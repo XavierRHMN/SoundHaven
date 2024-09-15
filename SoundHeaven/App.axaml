@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SoundHeaven.App"
              xmlns:local="using:SoundHeaven"
+             xmlns:converters="clr-namespace:SoundHeaven.Converters"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
@@ -12,4 +13,11 @@
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
+             
+     <Application.Resources>
+         <ResourceDictionary>
+             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+         </ResourceDictionary>
+     </Application.Resources>
+
 </Application>

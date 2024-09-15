@@ -10,7 +10,6 @@
 
     <ItemGroup>
         <AvaloniaResource Include="Assets\Images\avalonia-logo.ico" />
-        <Folder Include="Converters\" />
         <Folder Include="Helpers\" />
         <AvaloniaResource Include="Assets\**"/>
         <Folder Include="Assets\Styles\" />

@@ -49,10 +49,20 @@
 
         <!-- Playback Controls -->
         <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="10">
-            <Button Content="Previous" Command="{Binding PreviousCommand}" Margin="5"/>
-            <Button Content="Play" Command="{Binding PlayCommand}" Margin="5"/>
-            <Button Content="Pause" Command="{Binding PauseCommand}" Margin="5"/>
-            <Button Content="Next" Command="{Binding NextCommand}" Margin="5"/>
+            <Button Content="Previous"
+                    Command="{Binding PreviousCommand}"
+                    Margin="5"/>
+            <Button Content="Pause"
+                    Command="{Binding PauseCommand}"
+                    IsVisible="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Margin="5"/>
+            <Button Content="Play"
+                    Command="{Binding PlayCommand}"
+                    IsVisible="{Binding !IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Margin="5"/>
+            <Button Content="Next"
+                    Command="{Binding NextCommand}"
+                    Margin="5"/>
         </StackPanel>
     </Grid>
 

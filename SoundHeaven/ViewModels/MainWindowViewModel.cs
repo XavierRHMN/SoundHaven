@@ -16,7 +16,6 @@ namespace SoundHeaven.ViewModels
 
         // Properties
         private Song _currentSong;
-        private bool _isPaused = false;
         private bool _isPlaying = true;
 
         public Song CurrentSong
@@ -27,9 +26,7 @@ namespace SoundHeaven.ViewModels
                 if (_currentSong != value)
                 {
                     _currentSong = value;
-                    OnPropertyChanged();
-                    OnCurrentSongChanged();
-                    Play(); // Automatically play the new song when it's set
+                    Start();
                 }
             }
         }
@@ -42,20 +39,6 @@ namespace SoundHeaven.ViewModels
                 if (_isPlaying != value)
                 {
                     _isPlaying = value;
-                    OnPropertyChanged();
-                    OnIsPlayingChanged();
-                }
-            }
-        }
-
-        public bool IsPaused
-        {
-            get => _isPaused;
-            set
-            {
-                if (_isPaused != value)
-                {
-                    _isPaused = value;
                     OnPropertyChanged();
                     OnIsPlayingChanged();
                 }
@@ -90,41 +73,40 @@ namespace SoundHeaven.ViewModels
             // Load initial data (optional step)
             LoadSongs();
         }
-
-        private void Play()
+        
+                
+        private void Start()
         {
             if (CurrentSong != null)
             {
-                if (IsPaused)
-                {
-                    // If the song is paused, resume it
-                    _audioPlayerService.Resume();
-                    IsPlaying = true;
-                    IsPaused = false;
-                }
-                else
-                {
-                    // Otherwise, start playing the current song from the beginning
-                    _audioPlayerService.Play(CurrentSong.FilePath);
+                // Play the song
+                _audioPlayerService.Play(CurrentSong.FilePath);
+                IsPlaying = true;
+            }
+        }
 
-                }
+        private void Play()
+        {
+            if (!IsPlaying)
+            {
+                // If the song is paused, resume it
+                _audioPlayerService.Resume();
+                IsPlaying = true;
             }
         }
 
         private bool CanPlay()
         {
-            // Can play if there is a current song and either nothing is playing or the song is paused
-            return CurrentSong != null;
+            // Can play if the song is paused
+            return !IsPlaying;
         }
 
         private void Pause()
         {
-            Console.WriteLine(IsPlaying);
             if (IsPlaying)
             {
                 _audioPlayerService.Pause();
                 IsPlaying = false;
-                IsPaused = true; // Mark the song as paused so it can be resumed
             }
         }
 
@@ -166,7 +148,7 @@ namespace SoundHeaven.ViewModels
             // Load songs using the relative path to the Tracks folder
             Songs.Add(new Song
             {
-                Title = "Song 1",
+                Title = "path",
                 Artist = "Artist A",
                 Album = "Album A",
                 FilePath = System.IO.Path.Combine(tracksPath, "Counting Stars.mp3")
@@ -179,14 +161,6 @@ namespace SoundHeaven.ViewModels
                 Album = "Album B",
                 FilePath = System.IO.Path.Combine(tracksPath, "Nujabes - Highs 2 Lows.mp3")
             });
-        }
-
-        // Methods to handle property changes that affect command executability
-        private void OnCurrentSongChanged()
-        {
-            PlayCommand.RaiseCanExecuteChanged();
-            NextCommand.RaiseCanExecuteChanged();
-            PreviousCommand.RaiseCanExecuteChanged();
         }
 
         private void OnIsPlayingChanged()
