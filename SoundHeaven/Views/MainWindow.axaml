@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SoundHeaven.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
+        mc:Ignorable="d"
+        d:DesignWidth="800" d:DesignHeight="600"
+        x:Class="SoundHeaven.Views.MainWindow"
+        x:DataType="viewModels:MainWindowViewModel"
+        Icon="/Assets/Images/avalonia-logo.ico"
+        Title="SoundHeaven"
+        Width="800" Height="600">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <viewModels:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <!-- UI Components -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Now Playing Info -->
+        <StackPanel Orientation="Vertical" Grid.Row="0" Margin="10">
+            <TextBlock Text="{Binding CurrentSong.Title}" FontSize="20" FontWeight="Bold"/>
+            <TextBlock Text="{Binding CurrentSong.Artist}" FontSize="16"/>
+        </StackPanel>
+
+        <!-- Song List -->
+        <ListBox ItemsSource="{Binding Songs}"
+                 SelectedItem="{Binding CurrentSong}"
+                 Grid.Row="1" Margin="10">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Title}" FontSize="14" Width="200"/>
+                        <TextBlock Text="{Binding Artist}" FontSize="14" Width="150"/>
+                        <TextBlock Text="{Binding Album}" FontSize="14" Width="150"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- Playback Controls -->
+        <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="10">
+            <Button Content="Previous" Command="{Binding PreviousCommand}" Margin="5"/>
+            <Button Content="Play" Command="{Binding PlayCommand}" Margin="5"/>
+            <Button Content="Pause" Command="{Binding PauseCommand}" Margin="5"/>
+            <Button Content="Next" Command="{Binding NextCommand}" Margin="5"/>
+        </StackPanel>
+    </Grid>
+
+</Window>
