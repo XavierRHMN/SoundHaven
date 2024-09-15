@@ -25,15 +25,15 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
-        <!-- Now Playing Info -->
-        <StackPanel Orientation="Vertical" Grid.Row="0" Margin="10">
-            <TextBlock Text="{Binding CurrentSong.Title}" FontSize="20" FontWeight="Bold"/>
-            <TextBlock Text="{Binding CurrentSong.Artist}" FontSize="16"/>
-        </StackPanel>
+        
+        <!-- -->
+        <!-- <StackPanel Orientation="Vertical" Grid.Row="0" Margin="10"> -->
+        <!--     <TextBlock Text="{Binding CurrentSong.Title}" FontSize="20" FontWeight="Bold"/> -->
+        <!--     <TextBlock Text="{Binding CurrentSong.Artist}" FontSize="16"/> -->
+        <!-- </StackPanel> -->
 
         <!-- Song List -->
-        <ListBox ItemsSource="{Binding Songs}"
+        <ListBox ItemsSource="{Binding SongCollection}"
                  SelectedItem="{Binding CurrentSong}"
                  Grid.Row="1" Margin="10">
             <ListBox.ItemTemplate>
@@ -46,7 +46,7 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-
+        
         <!-- Playback Controls -->
         <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="10">
             <Button Content="Previous"
@@ -64,6 +64,8 @@
                     Command="{Binding NextCommand}"
                     Margin="5"/>
         </StackPanel>
+        
+        <!-- <Image Source="{Binding CurrentSong.Artwork, FallbackValue='/Assets/Images/MissingAlbum.png'}" Width="150" Height="150" /> -->
     </Grid>
 
 </Window>

@@ -4,15 +4,21 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using SoundHeaven.Models;
 using SoundHeaven.Commands;
+using SoundHeaven.Helpers;
 using SoundHeaven.Services;
+using SoundHeaven.Stores;
 using System;
+using System.IO;
 
 namespace SoundHeaven.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
+        public ObservableCollection<Song> SongCollection => _songStore.Songs;
+        
         // Services
         private readonly AudioPlayerService _audioPlayerService;
+        private readonly SongStore _songStore;
 
         // Properties
         private Song _currentSong;
@@ -44,8 +50,7 @@ namespace SoundHeaven.ViewModels
                 }
             }
         }
-
-        public ObservableCollection<Song> Songs { get; set; }
+        
         public ObservableCollection<Playlist> Playlists { get; set; }
 
         // Commands
@@ -61,7 +66,7 @@ namespace SoundHeaven.ViewModels
             _audioPlayerService = new AudioPlayerService();
 
             // Initialize collections
-            Songs = new ObservableCollection<Song>();
+            _songStore = new SongStore();    
             Playlists = new ObservableCollection<Playlist>();
 
             // Initialize commands
@@ -71,7 +76,7 @@ namespace SoundHeaven.ViewModels
             PreviousCommand = new RelayCommand(Previous, CanPrevious);
 
             // Load initial data (optional step)
-            LoadSongs();
+            _songStore.LoadSongs();
         }
         
                 
@@ -134,33 +139,6 @@ namespace SoundHeaven.ViewModels
         private bool CanPrevious()
         {
             return true; // CanPrevious logic to determine if the previous song is available
-        }
-
-        // Load initial data (optional)
-        private void LoadSongs()
-        {
-            // Get the base directory of the executable
-            string projectDirectory = AppContext.BaseDirectory;
-
-            // Set the relative path to the Tracks folder in your project
-            string tracksPath = System.IO.Path.Combine(projectDirectory, "..", "..", "..", "Tracks");
-            
-            // Load songs using the relative path to the Tracks folder
-            Songs.Add(new Song
-            {
-                Title = "path",
-                Artist = "Artist A",
-                Album = "Album A",
-                FilePath = System.IO.Path.Combine(tracksPath, "Counting Stars.mp3")
-            });
-
-            Songs.Add(new Song
-            {
-                Title = "Song 2",
-                Artist = "Artist B",
-                Album = "Album B",
-                FilePath = System.IO.Path.Combine(tracksPath, "Nujabes - Highs 2 Lows.mp3")
-            });
         }
 
         private void OnIsPlayingChanged()
