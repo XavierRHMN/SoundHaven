@@ -29,9 +29,11 @@ namespace SoundHeaven.ViewModels
             get => _currentSong;
             set
             {
+                
                 if (_currentSong != value)
                 {
                     _currentSong = value;
+                    OnPropertyChanged();  // Notify UI about the change
                     Start();
                 }
             }
@@ -121,25 +123,31 @@ namespace SoundHeaven.ViewModels
             return IsPlaying;
         }
 
+        // Navigate to the next song
         private void Next()
         {
-            // Logic for playing the next song, e.g., move to the next song in the list
+            var nextSong = _songStore.NextSong();
+            if (nextSong != null)
+            {
+                CurrentSong = nextSong;
+                Start();
+            }
         }
 
-        private bool CanNext()
-        {
-            return true; // CanNext logic to determine if the next song is available
-        }
+        private bool CanNext() => _songStore.CanNext;
 
+        // Navigate to the previous song
         private void Previous()
         {
-            // Logic for playing the previous song, e.g., move to the previous song in the list
+            var prevSong = _songStore.PreviousSong();
+            if (prevSong != null)
+            {
+                CurrentSong = prevSong;
+                Start();
+            }
         }
 
-        private bool CanPrevious()
-        {
-            return true; // CanPrevious logic to determine if the previous song is available
-        }
+        private bool CanPrevious() => _songStore.CanPrevious;
 
         private void OnIsPlayingChanged()
         {

@@ -10,36 +10,38 @@
         x:DataType="viewModels:MainWindowViewModel"
         Icon="/Assets/Images/avalonia-logo.ico"
         Title="SoundHeaven"
-        Width="800" Height="600">
-
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <viewModels:MainWindowViewModel/>
-    </Design.DataContext>
-
+        Width="1200" Height="600">
+    
     <!-- UI Components -->
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8*"/>
+            <RowDefinition Height="80"/>
         </Grid.RowDefinitions>
         
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="250"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- <Rectangle Grid.Row="0" Grid.Column="0" Fill="Red"/> -->
+        <!-- <Rectangle Grid.Row="1" Grid.Column="0" Fill="Blue"/> -->
         <!-- -->
-        <!-- <StackPanel Orientation="Vertical" Grid.Row="0" Margin="10"> -->
-        <!--     <TextBlock Text="{Binding CurrentSong.Title}" FontSize="20" FontWeight="Bold"/> -->
-        <!--     <TextBlock Text="{Binding CurrentSong.Artist}" FontSize="16"/> -->
-        <!-- </StackPanel> -->
-
-        <!-- Song List -->
-        <ListBox ItemsSource="{Binding SongCollection}"
+        <!-- <Rectangle Grid.Row="0" Grid.Column="1" Fill="Green"/> -->
+        <!-- <Rectangle Grid.Row="1" Grid.Column="1" Fill="Yellow"/> -->
+        <!-- -->
+        <!-- <Rectangle Grid.Row="0" Grid.Column="2" Fill="Purple"/> -->
+        <!-- <Rectangle Grid.Row="1" Grid.Column="2" Fill="Pink"/> -->
+        
+        <ListBox Grid.Row="0" Grid.Column="1"
+                 ItemsSource="{Binding SongCollection}"
                  SelectedItem="{Binding CurrentSong}"
-                 Grid.Row="1" Margin="10">
+                 Margin="0">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding Title}" FontSize="14" Width="200"/>
+                        <TextBlock Text="{Binding Title}" FontSize="14" Width="500"/>
                         <TextBlock Text="{Binding Artist}" FontSize="14" Width="150"/>
                         <TextBlock Text="{Binding Album}" FontSize="14" Width="150"/>
                     </StackPanel>
@@ -48,7 +50,7 @@
         </ListBox>
         
         <!-- Playback Controls -->
-        <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="10">
+        <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
             <Button Content="Previous"
                     Command="{Binding PreviousCommand}"
                     Margin="5"/>
@@ -64,8 +66,5 @@
                     Command="{Binding NextCommand}"
                     Margin="5"/>
         </StackPanel>
-        
-        <!-- <Image Source="{Binding CurrentSong.Artwork, FallbackValue='/Assets/Images/MissingAlbum.png'}" Width="150" Height="150" /> -->
     </Grid>
-
 </Window>
