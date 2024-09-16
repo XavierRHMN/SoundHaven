@@ -6,7 +6,35 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="SoundHeaven.Controls.VolumeControl"
              x:DataType="viewModels:MainWindowViewModel">
-    <StackPanel>
-        <Slider Minimum="0" Maximum="1" Value="{Binding Volume, Mode=TwoWay}" TickFrequency="0.1" TickPlacement="BottomRight" Margin="10"/>
+    
+    <!-- Define a style for buttons -->
+    <UserControl.Styles>
+        <Style Selector="Button">
+            <Setter Property="Width" Value="50"/>
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Styles>
+    
+    <StackPanel Orientation="Horizontal">
+        <!-- Volume Icon -->
+        <Button Command="{Binding MuteCommand}"
+                Background="{StaticResource PlayerBarColor}"
+                IsVisible="{Binding !IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Svg Path="avares://SoundHeaven/Assets/Icons/volumehigh.svg"/>
+        </Button>
+        
+        <Button Command="{Binding MuteCommand}"
+                Background="{StaticResource PlayerBarColor}"
+                IsVisible="{Binding IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Svg Path="avares://SoundHeaven/Assets/Icons/volumemute.svg"/>
+        </Button>
+        
+        <!-- <Svg Path="/Assets/Icons/volumehigh.svg" Width="24" Height="24"/> -->
+        
+        <!-- Volume Slider -->
+        <Slider Minimum="0" Maximum="1" Value="{Binding Volume}" Width="200"/>
     </StackPanel>
+    
+
 </UserControl>

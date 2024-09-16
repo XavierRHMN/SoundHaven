@@ -79,10 +79,46 @@ namespace SoundHeaven.ViewModels
             {
                 _volume = value;
                 OnPropertyChanged();
-                _audioPlayerService.SetVolume((float)_volume);
+                _audioPlayerService?.SetVolume((float)_volume);
                 
             }
         }
+        
+        private bool _isMuted;
+        public bool IsMuted
+        {
+            get => _isMuted;
+            set
+            {
+                if (_isMuted != value)
+                {
+                    _isMuted = value;
+                    OnPropertyChanged();
+            
+                    if (_isMuted)
+                    {
+                        PreviousVolume = (float)Volume; // Save the current volume before muting
+                        Volume = 0; // Set volume to 0 when muted
+                    }
+                    else
+                    {
+                        Volume = PreviousVolume; // Restore the previous volume when unmuted
+                    }
+                }
+            }
+        }
+
+        private float _previousVolume;
+        public float PreviousVolume
+        {
+            get => _previousVolume;
+            set
+            {
+                _previousVolume = value;
+                OnPropertyChanged();
+            }
+        }
+
         
         public ObservableCollection<Playlist> Playlists { get; set; }
 
@@ -93,6 +129,7 @@ namespace SoundHeaven.ViewModels
         public RelayCommand PreviousCommand { get; }
         public RelayCommand ShowHomeViewCommand { get; }
         public RelayCommand ShowPlaylistViewCommand { get; }
+        public RelayCommand MuteCommand { get; }
 
         // Constructor
         public MainWindowViewModel()
@@ -112,6 +149,7 @@ namespace SoundHeaven.ViewModels
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
             CurrentViewModel = new HomeViewModel(this);
+            MuteCommand = new RelayCommand(ToggleMute);
 
             // Load initial data (optional step)
             _songStore.LoadSongs(); 
@@ -196,6 +234,13 @@ namespace SoundHeaven.ViewModels
             PlayCommand.RaiseCanExecuteChanged();
             PauseCommand.RaiseCanExecuteChanged();
         }
+        
+        private void ToggleMute()
+        {
+            IsMuted = !IsMuted;
+        }
+        
+        private bool CanToggleMute() => CurrentSong != null;
 
         // INotifyPropertyChanged Implementation
         public event PropertyChangedEventHandler PropertyChanged;
