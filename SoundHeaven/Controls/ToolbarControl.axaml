@@ -8,22 +8,18 @@
              x:DataType="viewModels:MainWindowViewModel">
 
     <!-- Root Grid for Toolbar -->
-    <StackPanel HorizontalAlignment="Left" Background="{StaticResource ToolBarColor}">
-        <!-- Columns for Toolbar Buttons -->
-        
-        <!-- Command="{Binding HomeCommand}" -->
-        
+    <StackPanel Background="{StaticResource ToolBarColor}">
         <!-- Toolbar Buttons with Icons -->
-        <Button Background="Transparent" Foreground="White">
+        <Button Background="Transparent" Foreground="White" Command="{Binding ShowHomeViewCommand}">
             <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-                <Svg Path="avares://SoundHeaven/Assets/Icons/home.svg" Width="24" Height="24"  HorizontalAlignment="Left"/>
+                <Svg Path="avares://SoundHeaven/Assets/Icons/home.svg" Width="24" Height="24" HorizontalAlignment="Left"/>
                 <TextBlock Text="Home" Foreground="White" FontSize="12" HorizontalAlignment="Center"/>
             </StackPanel>
         </Button>
 
-        <Button Background="Transparent" Foreground="White">
+        <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlaylistViewCommand}">
             <StackPanel Orientation="Vertical">
-                <Svg Path="avares://SoundHeaven/Assets/Icons/playlists.svg" Width="24" Height="24"  HorizontalAlignment="Left"/>
+                <Svg Path="avares://SoundHeaven/Assets/Icons/playlists.svg" Width="24" Height="24" HorizontalAlignment="Left"/>
                 <TextBlock Text="Playlists" Foreground="White" FontSize="12" HorizontalAlignment="Center"/>
             </StackPanel>
         </Button>

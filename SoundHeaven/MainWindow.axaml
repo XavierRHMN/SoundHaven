@@ -25,25 +25,15 @@
         </Grid.RowDefinitions>
         
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="200"/>
             <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="200"/>
         </Grid.ColumnDefinitions>
         
-        <!-- <Rectangle Grid.Row="0" Grid.Column="0" Fill="Red"/> -->
-        <!-- <Rectangle Grid.Row="1" Grid.Column="0" Fill="Blue"/> -->
-        <!-- -->
-        <!-- <Rectangle Grid.Row="0" Grid.Column="1" Fill="Green"/> -->
-        <!-- <Rectangle Grid.Row="1" Grid.Column="1" Fill="Yellow"/> -->
-        <!-- -->
-        <!-- <Rectangle Grid.Row="0" Grid.Column="2" Fill="Purple"/> -->
-        <!-- <Rectangle Grid.Row="1" Grid.Column="2" Fill="Pink"/> -->
-        
-        <!-- <Border Background="{StaticResource ToolBarColor}"> -->
-        <!-- </Border> -->
-        
-        <controls:ToolbarControl></controls:ToolbarControl>
-        
+        <controls:ToolbarControl Grid.Row="0" Grid.Column="0"/>
         <controls:PlaybackControl Grid.Row="1" Grid.Column="0" Background="{StaticResource PlayerBarColor}"/>
+        
+        <!-- ContentControl to display the current view -->
+        <ContentControl Grid.Row="0" Grid.Column="1" Content="{Binding CurrentViewModel}"/>
     </Grid>
 </Window>

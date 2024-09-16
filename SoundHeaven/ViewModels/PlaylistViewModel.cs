@@ -1,5 +1,5 @@
 ﻿namespace SoundHeaven.ViewModels {
-    public class PlaylistViewModel {
-        
+    public class PlaylistViewModel : ViewModelBase {
+        // Properties and methods for PlaylistViewModel
     }
 }
