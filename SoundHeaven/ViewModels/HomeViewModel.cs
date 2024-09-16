@@ -31,6 +31,16 @@ namespace SoundHeaven.ViewModels
         public HomeViewModel(MainWindowViewModel mainWindowViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
+
+            // Subscribe to CurrentSong property changes in MainWindowViewModel
+            _mainWindowViewModel.PropertyChanged += (sender, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.CurrentSong))
+                {
+                    // Update HomeViewCurrentSong when MainWindowViewModel's CurrentSong changes
+                    HomeViewCurrentSong = _mainWindowViewModel.CurrentSong;
+                }
+            };
         }
     }
 }
