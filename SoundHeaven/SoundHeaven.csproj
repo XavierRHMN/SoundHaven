@@ -33,4 +33,18 @@
         <SubType>Code</SubType>
       </Compile>
     </ItemGroup>
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Black.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-BlackItalic.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Bold.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-BoldItalic.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Italic.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Light.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-LightItalic.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Regular.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Thin.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-ThinItalic.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Lato\OFL.txt" />
+    </ItemGroup>
 </Project>

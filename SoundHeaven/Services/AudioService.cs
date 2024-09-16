@@ -7,6 +7,7 @@ namespace SoundHeaven.Services
     {
         private IWavePlayer _waveOutDevice;
         private AudioFileReader _audioFileReader;
+        private double _audioVolume = 0.5;
 
         public AudioPlayerService()
         {
@@ -56,12 +57,17 @@ namespace SoundHeaven.Services
             }
         }
 
+        public double GetCurrentVolume()
+        {
+            _audioFileReader.Volume = (float)_audioVolume;
+            return _audioFileReader.Volume;
+        }
+
         public void SetVolume(float volume)
         {
-            if (_audioFileReader != null)
-            {
-                _audioFileReader.Volume = volume; // Volume should be between 0.0 and 1.0
-            }
+            _audioVolume = volume;
+            _audioFileReader.Volume = (float)_audioVolume;
+
         }
 
         public void Dispose()

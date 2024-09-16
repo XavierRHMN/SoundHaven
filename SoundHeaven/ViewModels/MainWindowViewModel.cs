@@ -22,6 +22,7 @@ namespace SoundHeaven.ViewModels
         public ObservableCollection<Song> SongCollection => _songStore.Songs;
         private readonly AudioPlayerService _audioPlayerService;
         private readonly SongStore _songStore;
+        private double _initialVolume = 0.5;
         
         private ViewModelBase _currentViewModel;
         public ViewModelBase CurrentViewModel {
@@ -49,6 +50,8 @@ namespace SoundHeaven.ViewModels
                     _currentSong = value;
                     OnPropertyChanged();  // Notify UI about the change
                     Start();
+                    
+                    Volume = _audioPlayerService.GetCurrentVolume(); // Assuming GetCurrentVolume() returns the current volume.
                 }
             }
         }
@@ -65,6 +68,19 @@ namespace SoundHeaven.ViewModels
                     OnPropertyChanged();
                     OnIsPlayingChanged();
                 }
+            }
+        }
+        
+        private double _volume;
+        public double Volume
+        {
+            get => _volume;
+            set
+            {
+                _volume = value;
+                OnPropertyChanged();
+                _audioPlayerService.SetVolume((float)_volume);
+                
             }
         }
         
@@ -95,7 +111,6 @@ namespace SoundHeaven.ViewModels
             PreviousCommand = new RelayCommand(Previous, CanPrevious);
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
-            
             CurrentViewModel = new HomeViewModel(this);
 
             // Load initial data (optional step)
@@ -161,7 +176,7 @@ namespace SoundHeaven.ViewModels
                 Start();
             }
         }
-
+        
         private bool CanNext() => _songStore.CanNext;
 
         // Navigate to the previous song
@@ -174,7 +189,6 @@ namespace SoundHeaven.ViewModels
                 Start();
             }
         }
-
         private bool CanPrevious() => _songStore.CanPrevious;
 
         private void OnIsPlayingChanged()

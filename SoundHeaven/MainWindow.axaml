@@ -34,10 +34,9 @@
             <controls:ToolbarControl/>
         </Border>
         
-        <!-- Add a border around PlaybackControl -->
-            <controls:PlaybackControl Grid.Row="2" Grid.Column="0" Background="{StaticResource PlayerBarColor}"/>
+        <controls:PlaybackControl Grid.Row="2" Grid.Column="0" Background="{StaticResource PlayerBarColor}"/>
+        <controls:VolumeControl Grid.Row="2" Grid.Column="1"/>
         
-        <!-- ContentControl to display the current view -->
         <ContentControl Grid.Row="1" Grid.Column="1" Content="{Binding CurrentViewModel}"/>
     </Grid>
 </Window>
