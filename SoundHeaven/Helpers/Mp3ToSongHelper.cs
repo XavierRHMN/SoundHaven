@@ -3,6 +3,7 @@ using System.IO;  // For regular file system operations
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using SoundHeaven.Models;
+using System.Text.RegularExpressions;
 using TagLib;  // For TagLib operations
 
 namespace SoundHeaven.Helpers
@@ -67,7 +68,7 @@ namespace SoundHeaven.Helpers
             var file = TagLib.File.Create(filePath);
 
             // Extract basic metadata
-            song.Title = file.Tag.Title;
+            song.Title = CleanSongTitle(file.Tag.Title, string.Join(", ", file.Tag.Performers));
             song.Artist = string.Join(", ", file.Tag.Performers);
             song.Album = file.Tag.Album;
             song.Genre = string.Join(", ", file.Tag.Genres);
@@ -79,6 +80,17 @@ namespace SoundHeaven.Helpers
             // SaveAlbumCover(song);
 
             return song;
+        }
+        
+        // Method to clean the song title
+        public static string CleanSongTitle(string title, string artist)
+        {
+            if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(artist))
+                return title;
+
+            // Regular expression to match patterns like "Artist - Title" or "Title by Artist"
+            string pattern = $@"\b{Regex.Escape(artist)}\b\s*[-|by]*\s*|\s*[-|by]*\s*\b{Regex.Escape(artist)}\b";
+            return Regex.Replace(title, pattern, "", RegexOptions.IgnoreCase).Trim();
         }
     }
 }
