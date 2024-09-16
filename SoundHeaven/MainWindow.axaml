@@ -6,12 +6,12 @@
         xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
         xmlns:controls="clr-namespace:SoundHeaven.Controls"
         mc:Ignorable="d"
-        d:DesignWidth="800" d:DesignHeight="600"
+        d:DesignWidth="1500" d:DesignHeight="600"
         x:Class="SoundHeaven.Views.MainWindow"
         x:DataType="viewModels:MainWindowViewModel"
         Icon="/Assets/Images/avalonia-logo.ico"
         Title="SoundHeaven"
-        Width="1200" Height="600">
+        Width="1500" Height="600">
     
     <Window.DataContext>
         <viewModels:MainWindowViewModel/>
@@ -20,6 +20,7 @@
     <!-- UI Components -->
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="80"/>
             <RowDefinition Height="8*"/>
             <RowDefinition Height="80"/>
         </Grid.RowDefinitions>
@@ -27,17 +28,16 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200"/>
             <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="200"/>
         </Grid.ColumnDefinitions>
         
-        <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="Gray">
+        <Border Grid.RowSpan="2" Grid.Row="0" Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="Gray">
             <controls:ToolbarControl/>
         </Border>
         
         <!-- Add a border around PlaybackControl -->
-            <controls:PlaybackControl Grid.Row="1" Grid.Column="0" Background="{StaticResource PlayerBarColor}"/>
+            <controls:PlaybackControl Grid.Row="2" Grid.Column="0" Background="{StaticResource PlayerBarColor}"/>
         
         <!-- ContentControl to display the current view -->
-        <ContentControl Grid.Row="0" Grid.Column="1" Content="{Binding CurrentViewModel}"/>
+        <ContentControl Grid.Row="1" Grid.Column="1" Content="{Binding CurrentViewModel}"/>
     </Grid>
 </Window>

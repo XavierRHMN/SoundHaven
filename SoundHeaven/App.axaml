@@ -16,8 +16,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="/Colors/Colors.axaml"/>
-                <ResourceInclude Source="/Converters/Converters.axaml"/>
+                <ResourceInclude Source="/Resources/Colors.axaml"/>
+                <ResourceInclude Source="/Resources/Converters.axaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

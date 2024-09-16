@@ -3,25 +3,36 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
+             d:DesignWidth="200" d:DesignHeight="600"
              x:Class="SoundHeaven.Controls.ToolbarControl"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              x:DataType="viewModels:MainWindowViewModel">
 
     <!-- Root Grid for Toolbar -->
     <StackPanel Background="{StaticResource ToolBarColor}">
+        
         <!-- Toolbar Buttons with Icons -->
-        <Button Background="Transparent" Foreground="White" Command="{Binding ShowHomeViewCommand}">
-            <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-                <Svg Path="avares://SoundHeaven/Assets/Icons/home.svg" Width="24" Height="24" HorizontalAlignment="Left"/>
-                <TextBlock Text="Home" Foreground="White" FontSize="12" HorizontalAlignment="Center"/>
+        <Button Background="Transparent" Foreground="White" Command="{Binding ShowHomeViewCommand}" Width="200">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="10">
+                <Svg Path="avares://SoundHeaven/Assets/Icons/home.svg" Width="32" Height="32" HorizontalAlignment="Left"/>
+                <TextBlock Classes="ToolbarText" Text="Home" VerticalAlignment="Center" Margin="20,10,0,0"/>
             </StackPanel>
         </Button>
 
-        <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlaylistViewCommand}">
-            <StackPanel Orientation="Vertical">
-                <Svg Path="avares://SoundHeaven/Assets/Icons/playlists.svg" Width="24" Height="24" HorizontalAlignment="Left"/>
-                <TextBlock Text="Playlists" Foreground="White" FontSize="12" HorizontalAlignment="Center"/>
+        <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlaylistViewCommand}" Width="200">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="10">
+                <Svg Path="avares://SoundHeaven/Assets/Icons/playlists.svg" Width="32" Height="32" HorizontalAlignment="Left"/>
+                <TextBlock Classes="ToolbarText" Text="Playlists" VerticalAlignment="Center" Margin="20,10,0,0"/>
             </StackPanel>
         </Button>
+                
+        <StackPanel.Styles>
+            <Style Selector="TextBlock.ToolbarText">
+                <Setter Property="FontSize" Value="24"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="FontWeight" Value="Medium"/>
+                <Setter Property="FontFamily" Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito"/>
+            </Style>
+        </StackPanel.Styles>
     </StackPanel>
 </UserControl>
