@@ -11,13 +11,12 @@
     <ItemGroup>
         <AvaloniaResource Include="Assets\Images\avalonia-logo.ico" />
         <AvaloniaResource Include="Assets\**"/>
-        <Folder Include="Assets\Styles\" />
-        <Folder Include="Assets\Themes\" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="11.1.0"/>
         <PackageReference Include="Avalonia.Desktop" Version="11.1.0"/>
+        <PackageReference Include="Avalonia.Svg" Version="11.1.0.1" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.0"/>
         <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.0"/>
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
@@ -25,5 +24,16 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
         <PackageReference Include="NAudio" Version="2.2.1" />
         <PackageReference Include="TagLibSharp" Version="2.3.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Assets\Themes\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="MainWindow.axaml.cs">
+        <DependentUpon>MainWindow.axaml</DependentUpon>
+        <SubType>Code</SubType>
+      </Compile>
     </ItemGroup>
 </Project>

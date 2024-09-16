@@ -12,7 +12,7 @@ using System.IO;
 
 namespace SoundHeaven.ViewModels
 {
-    public class MainWindowViewModel : INotifyPropertyChanged
+    public class MainWindowViewModel : ViewModelBase
     {
         public ObservableCollection<Song> SongCollection => _songStore.Songs;
         
@@ -153,13 +153,6 @@ namespace SoundHeaven.ViewModels
         {
             PlayCommand.RaiseCanExecuteChanged();
             PauseCommand.RaiseCanExecuteChanged();
-        }
-
-        // INotifyPropertyChanged Implementation
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

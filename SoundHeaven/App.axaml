@@ -4,20 +4,21 @@
              xmlns:local="using:SoundHeaven"
              xmlns:converters="clr-namespace:SoundHeaven.Converters"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-  
+
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
-             
-     <Application.Resources>
-         <ResourceDictionary>
-             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-         </ResourceDictionary>
-     </Application.Resources>
 
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="/Colors/Colors.axaml"/>
+                <ResourceInclude Source="/Converters/Converters.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
 </Application>

@@ -1,0 +1,49 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SoundHeaven.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
+        xmlns:controls="clr-namespace:SoundHeaven.Controls"
+        mc:Ignorable="d"
+        d:DesignWidth="800" d:DesignHeight="600"
+        x:Class="SoundHeaven.Views.MainWindow"
+        x:DataType="viewModels:MainWindowViewModel"
+        Icon="/Assets/Images/avalonia-logo.ico"
+        Title="SoundHeaven"
+        Width="1200" Height="600">
+    
+    <Window.DataContext>
+        <viewModels:MainWindowViewModel/>
+    </Window.DataContext>
+    
+    <!-- UI Components -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="8*"/>
+            <RowDefinition Height="80"/>
+        </Grid.RowDefinitions>
+        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="250"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- <Rectangle Grid.Row="0" Grid.Column="0" Fill="Red"/> -->
+        <!-- <Rectangle Grid.Row="1" Grid.Column="0" Fill="Blue"/> -->
+        <!-- -->
+        <!-- <Rectangle Grid.Row="0" Grid.Column="1" Fill="Green"/> -->
+        <!-- <Rectangle Grid.Row="1" Grid.Column="1" Fill="Yellow"/> -->
+        <!-- -->
+        <!-- <Rectangle Grid.Row="0" Grid.Column="2" Fill="Purple"/> -->
+        <!-- <Rectangle Grid.Row="1" Grid.Column="2" Fill="Pink"/> -->
+        
+        <!-- <Border Background="{StaticResource ToolBarColor}"> -->
+        <!-- </Border> -->
+        
+        <controls:ToolbarControl></controls:ToolbarControl>
+        
+        <controls:PlaybackControl Grid.Row="1" Grid.Column="0" Background="{StaticResource PlayerBarColor}"/>
+    </Grid>
+</Window>
