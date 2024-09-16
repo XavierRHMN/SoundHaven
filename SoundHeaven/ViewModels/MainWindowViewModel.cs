@@ -1,4 +1,6 @@
-﻿using Avalonia.Threading;
+﻿using Avalonia.Controls.Primitives;
+using Avalonia.Input;
+using Avalonia.Threading;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -21,8 +23,11 @@ namespace SoundHeaven.ViewModels
     {
         public ObservableCollection<Song> SongCollection => _songStore.Songs;
         private readonly AudioPlayerService _audioPlayerService;
+        public AudioPlayerService AudioPlayerService => _audioPlayerService;
         private readonly SongStore _songStore;
         private double _initialVolume = 0.5;
+        private DispatcherTimer _timer;
+        private bool _isDragging = false;
         
         private ViewModelBase _currentViewModel;
         public ViewModelBase CurrentViewModel {
@@ -123,6 +128,25 @@ namespace SoundHeaven.ViewModels
                 OnPropertyChanged();
             }
         }
+        
+        private double _seekPosition;
+        public double SeekPosition
+        {
+            get => _seekPosition;
+            set
+            {
+                if (_seekPosition != value)
+                {
+                    _seekPosition = value;
+                    OnPropertyChanged();  // This will notify the ViewModel and the UI
+
+                    if (CurrentSong != null)
+                    {
+                        // _audioPlayerService?.Seek(TimeSpan.FromSeconds(_seekPosition)); // seeks constantly
+                    }
+                }
+            }
+        }
 
         
         public ObservableCollection<Playlist> Playlists { get; set; }
@@ -135,6 +159,8 @@ namespace SoundHeaven.ViewModels
         public RelayCommand ShowHomeViewCommand { get; }
         public RelayCommand ShowPlaylistViewCommand { get; }
         public RelayCommand MuteCommand { get; }
+        public RelayCommand OnThumbDragStartedCommand { get; }
+        public RelayCommand OnThumbDragCompletedCommand { get; }
 
         // Constructor
         public MainWindowViewModel()
@@ -155,9 +181,37 @@ namespace SoundHeaven.ViewModels
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
             CurrentViewModel = new HomeViewModel(this);
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
+            OnThumbDragStartedCommand = new RelayCommand(OnThumbDragStarted);
+            OnThumbDragCompletedCommand = new RelayCommand(OnThumbDragCompleted);
 
             // Load initial data (optional step)
-            _songStore.LoadSongs(); 
+            _songStore.LoadSongs();
+
+            InitializeTimer();
+        }
+
+        private void InitializeTimer() {
+            // Initialize the timer
+            _timer = new DispatcherTimer();
+            _timer.Interval = TimeSpan.FromMilliseconds(500); // Update every 500ms
+            _timer.Tick += UpdateSeekPosition;
+            _timer.Start();
+        }
+        
+        private void UpdateSeekPosition(object sender, EventArgs e)
+        {
+            if (CurrentSong != null && AudioPlayerService != null)
+            {
+                SeekPosition += 0.5;
+            }
+        }
+
+        private void OnThumbDragStarted() {
+            _isDragging = true;
+        }
+        
+        private void OnThumbDragCompleted() {
+            _isDragging = false;
         }
         
         public void ShowHomeView() {

@@ -47,6 +47,8 @@
                 <RowDefinition Height="70"/>
             </Grid.RowDefinitions>
             
+            <controls:SeekSliderControl Grid.Row="0" Grid.Column="1" Margin="10 15 30 0"/>
+            
             <controls:VolumeControl Grid.Row="0" Grid.Column="2" Margin="10 15 30 0"/>
         </Grid>
         

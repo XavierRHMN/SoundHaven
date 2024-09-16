@@ -13,6 +13,19 @@ namespace SoundHeaven.Services
         {
             _waveOutDevice = new WaveOutEvent(); // You can replace this with a different output device if needed
         }
+        
+        public TimeSpan GetCurrentTime()
+        {
+            return _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
+        }
+        
+        public void Seek(TimeSpan position)
+        {
+            if (_audioFileReader != null)
+            {
+                _audioFileReader.CurrentTime = position;
+            }
+        }
 
         public void Play(string filePath)
         {
