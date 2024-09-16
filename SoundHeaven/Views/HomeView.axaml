@@ -13,8 +13,9 @@
             <DataTemplate>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding Title}" FontSize="14" Width="500"/>
-                    <TextBlock Text="{Binding Artist}" FontSize="14" Width="150"/>
-                    <TextBlock Text="{Binding Album}" FontSize="14" Width="150"/>
+                    <TextBlock Text="{Binding Artist}" FontSize="14" Width="100"/>
+                    <TextBlock Text="{Binding Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}" FontSize="14" Width="75"/>
+                    <TextBlock Text="{Binding FilePath, Converter={StaticResource FilePathShortenerConverter}}" FontSize="14" Width="400"/>
                 </StackPanel>
             </DataTemplate>
         </ListBox.ItemTemplate>
