@@ -21,7 +21,7 @@
                 HorizontalAlignment="Center"
                 Background="{StaticResource PlayerBarColor}">
 
-        <Button Command="{Binding PreviousCommand}"
+        <Button Command="{Binding PreviousCommand, Mode=TwoWay}"
                 Background="{StaticResource PlayerBarColor}">
             <Svg Path="avares://SoundHeaven/Assets/Icons/previous.svg"/>
         </Button>
@@ -38,7 +38,7 @@
             <Svg Path="avares://SoundHeaven/Assets/Icons/play.svg"/>
         </Button>
 
-        <Button Command="{Binding NextCommand}"
+        <Button Command="{Binding NextCommand, Mode=TwoWay}"
                 Background="{StaticResource PlayerBarColor}">
             <Svg Path="avares://SoundHeaven/Assets/Icons/next.svg"/>
         </Button>

@@ -10,6 +10,7 @@ using SoundHeaven.Helpers;
 using SoundHeaven.Services;
 using SoundHeaven.Stores;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -80,8 +81,6 @@ namespace SoundHeaven.ViewModels
         // Constructor
         public MainWindowViewModel()
         {
-            CurrentViewModel = new HomeViewModel();
-            
             // Initialize services
             _audioPlayerService = new AudioPlayerService();
 
@@ -96,17 +95,19 @@ namespace SoundHeaven.ViewModels
             PreviousCommand = new RelayCommand(Previous, CanPrevious);
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
+            
+            CurrentViewModel = new HomeViewModel(this);
 
             // Load initial data (optional step)
-            _songStore.LoadSongs();
+            _songStore.LoadSongs(); 
         }
         
         public void ShowHomeView() {
-            CurrentViewModel = new HomeViewModel();
+            CurrentViewModel = new HomeViewModel(this);
         }
         
         public void ShowPlaylistView() {
-            CurrentViewModel = new PlaylistViewModel();
+            CurrentViewModel = new PlaylistViewModel(this);
         }
                 
         private void Start()

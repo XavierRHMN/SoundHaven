@@ -1,22 +1,23 @@
-﻿<!-- HomeView.axaml -->
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="SoundHeaven.Views.HomeView">
-    <TextBlock Text="Home View" />
-    <!-- -->
-    <!-- <ListBox Grid.Row="0" Grid.Column="1" -->
-    <!--          ItemsSource="{Binding SongCollection}" -->
-    <!--          SelectedItem="{Binding CurrentSong}" -->
-    <!--          Margin="0"> -->
-    <!--     <ListBox.ItemTemplate> -->
-    <!--         <DataTemplate> -->
-    <!--             <StackPanel Orientation="Horizontal"> -->
-    <!--                 <TextBlock Text="{Binding Title}" FontSize="14" Width="500"/> -->
-    <!--                 <TextBlock Text="{Binding Artist}" FontSize="14" Width="150"/> -->
-    <!--                 <TextBlock Text="{Binding Album}" FontSize="14" Width="150"/> -->
-    <!--             </StackPanel> -->
-    <!--         </DataTemplate> -->
-    <!--     </ListBox.ItemTemplate> -->
-    <!-- </ListBox> -->
+             xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
+             x:Class="SoundHeaven.Views.HomeView"
+             x:DataType="viewModels:HomeViewModel">
+    
+    <ListBox Background="{StaticResource ToolBarColor}"
+             Foreground="White"
+             ItemsSource="{Binding HomeViewSongs}"
+             SelectedItem="{Binding HomeViewCurrentSong, Mode=TwoWay}"
+             Margin="0">
+        <ListBox.ItemTemplate>
+            <DataTemplate>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Title}" FontSize="14" Width="500"/>
+                    <TextBlock Text="{Binding Artist}" FontSize="14" Width="150"/>
+                    <TextBlock Text="{Binding Album}" FontSize="14" Width="150"/>
+                </StackPanel>
+            </DataTemplate>
+        </ListBox.ItemTemplate>
+    </ListBox>
 
 </UserControl>

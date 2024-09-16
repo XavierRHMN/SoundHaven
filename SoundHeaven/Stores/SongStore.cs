@@ -12,13 +12,7 @@ namespace SoundHeaven.Stores
         private ObservableCollection<Song> _songs;
         public ObservableCollection<Song> Songs => _songs;
 
-        // Current song index
-        private int _currentSongIndex = 0;
-        public int CurrentSongIndex
-        {
-            get => _currentSongIndex;
-            set => _currentSongIndex = value;
-        }
+
 
         public SongStore()
         {
@@ -42,9 +36,12 @@ namespace SoundHeaven.Stores
                 _songs.Remove(song);
             }
         }
+        
+        // Current song index
+        private int _currentSongIndex = 0;
 
         // Get the current song based on the index
-        public Song CurrentSong => _songs.Count > 0 ? _songs[_currentSongIndex] : null;
+        public Song CurrentSong => _songs[_currentSongIndex];
 
         // Can go to next song if there are more than one song
         public bool CanNext => _songs.Count > 1;
