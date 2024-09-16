@@ -3,7 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d"
              x:Class="SoundHeaven.Controls.VolumeControl"
              x:DataType="viewModels:MainWindowViewModel">
     
@@ -19,13 +19,13 @@
     <StackPanel Orientation="Horizontal">
         <!-- Volume Icon -->
         <Button Command="{Binding MuteCommand}"
-                Background="{StaticResource PlayerBarColor}"
+                Background="Transparent"
                 IsVisible="{Binding !IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Svg Path="avares://SoundHeaven/Assets/Icons/volumehigh.svg"/>
         </Button>
         
         <Button Command="{Binding MuteCommand}"
-                Background="{StaticResource PlayerBarColor}"
+                Background="Transparent"
                 IsVisible="{Binding IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Svg Path="avares://SoundHeaven/Assets/Icons/volumemute.svg"/>
         </Button>
@@ -33,7 +33,7 @@
         <!-- <Svg Path="/Assets/Icons/volumehigh.svg" Width="24" Height="24"/> -->
         
         <!-- Volume Slider -->
-        <Slider Minimum="0" Maximum="1" Value="{Binding Volume}" Width="200"/>
+        <Slider Minimum="0" Maximum="1" Value="{Binding Volume, Mode=TwoWay}" Width="200"/>
     </StackPanel>
     
 

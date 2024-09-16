@@ -21,6 +21,7 @@ namespace SoundHeaven.Services
             try
             {
                 _audioFileReader = new AudioFileReader(filePath);
+                _audioFileReader.Volume = (float)_audioVolume; // Set the current volume when loading the new song
                 _waveOutDevice.Init(_audioFileReader);
                 _waveOutDevice.Play();
             }
