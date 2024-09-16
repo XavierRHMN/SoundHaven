@@ -50,8 +50,8 @@ namespace SoundHeaven.ViewModels
                     _currentSong = value;
                     OnPropertyChanged();  // Notify UI about the change
                     Start();
-                    
                     Volume = _audioPlayerService.GetCurrentVolume(); // Assuming GetCurrentVolume() returns the current volume.
+                    MuteCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -79,7 +79,12 @@ namespace SoundHeaven.ViewModels
             {
                 _volume = value;
                 OnPropertyChanged();
-                _audioPlayerService?.SetVolume((float)_volume);
+                
+                // Only attempt to set volume if a song is loaded
+                if (CurrentSong != null)
+                {
+                    _audioPlayerService?.SetVolume((float)_volume);
+                }
                 
             }
         }
@@ -149,7 +154,7 @@ namespace SoundHeaven.ViewModels
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
             CurrentViewModel = new HomeViewModel(this);
-            MuteCommand = new RelayCommand(ToggleMute);
+            MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
 
             // Load initial data (optional step)
             _songStore.LoadSongs(); 
@@ -239,8 +244,10 @@ namespace SoundHeaven.ViewModels
         {
             IsMuted = !IsMuted;
         }
-        
-        private bool CanToggleMute() => CurrentSong != null;
+
+        private bool CanToggleMute() {
+            return CurrentSong != null;
+        }
 
         // INotifyPropertyChanged Implementation
         public event PropertyChangedEventHandler PropertyChanged;
