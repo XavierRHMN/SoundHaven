@@ -14,5 +14,6 @@ namespace SoundHeaven.Models {
         public string? ArtworkFilePath { get; set; }
         public string? Genre { get; set; }
         public int Year { get; set; }
+        public double Length => Duration.TotalSeconds;
     }
 }

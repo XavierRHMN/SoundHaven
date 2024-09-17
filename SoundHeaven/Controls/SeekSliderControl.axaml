@@ -7,5 +7,8 @@
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              x:DataType="viewModels:MainWindowViewModel">
 
-    <Slider Minimum="0" Maximum="100" Value="{Binding SeekPosition, Mode=TwoWay}"/>
+    <Slider Minimum="0" Maximum="{Binding CurrentSong.Length}"
+            Value="{Binding SeekPosition, Mode=TwoWay}"
+            ValueChanged="RangeBase_OnValueChanged"
+            PointerCaptureLost="OnPointerCaptureLost"/>
 </UserControl>

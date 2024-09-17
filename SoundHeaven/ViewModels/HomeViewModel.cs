@@ -6,6 +6,7 @@ namespace SoundHeaven.ViewModels
     public class HomeViewModel : ViewModelBase
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
+        public MainWindowViewModel MainWindowViewModel { get; set; }
 
         // Expose the SongCollection from MainWindowViewModel
         public ObservableCollection<Song> HomeViewSongs => _mainWindowViewModel.SongCollection;

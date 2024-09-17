@@ -33,7 +33,7 @@
         <!-- <Svg Path="/Assets/Icons/volumehigh.svg" Width="24" Height="24"/> -->
         
         <!-- Volume Slider -->
-        <Slider Minimum="0" Maximum="1" Value="{Binding Volume, Mode=TwoWay}" Width="200"/>
+        <Slider Minimum="0" Maximum="1" Value="{Binding Volume, Mode=TwoWay}" Width="150"/>
     </StackPanel>
     
 

@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using SoundHeaven.Models;
 using SoundHeaven.Commands;
+using SoundHeaven.Controls;
 using SoundHeaven.Helpers;
 using SoundHeaven.Services;
 using SoundHeaven.Stores;
@@ -139,11 +140,6 @@ namespace SoundHeaven.ViewModels
                 {
                     _seekPosition = value;
                     OnPropertyChanged();  // This will notify the ViewModel and the UI
-
-                    if (CurrentSong != null)
-                    {
-                        // _audioPlayerService?.Seek(TimeSpan.FromSeconds(_seekPosition)); // seeks constantly
-                    }
                 }
             }
         }
@@ -159,8 +155,7 @@ namespace SoundHeaven.ViewModels
         public RelayCommand ShowHomeViewCommand { get; }
         public RelayCommand ShowPlaylistViewCommand { get; }
         public RelayCommand MuteCommand { get; }
-        public RelayCommand OnThumbDragStartedCommand { get; }
-        public RelayCommand OnThumbDragCompletedCommand { get; }
+        private SeekSliderControl _seekSliderControl;
 
         // Constructor
         public MainWindowViewModel()
@@ -181,12 +176,10 @@ namespace SoundHeaven.ViewModels
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
             CurrentViewModel = new HomeViewModel(this);
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
-            OnThumbDragStartedCommand = new RelayCommand(OnThumbDragStarted);
-            OnThumbDragCompletedCommand = new RelayCommand(OnThumbDragCompleted);
 
             // Load initial data (optional step)
             _songStore.LoadSongs();
-
+            _seekSliderControl = new SeekSliderControl();
             InitializeTimer();
         }
 
@@ -200,18 +193,10 @@ namespace SoundHeaven.ViewModels
         
         private void UpdateSeekPosition(object sender, EventArgs e)
         {
-            if (CurrentSong != null && AudioPlayerService != null)
+            if (CurrentSong != null)
             {
                 SeekPosition += 0.5;
             }
-        }
-
-        private void OnThumbDragStarted() {
-            _isDragging = true;
-        }
-        
-        private void OnThumbDragCompleted() {
-            _isDragging = false;
         }
         
         public void ShowHomeView() {
@@ -270,6 +255,7 @@ namespace SoundHeaven.ViewModels
             if (nextSong != null)
             {
                 CurrentSong = nextSong;
+                SeekPosition = 0;
                 Start();
             }
         }
@@ -283,6 +269,7 @@ namespace SoundHeaven.ViewModels
             if (prevSong != null)
             {
                 CurrentSong = prevSong;
+                SeekPosition = 0;
                 Start();
             }
         }
