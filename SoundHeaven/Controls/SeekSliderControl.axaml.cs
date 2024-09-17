@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using SoundHeaven.Services;
 using SoundHeaven.ViewModels;
 using System;
 
@@ -17,7 +18,7 @@ namespace SoundHeaven.Controls
             InitializeComponent();
         }
 
-        private void RangeBase_OnValueChanged(object? sender, RangeBaseValueChangedEventArgs e) {
+        private void OnValueChanged(object? sender, RangeBaseValueChangedEventArgs e) {
             if (DataContext is MainWindowViewModel viewModel)
             {
                 if (_isDragging)

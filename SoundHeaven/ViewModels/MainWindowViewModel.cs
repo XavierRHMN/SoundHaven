@@ -26,9 +26,7 @@ namespace SoundHeaven.ViewModels
         private readonly AudioPlayerService _audioPlayerService;
         public AudioPlayerService AudioPlayerService => _audioPlayerService;
         private readonly SongStore _songStore;
-        private double _initialVolume = 0.5;
         private DispatcherTimer _timer;
-        private bool _isDragging = false;
         
         private ViewModelBase _currentViewModel;
         public ViewModelBase CurrentViewModel {
@@ -56,6 +54,7 @@ namespace SoundHeaven.ViewModels
                     _currentSong = value;
                     OnPropertyChanged();  // Notify UI about the change
                     Start();
+                    SeekPosition = 0;
                     Volume = _audioPlayerService.GetCurrentVolume(); // Assuming GetCurrentVolume() returns the current volume.
                     MuteCommand.RaiseCanExecuteChanged();
                 }
@@ -186,7 +185,7 @@ namespace SoundHeaven.ViewModels
         private void InitializeTimer() {
             // Initialize the timer
             _timer = new DispatcherTimer();
-            _timer.Interval = TimeSpan.FromMilliseconds(500); // Update every 500ms
+            _timer.Interval = TimeSpan.FromMilliseconds(100); // Update every 500ms
             _timer.Tick += UpdateSeekPosition;
             _timer.Start();
         }
@@ -195,7 +194,7 @@ namespace SoundHeaven.ViewModels
         {
             if (CurrentSong != null)
             {
-                SeekPosition += 0.5;
+                SeekPosition += 0.1;
             }
         }
         
@@ -255,8 +254,8 @@ namespace SoundHeaven.ViewModels
             if (nextSong != null)
             {
                 CurrentSong = nextSong;
-                SeekPosition = 0;
                 Start();
+                SeekPosition = 0;
             }
         }
         
@@ -269,8 +268,8 @@ namespace SoundHeaven.ViewModels
             if (prevSong != null)
             {
                 CurrentSong = prevSong;
-                SeekPosition = 0;
                 Start();
+                SeekPosition = 0;
             }
         }
         private bool CanPrevious() => _songStore.CanPrevious;
