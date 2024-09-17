@@ -6,7 +6,28 @@ namespace SoundHeaven.ViewModels
     public class PlaylistViewModel : ViewModelBase
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
+        public MainWindowViewModel MainWindowViewModel { get; set; }
 
+        // Expose the SongCollection from MainWindowViewModel
+        public ObservableCollection<Song> PlaylistSongs => _mainWindowViewModel.SongCollection;
+
+        private Song _playlistCurrentSong;
+        public Song PlaylistCurrentSong
+        {
+            get => _playlistCurrentSong;
+            set
+            {
+                if (_playlistCurrentSong != value)
+                {
+                    _playlistCurrentSong = value;
+                    OnPropertyChanged();
+
+                    // Set the MainWindowViewModel's CurrentSong to the selected song
+                    _mainWindowViewModel.CurrentSong = _playlistCurrentSong;
+                }
+            }
+        }
+        
         // Expose Playlists from MainWindowViewModel
         public ObservableCollection<Playlist> Playlists => _mainWindowViewModel.Playlists;
 
@@ -24,29 +45,23 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private Song _currentSong;
-        public Song CurrentSong
-        {
-            get => _currentSong;
-            set
-            {
-                if (_currentSong != value)
-                {
-                    _currentSong = value;
-                    OnPropertyChanged();
-
-                    // Set the MainWindowViewModel's CurrentSong to the selected song from the playlist
-                    _mainWindowViewModel.CurrentSong = _currentSong;
-                }
-            }
-        }
-
-        // Constructor accepting MainWindowViewModel
+        // Constructor that accepts MainWindowViewModel
         public PlaylistViewModel(MainWindowViewModel mainWindowViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
-        }
 
+            // Subscribe to CurrentSong property changes in MainWindowViewModel
+            _mainWindowViewModel.PropertyChanged += (sender, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.CurrentSong))
+                {
+                    // Update PlaylistCurrentSong when MainWindowViewModel's CurrentSong changes
+                    PlaylistCurrentSong = _mainWindowViewModel.CurrentSong;
+                }
+            };
+        }
+        
+        
         // Load the songs from the selected playlist
         public void LoadPlaylistSongs(Playlist playlist)
         {

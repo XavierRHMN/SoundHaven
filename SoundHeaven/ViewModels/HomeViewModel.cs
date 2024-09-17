@@ -6,42 +6,29 @@ namespace SoundHeaven.ViewModels
     public class HomeViewModel : ViewModelBase
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
-        public MainWindowViewModel MainWindowViewModel { get; set; }
 
-        // Expose the SongCollection from MainWindowViewModel
-        public ObservableCollection<Song> HomeViewSongs => _mainWindowViewModel.SongCollection;
-
-        private Song _homeViewCurrentSong;
-        public Song HomeViewCurrentSong
+        private Song _currentSong;
+        public Song CurrentSong
         {
-            get => _homeViewCurrentSong;
+            get => _currentSong;
             set
             {
-                if (_homeViewCurrentSong != value)
+                if (_currentSong != value)
                 {
-                    _homeViewCurrentSong = value;
+                    _currentSong = value;
                     OnPropertyChanged();
 
-                    // Set the MainWindowViewModel's CurrentSong to the selected song
-                    _mainWindowViewModel.CurrentSong = _homeViewCurrentSong;
+                    // Set the MainWindowViewModel's CurrentSong to the selected song from the playlist
+                    _mainWindowViewModel.CurrentSong = _currentSong;
                 }
             }
         }
 
-        // Constructor that accepts MainWindowViewModel
+        // Constructor accepting MainWindowViewModel
         public HomeViewModel(MainWindowViewModel mainWindowViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
-
-            // Subscribe to CurrentSong property changes in MainWindowViewModel
-            _mainWindowViewModel.PropertyChanged += (sender, args) =>
-            {
-                if (args.PropertyName == nameof(MainWindowViewModel.CurrentSong))
-                {
-                    // Update HomeViewCurrentSong when MainWindowViewModel's CurrentSong changes
-                    HomeViewCurrentSong = _mainWindowViewModel.CurrentSong;
-                }
-            };
         }
+
     }
 }

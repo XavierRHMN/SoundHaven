@@ -1,34 +1,6 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+﻿<!-- PlaylistView.axaml -->
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
-             x:Class="SoundHeaven.Views.HomeView"
-             x:DataType="viewModels:HomeViewModel">
-    
-    <ListBox Background="{StaticResource ToolBarColor}"
-             Foreground="White"
-             ItemsSource="{Binding HomeViewSongs}"
-             SelectedItem="{Binding HomeViewCurrentSong, Mode=TwoWay}"
-             Margin="0">
-        <ListBox.ItemTemplate>
-            <DataTemplate>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Classes="HomeViewText" Text="{Binding Title}" Width="500"/>
-                    <TextBlock Classes="HomeViewText" Text="{Binding Artist}" Width="100"/>
-                    <TextBlock Classes="HomeViewText" Text="{Binding Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}" FontSize="14" Width="75"/>
-                    <TextBlock Classes="HomeViewText" Text="{Binding FilePath, Converter={StaticResource FilePathShortenerConverter}}" FontSize="14" Width="400"/>
-                </StackPanel>
-            </DataTemplate>
-        </ListBox.ItemTemplate>
-    </ListBox>
-    
-            
-    <UserControl.Styles>
-        <Style Selector="TextBlock.HomeViewText">
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="FontFamily" Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito"/>
-        </Style>
-    </UserControl.Styles>
-
+             x:Class="SoundHeaven.Views.HomeView">
+    <TextBlock Text="Home View" />
 </UserControl>
