@@ -3,25 +3,49 @@
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              x:Class="SoundHeaven.Views.PlaylistView"
              x:DataType="viewModels:PlaylistViewModel">
-    
-    <ListBox Background="{StaticResource ToolBarColor}"
-             Foreground="White"
-             ItemsSource="{Binding PlaylistSongs}"
-             SelectedItem="{Binding PlaylistCurrentSong, Mode=TwoWay}"
-             Margin="0">
-        <ListBox.ItemTemplate>
-            <DataTemplate>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Classes="HomeViewText" Text="{Binding Title}" Width="500"/>
-                    <TextBlock Classes="HomeViewText" Text="{Binding Artist}" Width="100"/>
-                    <TextBlock Classes="HomeViewText" Text="{Binding Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}" FontSize="14" Width="75"/>
-                    <TextBlock Classes="HomeViewText" Text="{Binding FilePath, Converter={StaticResource FilePathShortenerConverter}}" FontSize="14" Width="400"/>
-                </StackPanel>
-            </DataTemplate>
-        </ListBox.ItemTemplate>
-    </ListBox>
-    
-            
+
+    <!-- Define the grid with 3 rows -->
+    <Grid>
+        <!-- Row Definitions -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="100"/>  <!-- First row for the playlist banner -->
+            <RowDefinition Height="Auto"/>  <!-- Second row for the column headers -->
+            <RowDefinition Height="*"/>     <!-- Third row for the ListBox, which will take remaining space -->
+        </Grid.RowDefinitions>
+
+        <!-- First Row: Playlist Banner (height fixed to 100) -->
+        <Border Grid.Row="0" Background="{StaticResource ToolBarColor}">
+            <TextBlock Text="Playlist Banner" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" Foreground="White"/>
+        </Border>
+
+        <!-- Second Row: Column Headers -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Background="{StaticResource ToolBarColor}" HorizontalAlignment="Stretch">
+            <TextBlock Text="Title" Width="500" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10"/>
+            <TextBlock Text="Artist" Width="100" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10"/>
+            <TextBlock Text="Duration" Width="125" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10"/>
+            <TextBlock Text="Filepath" Width="400" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10"/>
+        </StackPanel>
+
+        <!-- Third Row: ListBox for the playlist songs -->
+        <ListBox Grid.Row="2" Background="{StaticResource ToolBarColor}"
+                 Foreground="White"
+                 ItemsSource="{Binding PlaylistSongs}"
+                 SelectedItem="{Binding PlaylistCurrentSong, Mode=TwoWay}"
+                 Margin="0">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Classes="HomeViewText" Text="{Binding Title}" Width="500"/>
+                        <TextBlock Classes="HomeViewText" Text="{Binding Artist}" Width="100"/>
+                        <TextBlock Classes="HomeViewText" Text="{Binding Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}" FontSize="14" Width="125"/>
+                        <TextBlock Classes="HomeViewText" Text="{Binding FilePath, Converter={StaticResource FilePathShortenerConverter}}" FontSize="14" Width="400"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+
+    <!-- Define local styles -->
     <UserControl.Styles>
         <Style Selector="TextBlock.HomeViewText">
             <Setter Property="FontSize" Value="16"/>

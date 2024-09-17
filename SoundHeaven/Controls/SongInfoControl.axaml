@@ -1,0 +1,23 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="100"
+             x:Class="SoundHeaven.Controls.SongInfoControl"
+             xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
+             x:DataType="viewModels:MainWindowViewModel">
+             
+    <!-- StackPanel for displaying song info -->
+    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+        <!-- Title TextBlock -->
+        <TextBlock Text="{Binding CurrentSong.Title}" 
+                   FontSize="14" 
+                   FontWeight="Bold" 
+                   Foreground="White"/>
+        
+        <!-- Artist TextBlock -->
+        <TextBlock Text="{Binding CurrentSong.Artist}" 
+                   FontSize="12" 
+                   Foreground="Gray"/>
+    </StackPanel>
+</UserControl>

@@ -20,7 +20,6 @@
     <!-- UI Components -->
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="80"/>
             <RowDefinition Height="8*"/>
             <RowDefinition Height="80"/>
         </Grid.RowDefinitions>
@@ -34,12 +33,12 @@
             <controls:ToolbarControl/>
         </Border>
         
-        <controls:PlaybackControl Grid.Row="2" Grid.Column="0" Background="{StaticResource PlayerBarColor}"/>
+        <controls:PlaybackControl Grid.Row="1" Grid.Column="0" Background="{StaticResource PlayerBarColor}"/>
         
         <!-- New Grid within Grid.Row=2 and Grid.Column=1 -->
-        <Grid x:Name="SongInfoSeekbarVolumebar" Grid.Row="2" Grid.Column="1">
+        <Grid x:Name="SongInfoSeekbarVolumebar" Grid.Row="1" Grid.Column="1" Background="{StaticResource PlayerBarColor}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="300"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="250"/>
             </Grid.ColumnDefinitions>
@@ -47,11 +46,13 @@
                 <RowDefinition Height="70"/>
             </Grid.RowDefinitions>
             
+            <controls:SongInfoControl Grid.Row="0" Grid.Column="0" Margin="10 0 30 0"/>
+            
             <controls:SeekSliderControl Grid.Row="0" Grid.Column="1" Margin="10 15 30 0"/>
             
             <controls:VolumeControl Grid.Row="0" Grid.Column="2" Margin="10 15 30 0"/>
         </Grid>
         
-        <ContentControl Grid.Row="1" Grid.Column="1" Content="{Binding CurrentViewModel}"/>
+        <ContentControl Grid.Row="0" Grid.Column="1" Content="{Binding CurrentViewModel}"/>
     </Grid>
 </Window>
