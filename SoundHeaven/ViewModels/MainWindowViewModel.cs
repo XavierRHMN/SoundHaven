@@ -259,7 +259,7 @@ namespace SoundHeaven.ViewModels
                 {
                     IsPlaying = false;
                 }
-                else
+                else if (IsPlaying)
                 {
                     SeekPosition += 0.1;
                 }
