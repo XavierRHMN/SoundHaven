@@ -291,6 +291,7 @@ namespace SoundHeaven.ViewModels
             if (AudioPlayerService.IsStopped())
             {
                 Start();
+                SeekPosition = 0;
             }
             
             if (!IsPlaying)
@@ -356,8 +357,6 @@ namespace SoundHeaven.ViewModels
 
         private bool CanToggleMute() => CurrentSong != null;
         
-        
-
         private double ExtractTextWidth(string text, string fontFamily, double fontSize)
         {
             if (string.IsNullOrEmpty(text))
