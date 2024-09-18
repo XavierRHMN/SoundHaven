@@ -1,6 +1,7 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
+             xmlns:views="clr-namespace:SoundHeaven.Views"
              x:Class="SoundHeaven.Views.PlaylistView"
              x:DataType="viewModels:PlaylistViewModel">
 
@@ -12,13 +13,13 @@
         </Border>
 
         <!-- Shared Grid for Headers and Items -->
-        <Grid Grid.Row="1" Grid.RowSpan="2" Background="{StaticResource ToolBarColor}">
+        <Grid Grid.Row="1" Grid.RowSpan="2" x:Name="MainGrid" Background="{StaticResource ToolBarColor}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="5*" MinWidth="100" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="2*" MinWidth="50" />
+                <ColumnDefinition Width="2*" MinWidth="100" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="2*" MinWidth="50" />
+                <ColumnDefinition Width="2*" MinWidth="100" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="3*" MinWidth="100" />
             </Grid.ColumnDefinitions>
@@ -42,13 +43,16 @@
 
             <!-- ScrollViewer and ItemsRepeater for playlist songs -->
             <ScrollViewer Grid.Row="1" Grid.ColumnSpan="7">
-                <ItemsRepeater ItemsSource="{Binding PlaylistSongs}">
-                    <ItemsRepeater.Layout>
-                        <StackLayout />
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
+                <ListBox ItemsSource="{Binding PlaylistSongs}" SelectedItem="{Binding PlaylistCurrentSong}" Background="{StaticResource ToolBarColor}">
+                    <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid ColumnDefinitions="5*,2*,2*,3*">
+                            <Grid x:Name="ItemGrid">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="{Binding #MainGrid.ColumnDefinitions[0].Width}" />
+                                    <ColumnDefinition Width="{Binding #MainGrid.ColumnDefinitions[2].Width}" />
+                                    <ColumnDefinition Width="{Binding #MainGrid.ColumnDefinitions[4].Width}" />
+                                    <ColumnDefinition Width="{Binding #MainGrid.ColumnDefinitions[6].Width}" />
+                                </Grid.ColumnDefinitions>
                                 <TextBlock Classes="ItemText" Text="{Binding Title}" Grid.Column="0" />
                                 <TextBlock Classes="ItemText" Text="{Binding Artist}" Grid.Column="1" />
                                 <TextBlock Classes="ItemText" 
@@ -59,8 +63,8 @@
                                            Grid.Column="3" />
                             </Grid>
                         </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </ScrollViewer>
         </Grid>
     </Grid>

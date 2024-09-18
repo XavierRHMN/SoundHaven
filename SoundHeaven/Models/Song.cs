@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using System;
 using Avalonia.Media.Imaging;
+using SoundHeaven.Commands;
 
 namespace SoundHeaven.Models
 {

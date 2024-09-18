@@ -1,5 +1,9 @@
-﻿using System.Collections.ObjectModel;
+﻿using SoundHeaven.Commands;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 using SoundHeaven.Models;
+using System;
+using System.Diagnostics;
 
 namespace SoundHeaven.ViewModels
 {
@@ -68,6 +72,7 @@ namespace SoundHeaven.ViewModels
         {
             _mainWindowViewModel = mainWindowViewModel;
 
+
             // Subscribe to CurrentSong property changes in MainWindowViewModel
             _mainWindowViewModel.PropertyChanged += (sender, args) =>
             {
@@ -78,7 +83,6 @@ namespace SoundHeaven.ViewModels
                 }
             };
         }
-
 
         // Load the songs from the selected playlist
         public void LoadPlaylistSongs(Playlist playlist)
