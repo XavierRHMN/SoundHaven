@@ -21,20 +21,16 @@ namespace SoundHeaven.Controls
 
         private void OnValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
         {
-            if (DataContext is MainWindowViewModel viewModel)
+            if (DataContext is MainWindowViewModel viewModel && _isDragging)
             {
-                if (_isDragging)
-                {
-                    // Set the seek position when dragging stops
-                    viewModel.AudioPlayerService?.Seek(TimeSpan.FromSeconds(viewModel.SeekPosition));
-                    _isDragging = false;
-                }
+                // Set the seek position when dragging stops
+                viewModel.AudioPlayerService?.Seek(TimeSpan.FromSeconds(viewModel.SeekPosition));
+                _isDragging = false;
             }
         }
 
         private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
         {
-            Console.WriteLine(_isDragging);
             _isDragging = true;
         }
     }

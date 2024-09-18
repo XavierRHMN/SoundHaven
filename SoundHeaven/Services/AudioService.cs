@@ -16,6 +16,12 @@ namespace SoundHeaven.Services
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
 
+        public bool IsStopped()
+        {
+            return _waveOutDevice.PlaybackState == PlaybackState.Stopped;
+        }
+        
+        
         public void Seek(TimeSpan position)
         {
             if (_audioFileReader != null)

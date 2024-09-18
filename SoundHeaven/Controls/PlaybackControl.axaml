@@ -25,13 +25,13 @@
             <Svg Path="avares://SoundHeaven/Assets/Icons/previous.svg" />
         </Button>
 
-        <Button Command="{Binding PauseCommand}"
+        <Button Command="{Binding PauseCommand, Mode=TwoWay}"
                 Background="{StaticResource PlayerBarColor}"
                 IsVisible="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Svg Path="avares://SoundHeaven/Assets/Icons/pause.svg" />
         </Button>
 
-        <Button Command="{Binding PlayCommand}"
+        <Button Command="{Binding PlayCommand, Mode=TwoWay}"
                 Background="{StaticResource PlayerBarColor}"
                 IsVisible="{Binding !IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Svg Path="avares://SoundHeaven/Assets/Icons/play.svg" />

@@ -255,13 +255,28 @@ namespace SoundHeaven.ViewModels
         {
             if (CurrentSong != null)
             {
-                SeekPosition += 0.1;
+                if (AudioPlayerService.IsStopped())
+                {
+                    IsPlaying = false;
+                }
+                else
+                {
+                    SeekPosition += 0.1;
+                }
             }
         }
 
         public void ShowHomeView() => CurrentViewModel = new HomeViewModel(this);
         public void ShowPlaylistView() => CurrentViewModel = new PlaylistViewModel(this);
 
+
+        public void Restart()
+        {
+            AudioPlayerService.Stop();
+            Start();
+            SeekPosition = 0;
+        }
+        
         private void Start()
         {
             if (CurrentSong != null)
@@ -273,6 +288,11 @@ namespace SoundHeaven.ViewModels
 
         private void Play()
         {
+            if (AudioPlayerService.IsStopped())
+            {
+                Start();
+            }
+            
             if (!IsPlaying)
             {
                 _audioPlayerService.Resume();
@@ -306,14 +326,21 @@ namespace SoundHeaven.ViewModels
 
         private bool CanNext() => _songStore.CanNext;
 
-        private void Previous()
+        public void Previous()
         {
             var prevSong = _songStore.PreviousSong();
             if (prevSong != null)
             {
-                CurrentSong = prevSong;
-                Start();
-                SeekPosition = 0;
+                if (SeekPosition > 3)
+                {
+                    Restart();
+                }
+                else
+                {
+                    CurrentSong = prevSong;
+                    Start();
+                    SeekPosition = 0;
+                }
             }
         }
 

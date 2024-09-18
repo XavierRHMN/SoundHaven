@@ -10,5 +10,5 @@
     <Slider Minimum="0" Maximum="{Binding CurrentSong.Length}"
             Value="{Binding SeekPosition, Mode=TwoWay}"
             ValueChanged="OnValueChanged"
-            PointerCaptureLost="OnPointerCaptureLost" />
+            PointerCaptureLost="OnPointerCaptureLost"/>
 </UserControl>
