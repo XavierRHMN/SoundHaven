@@ -38,7 +38,7 @@
         <!-- New Grid within Grid.Row=2 and Grid.Column=1 -->
         <Grid x:Name="SongInfoSeekbarVolumebar" Grid.Row="1" Grid.Column="1" Background="{StaticResource PlayerBarColor}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="200"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="250"/>
             </Grid.ColumnDefinitions>
@@ -46,7 +46,7 @@
                 <RowDefinition Height="70"/>
             </Grid.RowDefinitions>
             
-            <controls:SongInfoControl Grid.Row="0" Grid.Column="0" Margin="10 0 30 0"/>
+            <controls:SongInfoControl Grid.Row="0" Grid.Column="0" Margin="10 15 30 0"/>
             
             <controls:SeekSliderControl Grid.Row="0" Grid.Column="1" Margin="10 15 30 0"/>
             
