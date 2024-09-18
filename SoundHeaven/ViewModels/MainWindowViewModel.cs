@@ -1,8 +1,11 @@
-﻿using Avalonia.Controls.Primitives;
+﻿using Avalonia;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.Threading;
 using ReactiveUI;
 using SoundHeaven.Commands;
+using SoundHeaven.Converters;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -10,6 +13,7 @@ using SoundHeaven.Models;
 using SoundHeaven.Services;
 using SoundHeaven.Stores;
 using System;
+using System.Globalization;
 
 namespace SoundHeaven.ViewModels
 {
@@ -50,7 +54,8 @@ namespace SoundHeaven.ViewModels
                 }
             }
         }
-
+        
+        public bool CurrentSongExists => CurrentSong != null;
         private Song _currentSong;
         public Song CurrentSong
         {
@@ -64,6 +69,7 @@ namespace SoundHeaven.ViewModels
                 {
                     _currentSong = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(CurrentSongExists));
                     Start();
                     SeekPosition = 0;
                     Volume = _audioPlayerService.GetCurrentVolume();
@@ -181,9 +187,12 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        public double TextWidth { get; set; } = 200; // Estimated width of the text
+        public double TextWidth => ExtractTextWidth(CurrentSong?.Title, "Nunito", 15);
+
+        // public double TextWidth { get; set; } = 200; // Estimated width of the text
         public double ControlWidth { get; set; } = 200; // Width of the canvas/border
 
+        
         public ObservableCollection<Playlist> Playlists { get; set; }
 
         // Commands
@@ -319,5 +328,27 @@ namespace SoundHeaven.ViewModels
         private void ToggleMute() => IsMuted = !IsMuted;
 
         private bool CanToggleMute() => CurrentSong != null;
+        
+        
+
+        private double ExtractTextWidth(string text, string fontFamily, double fontSize)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return 0;
+            }
+
+            var typeface = new Typeface(fontFamily);
+            var formattedText = new FormattedText(
+                text,
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                typeface,
+                fontSize,
+                Brushes.Black
+            );
+
+            return formattedText.Width;
+        }
     }
 }

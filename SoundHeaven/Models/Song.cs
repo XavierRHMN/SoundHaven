@@ -10,17 +10,11 @@ namespace SoundHeaven.Models
         public string? Artist { get; set; }
         public string? Album { get; set; }
         public TimeSpan Duration { get; set; }
-        public string FilePath { get; set; }
+        public string? FilePath { get; set; }
         public Image? Artwork { get; set; }
         public string? ArtworkFilePath { get; set; }
         public string? Genre { get; set; }
         public int Year { get; set; }
-        public double Length
-        {
-            get
-            {
-                return Duration.TotalSeconds;
-            }
-        }
+        public double Length => Duration.TotalSeconds;
     }
 }
