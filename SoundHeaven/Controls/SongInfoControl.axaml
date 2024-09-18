@@ -6,17 +6,15 @@
 
     <StackPanel Orientation="Vertical">
         <!-- Title with scrolling effect -->
-        <Border ClipToBounds="True" Width="200" Height="30" Background="Transparent">
+        <Border ClipToBounds="True" Width="200" Height="25" Background="Transparent">
             <Canvas Width="{Binding ControlWidth}">
                 <TextBlock Text="{Binding CurrentSong.Title}" FontSize="14" FontWeight="Bold" Foreground="White"
-                           Canvas.Left="{Binding TitleScrollPosition}"/>
+                           Canvas.Left="{Binding TitleScrollPosition}" />
             </Canvas>
         </Border>
 
         <!-- Artist without scrolling effect -->
-        <Border Width="200" Height="30" Background="Transparent">
-            <TextBlock Text="{Binding CurrentSong.Artist}" FontSize="14" Foreground="Gray"
-                       HorizontalAlignment="Center"/>
-        </Border>
+        <TextBlock Text="{Binding CurrentSong.Artist}" FontSize="14" Foreground="Gray"
+                   HorizontalAlignment="Left" />
     </StackPanel>
 </UserControl>

@@ -8,22 +8,24 @@
     <Grid>
         <!-- Row Definitions -->
         <Grid.RowDefinitions>
-            <RowDefinition Height="100"/>  <!-- First row for the playlist banner -->
-            <RowDefinition Height="Auto"/>  <!-- Second row for the column headers -->
-            <RowDefinition Height="*"/>     <!-- Third row for the ListBox, which will take remaining space -->
+            <RowDefinition Height="100" />  <!-- First row for the playlist banner -->
+            <RowDefinition Height="Auto" />  <!-- Second row for the column headers -->
+            <RowDefinition Height="*" />     <!-- Third row for the ListBox, which will take remaining space -->
         </Grid.RowDefinitions>
 
         <!-- First Row: Playlist Banner (height fixed to 100) -->
         <Border Grid.Row="0" Background="{StaticResource ToolBarColor}">
-            <TextBlock Text="Playlist Banner" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" Foreground="White"/>
+            <TextBlock Text="Playlist Banner" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24"
+                       Foreground="White" />
         </Border>
 
         <!-- Second Row: Column Headers -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Background="{StaticResource ToolBarColor}" HorizontalAlignment="Stretch">
-            <TextBlock Text="Title" Width="500" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10"/>
-            <TextBlock Text="Artist" Width="100" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10"/>
-            <TextBlock Text="Duration" Width="125" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10"/>
-            <TextBlock Text="Filepath" Width="400" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10"/>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Background="{StaticResource ToolBarColor}"
+                    HorizontalAlignment="Stretch">
+            <TextBlock Text="Title" Width="500" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10" />
+            <TextBlock Text="Artist" Width="100" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10" />
+            <TextBlock Text="Duration" Width="125" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10" />
+            <TextBlock Text="Filepath" Width="400" FontSize="16" Foreground="White" FontWeight="Bold" Padding="10" />
         </StackPanel>
 
         <!-- Third Row: ListBox for the playlist songs -->
@@ -35,10 +37,14 @@
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Classes="HomeViewText" Text="{Binding Title}" Width="500"/>
-                        <TextBlock Classes="HomeViewText" Text="{Binding Artist}" Width="100"/>
-                        <TextBlock Classes="HomeViewText" Text="{Binding Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}" FontSize="14" Width="125"/>
-                        <TextBlock Classes="HomeViewText" Text="{Binding FilePath, Converter={StaticResource FilePathShortenerConverter}}" FontSize="14" Width="400"/>
+                        <TextBlock Classes="HomeViewText" Text="{Binding Title}" Width="500" />
+                        <TextBlock Classes="HomeViewText" Text="{Binding Artist}" Width="100" />
+                        <TextBlock Classes="HomeViewText"
+                                   Text="{Binding Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}"
+                                   FontSize="14" Width="125" />
+                        <TextBlock Classes="HomeViewText"
+                                   Text="{Binding FilePath, Converter={StaticResource FilePathShortenerConverter}}"
+                                   FontSize="14" Width="400" />
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
@@ -48,10 +54,11 @@
     <!-- Define local styles -->
     <UserControl.Styles>
         <Style Selector="TextBlock.HomeViewText">
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="FontFamily" Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito"/>
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito" />
         </Style>
     </UserControl.Styles>
 

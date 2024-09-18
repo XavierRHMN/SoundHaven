@@ -9,7 +9,8 @@ using System;
 
 namespace SoundHeaven.Controls
 {
-    public partial class SeekSliderControl : UserControl {
+    public partial class SeekSliderControl : UserControl
+    {
         private bool _isDragging = false;
         private double _newSeekPosition;
 
@@ -18,7 +19,8 @@ namespace SoundHeaven.Controls
             InitializeComponent();
         }
 
-        private void OnValueChanged(object? sender, RangeBaseValueChangedEventArgs e) {
+        private void OnValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
+        {
             if (DataContext is MainWindowViewModel viewModel)
             {
                 if (_isDragging)
@@ -30,7 +32,8 @@ namespace SoundHeaven.Controls
             }
         }
 
-        private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e) {
+        private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+        {
             Console.WriteLine(_isDragging);
             _isDragging = true;
         }

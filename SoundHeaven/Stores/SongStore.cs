@@ -10,15 +10,20 @@ namespace SoundHeaven.Stores
     {
         // Collection of songs
         private ObservableCollection<Song> _songs;
-        public ObservableCollection<Song> Songs => _songs;
-
+        public ObservableCollection<Song> Songs
+        {
+            get
+            {
+                return _songs;
+            }
+        }
 
 
         public SongStore()
         {
             _songs = new ObservableCollection<Song>();
         }
-        
+
         // Add a song to the collection
         public void AddSong(Song song)
         {
@@ -27,7 +32,7 @@ namespace SoundHeaven.Stores
                 _songs.Add(song);
             }
         }
-        
+
         // Remove a song from the collection
         public void RemoveSong(Song song)
         {
@@ -36,18 +41,36 @@ namespace SoundHeaven.Stores
                 _songs.Remove(song);
             }
         }
-        
+
         // Current song index
         private int _currentSongIndex = 0;
 
         // Get the current song based on the index
-        public Song CurrentSong => _songs[_currentSongIndex];
+        public Song CurrentSong
+        {
+            get
+            {
+                return _songs[_currentSongIndex];
+            }
+        }
 
         // Can go to next song if there are more than one song
-        public bool CanNext => _songs.Count > 1;
+        public bool CanNext
+        {
+            get
+            {
+                return _songs.Count > 1;
+            }
+        }
 
         // Can go to previous song if there are more than one song
-        public bool CanPrevious => _songs.Count > 1;
+        public bool CanPrevious
+        {
+            get
+            {
+                return _songs.Count > 1;
+            }
+        }
 
         // Navigate to the next song
         public Song NextSong()
@@ -83,7 +106,7 @@ namespace SoundHeaven.Stores
                 string[] mp3Files = Directory.GetFiles(tracksPath, "*.mp3");
 
                 // Iterate over each MP3 file
-                foreach (var mp3File in mp3Files)
+                foreach (string? mp3File in mp3Files)
                 {
                     try
                     {

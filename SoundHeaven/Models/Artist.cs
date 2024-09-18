@@ -9,4 +9,3 @@ namespace SoundHeaven.Models
         public List<Album> Albums { get; set; }
     }
 }
-

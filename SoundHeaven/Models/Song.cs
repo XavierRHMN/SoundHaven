@@ -2,7 +2,8 @@
 using System;
 using Avalonia.Media.Imaging;
 
-namespace SoundHeaven.Models {
+namespace SoundHeaven.Models
+{
     public class Song
     {
         public string? Title { get; set; }
@@ -14,6 +15,12 @@ namespace SoundHeaven.Models {
         public string? ArtworkFilePath { get; set; }
         public string? Genre { get; set; }
         public int Year { get; set; }
-        public double Length => Duration.TotalSeconds;
+        public double Length
+        {
+            get
+            {
+                return Duration.TotalSeconds;
+            }
+        }
     }
 }

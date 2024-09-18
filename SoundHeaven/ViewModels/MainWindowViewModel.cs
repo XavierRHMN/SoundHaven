@@ -15,19 +15,32 @@ namespace SoundHeaven.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     {
-        public ObservableCollection<Song> SongCollection => _songStore.Songs;
+        public ObservableCollection<Song> SongCollection
+        {
+            get
+            {
+                return _songStore.Songs;
+            }
+        }
         private readonly AudioPlayerService _audioPlayerService;
-        public AudioPlayerService AudioPlayerService => _audioPlayerService;
+        public AudioPlayerService AudioPlayerService
+        {
+            get
+            {
+                return _audioPlayerService;
+            }
+        }
         private readonly SongStore _songStore;
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _scrollTimer;
-        private double _textWidth;
-        private double _controlWidth;
-        
+
         private ViewModelBase _currentViewModel;
         public ViewModelBase CurrentViewModel
         {
-            get => _currentViewModel;
+            get
+            {
+                return _currentViewModel;
+            }
             set
             {
                 if (_currentViewModel != value)
@@ -41,13 +54,16 @@ namespace SoundHeaven.ViewModels
         private Song _currentSong;
         public Song CurrentSong
         {
-            get => _currentSong;
+            get
+            {
+                return _currentSong;
+            }
             set
             {
                 if (_currentSong != value)
                 {
                     _currentSong = value;
-                    OnPropertyChanged();  
+                    OnPropertyChanged();
                     Start();
                     SeekPosition = 0;
                     Volume = _audioPlayerService.GetCurrentVolume();
@@ -59,7 +75,10 @@ namespace SoundHeaven.ViewModels
         private bool _isPlaying = true;
         public bool IsPlaying
         {
-            get => _isPlaying;
+            get
+            {
+                return _isPlaying;
+            }
             set
             {
                 if (_isPlaying != value)
@@ -74,7 +93,10 @@ namespace SoundHeaven.ViewModels
         private double _volume;
         public double Volume
         {
-            get => _volume;
+            get
+            {
+                return _volume;
+            }
             set
             {
                 _volume = value;
@@ -89,7 +111,10 @@ namespace SoundHeaven.ViewModels
         private bool _isMuted;
         public bool IsMuted
         {
-            get => _isMuted;
+            get
+            {
+                return _isMuted;
+            }
             set
             {
                 if (_isMuted != value)
@@ -113,7 +138,10 @@ namespace SoundHeaven.ViewModels
         private float _previousVolume;
         public float PreviousVolume
         {
-            get => _previousVolume;
+            get
+            {
+                return _previousVolume;
+            }
             set
             {
                 _previousVolume = value;
@@ -124,22 +152,28 @@ namespace SoundHeaven.ViewModels
         private double _seekPosition;
         public double SeekPosition
         {
-            get => _seekPosition;
+            get
+            {
+                return _seekPosition;
+            }
             set
             {
                 if (_seekPosition != value)
                 {
                     _seekPosition = value;
-                    OnPropertyChanged();  
+                    OnPropertyChanged();
                 }
             }
         }
 
         // For the scrolling text
-        private double _titleScrollPosition;
+        private double _titleScrollPosition = 200;
         public double TitleScrollPosition
         {
-            get => _titleScrollPosition;
+            get
+            {
+                return _titleScrollPosition;
+            }
             set
             {
                 _titleScrollPosition = value;
@@ -147,19 +181,8 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private double _artistScrollPosition;
-        public double ArtistScrollPosition
-        {
-            get => _artistScrollPosition;
-            set
-            {
-                _artistScrollPosition = value;
-                OnPropertyChanged();
-            }
-        }
-        
         public double TextWidth { get; set; } = 200; // Estimated width of the text
-        public double ControlWidth { get; set; } = 300; // Width of the canvas/border
+        public double ControlWidth { get; set; } = 200; // Width of the canvas/border
 
         public ObservableCollection<Playlist> Playlists { get; set; }
 
@@ -211,18 +234,11 @@ namespace SoundHeaven.ViewModels
         {
             // Adjust the scroll positions
             TitleScrollPosition -= 2;
-            ArtistScrollPosition -= 2;
 
             // Reset Title Scroll Position when it goes off screen
             if (TitleScrollPosition <= -TextWidth)
             {
                 TitleScrollPosition = ControlWidth;
-            }
-
-            // Reset Artist Scroll Position when it goes off screen
-            if (ArtistScrollPosition <= -TextWidth)
-            {
-                ArtistScrollPosition = ControlWidth;
             }
         }
 

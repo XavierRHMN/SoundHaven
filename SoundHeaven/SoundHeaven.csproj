@@ -9,42 +9,42 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <AvaloniaResource Include="Assets\Images\avalonia-logo.ico" />
+        <AvaloniaResource Include="Assets\Images\avalonia-logo.ico"/>
         <AvaloniaResource Include="Assets\**"/>
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="11.1.0"/>
         <PackageReference Include="Avalonia.Desktop" Version="11.1.0"/>
-        <PackageReference Include="Avalonia.Svg" Version="11.1.0.1" />
+        <PackageReference Include="Avalonia.Svg" Version="11.1.0.1"/>
         <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.0"/>
         <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.0"/>
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
         <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.0"/>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
-        <PackageReference Include="NAudio" Version="2.2.1" />
-        <PackageReference Include="ReactiveUI" Version="20.1.1" />
-        <PackageReference Include="TagLibSharp" Version="2.3.0" />
+        <PackageReference Include="NAudio" Version="2.2.1"/>
+        <PackageReference Include="ReactiveUI" Version="20.1.1"/>
+        <PackageReference Include="TagLibSharp" Version="2.3.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="MainWindow.axaml.cs">
-        <DependentUpon>MainWindow.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
+        <Compile Update="MainWindow.axaml.cs">
+            <DependentUpon>MainWindow.axaml</DependentUpon>
+            <SubType>Code</SubType>
+        </Compile>
     </ItemGroup>
 
     <ItemGroup>
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Black.ttf" />
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-BlackItalic.ttf" />
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Bold.ttf" />
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-BoldItalic.ttf" />
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Italic.ttf" />
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Light.ttf" />
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-LightItalic.ttf" />
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Regular.ttf" />
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Thin.ttf" />
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-ThinItalic.ttf" />
-      <UpToDateCheckInput Remove="Assets\Fonts\Lato\OFL.txt" />
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Black.ttf"/>
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-BlackItalic.ttf"/>
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Bold.ttf"/>
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-BoldItalic.ttf"/>
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Italic.ttf"/>
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Light.ttf"/>
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-LightItalic.ttf"/>
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Regular.ttf"/>
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Thin.ttf"/>
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-ThinItalic.ttf"/>
+        <UpToDateCheckInput Remove="Assets\Fonts\Lato\OFL.txt"/>
     </ItemGroup>
 </Project>

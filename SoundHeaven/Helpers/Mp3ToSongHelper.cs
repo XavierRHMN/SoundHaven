@@ -1,10 +1,10 @@
 ﻿using System;
-using System.IO;  // For regular file system operations
+using System.IO; // For regular file system operations
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using SoundHeaven.Models;
 using System.Text.RegularExpressions;
-using TagLib;  // For TagLib operations
+using TagLib; // For TagLib operations
 
 namespace SoundHeaven.Helpers
 {
@@ -41,8 +41,8 @@ namespace SoundHeaven.Helpers
                     var artwork = new Bitmap(stream);
 
                     // Generate a unique file name for the artwork (e.g., based on song title or file name)
-                    var artworkFileName = $"{Path.GetFileNameWithoutExtension(song.FilePath)}_cover.png";
-                    var artworkFilePath = Path.Combine(CoversPath, artworkFileName);
+                    string? artworkFileName = $"{Path.GetFileNameWithoutExtension(song.FilePath)}_cover.png";
+                    string? artworkFilePath = Path.Combine(CoversPath, artworkFileName);
 
                     // Use System.IO.File to save the artwork
                     using (var fileStream = System.IO.File.Create(artworkFilePath))
@@ -75,13 +75,13 @@ namespace SoundHeaven.Helpers
             song.Year = (int)file.Tag.Year;
             song.Duration = file.Properties.Duration;
             song.FilePath = filePath;
-            
+
             // TODO - Fix this cause it throws exception
             // SaveAlbumCover(song);
 
             return song;
         }
-        
+
         // Method to clean the song title
         public static string CleanSongTitle(string title, string artist)
         {

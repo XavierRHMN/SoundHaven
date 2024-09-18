@@ -9,12 +9,21 @@ namespace SoundHeaven.ViewModels
         public MainWindowViewModel MainWindowViewModel { get; set; }
 
         // Expose the SongCollection from MainWindowViewModel
-        public ObservableCollection<Song> PlaylistSongs => _mainWindowViewModel.SongCollection;
+        public ObservableCollection<Song> PlaylistSongs
+        {
+            get
+            {
+                return _mainWindowViewModel.SongCollection;
+            }
+        }
 
         private Song _playlistCurrentSong;
         public Song PlaylistCurrentSong
         {
-            get => _playlistCurrentSong;
+            get
+            {
+                return _playlistCurrentSong;
+            }
             set
             {
                 if (_playlistCurrentSong != value)
@@ -27,14 +36,23 @@ namespace SoundHeaven.ViewModels
                 }
             }
         }
-        
+
         // Expose Playlists from MainWindowViewModel
-        public ObservableCollection<Playlist> Playlists => _mainWindowViewModel.Playlists;
+        public ObservableCollection<Playlist> Playlists
+        {
+            get
+            {
+                return _mainWindowViewModel.Playlists;
+            }
+        }
 
         private Playlist _currentPlaylist;
         public Playlist CurrentPlaylist
         {
-            get => _currentPlaylist;
+            get
+            {
+                return _currentPlaylist;
+            }
             set
             {
                 if (_currentPlaylist != value)
@@ -60,8 +78,8 @@ namespace SoundHeaven.ViewModels
                 }
             };
         }
-        
-        
+
+
         // Load the songs from the selected playlist
         public void LoadPlaylistSongs(Playlist playlist)
         {

@@ -3,18 +3,18 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace SoundHeaven.ViewModels;
-
-public class ViewModelBase : INotifyPropertyChanged, IDisposable 
+namespace SoundHeaven.ViewModels
 {
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected void OnPropertyChanged([CallerMemberName] string? name = null)
+    public class ViewModelBase : INotifyPropertyChanged, IDisposable
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-    }
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-    public virtual void Dispose()
-    {
+        protected void OnPropertyChanged([CallerMemberName] string? name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        public virtual void Dispose()
+        { }
     }
 }

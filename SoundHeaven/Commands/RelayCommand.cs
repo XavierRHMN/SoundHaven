@@ -21,16 +21,14 @@ namespace SoundHeaven.Commands
             CanExecuteChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public bool CanExecute(object parameter)
-        {
-            return _canExecute == null || _canExecute();
-        }
+        public bool CanExecute(object parameter) => _canExecute == null || _canExecute();
 
         public void Execute(object parameter)
         {
             _execute();
         }
     }
+
 
     public class RelayCommand<T> : ICommand
     {
@@ -54,6 +52,7 @@ namespace SoundHeaven.Commands
         {
             if (parameter == null && typeof(T).IsValueType)
                 return _canExecute == null || _canExecute(default);
+
             return _canExecute == null || _canExecute((T)parameter);
         }
 
