@@ -54,7 +54,7 @@
             <ListBox
                 FlowDirection="LeftToRight"
                 ItemsSource="{Binding PlaylistCollection}"
-                SelectedItem="{Binding CurrentPlaylist}"
+                SelectedItem="{Binding CurrentPlaylist, Mode=TwoWay}"
                 Width="200">
 
                 <ListBox.ItemTemplate>
@@ -62,7 +62,7 @@
                         <TextBlock
                             Text="{Binding Name}"
                             Foreground="White"
-                            FontSize="18"
+                            FontSize="12"
                             Margin="20 0 0 0" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>

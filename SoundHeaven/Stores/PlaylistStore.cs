@@ -2,26 +2,36 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace SoundHeaven.Stores
 {
     public class PlaylistStore
     {
+        private static PlaylistStore _instance;
+        public static PlaylistStore Instance => _instance ?? (_instance = new PlaylistStore());
         
         // List to store all playlists
         private ObservableCollection<Playlist> _playlists;
-        public ObservableCollection<Playlist> Playlists
-        {
-            get
-            {
-                return _playlists;
-            }
-        }
+        public ObservableCollection<Playlist> Playlists => _playlists;
 
 
         // The currently active playlist
-        public Playlist CurrentPlaylist { get; set; }
+        private Playlist _currentPlaylist;
+        public Playlist CurrentPlaylist
+        {
+            get => _currentPlaylist;
+            set
+            {
+                if (_currentPlaylist != value)
+                {
+                    _currentPlaylist = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         // Constructor
         public PlaylistStore()
@@ -94,5 +104,10 @@ namespace SoundHeaven.Stores
                 playlist.Songs.Remove(song);
             }
         }
+        
+        // INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

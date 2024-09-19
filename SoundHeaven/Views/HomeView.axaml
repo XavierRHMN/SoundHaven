@@ -1,6 +1,98 @@
-﻿<!-- PlaylistView.axaml -->
+﻿<!-- HomeView.axaml -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="SoundHeaven.Views.HomeView">
-    <TextBlock Text="Home View" />
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:md="clr-namespace:Material.Styles;assembly=Material.Styles"
+             xmlns:controls="clr-namespace:Material.Styles.Controls;assembly=Material.Styles"
+             xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
+             mc:Ignorable="d"
+             x:Class="SoundHeaven.Views.HomeView"
+             x:DataType="viewModels:HomeViewModel">
+
+    <!-- Root ScrollViewer to allow scrolling -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16" Spacing="24">
+            <!-- Welcome Message -->
+            <TextBlock Text="Welcome to SoundHeaven!"
+                       FontSize="32"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource PrimaryColor}" />
+
+            <!-- Recently Played Songs -->
+            <StackPanel>
+                <TextBlock Text="Recently Played"
+                           FontSize="24"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,8" />
+                <ItemsControl ItemsSource="{Binding RecentlyPlayedSongs}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="8" Background="{DynamicResource MaterialBackground}">
+                                <Button  Background="Transparent" BorderThickness="0">
+                                    <StackPanel Orientation="Horizontal" Margin="8">
+                                        <Image Source="{Binding Artwork}" Width="50" Height="50" />
+                                        <StackPanel Margin="8,0,0,0">
+                                            <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding Artist}" FontSize="14" Foreground="Gray" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- Top Playlists -->
+            <StackPanel>
+                <TextBlock Text="Top Playlists"
+                           FontSize="24"
+                           FontWeight="SemiBold"
+                           Margin="0,16,0,8" />
+                <ItemsControl ItemsSource="{Binding RecentlyPlayedSongs}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel ItemWidth="150" ItemHeight="200" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Background="Transparent" BorderThickness="0">
+                                <StackPanel>
+                                    <!-- <Image Source="{Binding CoverImage}" Width="150" Height="150" /> -->
+                                    <TextBlock Text="Placeholder" FontSize="16" FontWeight="Bold" TextAlignment="Center" Margin="0,8,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- Recommended for You -->
+            <StackPanel>
+                <TextBlock Text="Recommended for You"
+                           FontSize="24"
+                           FontWeight="SemiBold"
+                           Margin="0,16,0,8" />
+                <ItemsControl ItemsSource="{Binding RecommendedSongs}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="8" Background="{DynamicResource MaterialBackground}">
+                                <Button Background="Transparent" BorderThickness="0">
+                                    <StackPanel Orientation="Horizontal" Margin="8">
+                                        <Image Source="{Binding Artwork}" Width="50" Height="50" />
+                                        <StackPanel Margin="8,0,0,0">
+                                            <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding Artist}" FontSize="14" Foreground="Gray" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

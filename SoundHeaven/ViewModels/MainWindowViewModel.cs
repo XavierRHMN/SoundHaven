@@ -26,16 +26,11 @@ namespace SoundHeaven.ViewModels
             get => _playlistStore.CurrentPlaylist;
             set => _playlistStore.CurrentPlaylist = value;
         }
-        public ICommand CreatePlaylistCommand { get; }
-        public ObservableCollection<Playlist> PlaylistCollection
-        {
-            get
-            {
-                return _playlistStore.Playlists;
-            }
-        }
         
+        public ICommand CreatePlaylistCommand { get; }
+        public ObservableCollection<Playlist> PlaylistCollection => _playlistStore.Playlists;
 
+        
         public ObservableCollection<Song> SongCollection
         {
             get
@@ -224,7 +219,7 @@ namespace SoundHeaven.ViewModels
         {
             _audioPlayerService = new AudioPlayerService();
             _songStore = new SongStore();
-            _playlistStore = new PlaylistStore();
+            _playlistStore = PlaylistStore.Instance;
 
             PlayCommand = new RelayCommand(Play, CanPlay);
             PauseCommand = new RelayCommand(Pause, CanPause);
@@ -240,32 +235,6 @@ namespace SoundHeaven.ViewModels
             _songStore.LoadSongs();
             InitializeSeekTimer();
             InitializeScrollTimer();
-            
-            // Add an example playlist
-            var examplePlaylist = new Playlist
-            {
-                Name = "Example Playlist",
-                Songs = new ObservableCollection<Song>
-                {
-                    new Song { Title = "Song 1", Artist = "Artist 1", Duration = TimeSpan.FromMinutes(3), FilePath = "path/to/song1.mp3" },
-                    new Song { Title = "Song 2", Artist = "Artist 2", Duration = TimeSpan.FromMinutes(4), FilePath = "path/to/song2.mp3" }
-                }
-            };
-            
-            var anotherExamplePlaylist = new Playlist
-            {
-                Name = "Another Example Playlist",
-                Songs = new ObservableCollection<Song>
-                {
-                    new Song { Title = "Song A", Artist = "Artist A", Duration = TimeSpan.FromMinutes(3), FilePath = "path/to/songA.mp3" },
-                    new Song { Title = "Song B", Artist = "Artist B", Duration = TimeSpan.FromMinutes(4), FilePath = "path/to/songB.mp3" }
-                }
-            };
-            
-            
-            _playlistStore.AddPlaylist(examplePlaylist);
-            _playlistStore.AddPlaylist(anotherExamplePlaylist);
-            Console.WriteLine(_playlistStore.CurrentPlaylist);
         }
         
         private void CreatePlaylist()
