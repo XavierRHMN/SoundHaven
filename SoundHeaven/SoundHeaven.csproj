@@ -49,5 +49,7 @@
         <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Thin.ttf"/>
         <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-ThinItalic.ttf"/>
         <UpToDateCheckInput Remove="Assets\Fonts\Lato\OFL.txt"/>
+        <UpToDateCheckInput Remove="Themes\SliderColors.axaml" />
+        <UpToDateCheckInput Remove="Resources\SliderStyle\.axaml" />
     </ItemGroup>
 </Project>

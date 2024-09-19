@@ -7,7 +7,7 @@
              x:Class="SoundHeaven.Controls.SeekSliderControl"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              x:DataType="viewModels:MainWindowViewModel">
-
+  
     <Slider Minimum="0" Maximum="{Binding CurrentSong.Length}" Margin="30 0"
             Value="{Binding SeekPosition, Mode=TwoWay}"
             ValueChanged="OnValueChanged"

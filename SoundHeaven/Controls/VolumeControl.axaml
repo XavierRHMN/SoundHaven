@@ -23,7 +23,7 @@
             <Svg Path="avares://SoundHeaven/Assets/Icons/volumehigh.svg" />
         </Button>
 
-        <Button Command="{Binding MuteCommand}"
+        <Button Command="{Binding MuteCommand}" Margin="10 0"
                 Background="Transparent"
                 IsVisible="{Binding IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Svg Path="avares://SoundHeaven/Assets/Icons/volumemute.svg" />
