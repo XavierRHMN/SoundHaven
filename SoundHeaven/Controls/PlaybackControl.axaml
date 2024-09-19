@@ -10,8 +10,8 @@
     <!-- Define a style for buttons -->
     <UserControl.Styles>
         <Style Selector="Button">
-            <Setter Property="Width" Value="50" />
-            <Setter Property="Height" Value="50" />
+            <Setter Property="Width" Value="60" />
+            <Setter Property="Height" Value="60" />
         </Style>
     </UserControl.Styles>
 
