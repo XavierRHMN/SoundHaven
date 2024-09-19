@@ -14,11 +14,28 @@ using SoundHeaven.Services;
 using SoundHeaven.Stores;
 using System;
 using System.Globalization;
+using System.Windows.Input;
 
 namespace SoundHeaven.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
     {
+        
+        public Playlist CurrentPlaylist
+        {
+            get => _playlistStore.CurrentPlaylist;
+            set => _playlistStore.CurrentPlaylist = value;
+        }
+        public ICommand CreatePlaylistCommand { get; }
+        public ObservableCollection<Playlist> PlaylistCollection
+        {
+            get
+            {
+                return _playlistStore.Playlists;
+            }
+        }
+        
+
         public ObservableCollection<Song> SongCollection
         {
             get
@@ -34,6 +51,8 @@ namespace SoundHeaven.ViewModels
                 return _audioPlayerService;
             }
         }
+        
+        private readonly PlaylistStore _playlistStore;
         private readonly SongStore _songStore;
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _scrollTimer;
@@ -191,10 +210,7 @@ namespace SoundHeaven.ViewModels
 
         // public double TextWidth { get; set; } = 200; // Estimated width of the text
         public double ControlWidth { get; set; } = 200; // Width of the canvas/border
-
         
-        public ObservableCollection<Playlist> Playlists { get; set; }
-
         // Commands
         public RelayCommand PlayCommand { get; }
         public RelayCommand PauseCommand { get; }
@@ -208,7 +224,7 @@ namespace SoundHeaven.ViewModels
         {
             _audioPlayerService = new AudioPlayerService();
             _songStore = new SongStore();
-            Playlists = new ObservableCollection<Playlist>();
+            _playlistStore = new PlaylistStore();
 
             PlayCommand = new RelayCommand(Play, CanPlay);
             PauseCommand = new RelayCommand(Pause, CanPause);
@@ -219,10 +235,44 @@ namespace SoundHeaven.ViewModels
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
 
             CurrentViewModel = new HomeViewModel(this);
-
+            CreatePlaylistCommand = new RelayCommand(CreatePlaylist);
+            
             _songStore.LoadSongs();
             InitializeSeekTimer();
             InitializeScrollTimer();
+            
+            // Add an example playlist
+            var examplePlaylist = new Playlist
+            {
+                Name = "Example Playlist",
+                Songs = new ObservableCollection<Song>
+                {
+                    new Song { Title = "Song 1", Artist = "Artist 1", Duration = TimeSpan.FromMinutes(3), FilePath = "path/to/song1.mp3" },
+                    new Song { Title = "Song 2", Artist = "Artist 2", Duration = TimeSpan.FromMinutes(4), FilePath = "path/to/song2.mp3" }
+                }
+            };
+            
+            var anotherExamplePlaylist = new Playlist
+            {
+                Name = "Another Example Playlist",
+                Songs = new ObservableCollection<Song>
+                {
+                    new Song { Title = "Song A", Artist = "Artist A", Duration = TimeSpan.FromMinutes(3), FilePath = "path/to/songA.mp3" },
+                    new Song { Title = "Song B", Artist = "Artist B", Duration = TimeSpan.FromMinutes(4), FilePath = "path/to/songB.mp3" }
+                }
+            };
+            
+            
+            _playlistStore.AddPlaylist(examplePlaylist);
+            _playlistStore.AddPlaylist(anotherExamplePlaylist);
+            Console.WriteLine(_playlistStore.CurrentPlaylist);
+        }
+        
+        private void CreatePlaylist()
+        {
+            // Logic for creating a new playlist
+            var newPlaylist = new Playlist { Name = $"Playlist {PlaylistCollection.Count + 1}" };
+            _playlistStore.AddPlaylist(newPlaylist);
         }
 
         private void InitializeSeekTimer()
@@ -267,7 +317,7 @@ namespace SoundHeaven.ViewModels
         }
 
         public void ShowHomeView() => CurrentViewModel = new HomeViewModel(this);
-        public void ShowPlaylistView() => CurrentViewModel = new PlaylistViewModel(this);
+        public void ShowPlaylistView() => CurrentViewModel = new PlaylistViewModel(_playlistStore);
 
 
         public void Restart()

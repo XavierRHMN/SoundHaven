@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace SoundHeaven.Models
 {
@@ -6,6 +7,11 @@ namespace SoundHeaven.Models
     {
         public string Name { get; set; }
         public string Description { get; set; }
-        public List<Song> Songs { get; set; }
+        public ObservableCollection<Song> Songs { get; set; }
+        
+        public Playlist()
+        {
+            Songs = new ObservableCollection<Song>();
+        }
     }
 }

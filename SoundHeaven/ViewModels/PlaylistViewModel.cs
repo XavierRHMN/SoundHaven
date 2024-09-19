@@ -1,33 +1,49 @@
-﻿using SoundHeaven.Commands;
+﻿using SoundHeaven.Models;
+using SoundHeaven.Stores;
 using System.Collections.ObjectModel;
-using System.Windows.Input;
-using SoundHeaven.Models;
-using System;
-using System.Diagnostics;
+using System.Collections.Specialized;
 
 namespace SoundHeaven.ViewModels
 {
     public class PlaylistViewModel : ViewModelBase
     {
-        private readonly MainWindowViewModel _mainWindowViewModel;
-        public MainWindowViewModel MainWindowViewModel { get; set; }
+        private readonly PlaylistStore _playlistStore;
 
-        // Expose the SongCollection from MainWindowViewModel
-        public ObservableCollection<Song> PlaylistSongs
+        public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
+
+        private Playlist _currentPlaylist;
+        public Playlist CurrentPlaylist
         {
-            get
+            get => _currentPlaylist;
+            set
             {
-                return _mainWindowViewModel.SongCollection;
+                if (_currentPlaylist != value)
+                {
+                    if (_currentPlaylist != null)
+                    {
+                        _currentPlaylist.Songs.CollectionChanged -= OnSongsCollectionChanged;
+                    }
+
+                    _currentPlaylist = value;
+                    OnPropertyChanged();
+
+                    if (_currentPlaylist != null)
+                    {
+                        _currentPlaylist.Songs.CollectionChanged += OnSongsCollectionChanged;
+                    }
+
+                    OnPropertyChanged(nameof(PlaylistSongs));
+                    _playlistStore.CurrentPlaylist = _currentPlaylist;
+                }
             }
         }
+
+        public ObservableCollection<Song> PlaylistSongs => CurrentPlaylist?.Songs;
 
         private Song _playlistCurrentSong;
         public Song PlaylistCurrentSong
         {
-            get
-            {
-                return _playlistCurrentSong;
-            }
+            get => _playlistCurrentSong;
             set
             {
                 if (_playlistCurrentSong != value)
@@ -35,62 +51,25 @@ namespace SoundHeaven.ViewModels
                     _playlistCurrentSong = value;
                     OnPropertyChanged();
 
-                    // Set the MainWindowViewModel's CurrentSong to the selected song
-                    _mainWindowViewModel.CurrentSong = _playlistCurrentSong;
+                    // Optionally, perform actions like playing the song
                 }
             }
         }
 
-        // Expose Playlists from MainWindowViewModel
-        public ObservableCollection<Playlist> Playlists
+        public PlaylistViewModel(PlaylistStore playlistStore)
         {
-            get
+            _playlistStore = playlistStore;
+            _currentPlaylist = _playlistStore.CurrentPlaylist;
+
+            if (_currentPlaylist != null)
             {
-                return _mainWindowViewModel.Playlists;
+                _currentPlaylist.Songs.CollectionChanged += OnSongsCollectionChanged;
             }
         }
 
-        private Playlist _currentPlaylist;
-        public Playlist CurrentPlaylist
+        private void OnSongsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            get
-            {
-                return _currentPlaylist;
-            }
-            set
-            {
-                if (_currentPlaylist != value)
-                {
-                    _currentPlaylist = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        // Constructor that accepts MainWindowViewModel
-        public PlaylistViewModel(MainWindowViewModel mainWindowViewModel)
-        {
-            _mainWindowViewModel = mainWindowViewModel;
-
-
-            // Subscribe to CurrentSong property changes in MainWindowViewModel
-            _mainWindowViewModel.PropertyChanged += (sender, args) =>
-            {
-                if (args.PropertyName == nameof(MainWindowViewModel.CurrentSong))
-                {
-                    // Update PlaylistCurrentSong when MainWindowViewModel's CurrentSong changes
-                    PlaylistCurrentSong = _mainWindowViewModel.CurrentSong;
-                }
-            };
-        }
-
-        // Load the songs from the selected playlist
-        public void LoadPlaylistSongs(Playlist playlist)
-        {
-            CurrentPlaylist = playlist;
-
-            // You can modify this section to load songs from the playlist
-            // into a collection if necessary, or directly access playlist songs.
+            OnPropertyChanged(nameof(PlaylistSongs));
         }
     }
 }
