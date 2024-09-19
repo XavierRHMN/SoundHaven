@@ -13,7 +13,7 @@
     <!-- Define Custom Resources -->
     <UserControl.Resources>
         <!-- Override MaterialSelectionBrush with your desired color -->
-        <SolidColorBrush x:Key="MaterialSelectionBrush" Color="MediumPurple" Opacity="0.1"/> <!-- Example: Blue -->
+        <SolidColorBrush x:Key="MaterialSelectionBrush" Color="{StaticResource PrimaryColor}" Opacity="0.1"/> <!-- Example: Blue -->
     </UserControl.Resources>
 
     <Grid RowDefinitions="Auto,*" Background="{StaticResource ToolBarColor}">

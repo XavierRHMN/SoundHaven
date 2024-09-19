@@ -7,7 +7,6 @@
              x:Class="SoundHeaven.Controls.VolumeControl"
              x:DataType="viewModels:MainWindowViewModel">
 
-    <!-- Define a style for buttons -->
     <UserControl.Styles>
         <Style Selector="Button">
             <Setter Property="Width" Value="60"/>
@@ -16,7 +15,6 @@
     </UserControl.Styles>
 
     <StackPanel Orientation="Horizontal">
-        <!-- Volume Icon -->
         <Button Command="{Binding MuteCommand}" Margin="10 0"
                 Background="Transparent"
                 IsVisible="{Binding !IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -29,11 +27,7 @@
             <Svg Path="avares://SoundHeaven/Assets/Icons/volumemute.svg" />
         </Button>
 
-        <!-- <Svg Path="/Assets/Icons/volumehigh.svg" Width="24" Height="24"/> -->
-
-        <!-- Volume Slider -->
         <Slider Minimum="0" Maximum="1" Value="{Binding Volume, Mode=TwoWay}" Width="150" />
     </StackPanel>
-
 
 </UserControl>

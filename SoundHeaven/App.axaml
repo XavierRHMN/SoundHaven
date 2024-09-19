@@ -10,7 +10,8 @@
     </Application.DataTemplates>
 
     <Application.Styles>
-        <themes:MaterialTheme BaseTheme="Dark" PrimaryColor="DeepPurple"/>
+        <themes:MaterialTheme BaseTheme="Dark" PrimaryColor="DeepOrange"/>
+        <StyleInclude Source="/Resources/Styles.axaml"/>
     </Application.Styles>
 
     <Application.Resources>

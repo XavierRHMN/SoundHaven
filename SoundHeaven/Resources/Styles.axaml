@@ -1,0 +1,35 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Slider styles -->
+    <Style Selector="Slider">
+        <Setter Property="Foreground">
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                <!-- <GradientStop Color="#FF6B6B" Offset="0" /> -->
+                <!-- <GradientStop Color="#4E54C8" Offset="1" /> -->
+            </LinearGradientBrush>
+        </Setter>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
+    <Style Selector="Slider /template/ RepeatButton#PART_DecreaseButton">
+        
+    </Style>
+
+    <Style Selector="Slider /template/ RepeatButton#PART_IncreaseButton">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <Style Selector="Slider /template/ Thumb">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Ellipse Width="12" Height="12" Fill="White" Stroke="{StaticResource PrimaryHueMidBrush}" StrokeThickness="2" />
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <!-- Add any other styles you want to include here -->
+
+</Styles>
