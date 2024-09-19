@@ -12,10 +12,6 @@
         Title="SoundHeaven"
         Width="1500" Height="600">
 
-    <Window.DataContext>
-        <viewModels:MainWindowViewModel />
-    </Window.DataContext>
-
     <!-- UI Components -->
     <Grid>
         <Grid.RowDefinitions>
@@ -34,7 +30,6 @@
 
         <controls:PlaybackControl Grid.Row="1" Grid.Column="0" Background="{StaticResource PlayerBarColor}" />
         
-
         
         <Grid x:Name="SongInfoSeekbarVolumebar" Grid.Row="1" Grid.Column="1"
               Background="{StaticResource PlayerBarColor}">

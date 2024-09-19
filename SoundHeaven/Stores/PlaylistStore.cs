@@ -10,9 +10,6 @@ namespace SoundHeaven.Stores
 {
     public class PlaylistStore
     {
-        private static PlaylistStore _instance;
-        public static PlaylistStore Instance => _instance ?? (_instance = new PlaylistStore());
-        
         // List to store all playlists
         private ObservableCollection<Playlist> _playlists;
         public ObservableCollection<Playlist> Playlists => _playlists;

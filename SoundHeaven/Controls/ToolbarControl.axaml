@@ -57,10 +57,11 @@
                 SelectedItem="{Binding CurrentPlaylist, Mode=TwoWay}"
                 Width="200">
 
+
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock
-                            Text="{Binding Name}"
+                            Text="{Binding Name, Mode=TwoWay}"
                             Foreground="White"
                             FontSize="12"
                             Margin="20 0 0 0" />

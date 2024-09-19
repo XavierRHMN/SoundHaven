@@ -18,8 +18,7 @@
 
     <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Background="{StaticResource ToolBarColor}">
         <!-- TextBlock centered in first row -->
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="Playlist" FontSize="24" FontWeight="Bold" Margin="0 20 0  0" HorizontalAlignment="Center"/>
-
+        <TextBox Grid.Row="0" Grid.Column="0" Text="{Binding PlaylistName, Mode=TwoWay}" FontSize="24" FontWeight="Bold" Margin="0 20 0 0" HorizontalAlignment="Center"/>
         <!-- StackPanel for Buttons aligned horizontally in second row -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="16">
             <!-- Horizontally stacked buttons with custom corner radius -->

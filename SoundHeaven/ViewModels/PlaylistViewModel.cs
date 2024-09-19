@@ -1,4 +1,5 @@
 ﻿using SoundHeaven.Models;
+using SoundHeaven.Services;
 using SoundHeaven.Stores;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -8,6 +9,7 @@ namespace SoundHeaven.ViewModels
 {
     public class PlaylistViewModel : ViewModelBase
     {
+        private MainWindowViewModel _mainWindowViewModel;
         private readonly PlaylistStore _playlistStore;
 
         public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
@@ -39,7 +41,20 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        public ObservableCollection<Song> PlaylistSongs => _playlistStore.CurrentPlaylist?.Songs;
+        // Expose the songs of the current playlist
+        public ObservableCollection<Song> PlaylistSongs => _mainWindowViewModel.CurrentPlaylist?.Songs;
+        public string PlaylistName
+        {
+            get => _mainWindowViewModel.CurrentPlaylist.Name;
+            set
+            {
+                if (_mainWindowViewModel.CurrentPlaylist.Name != value)
+                {
+                    _mainWindowViewModel.CurrentPlaylist.Name = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         private Song _playlistCurrentSong;
         public Song PlaylistCurrentSong
@@ -52,20 +67,16 @@ namespace SoundHeaven.ViewModels
                     _playlistCurrentSong = value;
                     OnPropertyChanged();
 
-                    // Optionally, perform actions like playing the song
+                    // Set the MainWindowViewModel's CurrentSong to play the song
+                    _mainWindowViewModel.CurrentSong = _playlistCurrentSong;
                 }
             }
         }
-
-        public PlaylistViewModel(PlaylistStore playlistStore)
+        
+        // Constructor accepting MainWindowViewModel
+        public PlaylistViewModel(MainWindowViewModel mainWindowViewModel)
         {
-            _playlistStore = PlaylistStore.Instance;
-            _playlistStore.PropertyChanged += OnPlaylistStorePropertyChanged;
-
-            if (_currentPlaylist != null)
-            {
-                _currentPlaylist.Songs.CollectionChanged += OnSongsCollectionChanged;
-            }
+            _mainWindowViewModel = mainWindowViewModel;
         }
         
         private void OnPlaylistStorePropertyChanged(object sender, PropertyChangedEventArgs e)

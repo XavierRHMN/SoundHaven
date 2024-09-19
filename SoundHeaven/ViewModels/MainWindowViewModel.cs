@@ -23,6 +23,7 @@ namespace SoundHeaven.ViewModels
         
         public Playlist CurrentPlaylist
         {
+            
             get => _playlistStore.CurrentPlaylist;
             set => _playlistStore.CurrentPlaylist = value;
         }
@@ -219,7 +220,7 @@ namespace SoundHeaven.ViewModels
         {
             _audioPlayerService = new AudioPlayerService();
             _songStore = new SongStore();
-            _playlistStore = PlaylistStore.Instance;
+            _playlistStore = new PlaylistStore();
 
             PlayCommand = new RelayCommand(Play, CanPlay);
             PauseCommand = new RelayCommand(Pause, CanPause);
@@ -235,6 +236,12 @@ namespace SoundHeaven.ViewModels
             _songStore.LoadSongs();
             InitializeSeekTimer();
             InitializeScrollTimer();
+            
+            Playlist example = new Playlist();
+            example.Name = "test";
+            example.Songs = _songStore.Songs;
+            _playlistStore.AddPlaylist(example);
+            
         }
         
         private void CreatePlaylist()
@@ -286,7 +293,7 @@ namespace SoundHeaven.ViewModels
         }
 
         public void ShowHomeView() => CurrentViewModel = new HomeViewModel(this);
-        public void ShowPlaylistView() => CurrentViewModel = new PlaylistViewModel(_playlistStore);
+        public void ShowPlaylistView() => CurrentViewModel = new PlaylistViewModel(this);
 
 
         public void Restart()
@@ -296,7 +303,7 @@ namespace SoundHeaven.ViewModels
             SeekPosition = 0;
         }
         
-        private void Start()
+        public void Start()
         {
             if (CurrentSong != null)
             {
@@ -305,7 +312,7 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private void Play()
+        public void Play()
         {
             if (AudioPlayerService.IsStopped())
             {

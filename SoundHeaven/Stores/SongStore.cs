@@ -91,6 +91,11 @@ namespace SoundHeaven.Stores
             _currentSongIndex = (_currentSongIndex - 1 + _songs.Count) % _songs.Count;
             return CurrentSong;
         }
+        
+        public ObservableCollection<Song> GetAllSongs()
+        {
+            return _songs;
+        }
 
         // Load songs from the Tracks directory
         public void LoadSongs()
