@@ -9,24 +9,15 @@ namespace SoundHeaven.Services
         private AudioFileReader _audioFileReader;
         private double _audioVolume = 0.5;
 
-        public AudioPlayerService()
-        {
-            _waveOutDevice = new WaveOutEvent(); // You can replace this with a different output device if needed
-        }
+        public AudioPlayerService() => _waveOutDevice = new WaveOutEvent(); // You can replace this with a different output device if needed
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
 
-        public bool IsPlaying()
-        {
-            return _waveOutDevice.PlaybackState == PlaybackState.Playing;
-        }
-        
-        public bool IsStopped()
-        {
-            return _waveOutDevice.PlaybackState == PlaybackState.Stopped;
-        }
-        
-        
+        public bool IsPlaying() => _waveOutDevice.PlaybackState == PlaybackState.Playing;
+
+        public bool IsStopped() => _waveOutDevice.PlaybackState == PlaybackState.Stopped;
+
+
         public void Seek(TimeSpan position)
         {
             if (_audioFileReader != null)

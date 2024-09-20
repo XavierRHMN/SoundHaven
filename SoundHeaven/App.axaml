@@ -6,26 +6,26 @@
              xmlns:views="clr-namespace:SoundHeaven.Views"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              RequestedThemeVariant="Default">
-    
+
     <Application.DataTemplates>
         <local:ViewLocator />
-        
+
         <!-- DataTemplate for PlaylistViewModel -->
         <DataTemplate DataType="viewModels:PlaylistViewModel">
             <views:PlaylistView />
         </DataTemplate>
-        
+
         <!-- DataTemplate for HomeViewModel -->
         <DataTemplate DataType="viewModels:HomeViewModel">
             <views:HomeView />
         </DataTemplate>
-        
+
         <!-- Add more DataTemplates as needed -->
     </Application.DataTemplates>
 
     <Application.Styles>
-        <themes:MaterialTheme BaseTheme="Dark" PrimaryColor="DeepOrange"/>
-        <StyleInclude Source="/Resources/Styles.axaml"/>
+        <themes:MaterialTheme BaseTheme="Dark" PrimaryColor="DeepOrange" />
+        <StyleInclude Source="/Resources/Styles.axaml" />
     </Application.Styles>
 
     <Application.Resources>

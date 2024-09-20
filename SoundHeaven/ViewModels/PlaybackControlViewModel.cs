@@ -1,4 +1,5 @@
 ﻿using SoundHeaven.Commands;
+using SoundHeaven.Models;
 using SoundHeaven.Services;
 using System;
 
@@ -8,6 +9,7 @@ namespace SoundHeaven.ViewModels
     {
         private readonly AudioPlayerService _audioPlayerService;
         private readonly MainWindowViewModel _mainWindowViewModel;
+        private readonly PlaylistViewModel _playlistViewModel;
 
         // Playback state
         private bool _isPlaying;
@@ -24,6 +26,8 @@ namespace SoundHeaven.ViewModels
             }
         }
 
+        private Playlist _currentPlaylist => _mainWindowViewModel.PlaylistViewModel.CurrentPlaylist;
+
         // Commands for controlling playback
         public RelayCommand PlayCommand { get; }
         public RelayCommand PauseCommand { get; }
@@ -31,9 +35,9 @@ namespace SoundHeaven.ViewModels
         public RelayCommand PreviousCommand { get; }
 
         // Constructor
-        public PlaybackControlViewModel(AudioPlayerService audioPlayerService, MainWindowViewModel mainWindowViewModel)
+        public PlaybackControlViewModel(MainWindowViewModel mainWindowViewModel)
         {
-            _audioPlayerService = audioPlayerService;
+            _audioPlayerService = mainWindowViewModel.AudioService;
             _mainWindowViewModel = mainWindowViewModel;
 
             // Define commands
@@ -44,8 +48,8 @@ namespace SoundHeaven.ViewModels
 
             // Set initial state based on whether audio is playing
             IsPlaying = true;
-
         }
+
         // Method to play music
         private void Play()
         {
@@ -67,13 +71,9 @@ namespace SoundHeaven.ViewModels
                 Console.WriteLine("No song selected to play.");
             }
         }
-        
 
 
-        private bool CanPlay()
-        {
-            return !_audioPlayerService.IsStopped();
-        }
+        private bool CanPlay() => !_audioPlayerService.IsStopped();
 
         // Method to pause music
         private void Pause()
@@ -86,10 +86,7 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private bool CanPause()
-        {
-            return !_audioPlayerService.IsStopped();
-        }
+        private bool CanPause() => !_audioPlayerService.IsStopped();
 
         // Method to go to the next track
         private void NextTrack()
@@ -99,11 +96,9 @@ namespace SoundHeaven.ViewModels
             // Example: Switch to the next song in the playlist
         }
 
-        private bool CanNextTrack()
-        {
+        private bool CanNextTrack() =>
             // Implement logic to determine if next track is available
-            return false; // Placeholder
-        }
+            false; // Placeholder
 
         // Method to go to the previous track
         private void PreviousTrack()
@@ -113,10 +108,8 @@ namespace SoundHeaven.ViewModels
             // Example: Switch to the previous song in the playlist
         }
 
-        private bool CanPreviousTrack()
-        {
+        private bool CanPreviousTrack() =>
             // Implement logic to determine if previous track is available
-            return false; // Placeholder
-        }
+            false; // Placeholder
     }
 }

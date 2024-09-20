@@ -10,11 +10,13 @@ namespace SoundHeaven.Models
         public ObservableCollection<Playlist> Playlists { get; set; }
         private int _currentPlaylistIndex = 0;
         private AudioPlayerService _audioPlayerService;
+        private MainWindowViewModel _mainWindowViewModel;
 
-        public PlaylistStore(AudioPlayerService audioPlayerService)
+        public PlaylistStore(MainWindowViewModel mainWindowViewModel)
         {
             Playlists = new ObservableCollection<Playlist>();
-            _audioPlayerService = audioPlayerService;
+            _mainWindowViewModel = mainWindowViewModel;
+            _audioPlayerService = _mainWindowViewModel.AudioService;
         }
 
         public Playlist? GetCurrentPlaylist()

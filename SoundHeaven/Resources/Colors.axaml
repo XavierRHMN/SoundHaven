@@ -1,12 +1,11 @@
 ﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:colors="clr-namespace:Material.Colors;assembly=Material.Colors">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <SolidColorBrush x:Key="PlayerBarColor" Color="#060607" />
     <SolidColorBrush x:Key="ToolBarColor" Color="#121319" />
-    
+
     <Color x:Key="PrimaryColor">OrangeRed</Color>
     <Color x:Key="SecondaryColor">MediumPurple</Color>
 
-    <SolidColorBrush x:Key="PrimaryHueMidBrush" Color="{StaticResource PrimaryColor}"/>
-    <SolidColorBrush x:Key="SecondaryHueMidBrush" Color="{StaticResource SecondaryColor}"/>
+    <SolidColorBrush x:Key="PrimaryHueMidBrush" Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="SecondaryHueMidBrush" Color="{StaticResource SecondaryColor}" />
 </ResourceDictionary>

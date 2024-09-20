@@ -9,23 +9,22 @@
                 <!-- <GradientStop Color="#4E54C8" Offset="1" /> -->
             </LinearGradientBrush>
         </Setter>
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
     </Style>
 
-    <Style Selector="Slider /template/ RepeatButton#PART_DecreaseButton">
-        
-    </Style>
+    <Style Selector="Slider /template/ RepeatButton#PART_DecreaseButton" />
 
     <Style Selector="Slider /template/ RepeatButton#PART_IncreaseButton">
-        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Background" Value="Transparent" />
     </Style>
 
     <Style Selector="Slider /template/ Thumb">
         <Setter Property="Template">
             <ControlTemplate>
-                <Ellipse Width="12" Height="12" Fill="White" Stroke="{StaticResource PrimaryHueMidBrush}" StrokeThickness="2" />
+                <Ellipse Width="12" Height="12" Fill="White" Stroke="{StaticResource PrimaryHueMidBrush}"
+                         StrokeThickness="2" />
             </ControlTemplate>
         </Setter>
     </Style>

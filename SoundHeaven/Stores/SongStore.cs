@@ -10,19 +10,10 @@ namespace SoundHeaven.Stores
     {
         // Collection of songs
         private ObservableCollection<Song> _songs;
-        public ObservableCollection<Song> Songs
-        {
-            get
-            {
-                return _songs;
-            }
-        }
+        public ObservableCollection<Song> Songs => _songs;
 
 
-        public SongStore()
-        {
-            _songs = new ObservableCollection<Song>();
-        }
+        public SongStore() => _songs = new ObservableCollection<Song>();
 
         // Add a song to the collection
         public void AddSong(Song song)
@@ -46,31 +37,13 @@ namespace SoundHeaven.Stores
         private int _currentSongIndex = 0;
 
         // Get the current song based on the index
-        public Song CurrentSong
-        {
-            get
-            {
-                return _songs[_currentSongIndex];
-            }
-        }
+        public Song CurrentSong => _songs[_currentSongIndex];
 
         // Can go to next song if there are more than one song
-        public bool CanNext
-        {
-            get
-            {
-                return _songs.Count > 1;
-            }
-        }
+        public bool CanNext => _songs.Count > 1;
 
         // Can go to previous song if there are more than one song
-        public bool CanPrevious
-        {
-            get
-            {
-                return _songs.Count > 1;
-            }
-        }
+        public bool CanPrevious => _songs.Count > 1;
 
         // Navigate to the next song
         public Song NextSong()
@@ -91,11 +64,8 @@ namespace SoundHeaven.Stores
             _currentSongIndex = (_currentSongIndex - 1 + _songs.Count) % _songs.Count;
             return CurrentSong;
         }
-        
-        public ObservableCollection<Song> GetAllSongs()
-        {
-            return _songs;
-        }
+
+        public ObservableCollection<Song> GetAllSongs() => _songs;
 
         // Load songs from the Tracks directory
         public void LoadSongs()

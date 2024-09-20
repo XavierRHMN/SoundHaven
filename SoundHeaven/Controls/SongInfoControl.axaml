@@ -1,10 +1,9 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
-             xmlns:converters="clr-namespace:SoundHeaven.Converters"
              x:Class="SoundHeaven.Controls.SongInfoControl"
              x:DataType="viewModels:MainWindowViewModel">
-    
+
     <StackPanel Orientation="Vertical">
         <!-- Title with scrolling effect -->
         <Border ClipToBounds="True" Width="{Binding ControlWidth}" Height="25" Background="Transparent">
@@ -19,7 +18,7 @@
                    IsVisible="{Binding CurrentSongExists, Converter={StaticResource BooleanToVisibilityConverter}}">
             <TextBlock.Text>
                 <MultiBinding StringFormat="{}{0} - {1}">
-                    <Binding Path="CurrentSong.Artist"/>
+                    <Binding Path="CurrentSong.Artist" />
                     <Binding Path="CurrentSong.Year" />
                 </MultiBinding>
             </TextBlock.Text>

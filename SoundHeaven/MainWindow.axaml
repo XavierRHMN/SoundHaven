@@ -29,7 +29,7 @@
         </Border>
 
         <!-- PlaybackControl with Binding to PlaybackControlViewModel -->
-        <controls:PlaybackControl Grid.Row="1" Grid.Column="0" Background="{StaticResource PlayerBarColor}" 
+        <controls:PlaybackControl Grid.Row="1" Grid.Column="0" Background="{StaticResource PlayerBarColor}"
                                   DataContext="{Binding PlaybackControlViewModel}" />
 
         <!-- Song Info and Controls -->
@@ -40,12 +40,12 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="250" />
             </Grid.ColumnDefinitions>
-        
-            <controls:SongInfoControl Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
-        
-            <controls:SeekSliderControl Grid.Row="0" Grid.Column="1"/>
-        
-            <controls:VolumeControl Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"/>
+
+            <controls:SongInfoControl Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
+
+            <controls:SeekSliderControl Grid.Row="0" Grid.Column="1" />
+
+            <controls:VolumeControl Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" />
         </Grid>
 
         <!-- ContentControl for Switching Views -->

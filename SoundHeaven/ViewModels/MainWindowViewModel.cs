@@ -24,40 +24,27 @@ namespace SoundHeaven.ViewModels
     {
         private PlaylistViewModel _playlistViewModel;
         public PlaylistViewModel PlaylistViewModel { get; }
-        
+
         public ICommand CreatePlaylistCommand { get; }
         public ObservableCollection<Playlist> PlaylistCollection => _playlistStore.Playlists;
 
-        
-        public ObservableCollection<Song> SongCollection
-        {
-            get
-            {
-                return _songStore.Songs;
-            }
-        }
+
+        public ObservableCollection<Song> SongCollection => _songStore.Songs;
         private readonly AudioPlayerService _audioService;
-        public AudioPlayerService AudioService
-        {
-            get
-            {
-                return _audioService;
-            }
-        }
+        public AudioPlayerService AudioService => _audioService;
+
 
         private PlaylistStore _playlistStore;
+        public PlaylistStore PlaylistStore => _playlistStore;
         private readonly SongStore _songStore;
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _scrollTimer;
-        
+
         public bool CurrentSongExists => CurrentSong != null;
         private Song _currentSong;
         public Song CurrentSong
         {
-            get
-            {
-                return _currentSong;
-            }
+            get => _currentSong;
             set
             {
                 if (_currentSong != value)
@@ -78,10 +65,7 @@ namespace SoundHeaven.ViewModels
         private double _volume;
         public double Volume
         {
-            get
-            {
-                return _volume;
-            }
+            get => _volume;
             set
             {
                 _volume = value;
@@ -96,10 +80,7 @@ namespace SoundHeaven.ViewModels
         private bool _isMuted;
         public bool IsMuted
         {
-            get
-            {
-                return _isMuted;
-            }
+            get => _isMuted;
             set
             {
                 if (_isMuted != value)
@@ -123,10 +104,7 @@ namespace SoundHeaven.ViewModels
         private float _previousVolume;
         public float PreviousVolume
         {
-            get
-            {
-                return _previousVolume;
-            }
+            get => _previousVolume;
             set
             {
                 _previousVolume = value;
@@ -137,10 +115,7 @@ namespace SoundHeaven.ViewModels
         private double _seekPosition;
         public double SeekPosition
         {
-            get
-            {
-                return _seekPosition;
-            }
+            get => _seekPosition;
             set
             {
                 if (_seekPosition != value)
@@ -155,17 +130,14 @@ namespace SoundHeaven.ViewModels
         private double _titleScrollPosition = 200;
         public double TitleScrollPosition
         {
-            get
-            {
-                return _titleScrollPosition;
-            }
+            get => _titleScrollPosition;
             set
             {
                 _titleScrollPosition = value;
                 OnPropertyChanged();
             }
         }
-        
+
         private ViewModelBase _currentViewModel;
         public ViewModelBase CurrentViewModel
         {
@@ -179,7 +151,7 @@ namespace SoundHeaven.ViewModels
                 }
             }
         }
-        
+
         public ToolBarControlViewModel ToolBarControlViewModel { get; }
         public PlaybackControlViewModel PlaybackControlViewModel { get; }
 
@@ -187,7 +159,7 @@ namespace SoundHeaven.ViewModels
 
         // public double TextWidth { get; set; } = 200; // Estimated width of the text
         public double ControlWidth { get; set; } = 200; // Width of the canvas/border
-        
+
         // Commands
         public RelayCommand MuteCommand { get; }
 
@@ -195,26 +167,27 @@ namespace SoundHeaven.ViewModels
         {
             _audioService = new AudioPlayerService();
             _songStore = new SongStore();
-            _playlistStore = new PlaylistStore(_audioService);
-            
+            _playlistStore = new PlaylistStore(this);
+            _playlistViewModel = new PlaylistViewModel(this);
+
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
 
             _songStore.LoadSongs();
             InitializeSeekTimer();
             InitializeScrollTimer();
-            
+
             var example = new Playlist(_audioService)
             {
                 Name = "example",
                 Songs = _songStore.Songs
             };
             _playlistStore.AddPlaylist(example);
-            
+
             ToolBarControlViewModel = new ToolBarControlViewModel(this);
-            PlaybackControlViewModel = new PlaybackControlViewModel(_audioService, this);
+            PlaybackControlViewModel = new PlaybackControlViewModel( this);
 
             // Set initial CurrentViewModel
-            CurrentViewModel = new PlaylistViewModel(_playlistStore, _audioService, this);
+            CurrentViewModel = new PlaylistViewModel(this);
         }
 
         private void InitializeSeekTimer()
@@ -252,7 +225,7 @@ namespace SoundHeaven.ViewModels
                 {
                     PlaybackControlViewModel.IsPlaying = false;
                 }
-                
+
                 if (IsPlaying)
                 {
                     SeekPosition += 0.1;
@@ -263,7 +236,7 @@ namespace SoundHeaven.ViewModels
         private void ToggleMute() => IsMuted = !IsMuted;
 
         private bool CanToggleMute() => CurrentSong != null;
-        
+
         private double ExtractTextWidth(string text, string fontFamily, double fontSize)
         {
             if (string.IsNullOrEmpty(text))

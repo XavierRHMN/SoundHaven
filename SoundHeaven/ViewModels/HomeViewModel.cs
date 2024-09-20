@@ -10,10 +10,7 @@ namespace SoundHeaven.ViewModels
         private Song _currentSong;
         public Song CurrentSong
         {
-            get
-            {
-                return _currentSong;
-            }
+            get => _currentSong;
             set
             {
                 if (_currentSong != value)

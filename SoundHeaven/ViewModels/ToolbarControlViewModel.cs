@@ -18,14 +18,12 @@ namespace SoundHeaven.ViewModels
         private readonly MainWindowViewModel _mainWindowViewModel;
 
         private SongStore _songStore;
+
         // Current Playlist binding
         private Playlist? _currentPlaylist;
         public Playlist? CurrentPlaylist
         {
-            get
-            {
-                return _currentPlaylist;
-            }
+            get => _currentPlaylist;
             set
             {
                 if (_currentPlaylist != value)
@@ -47,9 +45,9 @@ namespace SoundHeaven.ViewModels
         // Constructor
         public ToolBarControlViewModel(MainWindowViewModel mainWindowViewModel)
         {
-            _audioService = new AudioPlayerService();
-            _playlistStore = new PlaylistStore(_audioService);
             _mainWindowViewModel = mainWindowViewModel;
+            _audioService = mainWindowViewModel.AudioService;
+            _playlistStore = new PlaylistStore(_mainWindowViewModel);
             _songStore = new SongStore();
 
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
@@ -68,7 +66,7 @@ namespace SoundHeaven.ViewModels
             _playlistStore.AddPlaylist(example);
 
             // Set initial CurrentViewModel in MainWindowViewModel
-            _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_playlistStore, _audioService, _mainWindowViewModel);
+            _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_mainWindowViewModel);
         }
 
         // Methods for commands
@@ -86,9 +84,9 @@ namespace SoundHeaven.ViewModels
         private void ShowPlaylistView()
         {
             Console.WriteLine("Switching to PlaylistView");
-            _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_playlistStore, _audioService, _mainWindowViewModel);
+            _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_mainWindowViewModel);
         }
-        
+
         private void CreatePlaylist()
         {
             Console.WriteLine("Creating new playlist");

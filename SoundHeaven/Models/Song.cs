@@ -19,10 +19,7 @@ namespace SoundHeaven.Models
 
         private AudioPlayerService _audioPlayerService;
 
-        public Song(AudioPlayerService audioPlayerService)
-        {
-            _audioPlayerService = audioPlayerService;
-        }
+        public Song(AudioPlayerService audioPlayerService) => _audioPlayerService = audioPlayerService;
 
         public void Play()
         {

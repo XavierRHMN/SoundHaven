@@ -3,7 +3,7 @@
              x:Class="SoundHeaven.Controls.SeekSliderControl"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              x:DataType="viewModels:MainWindowViewModel">
-    
+
 
     <!-- Your Slider Control -->
     <Slider Height="75"
@@ -12,5 +12,5 @@
             Margin="30,0"
             Value="{Binding SeekPosition, Mode=TwoWay}"
             ValueChanged="OnValueChanged"
-            PointerCaptureLost="OnPointerCaptureLost"/>
+            PointerCaptureLost="OnPointerCaptureLost" />
 </UserControl>

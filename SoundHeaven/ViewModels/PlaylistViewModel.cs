@@ -10,8 +10,8 @@ namespace SoundHeaven.ViewModels
 {
     public class PlaylistViewModel : ViewModelBase
     {
-        private readonly PlaylistStore _playlistStore;
-        private readonly AudioPlayerService _audioPlayerService;
+        private PlaylistStore _playlistStore => _mainWindowViewModel.PlaylistStore;
+        private AudioPlayerService _audioPlayerService => _mainWindowViewModel.AudioService;
         private readonly MainWindowViewModel _mainWindowViewModel;
 
         private Playlist? _currentPlaylist;
@@ -56,12 +56,10 @@ namespace SoundHeaven.ViewModels
         public RelayCommand EditSongCommand { get; }
         public RelayCommand DeleteSongCommand { get; }
 
-        public PlaylistViewModel(PlaylistStore playlistStore, AudioPlayerService audioPlayerService, MainWindowViewModel mainWindowViewModel)
+        public PlaylistViewModel(MainWindowViewModel mainWindowViewModel)
         {
-            _playlistStore = playlistStore;
-            _audioPlayerService = audioPlayerService;
             _mainWindowViewModel = mainWindowViewModel;
-            
+
             NextPlaylistCommand = new RelayCommand(SwitchToNextPlaylist);
             PreviousPlaylistCommand = new RelayCommand(SwitchToPreviousPlaylist);
             SwitchToPlaylistCommand = new RelayCommand<int>(SwitchToPlaylist);
@@ -73,7 +71,7 @@ namespace SoundHeaven.ViewModels
 
             // Set CurrentPlaylist to the first playlist if available
             CurrentPlaylist = _playlistStore.Playlists.FirstOrDefault();
-            
+
             if (CurrentPlaylist != null)
             {
                 Console.WriteLine($"CurrentPlaylist set to: {CurrentPlaylist.Name}");
