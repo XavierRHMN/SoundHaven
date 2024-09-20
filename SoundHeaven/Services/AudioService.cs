@@ -13,15 +13,14 @@ namespace SoundHeaven.Services
         {
             _waveOutDevice = new WaveOutEvent(); // You can replace this with a different output device if needed
         }
-        
-        public bool IsPlaying(string filePath)
-        {
-            // Check if the audio player is currently playing a song and if the song matches the provided file path
-            return _waveOutDevice.PlaybackState == PlaybackState.Playing && _audioFileReader != null && _audioFileReader.FileName == filePath;
-        }
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
 
+        public bool IsPlaying()
+        {
+            return _waveOutDevice.PlaybackState == PlaybackState.Playing;
+        }
+        
         public bool IsStopped()
         {
             return _waveOutDevice.PlaybackState == PlaybackState.Stopped;
@@ -36,7 +35,7 @@ namespace SoundHeaven.Services
             }
         }
 
-        public void Play(string filePath)
+        public void Start(string filePath)
         {
             Stop(); // Ensure any currently playing audio is stopped before starting a new one
 
