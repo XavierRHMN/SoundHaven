@@ -51,12 +51,12 @@ namespace SoundHeaven.ViewModels
         private void LoadData()
         {
 // Sample data for recently played songs
-RecentlyPlayedSongs.Add(new Song { Title = "Song 1", Artist = "Artist A", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
-RecentlyPlayedSongs.Add(new Song { Title = "Song 2", Artist = "Artist B", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
-
-// Sample data for recommended songs
-RecommendedSongs.Add(new Song { Title = "Song 3", Artist = "Artist C", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
-RecommendedSongs.Add(new Song { Title = "Song 4", Artist = "Artist D", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
+// RecentlyPlayedSongs.Add(new Song { Title = "Song 1", Artist = "Artist A", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
+// RecentlyPlayedSongs.Add(new Song { Title = "Song 2", Artist = "Artist B", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
+//
+// // Sample data for recommended songs
+// RecommendedSongs.Add(new Song { Title = "Song 3", Artist = "Artist C", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
+// RecommendedSongs.Add(new Song { Title = "Song 4", Artist = "Artist D", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
         }
     }
 }

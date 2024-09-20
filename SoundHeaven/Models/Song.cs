@@ -1,7 +1,6 @@
 ﻿using Avalonia.Controls;
+using SoundHeaven.Services;
 using System;
-using Avalonia.Media.Imaging;
-using SoundHeaven.Commands;
 
 namespace SoundHeaven.Models
 {
@@ -17,5 +16,35 @@ namespace SoundHeaven.Models
         public string? Genre { get; set; }
         public int Year { get; set; }
         public double Length => Duration.TotalSeconds;
+
+        private AudioPlayerService _audioPlayerService;
+
+        public Song(AudioPlayerService audioPlayerService)
+        {
+            _audioPlayerService = audioPlayerService;
+        }
+
+        public void Play()
+        {
+            if (!string.IsNullOrEmpty(FilePath))
+            {
+                _audioPlayerService.Start(FilePath);
+            }
+        }
+
+        public void Pause()
+        {
+            _audioPlayerService.Pause();
+        }
+
+        public void Resume()
+        {
+            _audioPlayerService.Resume();
+        }
+
+        public void Stop()
+        {
+            _audioPlayerService.Stop();
+        }
     }
 }

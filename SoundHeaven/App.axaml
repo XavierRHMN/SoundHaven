@@ -3,10 +3,24 @@
              x:Class="SoundHeaven.App"
              xmlns:local="using:SoundHeaven"
              xmlns:themes="clr-namespace:Material.Styles.Themes;assembly=Material.Styles"
+             xmlns:views="clr-namespace:SoundHeaven.Views"
+             xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              RequestedThemeVariant="Default">
-
+    
     <Application.DataTemplates>
         <local:ViewLocator />
+        
+        <!-- DataTemplate for PlaylistViewModel -->
+        <DataTemplate DataType="viewModels:PlaylistViewModel">
+            <views:PlaylistView />
+        </DataTemplate>
+        
+        <!-- DataTemplate for HomeViewModel -->
+        <DataTemplate DataType="viewModels:HomeViewModel">
+            <views:HomeView />
+        </DataTemplate>
+        
+        <!-- Add more DataTemplates as needed -->
     </Application.DataTemplates>
 
     <Application.Styles>

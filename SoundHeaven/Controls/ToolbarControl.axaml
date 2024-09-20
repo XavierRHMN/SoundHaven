@@ -7,7 +7,7 @@
              xmlns:controls="clr-namespace:Material.Styles.Controls;assembly=Material.Styles"
              x:Class="SoundHeaven.Controls.ToolbarControl"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
-             x:DataType="viewModels:MainWindowViewModel">
+             x:DataType="viewModels:ToolBarControlViewModel">
 
     <!-- Root Grid for Toolbar -->
     <StackPanel Background="{StaticResource ToolBarColor}">
@@ -21,7 +21,7 @@
             </StackPanel>
         </Button>
 
-        <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlaylistViewCommand}" Width="200" HorizontalContentAlignment="Left">
+        <Button Background="Transparent" Foreground="White" Command="{Binding ShowSearchViewCommand}" Width="200" HorizontalContentAlignment="Left">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
                 <Svg Path="avares://SoundHeaven/Assets/Icons/search.svg" Width="32" Height="32"
                      HorizontalAlignment="Left" />

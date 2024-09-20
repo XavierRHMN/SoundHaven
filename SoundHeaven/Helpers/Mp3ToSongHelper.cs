@@ -3,6 +3,7 @@ using System.IO; // For regular file system operations
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using SoundHeaven.Models;
+using SoundHeaven.Services;
 using System.Text.RegularExpressions;
 using TagLib; // For TagLib operations
 
@@ -63,7 +64,8 @@ namespace SoundHeaven.Helpers
             if (!System.IO.File.Exists(filePath))
                 throw new FileNotFoundException("MP3 file not found.", filePath);
 
-            var song = new Song();
+            var _audioService = new AudioPlayerService();
+            var song = new Song(_audioService);
             // Use TagLib.File to read the MP3 metadata
             var file = TagLib.File.Create(filePath);
 

@@ -24,7 +24,7 @@ namespace SoundHeaven.Controls
             if (DataContext is MainWindowViewModel viewModel && _isDragging)
             {
                 // Set the seek position when dragging stops
-                viewModel.AudioPlayerService?.Seek(TimeSpan.FromSeconds(viewModel.SeekPosition));
+                viewModel.AudioService?.Seek(TimeSpan.FromSeconds(viewModel.SeekPosition));
                 _isDragging = false;
             }
         }

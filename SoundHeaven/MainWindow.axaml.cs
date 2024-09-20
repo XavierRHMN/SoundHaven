@@ -1,5 +1,10 @@
 using Avalonia.Controls;
+using SoundHeaven.Controls;
+using SoundHeaven.Models;
+using SoundHeaven.Services;
 using SoundHeaven.ViewModels;
+using SoundHeaven.Stores;
+using System;
 
 namespace SoundHeaven.Views
 {
@@ -8,6 +13,9 @@ namespace SoundHeaven.Views
         public MainWindow()
         {
             InitializeComponent();
+
+            // Set DataContext for MainWindow
+            DataContext = new MainWindowViewModel();
         }
     }
 }

@@ -12,21 +12,18 @@ using System.Runtime.CompilerServices;
 using SoundHeaven.Models;
 using SoundHeaven.Services;
 using SoundHeaven.Stores;
+using SoundHeaven.Views;
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Input;
 
 namespace SoundHeaven.ViewModels
 {
-    public class MainWindowViewModel : ViewModelBase, INotifyPropertyChanged
+    public class MainWindowViewModel : ViewModelBase
     {
-        
-        public Playlist CurrentPlaylist
-        {
-            
-            get => _playlistStore.CurrentPlaylist;
-            set => _playlistStore.CurrentPlaylist = value;
-        }
+        private PlaylistViewModel _playlistViewModel;
+        public PlaylistViewModel PlaylistViewModel { get; }
         
         public ICommand CreatePlaylistCommand { get; }
         public ObservableCollection<Playlist> PlaylistCollection => _playlistStore.Playlists;
@@ -39,36 +36,19 @@ namespace SoundHeaven.ViewModels
                 return _songStore.Songs;
             }
         }
-        private readonly AudioPlayerService _audioPlayerService;
-        public AudioPlayerService AudioPlayerService
+        private readonly AudioPlayerService _audioService;
+        public AudioPlayerService AudioService
         {
             get
             {
-                return _audioPlayerService;
+                return _audioService;
             }
         }
-        
-        private readonly PlaylistStore _playlistStore;
+
+        private PlaylistStore _playlistStore;
         private readonly SongStore _songStore;
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _scrollTimer;
-
-        private ViewModelBase _currentViewModel;
-        public ViewModelBase CurrentViewModel
-        {
-            get
-            {
-                return _currentViewModel;
-            }
-            set
-            {
-                if (_currentViewModel != value)
-                {
-                    _currentViewModel = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
         
         public bool CurrentSongExists => CurrentSong != null;
         private Song _currentSong;
@@ -85,31 +65,15 @@ namespace SoundHeaven.ViewModels
                     _currentSong = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(CurrentSongExists));
-                    Start();
+                    _audioService.Start(_currentSong.FilePath);
                     SeekPosition = 0;
-                    Volume = _audioPlayerService.GetCurrentVolume();
+                    Volume = _audioService.GetCurrentVolume();
                     MuteCommand.RaiseCanExecuteChanged();
                 }
             }
         }
 
-        private bool _isPlaying = true;
-        public bool IsPlaying
-        {
-            get
-            {
-                return _isPlaying;
-            }
-            set
-            {
-                if (_isPlaying != value)
-                {
-                    _isPlaying = value;
-                    OnPropertyChanged();
-                    OnIsPlayingChanged();
-                }
-            }
-        }
+        public bool IsPlaying => _audioService.IsPlaying();
 
         private double _volume;
         public double Volume
@@ -124,7 +88,7 @@ namespace SoundHeaven.ViewModels
                 OnPropertyChanged();
                 if (CurrentSong != null)
                 {
-                    _audioPlayerService?.SetVolume((float)_volume);
+                    _audioService?.SetVolume((float)_volume);
                 }
             }
         }
@@ -201,6 +165,23 @@ namespace SoundHeaven.ViewModels
                 OnPropertyChanged();
             }
         }
+        
+        private ViewModelBase _currentViewModel;
+        public ViewModelBase CurrentViewModel
+        {
+            get => _currentViewModel;
+            set
+            {
+                if (_currentViewModel != value) // Check if the new value is different
+                {
+                    _currentViewModel = value;
+                    OnPropertyChanged(nameof(CurrentViewModel)); // Notify the UI of the property change
+                }
+            }
+        }
+        
+        public ToolBarControlViewModel ToolBarControlViewModel { get; }
+        public PlaybackControlViewModel PlaybackControlViewModel { get; }
 
         public double TextWidth => ExtractTextWidth(CurrentSong?.Title, "Nunito", 15);
 
@@ -208,47 +189,32 @@ namespace SoundHeaven.ViewModels
         public double ControlWidth { get; set; } = 200; // Width of the canvas/border
         
         // Commands
-        public RelayCommand PlayCommand { get; }
-        public RelayCommand PauseCommand { get; }
-        public RelayCommand NextCommand { get; }
-        public RelayCommand PreviousCommand { get; }
-        public RelayCommand ShowHomeViewCommand { get; }
-        public RelayCommand ShowPlaylistViewCommand { get; }
         public RelayCommand MuteCommand { get; }
 
         public MainWindowViewModel()
         {
-            _audioPlayerService = new AudioPlayerService();
+            _audioService = new AudioPlayerService();
             _songStore = new SongStore();
-            _playlistStore = new PlaylistStore();
-
-            PlayCommand = new RelayCommand(Play, CanPlay);
-            PauseCommand = new RelayCommand(Pause, CanPause);
-            NextCommand = new RelayCommand(Next, CanNext);
-            PreviousCommand = new RelayCommand(Previous, CanPrevious);
-            ShowHomeViewCommand = new RelayCommand(ShowHomeView);
-            ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
+            _playlistStore = new PlaylistStore(_audioService);
+            
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
 
-            CurrentViewModel = new HomeViewModel(this);
-            CreatePlaylistCommand = new RelayCommand(CreatePlaylist);
-            
             _songStore.LoadSongs();
             InitializeSeekTimer();
             InitializeScrollTimer();
             
-            Playlist example = new Playlist();
-            example.Name = "test";
-            example.Songs = _songStore.Songs;
+            var example = new Playlist(_audioService)
+            {
+                Name = "example",
+                Songs = _songStore.Songs
+            };
             _playlistStore.AddPlaylist(example);
             
-        }
-        
-        private void CreatePlaylist()
-        {
-            // Logic for creating a new playlist
-            var newPlaylist = new Playlist { Name = $"Playlist {PlaylistCollection.Count + 1}" };
-            _playlistStore.AddPlaylist(newPlaylist);
+            ToolBarControlViewModel = new ToolBarControlViewModel(this);
+            PlaybackControlViewModel = new PlaybackControlViewModel(_audioService, this);
+
+            // Set initial CurrentViewModel
+            CurrentViewModel = new PlaylistViewModel(_playlistStore, _audioService, this);
         }
 
         private void InitializeSeekTimer()
@@ -281,102 +247,17 @@ namespace SoundHeaven.ViewModels
         {
             if (CurrentSong != null)
             {
-                if (AudioPlayerService.IsStopped())
+
+                if (AudioService.IsStopped())
                 {
-                    IsPlaying = false;
+                    PlaybackControlViewModel.IsPlaying = false;
                 }
-                else if (IsPlaying)
+                
+                if (IsPlaying)
                 {
                     SeekPosition += 0.1;
                 }
             }
-        }
-
-        public void ShowHomeView() => CurrentViewModel = new HomeViewModel(this);
-        public void ShowPlaylistView() => CurrentViewModel = new PlaylistViewModel(this);
-
-
-        public void Restart()
-        {
-            AudioPlayerService.Stop();
-            Start();
-            SeekPosition = 0;
-        }
-        
-        public void Start()
-        {
-            if (CurrentSong != null)
-            {
-                _audioPlayerService.Play(CurrentSong.FilePath);
-                IsPlaying = true;
-            }
-        }
-
-        public void Play()
-        {
-            if (AudioPlayerService.IsStopped())
-            {
-                Start();
-                SeekPosition = 0;
-            }
-            
-            if (!IsPlaying)
-            {
-                _audioPlayerService.Resume();
-                IsPlaying = true;
-            }
-        }
-
-        private bool CanPlay() => !IsPlaying;
-
-        private void Pause()
-        {
-            if (IsPlaying)
-            {
-                _audioPlayerService.Pause();
-                IsPlaying = false;
-            }
-        }
-
-        private bool CanPause() => IsPlaying;
-
-        private void Next()
-        {
-            var nextSong = _songStore.NextSong();
-            if (nextSong != null)
-            {
-                CurrentSong = nextSong;
-                Start();
-                SeekPosition = 0;
-            }
-        }
-
-        private bool CanNext() => _songStore.CanNext;
-
-        public void Previous()
-        {
-            var prevSong = _songStore.PreviousSong();
-            if (prevSong != null)
-            {
-                if (SeekPosition > 3)
-                {
-                    Restart();
-                }
-                else
-                {
-                    CurrentSong = prevSong;
-                    Start();
-                    SeekPosition = 0;
-                }
-            }
-        }
-
-        private bool CanPrevious() => _songStore.CanPrevious;
-
-        private void OnIsPlayingChanged()
-        {
-            PlayCommand.RaiseCanExecuteChanged();
-            PauseCommand.RaiseCanExecuteChanged();
         }
 
         private void ToggleMute() => IsMuted = !IsMuted;

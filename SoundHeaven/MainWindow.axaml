@@ -12,7 +12,6 @@
         Title="SoundHeaven"
         Width="1500" Height="600">
 
-    <!-- UI Components -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="8*" />
@@ -24,13 +23,16 @@
             <ColumnDefinition Width="3*" />
         </Grid.ColumnDefinitions>
 
+        <!-- ToolbarControl with Binding to ToolBarControlViewModel -->
         <Border Grid.RowSpan="2" Grid.Row="0" Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="Gray">
-            <controls:ToolbarControl />
+            <controls:ToolbarControl DataContext="{Binding ToolBarControlViewModel}" />
         </Border>
 
-        <controls:PlaybackControl Grid.Row="1" Grid.Column="0" Background="{StaticResource PlayerBarColor}" />
-        
-        
+        <!-- PlaybackControl with Binding to PlaybackControlViewModel -->
+        <controls:PlaybackControl Grid.Row="1" Grid.Column="0" Background="{StaticResource PlayerBarColor}" 
+                                  DataContext="{Binding PlaybackControlViewModel}" />
+
+        <!-- Song Info and Controls -->
         <Grid x:Name="SongInfoSeekbarVolumebar" Grid.Row="1" Grid.Column="1"
               Background="{StaticResource PlayerBarColor}">
             <Grid.ColumnDefinitions>
@@ -45,9 +47,8 @@
         
             <controls:VolumeControl Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"/>
         </Grid>
-        
 
-
+        <!-- ContentControl for Switching Views -->
         <ContentControl Grid.Row="0" Grid.Column="1" Content="{Binding CurrentViewModel}" />
     </Grid>
 </Window>

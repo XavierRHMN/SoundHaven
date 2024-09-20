@@ -1,110 +1,89 @@
-﻿using SoundHeaven.Models;
-using System;
-using System.Collections.Generic;
+﻿using SoundHeaven.Services;
+using SoundHeaven.ViewModels;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
-namespace SoundHeaven.Stores
+namespace SoundHeaven.Models
 {
-    public class PlaylistStore
+    public class PlaylistStore : ViewModelBase
     {
-        // List to store all playlists
-        private ObservableCollection<Playlist> _playlists;
-        public ObservableCollection<Playlist> Playlists => _playlists;
+        public ObservableCollection<Playlist> Playlists { get; set; }
+        private int _currentPlaylistIndex = 0;
+        private AudioPlayerService _audioPlayerService;
 
-
-        // The currently active playlist
-        private Playlist _currentPlaylist;
-        public Playlist CurrentPlaylist
+        public PlaylistStore(AudioPlayerService audioPlayerService)
         {
-            get => _currentPlaylist;
-            set
+            Playlists = new ObservableCollection<Playlist>();
+            _audioPlayerService = audioPlayerService;
+        }
+
+        public Playlist? GetCurrentPlaylist()
+        {
+            if (Playlists.Count > 0 && _currentPlaylistIndex >= 0 && _currentPlaylistIndex < Playlists.Count)
             {
-                if (_currentPlaylist != value)
-                {
-                    _currentPlaylist = value;
-                    OnPropertyChanged();
-                }
+                return Playlists[_currentPlaylistIndex];
             }
+            return null;
         }
 
-        // Constructor
-        public PlaylistStore()
+        public void PlayCurrentPlaylist()
         {
-            _playlists = new ObservableCollection<Playlist>();
+            var currentPlaylist = GetCurrentPlaylist();
+            currentPlaylist?.PlayCurrentSong();
         }
 
-        // Adds a new playlist to the store
         public void AddPlaylist(Playlist playlist)
         {
-            if (playlist == null)
-                throw new ArgumentNullException(nameof(playlist));
-
-            _playlists.Add(playlist);
+            Playlists.Add(playlist);
         }
 
-        // Removes a playlist by name
-        public void RemovePlaylist(string playlistName)
+        public void RemovePlaylist(Playlist playlist)
         {
-            var playlistToRemove = _playlists.FirstOrDefault(p => p.Name == playlistName);
-            if (playlistToRemove != null)
+            if (Playlists.Contains(playlist))
             {
-                _playlists.Remove(playlistToRemove);
+                Playlists.Remove(playlist);
             }
         }
 
-        // Retrieves all playlists
-        public ObservableCollection<Playlist> GetAllPlaylists()
+        public void SwitchToNextPlaylist()
         {
-            return _playlists;
+            if (_currentPlaylistIndex < Playlists.Count - 1)
+            {
+                _audioPlayerService.Stop(); // Stop any song playing in the current playlist
+                _currentPlaylistIndex++;
+                PlayCurrentPlaylist(); // Start playing the next playlist
+            }
         }
 
-        public string getName()
+        public void SwitchToPreviousPlaylist()
         {
-            return CurrentPlaylist.Name;
+            if (_currentPlaylistIndex > 0)
+            {
+                _audioPlayerService.Stop(); // Stop any song playing in the current playlist
+                _currentPlaylistIndex--;
+                PlayCurrentPlaylist(); // Start playing the previous playlist
+            }
         }
 
-        // Finds a playlist by name
-        public Playlist GetPlaylistByName(string playlistName)
+        public void SwitchToPlaylist(int index)
         {
-            return _playlists.FirstOrDefault(p => p.Name == playlistName);
+            if (index >= 0 && index < Playlists.Count)
+            {
+                _audioPlayerService.Stop(); // Stop the current playlist
+                _currentPlaylistIndex = index;
+                PlayCurrentPlaylist(); // Start playing the selected playlist
+            }
         }
 
-        // Sets the current playlist by name
-        public void SetCurrentPlaylist(string playlistName)
+        public void SwitchToPlaylist(string playlistName)
         {
-            var playlist = GetPlaylistByName(playlistName);
+            var playlist = Playlists.FirstOrDefault(p => p.Name == playlistName);
             if (playlist != null)
             {
-                CurrentPlaylist = playlist;
+                _audioPlayerService.Stop(); // Stop the current playlist
+                _currentPlaylistIndex = Playlists.IndexOf(playlist);
+                PlayCurrentPlaylist(); // Start playing the selected playlist
             }
         }
-
-        // Adds a song to a specific playlist
-        public void AddSongToPlaylist(string playlistName, Song song)
-        {
-            var playlist = GetPlaylistByName(playlistName);
-            if (playlist != null && song != null)
-            {
-                playlist.Songs.Add(song);
-            }
-        }
-
-        // Removes a song from a specific playlist
-        public void RemoveSongFromPlaylist(string playlistName, Song song)
-        {
-            var playlist = GetPlaylistByName(playlistName);
-            if (playlist != null && song != null)
-            {
-                playlist.Songs.Remove(song);
-            }
-        }
-        
-        // INotifyPropertyChanged implementation
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

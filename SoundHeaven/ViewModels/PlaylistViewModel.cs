@@ -1,95 +1,152 @@
-﻿using SoundHeaven.Models;
+﻿using SoundHeaven.Commands;
+using SoundHeaven.Models;
 using SoundHeaven.Services;
 using SoundHeaven.Stores;
+using System;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.ComponentModel;
+using System.Linq;
 
 namespace SoundHeaven.ViewModels
 {
     public class PlaylistViewModel : ViewModelBase
     {
-        private MainWindowViewModel _mainWindowViewModel;
         private readonly PlaylistStore _playlistStore;
+        private readonly AudioPlayerService _audioPlayerService;
+        private readonly MainWindowViewModel _mainWindowViewModel;
 
-        public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
-
-        private Playlist _currentPlaylist;
-        public Playlist CurrentPlaylist
+        private Playlist? _currentPlaylist;
+        public Playlist? CurrentPlaylist
         {
             get => _currentPlaylist;
             set
             {
                 if (_currentPlaylist != value)
                 {
-                    if (_currentPlaylist != null)
-                    {
-                        _currentPlaylist.Songs.CollectionChanged -= OnSongsCollectionChanged;
-                    }
-
                     _currentPlaylist = value;
-                    OnPropertyChanged();
-
-                    if (_currentPlaylist != null)
-                    {
-                        _currentPlaylist.Songs.CollectionChanged += OnSongsCollectionChanged;
-                    }
-
-                    OnPropertyChanged(nameof(PlaylistSongs));
-                    _playlistStore.CurrentPlaylist = _currentPlaylist;
+                    OnPropertyChanged(nameof(CurrentPlaylist));
                 }
             }
         }
 
-        // Expose the songs of the current playlist
-        public ObservableCollection<Song> PlaylistSongs => _mainWindowViewModel.CurrentPlaylist?.Songs;
-        public string PlaylistName
+        // The currently selected song in the DataGrid
+        private Song? _selectedSong;
+        public Song? SelectedSong
         {
-            get => _mainWindowViewModel.CurrentPlaylist.Name;
+            get => _selectedSong;
             set
             {
-                if (_mainWindowViewModel.CurrentPlaylist.Name != value)
+                if (_selectedSong != value)
                 {
-                    _mainWindowViewModel.CurrentPlaylist.Name = value;
-                    OnPropertyChanged();
+                    _selectedSong = value;
+                    _mainWindowViewModel.CurrentSong = _selectedSong;
+                    OnPropertyChanged(nameof(SelectedSong));
                 }
             }
         }
 
-        private Song _playlistCurrentSong;
-        public Song PlaylistCurrentSong
-        {
-            get => _playlistCurrentSong;
-            set
-            {
-                if (_playlistCurrentSong != value)
-                {
-                    _playlistCurrentSong = value;
-                    OnPropertyChanged();
+        public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
 
-                    // Set the MainWindowViewModel's CurrentSong to play the song
-                    _mainWindowViewModel.CurrentSong = _playlistCurrentSong;
-                }
-            }
-        }
-        
-        // Constructor accepting MainWindowViewModel
-        public PlaylistViewModel(MainWindowViewModel mainWindowViewModel)
+        // Commands
+        public RelayCommand NextPlaylistCommand { get; }
+        public RelayCommand PreviousPlaylistCommand { get; }
+        public RelayCommand<int> SwitchToPlaylistCommand { get; }
+
+        // New commands for adding, editing, and deleting songs
+        public RelayCommand AddSongCommand { get; }
+        public RelayCommand EditSongCommand { get; }
+        public RelayCommand DeleteSongCommand { get; }
+
+        public PlaylistViewModel(PlaylistStore playlistStore, AudioPlayerService audioPlayerService, MainWindowViewModel mainWindowViewModel)
         {
+            _playlistStore = playlistStore;
+            _audioPlayerService = audioPlayerService;
             _mainWindowViewModel = mainWindowViewModel;
-        }
-        
-        private void OnPlaylistStorePropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(PlaylistStore.CurrentPlaylist))
+            
+            NextPlaylistCommand = new RelayCommand(SwitchToNextPlaylist);
+            PreviousPlaylistCommand = new RelayCommand(SwitchToPreviousPlaylist);
+            SwitchToPlaylistCommand = new RelayCommand<int>(SwitchToPlaylist);
+
+            // Define new commands for song management
+            AddSongCommand = new RelayCommand(AddSong);
+            EditSongCommand = new RelayCommand(EditSong);
+            DeleteSongCommand = new RelayCommand(DeleteSong);
+
+            // Set CurrentPlaylist to the first playlist if available
+            CurrentPlaylist = _playlistStore.Playlists.FirstOrDefault();
+            
+            if (CurrentPlaylist != null)
             {
-                OnPropertyChanged(nameof(PlaylistSongs));
+                Console.WriteLine($"CurrentPlaylist set to: {CurrentPlaylist.Name}");
+            }
+            else
+            {
+                Console.WriteLine("No playlists available.");
             }
         }
 
-        private void OnSongsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        // Switch to the next playlist
+        private void SwitchToNextPlaylist()
         {
-            OnPropertyChanged(nameof(PlaylistSongs));
+            _playlistStore.SwitchToNextPlaylist();
+            CurrentPlaylist = _playlistStore.GetCurrentPlaylist();
+            Console.WriteLine($"Switched to playlist: {CurrentPlaylist?.Name}");
+        }
+
+        // Switch to the previous playlist
+        private void SwitchToPreviousPlaylist()
+        {
+            _playlistStore.SwitchToPreviousPlaylist();
+            CurrentPlaylist = _playlistStore.GetCurrentPlaylist();
+            Console.WriteLine($"Switched to playlist: {CurrentPlaylist?.Name}");
+        }
+
+        // Switch to a specific playlist by index
+        private void SwitchToPlaylist(int index)
+        {
+            _playlistStore.SwitchToPlaylist(index);
+            CurrentPlaylist = _playlistStore.GetCurrentPlaylist();
+            Console.WriteLine($"Switched to playlist: {CurrentPlaylist?.Name}");
+        }
+
+        // Add a new song to the current playlist
+        private void AddSong()
+        {
+            if (CurrentPlaylist != null)
+            {
+                // Example of adding a new song - you could show a dialog here to gather song information
+                var newSong = new Song(_audioPlayerService)
+                {
+                    Title = "New Song",
+                    Artist = "Unknown Artist",
+                    Duration = TimeSpan.Zero,
+                    FilePath = "path/to/song.mp3"
+                };
+                CurrentPlaylist.Songs.Add(newSong);
+                Console.WriteLine($"Added song: {newSong.Title} to playlist: {CurrentPlaylist.Name}");
+            }
+        }
+
+        // Edit the currently selected song
+        private void EditSong()
+        {
+            if (SelectedSong != null)
+            {
+                // Example of editing the selected song - you could show a dialog here to edit song information
+                SelectedSong.Title = "Edited Song Title";
+                OnPropertyChanged(nameof(SelectedSong));
+                Console.WriteLine($"Edited song: {SelectedSong.Title}");
+            }
+        }
+
+        // Delete the currently selected song from the current playlist
+        private void DeleteSong()
+        {
+            if (CurrentPlaylist != null && SelectedSong != null)
+            {
+                CurrentPlaylist.Songs.Remove(SelectedSong);
+                Console.WriteLine($"Deleted song: {SelectedSong.Title} from playlist: {CurrentPlaylist.Name}");
+                SelectedSong = null; // Clear selection after deletion
+            }
         }
     }
 }
