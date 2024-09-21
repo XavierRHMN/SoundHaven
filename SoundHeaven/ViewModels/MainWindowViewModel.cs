@@ -161,7 +161,8 @@ namespace SoundHeaven.ViewModels
         }
 
         public ToolBarControlViewModel ToolBarControlViewModel { get; set; }
-        public PlaybackControlViewModel PlaybackControlViewModel { get; }
+        public PlaybackControlViewModel PlaybackControlViewModel { get; set; }
+        public ShuffleControlViewModel ShuffleControlViewModel { get; }
 
         public double TextWidth => ExtractTextWidth(CurrentSong?.Title, "Nunito", 15);
 
@@ -194,6 +195,8 @@ namespace SoundHeaven.ViewModels
 
             ToolBarControlViewModel = new ToolBarControlViewModel(this);
             PlaybackControlViewModel = new PlaybackControlViewModel(this);
+            ShuffleControlViewModel = new ShuffleControlViewModel(this);
+
 
             // Set initial CurrentViewModel
             CurrentViewModel = new PlaylistViewModel(this, new OpenFileDialogService());

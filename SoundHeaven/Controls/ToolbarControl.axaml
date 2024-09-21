@@ -44,10 +44,9 @@
 
         <controls:FloatingButton VerticalAlignment="Center"
                                  Theme="{StaticResource MaterialFlatButton}"
-                                 Classes="Dark"
                                  IsExtended="True"
                                  Command="{Binding CreatePlaylistCommand}"
-                                 Content="Create Playlist" />
+                                 Content="Create Playlist"/>
 
         <Separator Background="White" Opacity="0.1" />
 
@@ -64,16 +63,15 @@
                      FlowDirection="LeftToRight"
                      ItemsSource="{Binding PlaylistCollection}"
                      SelectedItem="{Binding CurrentPlaylist, Mode=TwoWay}"
-                     Width="200">
-
-
+                     Width="200"
+                     Classes="ToolbarText">
+                
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock
                             HorizontalAlignment="Center"
                             Text="{Binding Name, Mode=TwoWay}"
-                            Foreground="White"
-                            FontSize="13" />
+                            Classes="Playlists"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -86,6 +84,23 @@
                 <Setter Property="FontSize" Value="24" />
                 <Setter Property="Foreground" Value="White" />
                 <Setter Property="FontWeight" Value="Medium" />
+                <Setter Property="FontFamily"
+                        Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito" />
+            </Style>
+            
+            <Style Selector="TextBlock.Playlists">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Opacity" Value="0.8" />
+                <Setter Property="FontWeight" Value="Light" />
+                <Setter Property="FontFamily"
+                        Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito" />
+            </Style>
+            
+            <Style Selector="controls|FloatingButton">
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="FontWeight" Value="Light" />
                 <Setter Property="FontFamily"
                         Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito" />
             </Style>

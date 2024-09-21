@@ -6,7 +6,18 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="SoundHeaven.Views.PlaylistView"
              x:DataType="viewModels:PlaylistViewModel">
-
+    
+    <!-- Styling for TextBlocks in the toolbar -->
+    <UserControl.Styles>
+        <Style Selector="TextBox.PlaylistText">
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="ExtraLight" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito" />
+        </Style>
+    </UserControl.Styles>
+    
     <!-- Define Custom Resources -->
     <UserControl.Resources>
         <!-- Override MaterialSelectionBrush with your desired color -->
@@ -17,8 +28,9 @@
 
         <!-- TextBox bound to CurrentPlaylist.Name -->
         <TextBox Grid.Row="0" Grid.Column="0" Text="{Binding CurrentPlaylist.Name, Mode=TwoWay, FallbackValue='No Playlist Selected'}"
-                 FontSize="24" FontWeight="Bold" Margin="0 20 0 0"
-                 HorizontalAlignment="Center" />
+                 Margin="0 20 0 0"
+                 HorizontalAlignment="Center"
+                 Classes="PlaylistText"/>
 
         <!-- StackPanel for Buttons -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="16">

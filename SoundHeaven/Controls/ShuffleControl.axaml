@@ -1,0 +1,20 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:SoundHeaven.ViewModels"
+             x:Class="SoundHeaven.Controls.ShuffleControl"
+             x:DataType="vm:ShuffleControlViewModel">
+
+    <!-- Shuffle Toggle Button -->
+    <ToggleButton x:Name="ShuffleButton"
+                  IsChecked="{Binding IsShuffleEnabled}"
+                  Command="{Binding ToggleShuffleCommand}"
+                  Background="Transparent"
+                  BorderBrush="Transparent"
+                  Width="60" Height="60"
+                  ToolTip.Tip="Toggle Shuffle">
+
+        <!-- Use an image or SVG for the shuffle icon -->
+        <Svg Path="avares://SoundHeaven/Assets/Icons/shuffle.svg"
+               Opacity="{Binding IsShuffleEnabled, Converter={StaticResource BooleanToOpacityConverter}, ConverterParameter='1,0.5'}" />
+    </ToggleButton>
+</UserControl>

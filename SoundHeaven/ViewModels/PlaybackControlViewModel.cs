@@ -10,6 +10,21 @@ namespace SoundHeaven.ViewModels
     {
         private AudioPlayerService _audioPlayerService => _mainWindowViewModel.AudioService;
         private readonly MainWindowViewModel _mainWindowViewModel;
+        
+                
+        private bool _isShuffleEnabled;
+        public bool IsShuffleEnabled
+        {
+            get => _isShuffleEnabled;
+            set
+            {
+                if (_isShuffleEnabled != value)
+                {
+                    _isShuffleEnabled = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         private bool _isPlaying;
         public bool IsPlaying
@@ -113,12 +128,30 @@ namespace SoundHeaven.ViewModels
         {
             if (CurrentPlaylist != null)
             {
-                var nextSong = CurrentPlaylist.GetNextSong(_mainWindowViewModel.CurrentSong);
+                Song? nextSong = null;
+
+                if (IsShuffleEnabled)
+                {
+                    // Get a random song from the playlist
+                    var random = new Random();
+                    int index = random.Next(CurrentPlaylist.Songs.Count);
+                    nextSong = CurrentPlaylist.Songs[index];
+                }
+                else
+                {
+                    // Get the next song in the playlist
+                    nextSong = CurrentPlaylist.GetNextSong(_mainWindowViewModel.CurrentSong);
+                }
+
                 if (nextSong != null)
                 {
                     _mainWindowViewModel.CurrentSong = nextSong;
                     _audioPlayerService.Start(nextSong.FilePath);
                     IsPlaying = true;
+                }
+                else
+                {
+                    Console.WriteLine("No next song available.");
                 }
             }
             else

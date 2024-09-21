@@ -38,14 +38,18 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="250" />
             </Grid.ColumnDefinitions>
 
             <controls:SongInfoControl Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
 
             <controls:SeekSliderControl Grid.Row="0" Grid.Column="1" />
+            
+            <controls:ShuffleControl Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
+                                     DataContext="{Binding ShuffleControlViewModel}" />
 
-            <controls:VolumeControl Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" />
+            <controls:VolumeControl Grid.Row="0" Grid.Column="3" VerticalAlignment="Center" />
         </Grid>
 
         <!-- ContentControl for Switching Views -->

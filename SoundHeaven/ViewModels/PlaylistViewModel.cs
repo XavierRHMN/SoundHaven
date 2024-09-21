@@ -87,15 +87,6 @@ namespace SoundHeaven.ViewModels
             // Initialize CurrentPlaylist
             CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
             SelectedSong = _mainWindowViewModel.CurrentSong;
-
-            if (CurrentPlaylist != null)
-            {
-                Console.WriteLine($"CurrentPlaylist set to: {CurrentPlaylist.Name}");
-            }
-            else
-            {
-                Console.WriteLine("No playlists available.");
-            }
         }
 
         // Add a new song to the current playlist

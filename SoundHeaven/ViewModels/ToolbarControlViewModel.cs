@@ -82,7 +82,7 @@ namespace SoundHeaven.ViewModels
 
                 var newPlaylist = new Playlist
                 {
-                    Name = $"Playlist {PlaylistCollection.Count + 1}",
+                    Name = $"Playlist #{PlaylistCollection.Count + 1}",
                     Description = "A new playlist",
                     Songs = new ObservableCollection<Song>()
                 };
