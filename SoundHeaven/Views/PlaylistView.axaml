@@ -10,7 +10,7 @@
     <!-- Define Custom Resources -->
     <UserControl.Resources>
         <!-- Override MaterialSelectionBrush with your desired color -->
-        <!-- Example: Blue -->
+        <SolidColorBrush x:Key="MaterialSelectionBrush" Color="{StaticResource PrimaryColor}" Opacity="0.1"/> <!-- Example: Blue -->
     </UserControl.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Background="{StaticResource ToolBarColor}">
@@ -23,8 +23,21 @@
         <!-- StackPanel for Buttons -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="16">
             <Button Command="{Binding AddSongCommand}"
-                    Theme="{StaticResource MaterialOutlineButton}" Content="Add"
-                    ToolTip.Tip="Add a new song" Width="60" Height="30" CornerRadius="16" />
+                    Theme="{StaticResource MaterialOutlineButton}" 
+                    Content="Add"
+                    ToolTip.Tip="Add a new song" 
+                    Width="60" 
+                    Height="30" 
+                    CornerRadius="16" 
+                    HorizontalAlignment="Center">
+                <Button.Flyout>
+                    <MenuFlyout>
+                        <MenuItem Header="Open"/>
+                        <MenuItem Header="-"/>
+                        <MenuItem Header="Close"/>        
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
             <Button Command="{Binding EditSongCommand}"
                     Theme="{StaticResource MaterialOutlineButton}" Content="Edit"
                     ToolTip.Tip="Edit selected song" Width="60" Height="30" CornerRadius="16" />
@@ -35,7 +48,7 @@
 
         <!-- DataGrid for PlaylistSongs -->
         <DataGrid Grid.Row="2"
-                  ItemsSource="{Binding CurrentPlaylist.Songs}"
+                  ItemsSource="{Binding Songs}"
                   AutoGenerateColumns="False"
                   CanUserReorderColumns="True"
                   CanUserResizeColumns="True"
@@ -47,7 +60,7 @@
                   SelectedItem="{Binding SelectedSong, Mode=TwoWay}">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*" />
-                <DataGridTextColumn Header="Artist" Binding="{Binding Artist}" Width="*" />
+                <DataGridTextColumn Header="Artist" Binding="{Binding Artist}" Width="120" />
                 <DataGridTextColumn Header="Duration"
                                     Binding="{Binding Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}"
                                     Width="Auto" />

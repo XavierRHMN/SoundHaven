@@ -4,29 +4,32 @@ using SoundHeaven.Services;
 using SoundHeaven.Stores;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 
 namespace SoundHeaven.ViewModels
 {
     public class PlaylistViewModel : ViewModelBase
     {
-        private PlaylistStore _playlistStore => _mainWindowViewModel.PlaylistStore;
-        private AudioPlayerService _audioPlayerService => _mainWindowViewModel.AudioService;
         private readonly MainWindowViewModel _mainWindowViewModel;
-
-        private Playlist? _currentPlaylist;
-        public Playlist? CurrentPlaylist
-        {
-            get => _currentPlaylist;
-            set
+        private AudioPlayerService _audioPlayerService => _mainWindowViewModel.AudioService;
+        
+            // Current Playlist binding for PlaylistView.axaml
+            private Playlist? _currentPlaylist;
+            public Playlist? CurrentPlaylist
             {
-                if (_currentPlaylist != value)
+                get => _currentPlaylist;
+                set
                 {
-                    _currentPlaylist = value;
-                    OnPropertyChanged(nameof(CurrentPlaylist));
+                    if (_currentPlaylist != value)
+                    {
+                        _currentPlaylist = value;
+                        OnPropertyChanged();
+                        // Notify that the Songs collection has changed
+                        OnPropertyChanged(nameof(Songs));
+                    }
                 }
             }
-        }
 
         // The currently selected song in the DataGrid
         private Song? _selectedSong;
@@ -38,19 +41,19 @@ namespace SoundHeaven.ViewModels
                 if (_selectedSong != value)
                 {
                     _selectedSong = value;
-                    _mainWindowViewModel.CurrentSong = _selectedSong;
-                    OnPropertyChanged(nameof(SelectedSong));
+                    OnPropertyChanged();
+
+                    // Update MainWindowViewModel's CurrentSong
+                    if (_mainWindowViewModel.CurrentSong != _selectedSong)
+                    {
+                        _mainWindowViewModel.CurrentSong = _selectedSong;
+                    }
                 }
             }
         }
-
-        public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
-
-        // Commands
-        public RelayCommand NextPlaylistCommand { get; }
-        public RelayCommand PreviousPlaylistCommand { get; }
-        public RelayCommand<int> SwitchToPlaylistCommand { get; }
-
+        
+        public ObservableCollection<Song>? Songs => CurrentPlaylist?.Songs;
+        
         // New commands for adding, editing, and deleting songs
         public RelayCommand AddSongCommand { get; }
         public RelayCommand EditSongCommand { get; }
@@ -60,18 +63,18 @@ namespace SoundHeaven.ViewModels
         {
             _mainWindowViewModel = mainWindowViewModel;
 
-            NextPlaylistCommand = new RelayCommand(SwitchToNextPlaylist);
-            PreviousPlaylistCommand = new RelayCommand(SwitchToPreviousPlaylist);
-            SwitchToPlaylistCommand = new RelayCommand<int>(SwitchToPlaylist);
-
             // Define new commands for song management
             AddSongCommand = new RelayCommand(AddSong);
             EditSongCommand = new RelayCommand(EditSong);
             DeleteSongCommand = new RelayCommand(DeleteSong);
 
-            // Set CurrentPlaylist to the first playlist if available
-            CurrentPlaylist = _playlistStore.Playlists.FirstOrDefault();
+            // Subscribe to changes in MainWindowViewModel.CurrentPlaylist
+            _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
 
+            // Initialize CurrentPlaylist
+            CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
+            SelectedSong = _mainWindowViewModel.CurrentSong;
+            
             if (CurrentPlaylist != null)
             {
                 Console.WriteLine($"CurrentPlaylist set to: {CurrentPlaylist.Name}");
@@ -80,30 +83,6 @@ namespace SoundHeaven.ViewModels
             {
                 Console.WriteLine("No playlists available.");
             }
-        }
-
-        // Switch to the next playlist
-        private void SwitchToNextPlaylist()
-        {
-            _playlistStore.SwitchToNextPlaylist();
-            CurrentPlaylist = _playlistStore.GetCurrentPlaylist();
-            Console.WriteLine($"Switched to playlist: {CurrentPlaylist?.Name}");
-        }
-
-        // Switch to the previous playlist
-        private void SwitchToPreviousPlaylist()
-        {
-            _playlistStore.SwitchToPreviousPlaylist();
-            CurrentPlaylist = _playlistStore.GetCurrentPlaylist();
-            Console.WriteLine($"Switched to playlist: {CurrentPlaylist?.Name}");
-        }
-
-        // Switch to a specific playlist by index
-        private void SwitchToPlaylist(int index)
-        {
-            _playlistStore.SwitchToPlaylist(index);
-            CurrentPlaylist = _playlistStore.GetCurrentPlaylist();
-            Console.WriteLine($"Switched to playlist: {CurrentPlaylist?.Name}");
         }
 
         // Add a new song to the current playlist
@@ -141,9 +120,24 @@ namespace SoundHeaven.ViewModels
         {
             if (CurrentPlaylist != null && SelectedSong != null)
             {
-                CurrentPlaylist.Songs.Remove(SelectedSong);
                 Console.WriteLine($"Deleted song: {SelectedSong.Title} from playlist: {CurrentPlaylist.Name}");
-                SelectedSong = null; // Clear selection after deletion
+                CurrentPlaylist.Songs.Remove(SelectedSong);
+                // SelectedSong = null; // Clear selection after deletion
+            }
+        }
+        
+        private void MainWindowViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
+            {
+                CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
+            }
+            else if (e.PropertyName == nameof(MainWindowViewModel.CurrentSong))
+            {
+                if (SelectedSong != _mainWindowViewModel.CurrentSong)
+                {
+                    SelectedSong = _mainWindowViewModel.CurrentSong;
+                }
             }
         }
     }

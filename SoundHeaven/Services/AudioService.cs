@@ -1,4 +1,5 @@
 ﻿using NAudio.Wave;
+using SoundHeaven.Models;
 using System;
 
 namespace SoundHeaven.Services
@@ -7,7 +8,7 @@ namespace SoundHeaven.Services
     {
         private IWavePlayer _waveOutDevice;
         private AudioFileReader _audioFileReader;
-        private double _audioVolume = 0.5;
+        private double _audioVolume = 0.1;
 
         public AudioPlayerService() => _waveOutDevice = new WaveOutEvent(); // You can replace this with a different output device if needed
 
@@ -68,6 +69,20 @@ namespace SoundHeaven.Services
                 _audioFileReader?.Dispose();
                 _audioFileReader = null;
             }
+        }
+
+        public void Restart(Song song)
+        {
+            try
+            {
+                Stop();
+                Start(song.FilePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Could restart audio: {ex.Message}");
+            }
+
         }
 
         public double GetCurrentVolume()

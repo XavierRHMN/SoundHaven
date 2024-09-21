@@ -19,7 +19,7 @@ namespace SoundHeaven.ViewModels
 
         private SongStore _songStore;
 
-        // Current Playlist binding
+        // Current Playlist binding for ToolbarControl.axaml
         private Playlist? _currentPlaylist;
         public Playlist? CurrentPlaylist
         {
@@ -30,17 +30,24 @@ namespace SoundHeaven.ViewModels
                 {
                     _currentPlaylist = value;
                     OnPropertyChanged();
+
+                    // Update MainWindowViewModel's CurrentPlaylist
+                    _mainWindowViewModel.CurrentPlaylist = _currentPlaylist;
+                    
+                    // Switch to PlaylistViewModel
+                    _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlaylistViewModel;
                 }
             }
         }
         // Playlists collection
-        public ObservableCollection<Playlist> PlaylistCollection => _playlistStore.Playlists;
+        public ObservableCollection<Playlist> PlaylistCollection => _mainWindowViewModel.PlaylistCollection;
 
         // Commands
         public RelayCommand ShowHomeViewCommand { get; set; }
         public RelayCommand ShowSearchViewCommand { get; set; }
         public RelayCommand ShowPlaylistViewCommand { get; set; }
         public RelayCommand CreatePlaylistCommand { get; set; }
+
 
         // Constructor
         public ToolBarControlViewModel(MainWindowViewModel mainWindowViewModel)
@@ -55,18 +62,26 @@ namespace SoundHeaven.ViewModels
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
             CreatePlaylistCommand = new RelayCommand(CreatePlaylist);
 
-            // Load songs and add example playlist
-            _songStore.LoadSongs();
-
-            var example = new Playlist(_audioService)
-            {
-                Name = "example",
-                Songs = _songStore.Songs
-            };
-            _playlistStore.AddPlaylist(example);
-
             // Set initial CurrentViewModel in MainWindowViewModel
             _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_mainWindowViewModel);
+            
+            // Initialize the PlaylistViewModel if not already done
+            if (_mainWindowViewModel.PlaylistViewModel == null)
+            {
+                _mainWindowViewModel.PlaylistViewModel = new PlaylistViewModel(_mainWindowViewModel);
+            }
+        }
+        
+        private void CreatePlaylist()
+        {
+            Console.WriteLine("Creating new playlist");
+            var newPlaylist = new Playlist(_audioService, _mainWindowViewModel)
+            {
+                Name = $"Playlist {PlaylistCollection.Count + 1}",
+                Description = "A new playlist",
+                Songs = new ObservableCollection<Song>()
+            };
+            _mainWindowViewModel.PlaylistStore.AddPlaylist(newPlaylist);
         }
 
         // Methods for commands
@@ -85,19 +100,6 @@ namespace SoundHeaven.ViewModels
         {
             Console.WriteLine("Switching to PlaylistView");
             _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_mainWindowViewModel);
-        }
-
-        private void CreatePlaylist()
-        {
-            Console.WriteLine("Creating new playlist");
-            var newPlaylist = new Playlist(_audioService)
-            {
-                Name = $"Playlist {PlaylistCollection.Count + 1}",
-                Description = "A new playlist",
-                Songs = new ObservableCollection<Song>()
-            };
-            _playlistStore.AddPlaylist(newPlaylist);
-            CurrentPlaylist = newPlaylist; // Optionally set the newly created playlist as current
         }
     }
 }

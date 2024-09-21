@@ -15,7 +15,7 @@
             <Setter Property="Height" Value="60" />
         </Style>
     </UserControl.Styles>
-
+    
     <!-- Playback Controls -->
     <StackPanel Orientation="Horizontal"
                 HorizontalAlignment="Center"

@@ -2,16 +2,15 @@
 using SoundHeaven.Models;
 using SoundHeaven.Services;
 using System;
+using System.ComponentModel;
 
 namespace SoundHeaven.ViewModels
 {
     public class PlaybackControlViewModel : ViewModelBase
     {
-        private readonly AudioPlayerService _audioPlayerService;
+        private AudioPlayerService _audioPlayerService => _mainWindowViewModel.AudioService;
         private readonly MainWindowViewModel _mainWindowViewModel;
-        private readonly PlaylistViewModel _playlistViewModel;
 
-        // Playback state
         private bool _isPlaying;
         public bool IsPlaying
         {
@@ -26,34 +25,53 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private Playlist _currentPlaylist => _mainWindowViewModel.PlaylistViewModel.CurrentPlaylist;
+        private Playlist? _currentPlaylist;
+        public Playlist? CurrentPlaylist
+        {
+            get => _currentPlaylist;
+            set
+            {
+                if (_currentPlaylist != value)
+                {
+                    _currentPlaylist = value;
+                    OnPropertyChanged(nameof(CurrentPlaylist));
+                }
+            }
+        }
 
-        // Commands for controlling playback
-        public RelayCommand PlayCommand { get; }
-        public RelayCommand PauseCommand { get; }
-        public RelayCommand NextCommand { get; }
-        public RelayCommand PreviousCommand { get; }
+        public RelayCommand PlayCommand { get; private set; }
+        public RelayCommand PauseCommand { get; private set; }
+        public RelayCommand NextCommand { get; private set; }
+        public RelayCommand PreviousCommand { get; private set; }
 
-        // Constructor
         public PlaybackControlViewModel(MainWindowViewModel mainWindowViewModel)
         {
-            _audioPlayerService = mainWindowViewModel.AudioService;
             _mainWindowViewModel = mainWindowViewModel;
 
-            // Define commands
+            InitializeCommands();
+
+            // Set initial CurrentPlaylist
+            CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
+
+            // Subscribe to changes in MainWindowViewModel.CurrentPlaylist
+            _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
+
+            // Subscribe to changes in MainWindowViewModel.CurrentSong
+            _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
+        }
+
+        private void InitializeCommands()
+        {
             PlayCommand = new RelayCommand(Play);
             PauseCommand = new RelayCommand(Pause);
             NextCommand = new RelayCommand(NextTrack);
             PreviousCommand = new RelayCommand(PreviousTrack);
-
-            // Set initial state based on whether audio is playing
-            IsPlaying = true;
         }
 
-        // Method to play music
         private void Play()
         {
             var song = _mainWindowViewModel.CurrentSong;
+
             if (song != null)
             {
                 if (_audioPlayerService.IsStopped())
@@ -66,50 +84,97 @@ namespace SoundHeaven.ViewModels
                 }
                 IsPlaying = true;
             }
+            else if (CurrentPlaylist?.Songs.Count > 0)
+            {
+                // Play the first song in the playlist
+                song = CurrentPlaylist.Songs[0];
+                _mainWindowViewModel.CurrentSong = song; // Update CurrentSong
+                _audioPlayerService.Start(song.FilePath);
+                IsPlaying = true;
+            }
             else
             {
-                Console.WriteLine("No song selected to play.");
+                Console.WriteLine("No song or playlist available to play.");
+                IsPlaying = false;
             }
         }
 
+        private bool CanPlay() => !IsPlaying && (CurrentPlaylist?.Songs.Count > 0 || _mainWindowViewModel.CurrentSong != null);
 
-        private bool CanPlay() => !_audioPlayerService.IsStopped();
-
-        // Method to pause music
         private void Pause()
         {
-            var song = _mainWindowViewModel.CurrentSong;
-            if (song != null)
+            if (_audioPlayerService.IsPlaying())
             {
                 _audioPlayerService.Pause();
                 IsPlaying = false;
             }
         }
 
-        private bool CanPause() => !_audioPlayerService.IsStopped();
+        private bool CanPause() => IsPlaying;
 
-        // Method to go to the next track
         private void NextTrack()
         {
-            // Implement logic for next track if available
-            Console.WriteLine("Next track command invoked.");
-            // Example: Switch to the next song in the playlist
+            if (CurrentPlaylist != null)
+            {
+                var nextSong = CurrentPlaylist.GetNextSong(_mainWindowViewModel.CurrentSong);
+                if (nextSong != null)
+                {
+                    _mainWindowViewModel.CurrentSong = nextSong;
+                    _audioPlayerService.Start(nextSong.FilePath);
+                    IsPlaying = true;
+                }
+            }
+            else
+            {
+                Console.WriteLine("No playlist available.");
+            }
         }
 
-        private bool CanNextTrack() =>
-            // Implement logic to determine if next track is available
-            false; // Placeholder
 
-        // Method to go to the previous track
+        private bool CanNextTrack() => CurrentPlaylist?.Songs.Count > 1;
+        
         private void PreviousTrack()
         {
-            // Implement logic for previous track if available
-            Console.WriteLine("Previous track command invoked.");
-            // Example: Switch to the previous song in the playlist
+            if (CurrentPlaylist == null)
+            {
+                Console.WriteLine("No playlist available.");
+                return;
+            }
+            
+            var previousSong = CurrentPlaylist.GetPreviousSong(_mainWindowViewModel.CurrentSong);
+    
+            if (previousSong == null)
+            {
+                Console.WriteLine("No previous song available.");
+                return;
+            }
+            
+            if (_mainWindowViewModel.SeekPosition > 3)
+            {
+                _mainWindowViewModel.SeekPosition = 0;
+                _audioPlayerService.Restart(_mainWindowViewModel.CurrentSong);
+            }
+            else
+            {
+                _mainWindowViewModel.CurrentSong = previousSong;
+                _audioPlayerService.Start(previousSong.FilePath);
+                IsPlaying = true;
+            }
         }
 
-        private bool CanPreviousTrack() =>
-            // Implement logic to determine if previous track is available
-            false; // Placeholder
+        
+        private void MainWindowViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
+            {
+                CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
+            }
+            else if (e.PropertyName == nameof(MainWindowViewModel.CurrentSong))
+            {
+                // Optionally, update playback status or other properties
+            }
+        }
+
+        private bool CanPreviousTrack() => CurrentPlaylist?.Songs.Count > 1;
     }
 }

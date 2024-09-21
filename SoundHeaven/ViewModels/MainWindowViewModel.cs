@@ -23,9 +23,8 @@ namespace SoundHeaven.ViewModels
     public class MainWindowViewModel : ViewModelBase
     {
         private PlaylistViewModel _playlistViewModel;
-        public PlaylistViewModel PlaylistViewModel { get; }
-
-        public ICommand CreatePlaylistCommand { get; }
+        public PlaylistViewModel PlaylistViewModel { get; set; }
+        
         public ObservableCollection<Playlist> PlaylistCollection => _playlistStore.Playlists;
 
 
@@ -56,6 +55,21 @@ namespace SoundHeaven.ViewModels
                     SeekPosition = 0;
                     Volume = _audioService.GetCurrentVolume();
                     MuteCommand.RaiseCanExecuteChanged();
+                    PlaybackControlViewModel.IsPlaying = true;
+                }
+            }
+        }
+        
+        private Playlist? _currentPlaylist;
+        public Playlist? CurrentPlaylist
+        {
+            get => _currentPlaylist;
+            set
+            {
+                if (_currentPlaylist != value)
+                {
+                    _currentPlaylist = value;
+                    OnPropertyChanged();
                 }
             }
         }
@@ -162,6 +176,8 @@ namespace SoundHeaven.ViewModels
 
         // Commands
         public RelayCommand MuteCommand { get; }
+        public RelayCommand CreatePlaylistCommand { get; set; }
+
 
         public MainWindowViewModel()
         {
@@ -171,12 +187,13 @@ namespace SoundHeaven.ViewModels
             _playlistViewModel = new PlaylistViewModel(this);
 
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
+            CreatePlaylistCommand = new RelayCommand(CreatePlaylist);
 
             _songStore.LoadSongs();
             InitializeSeekTimer();
             InitializeScrollTimer();
 
-            var example = new Playlist(_audioService)
+            var example = new Playlist(_audioService, this)
             {
                 Name = "example",
                 Songs = _songStore.Songs
@@ -188,6 +205,18 @@ namespace SoundHeaven.ViewModels
 
             // Set initial CurrentViewModel
             CurrentViewModel = new PlaylistViewModel(this);
+        }
+        
+        private void CreatePlaylist()
+        {
+            Console.WriteLine("Creating new playlist");
+            var newPlaylist = new Playlist(_audioService, this)
+            {
+                Name = $"Playlist {PlaylistCollection.Count + 1}",
+                Description = "A new playlist",
+                Songs = new ObservableCollection<Song>()
+            };
+            _playlistStore.AddPlaylist(newPlaylist);
         }
 
         private void InitializeSeekTimer()
