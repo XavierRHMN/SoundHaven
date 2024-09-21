@@ -128,19 +128,33 @@ namespace SoundHeaven.ViewModels
         {
             if (CurrentPlaylist != null)
             {
+                if (CurrentPlaylist.Songs.Count == 0)
+                {
+                    Console.WriteLine("The playlist is empty.");
+                    // Optionally, display a message to the user or disable playback controls.
+                    return;
+                }
+                
+                var currentSong = _mainWindowViewModel.CurrentSong;
+                var songs = CurrentPlaylist.Songs;
+                
                 Song? nextSong = null;
 
                 if (IsShuffleEnabled)
                 {
                     // Get a random song from the playlist
                     var random = new Random();
-                    int index = random.Next(CurrentPlaylist.Songs.Count);
-                    nextSong = CurrentPlaylist.Songs[index];
+                    int index = random.Next(songs.Count);
+                    if (index == songs.IndexOf(currentSong))
+                    {
+                        index = (index + 1) % songs.Count;
+                    }
+                    nextSong = songs[index];
                 }
                 else
                 {
                     // Get the next song in the playlist
-                    nextSong = CurrentPlaylist.GetNextSong(_mainWindowViewModel.CurrentSong);
+                    nextSong = CurrentPlaylist.GetNextSong(currentSong);
                 }
 
                 if (nextSong != null)
