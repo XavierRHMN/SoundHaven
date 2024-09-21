@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -166,7 +167,7 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        public ToolBarControlViewModel ToolBarControlViewModel { get; }
+        public ToolBarControlViewModel ToolBarControlViewModel { get; set; }
         public PlaybackControlViewModel PlaybackControlViewModel { get; }
 
         public double TextWidth => ExtractTextWidth(CurrentSong?.Title, "Nunito", 15);
@@ -184,7 +185,7 @@ namespace SoundHeaven.ViewModels
             _audioService = new AudioPlayerService();
             _songStore = new SongStore();
             _playlistStore = new PlaylistStore(this);
-            _playlistViewModel = new PlaylistViewModel(this);
+            _playlistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
 
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
             CreatePlaylistCommand = new RelayCommand(CreatePlaylist);
@@ -204,7 +205,7 @@ namespace SoundHeaven.ViewModels
             PlaybackControlViewModel = new PlaybackControlViewModel( this);
 
             // Set initial CurrentViewModel
-            CurrentViewModel = new PlaylistViewModel(this);
+            CurrentViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
         }
         
         private void CreatePlaylist()

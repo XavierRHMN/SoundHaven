@@ -1,4 +1,6 @@
-﻿using SoundHeaven.Commands;
+﻿using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using SoundHeaven.Commands;
 using SoundHeaven.Models;
 using SoundHeaven.Services;
 using SoundHeaven.Stores;
@@ -6,11 +8,13 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SoundHeaven.ViewModels
 {
     public class PlaylistViewModel : ViewModelBase
     {
+        private readonly IOpenFileDialogService _openFileDialogService;
         private readonly MainWindowViewModel _mainWindowViewModel;
         private AudioPlayerService _audioPlayerService => _mainWindowViewModel.AudioService;
         
@@ -55,16 +59,17 @@ namespace SoundHeaven.ViewModels
         public ObservableCollection<Song>? Songs => CurrentPlaylist?.Songs;
         
         // New commands for adding, editing, and deleting songs
-        public RelayCommand AddSongCommand { get; }
+        public AsyncRelayCommand AddSongCommand { get; }
         public RelayCommand EditSongCommand { get; }
         public RelayCommand DeleteSongCommand { get; }
 
-        public PlaylistViewModel(MainWindowViewModel mainWindowViewModel)
+        public PlaylistViewModel(MainWindowViewModel mainWindowViewModel, IOpenFileDialogService openFileDialogService)
         {
             _mainWindowViewModel = mainWindowViewModel;
+            _openFileDialogService = openFileDialogService;
 
             // Define new commands for song management
-            AddSongCommand = new RelayCommand(AddSong);
+            AddSongCommand = new AsyncRelayCommand(AddSongAsync);
             EditSongCommand = new RelayCommand(EditSong);
             DeleteSongCommand = new RelayCommand(DeleteSong);
 
@@ -84,22 +89,39 @@ namespace SoundHeaven.ViewModels
                 Console.WriteLine("No playlists available.");
             }
         }
-
+        
         // Add a new song to the current playlist
-        private void AddSong()
+        public async Task AddSongAsync()
         {
             if (CurrentPlaylist != null)
             {
-                // Example of adding a new song - you could show a dialog here to gather song information
-                var newSong = new Song(_audioPlayerService)
+                // Get the parent window from MainWindowViewModel
+                var applicationLifetime = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
+                var parentWindow = applicationLifetime.MainWindow;
+                if (parentWindow == null)
                 {
-                    Title = "New Song",
-                    Artist = "Unknown Artist",
-                    Duration = TimeSpan.Zero,
-                    FilePath = "path/to/song.mp3"
-                };
-                CurrentPlaylist.Songs.Add(newSong);
-                Console.WriteLine($"Added song: {newSong.Title} to playlist: {CurrentPlaylist.Name}");
+                    Console.WriteLine("Parent window is not available.");
+                    return;
+                }
+
+                // Open the file dialog
+                var filePath = await _openFileDialogService.ShowOpenFileDialogAsync(parentWindow);
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    // Optionally, extract metadata using TagLib#
+                    var file = TagLib.File.Create(filePath);
+                    var newSong = new Song(_audioPlayerService)
+                    {
+                        Title = file.Tag.Title ?? System.IO.Path.GetFileNameWithoutExtension(filePath),
+                        Artist = string.Join(", ", file.Tag.Performers),
+                        Duration = file.Properties.Duration,
+                        FilePath = filePath,
+                        Year = (int)file.Tag.Year
+                    };
+
+                    CurrentPlaylist.Songs.Add(newSong);
+                    Console.WriteLine($"Added song: {newSong.Title} to playlist: {CurrentPlaylist.Name}");
+                }
             }
         }
 

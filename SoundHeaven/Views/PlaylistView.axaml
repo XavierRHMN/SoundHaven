@@ -30,13 +30,6 @@
                     Height="30" 
                     CornerRadius="16" 
                     HorizontalAlignment="Center">
-                <Button.Flyout>
-                    <MenuFlyout>
-                        <MenuItem Header="Open"/>
-                        <MenuItem Header="-"/>
-                        <MenuItem Header="Close"/>        
-                    </MenuFlyout>
-                </Button.Flyout>
             </Button>
             <Button Command="{Binding EditSongCommand}"
                     Theme="{StaticResource MaterialOutlineButton}" Content="Edit"

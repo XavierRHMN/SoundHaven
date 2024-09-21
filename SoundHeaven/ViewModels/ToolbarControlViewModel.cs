@@ -63,12 +63,12 @@ namespace SoundHeaven.ViewModels
             CreatePlaylistCommand = new RelayCommand(CreatePlaylist);
 
             // Set initial CurrentViewModel in MainWindowViewModel
-            _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_mainWindowViewModel);
+            _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_mainWindowViewModel, new OpenFileDialogService());
             
             // Initialize the PlaylistViewModel if not already done
             if (_mainWindowViewModel.PlaylistViewModel == null)
             {
-                _mainWindowViewModel.PlaylistViewModel = new PlaylistViewModel(_mainWindowViewModel);
+                _mainWindowViewModel.PlaylistViewModel = new PlaylistViewModel(_mainWindowViewModel, new OpenFileDialogService());
             }
         }
         
@@ -99,7 +99,7 @@ namespace SoundHeaven.ViewModels
         private void ShowPlaylistView()
         {
             Console.WriteLine("Switching to PlaylistView");
-            _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_mainWindowViewModel);
+            _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_mainWindowViewModel, new OpenFileDialogService());
         }
     }
 }
