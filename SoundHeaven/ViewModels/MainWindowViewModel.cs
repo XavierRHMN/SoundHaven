@@ -177,7 +177,6 @@ namespace SoundHeaven.ViewModels
 
         // Commands
         public RelayCommand MuteCommand { get; }
-        public RelayCommand CreatePlaylistCommand { get; set; }
 
 
         public MainWindowViewModel()
@@ -188,13 +187,12 @@ namespace SoundHeaven.ViewModels
             _playlistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
 
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
-            CreatePlaylistCommand = new RelayCommand(CreatePlaylist);
 
             _songStore.LoadSongs();
             InitializeSeekTimer();
             InitializeScrollTimer();
 
-            var example = new Playlist(_audioService, this)
+            var example = new Playlist()
             {
                 Name = "example",
                 Songs = _songStore.Songs
@@ -206,18 +204,6 @@ namespace SoundHeaven.ViewModels
 
             // Set initial CurrentViewModel
             CurrentViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
-        }
-        
-        private void CreatePlaylist()
-        {
-            Console.WriteLine("Creating new playlist");
-            var newPlaylist = new Playlist(_audioService, this)
-            {
-                Name = $"Playlist {PlaylistCollection.Count + 1}",
-                Description = "A new playlist",
-                Songs = new ObservableCollection<Song>()
-            };
-            _playlistStore.AddPlaylist(newPlaylist);
         }
 
         private void InitializeSeekTimer()

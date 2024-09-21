@@ -11,8 +11,6 @@ namespace SoundHeaven.Models
         public string Description { get; set; }
         public ObservableCollection<Song> Songs { get; set; }
         
-        private AudioPlayerService _audioPlayerService;
-        private MainWindowViewModel _mainWindowViewModel { get; set; }
         private int _currentIndex = 0;
         public int CurrentIndex { get; private set; } = 0;
         
@@ -31,11 +29,9 @@ namespace SoundHeaven.Models
             }
         }
 
-        public Playlist(AudioPlayerService audioPlayerService, MainWindowViewModel mainWindowViewModel)
+        public Playlist()
         {
             Songs = new ObservableCollection<Song>();
-            _audioPlayerService = audioPlayerService;
-            _mainWindowViewModel = mainWindowViewModel;
         }
         
         public Song? GetNextSong(Song? currentSong)

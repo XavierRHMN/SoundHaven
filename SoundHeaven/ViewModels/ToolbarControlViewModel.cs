@@ -14,7 +14,6 @@ namespace SoundHeaven.ViewModels
     public class ToolBarControlViewModel : ViewModelBase
     {
         private readonly AudioPlayerService _audioService;
-        private readonly PlaylistStore _playlistStore;
         private readonly MainWindowViewModel _mainWindowViewModel;
 
         private SongStore _songStore;
@@ -46,7 +45,7 @@ namespace SoundHeaven.ViewModels
         public RelayCommand ShowHomeViewCommand { get; set; }
         public RelayCommand ShowSearchViewCommand { get; set; }
         public RelayCommand ShowPlaylistViewCommand { get; set; }
-        public RelayCommand CreatePlaylistCommand { get; set; }
+        public AsyncRelayCommand CreatePlaylistCommand { get; set; }
 
 
         // Constructor
@@ -54,13 +53,12 @@ namespace SoundHeaven.ViewModels
         {
             _mainWindowViewModel = mainWindowViewModel;
             _audioService = mainWindowViewModel.AudioService;
-            _playlistStore = new PlaylistStore(_mainWindowViewModel);
             _songStore = new SongStore();
 
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowSearchViewCommand = new RelayCommand(ShowSearchView);
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
-            CreatePlaylistCommand = new RelayCommand(CreatePlaylist);
+            CreatePlaylistCommand = new AsyncRelayCommand(CreatePlaylistAsync);
 
             // Set initial CurrentViewModel in MainWindowViewModel
             _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_mainWindowViewModel, new OpenFileDialogService());
@@ -72,17 +70,42 @@ namespace SoundHeaven.ViewModels
             }
         }
         
-        private void CreatePlaylist()
+        private bool _isCreatingPlaylist;
+
+        public async Task CreatePlaylistAsync()
         {
-            Console.WriteLine("Creating new playlist");
-            var newPlaylist = new Playlist(_audioService, _mainWindowViewModel)
+            if (_isCreatingPlaylist)
+                return;
+
+            _isCreatingPlaylist = true;
+
+            try
             {
-                Name = $"Playlist {PlaylistCollection.Count + 1}",
-                Description = "A new playlist",
-                Songs = new ObservableCollection<Song>()
-            };
-            _mainWindowViewModel.PlaylistStore.AddPlaylist(newPlaylist);
+                Console.WriteLine("Creating new playlist");
+
+                // Simulate some asynchronous operation (e.g., a small delay)
+                await Task.Delay(50); // Delay of 500 milliseconds to prevent spamming
+
+                var newPlaylist = new Playlist
+                {
+                    Name = $"Playlist {PlaylistCollection.Count + 1}",
+                    Description = "A new playlist",
+                    Songs = new ObservableCollection<Song>()
+                };
+
+                _mainWindowViewModel.PlaylistStore.AddPlaylist(newPlaylist);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating playlist: {ex.Message}");
+            }
+            finally
+            {
+                _isCreatingPlaylist = false;
+            }
         }
+
+
 
         // Methods for commands
         private void ShowHomeView()
