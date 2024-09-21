@@ -12,8 +12,9 @@ namespace SoundHeaven.Views
     {
         public MainWindow()
         {
-        InitializeComponent();
-        DataContext = new MainWindowViewModel();;
+            InitializeComponent();
+            DataContext = new MainWindowViewModel();
+            ;
         }
     }
 }

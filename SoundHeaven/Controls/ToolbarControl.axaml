@@ -7,7 +7,6 @@
              xmlns:controls="clr-namespace:Material.Styles.Controls;assembly=Material.Styles"
              x:Class="SoundHeaven.Controls.ToolbarControl"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
-             xmlns:controls1="clr-namespace:SoundHeaven.Controls"
              x:DataType="viewModels:ToolBarControlViewModel">
 
     <!-- Root Grid for Toolbar -->
@@ -37,21 +36,21 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
                 <Svg Path="avares://SoundHeaven/Assets/Icons/playlists.svg" Width="32" Height="32"
                      HorizontalAlignment="Left" />
-                <TextBlock Classes="ToolbarText" Text="Playlists" VerticalAlignment="Center" Margin="20,5,0,0" />
+                <TextBlock Classes="ToolbarText" Text="Playlists" VerticalAlignment="Center" Margin="20,0,0,0" />
             </StackPanel>
         </Button>
 
         <Separator Background="White" Opacity="0.1" />
 
-        <controls:FloatingButton VerticalAlignment="Center" 
-                                 Theme="{StaticResource MaterialFlatButton}" 
-                                 Classes="Dark" 
+        <controls:FloatingButton VerticalAlignment="Center"
+                                 Theme="{StaticResource MaterialFlatButton}"
+                                 Classes="Dark"
                                  IsExtended="True"
-                                 Command="{Binding CreatePlaylistCommand}" 
-                                 Content="Create Playlist"/>
-        
+                                 Command="{Binding CreatePlaylistCommand}"
+                                 Content="Create Playlist" />
+
         <Separator Background="White" Opacity="0.1" />
-        
+
         <!-- ScrollViewer for ListBox -->
         <ScrollViewer Margin="0 0 0 0"
                       FlowDirection="RightToLeft"
@@ -62,10 +61,10 @@
 
             <!-- ListBox for displaying playlists -->
             <ListBox Margin="0 0 0 0"
-                FlowDirection="LeftToRight"
-                ItemsSource="{Binding PlaylistCollection}"
-                SelectedItem="{Binding CurrentPlaylist, Mode=TwoWay}"
-                Width="200">
+                     FlowDirection="LeftToRight"
+                     ItemsSource="{Binding PlaylistCollection}"
+                     SelectedItem="{Binding CurrentPlaylist, Mode=TwoWay}"
+                     Width="200">
 
 
                 <ListBox.ItemTemplate>
@@ -74,7 +73,7 @@
                             HorizontalAlignment="Center"
                             Text="{Binding Name, Mode=TwoWay}"
                             Foreground="White"
-                            FontSize="13"/>
+                            FontSize="13" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

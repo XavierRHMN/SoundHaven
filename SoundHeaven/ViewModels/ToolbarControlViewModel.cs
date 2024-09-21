@@ -13,10 +13,7 @@ namespace SoundHeaven.ViewModels
 {
     public class ToolBarControlViewModel : ViewModelBase
     {
-        private readonly AudioPlayerService _audioService;
         private readonly MainWindowViewModel _mainWindowViewModel;
-
-        private SongStore _songStore;
 
         // Current Playlist binding for ToolbarControl.axaml
         private Playlist? _currentPlaylist;
@@ -32,7 +29,7 @@ namespace SoundHeaven.ViewModels
 
                     // Update MainWindowViewModel's CurrentPlaylist
                     _mainWindowViewModel.CurrentPlaylist = _currentPlaylist;
-                    
+
                     // Switch to PlaylistViewModel
                     _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlaylistViewModel;
                 }
@@ -52,8 +49,6 @@ namespace SoundHeaven.ViewModels
         public ToolBarControlViewModel(MainWindowViewModel mainWindowViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
-            _audioService = mainWindowViewModel.AudioService;
-            _songStore = new SongStore();
 
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowSearchViewCommand = new RelayCommand(ShowSearchView);
@@ -62,14 +57,14 @@ namespace SoundHeaven.ViewModels
 
             // Set initial CurrentViewModel in MainWindowViewModel
             _mainWindowViewModel.CurrentViewModel = new PlaylistViewModel(_mainWindowViewModel, new OpenFileDialogService());
-            
+
             // Initialize the PlaylistViewModel if not already done
             if (_mainWindowViewModel.PlaylistViewModel == null)
             {
                 _mainWindowViewModel.PlaylistViewModel = new PlaylistViewModel(_mainWindowViewModel, new OpenFileDialogService());
             }
         }
-        
+
         private bool _isCreatingPlaylist;
 
         public async Task CreatePlaylistAsync()
@@ -83,8 +78,7 @@ namespace SoundHeaven.ViewModels
             {
                 Console.WriteLine("Creating new playlist");
 
-                // Simulate some asynchronous operation (e.g., a small delay)
-                await Task.Delay(50); // Delay of 500 milliseconds to prevent spamming
+                await Task.Delay(50); 
 
                 var newPlaylist = new Playlist
                 {
@@ -104,7 +98,6 @@ namespace SoundHeaven.ViewModels
                 _isCreatingPlaylist = false;
             }
         }
-
 
 
         // Methods for commands

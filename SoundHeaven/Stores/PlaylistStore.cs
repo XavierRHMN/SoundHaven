@@ -10,14 +10,8 @@ namespace SoundHeaven.Models
         private ObservableCollection<Playlist>? _playlists;
         public ObservableCollection<Playlist> Playlists
         {
-            get
-            {
-                return _playlists;
-            }
-            set
-            {
-                _playlists = value;
-            }
+            get => _playlists;
+            set => _playlists = value;
         }
 
         private MainWindowViewModel _mainWindowViewModel;
@@ -31,7 +25,7 @@ namespace SoundHeaven.Models
             _audioPlayerService = _mainWindowViewModel.AudioService;
             _toolBarControlViewModel = _mainWindowViewModel.ToolBarControlViewModel;
         }
-        
+
         public void AddPlaylist(Playlist playlist)
         {
             Playlists.Add(playlist);

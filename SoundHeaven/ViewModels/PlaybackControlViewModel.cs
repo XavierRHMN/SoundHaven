@@ -55,9 +55,6 @@ namespace SoundHeaven.ViewModels
 
             // Subscribe to changes in MainWindowViewModel.CurrentPlaylist
             _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
-
-            // Subscribe to changes in MainWindowViewModel.CurrentSong
-            _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
         }
 
         private void InitializeCommands()
@@ -132,7 +129,7 @@ namespace SoundHeaven.ViewModels
 
 
         private bool CanNextTrack() => CurrentPlaylist?.Songs.Count > 1;
-        
+
         private void PreviousTrack()
         {
             if (CurrentPlaylist == null)
@@ -140,18 +137,18 @@ namespace SoundHeaven.ViewModels
                 Console.WriteLine("No playlist available.");
                 return;
             }
-            
+
             var previousSong = CurrentPlaylist.GetPreviousSong(_mainWindowViewModel.CurrentSong);
-    
+
             if (previousSong == null)
             {
                 Console.WriteLine("No previous song available.");
                 return;
             }
             
+            
             if (_mainWindowViewModel.SeekPosition > 3)
             {
-                _mainWindowViewModel.SeekPosition = 0;
                 _audioPlayerService.Restart(_mainWindowViewModel.CurrentSong);
             }
             else
@@ -160,9 +157,10 @@ namespace SoundHeaven.ViewModels
                 _audioPlayerService.Start(previousSong.FilePath);
                 IsPlaying = true;
             }
+            _mainWindowViewModel.SeekPosition = 0;
         }
 
-        
+
         private void MainWindowViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))

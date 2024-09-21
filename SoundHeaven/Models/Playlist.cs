@@ -10,10 +10,10 @@ namespace SoundHeaven.Models
     {
         public string Description { get; set; }
         public ObservableCollection<Song> Songs { get; set; }
-        
+
         private int _currentIndex = 0;
         public int CurrentIndex { get; private set; } = 0;
-        
+
         private string _name;
         public string Name
         {
@@ -29,11 +29,8 @@ namespace SoundHeaven.Models
             }
         }
 
-        public Playlist()
-        {
-            Songs = new ObservableCollection<Song>();
-        }
-        
+        public Playlist() => Songs = new ObservableCollection<Song>();
+
         public Song? GetNextSong(Song? currentSong)
         {
             if (currentSong == null || Songs == null)
@@ -51,7 +48,7 @@ namespace SoundHeaven.Models
             if (currentSong == null || Songs == null)
                 return null;
 
-            
+
             int index = Songs.IndexOf(currentSong);
             if (index > 0)
                 return Songs[index - 1];

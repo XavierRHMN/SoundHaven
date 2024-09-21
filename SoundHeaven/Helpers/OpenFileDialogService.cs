@@ -8,7 +8,8 @@ namespace SoundHeaven.Services
     {
         Task<string?> ShowOpenFileDialogAsync(Window parent);
     }
-    
+
+
     public class OpenFileDialogService : IOpenFileDialogService
     {
         public async Task<string?> ShowOpenFileDialogAsync(Window parent)
@@ -27,7 +28,7 @@ namespace SoundHeaven.Services
                 }
             };
 
-            var result = await dialog.ShowAsync(parent);
+            string[]? result = await dialog.ShowAsync(parent);
             return result?.Length > 0 ? result[0] : null;
         }
     }

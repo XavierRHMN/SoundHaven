@@ -16,21 +16,20 @@
     <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Background="{StaticResource ToolBarColor}">
 
         <!-- TextBox bound to CurrentPlaylist.Name -->
-        <TextBox Grid.Row="0" Grid.Column="0" Text="{Binding CurrentPlaylist.Name, Mode=TwoWay}"
+        <TextBox Grid.Row="0" Grid.Column="0" Text="{Binding CurrentPlaylist.Name, Mode=TwoWay, FallbackValue='No Playlist Selected'}"
                  FontSize="24" FontWeight="Bold" Margin="0 20 0 0"
                  HorizontalAlignment="Center" />
 
         <!-- StackPanel for Buttons -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="16">
             <Button Command="{Binding AddSongCommand}"
-                    Theme="{StaticResource MaterialOutlineButton}" 
+                    Theme="{StaticResource MaterialOutlineButton}"
                     Content="Add"
-                    ToolTip.Tip="Add a new song" 
-                    Width="60" 
-                    Height="30" 
-                    CornerRadius="16" 
-                    HorizontalAlignment="Center">
-            </Button>
+                    ToolTip.Tip="Add a new song"
+                    Width="60"
+                    Height="30"
+                    CornerRadius="16"
+                    HorizontalAlignment="Center" />
             <Button Command="{Binding EditSongCommand}"
                     Theme="{StaticResource MaterialOutlineButton}" Content="Edit"
                     ToolTip.Tip="Edit selected song" Width="60" Height="30" CornerRadius="16" />

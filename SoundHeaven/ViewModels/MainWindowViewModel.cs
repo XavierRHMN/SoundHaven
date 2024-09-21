@@ -23,19 +23,12 @@ namespace SoundHeaven.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private PlaylistViewModel _playlistViewModel;
         public PlaylistViewModel PlaylistViewModel { get; set; }
-        
-        public ObservableCollection<Playlist> PlaylistCollection => _playlistStore.Playlists;
 
+        public ObservableCollection<Playlist> PlaylistCollection => PlaylistStore.Playlists;
 
-        public ObservableCollection<Song> SongCollection => _songStore.Songs;
-        private readonly AudioPlayerService _audioService;
-        public AudioPlayerService AudioService => _audioService;
-
-
-        private PlaylistStore _playlistStore;
-        public PlaylistStore PlaylistStore => _playlistStore;
+        public AudioPlayerService AudioService { get; set; }
+        public PlaylistStore PlaylistStore { get; set; }
         private readonly SongStore _songStore;
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _scrollTimer;
@@ -52,15 +45,15 @@ namespace SoundHeaven.ViewModels
                     _currentSong = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(CurrentSongExists));
-                    _audioService.Start(_currentSong.FilePath);
+                    AudioService.Start(_currentSong.FilePath);
                     SeekPosition = 0;
-                    Volume = _audioService.GetCurrentVolume();
+                    Volume = AudioService.GetCurrentVolume();
                     MuteCommand.RaiseCanExecuteChanged();
                     PlaybackControlViewModel.IsPlaying = true;
                 }
             }
         }
-        
+
         private Playlist? _currentPlaylist;
         public Playlist? CurrentPlaylist
         {
@@ -75,7 +68,7 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        public bool IsPlaying => _audioService.IsPlaying();
+        private bool _isPlaying => AudioService.IsPlaying();
 
         private double _volume;
         public double Volume
@@ -87,7 +80,7 @@ namespace SoundHeaven.ViewModels
                 OnPropertyChanged();
                 if (CurrentSong != null)
                 {
-                    _audioService?.SetVolume((float)_volume);
+                    AudioService?.SetVolume((float)_volume);
                 }
             }
         }
@@ -181,10 +174,10 @@ namespace SoundHeaven.ViewModels
 
         public MainWindowViewModel()
         {
-            _audioService = new AudioPlayerService();
+            AudioService = new AudioPlayerService();
             _songStore = new SongStore();
-            _playlistStore = new PlaylistStore(this);
-            _playlistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
+            PlaylistStore = new PlaylistStore(this);
+            PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
 
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
 
@@ -197,10 +190,10 @@ namespace SoundHeaven.ViewModels
                 Name = "example",
                 Songs = _songStore.Songs
             };
-            _playlistStore.AddPlaylist(example);
+            PlaylistStore.AddPlaylist(example);
 
             ToolBarControlViewModel = new ToolBarControlViewModel(this);
-            PlaybackControlViewModel = new PlaybackControlViewModel( this);
+            PlaybackControlViewModel = new PlaybackControlViewModel(this);
 
             // Set initial CurrentViewModel
             CurrentViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
@@ -242,7 +235,7 @@ namespace SoundHeaven.ViewModels
                     PlaybackControlViewModel.IsPlaying = false;
                 }
 
-                if (IsPlaying)
+                if (_isPlaying)
                 {
                     SeekPosition += 0.1;
                 }

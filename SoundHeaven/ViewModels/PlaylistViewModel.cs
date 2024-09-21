@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using SoundHeaven.Commands;
+using SoundHeaven.Helpers;
 using SoundHeaven.Models;
 using SoundHeaven.Services;
 using SoundHeaven.Stores;
@@ -16,24 +17,29 @@ namespace SoundHeaven.ViewModels
     {
         private readonly IOpenFileDialogService _openFileDialogService;
         private readonly MainWindowViewModel _mainWindowViewModel;
-        private AudioPlayerService _audioPlayerService => _mainWindowViewModel.AudioService;
-        
-            // Current Playlist binding for PlaylistView.axaml
-            private Playlist? _currentPlaylist;
-            public Playlist? CurrentPlaylist
+
+        // Current Playlist binding for PlaylistView.axaml
+        private Playlist? _currentPlaylist;
+        private bool _suppressSelectionChange = false;
+
+        public Playlist? CurrentPlaylist
+        {
+            get => _currentPlaylist;
+            set
             {
-                get => _currentPlaylist;
-                set
+                if (_currentPlaylist != value)
                 {
-                    if (_currentPlaylist != value)
-                    {
-                        _currentPlaylist = value;
-                        OnPropertyChanged();
-                        // Notify that the Songs collection has changed
-                        OnPropertyChanged(nameof(Songs));
-                    }
+                    _currentPlaylist = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(Songs));
+
+                    // Suppress selection change events
+                    _suppressSelectionChange = true;
+                    // Do not change SelectedSong
+                    _suppressSelectionChange = false;
                 }
             }
+        }
 
         // The currently selected song in the DataGrid
         private Song? _selectedSong;
@@ -44,20 +50,22 @@ namespace SoundHeaven.ViewModels
             {
                 if (_selectedSong != value)
                 {
+                    if (_suppressSelectionChange && value == null)
+                        return;
+
                     _selectedSong = value;
                     OnPropertyChanged();
 
-                    // Update MainWindowViewModel's CurrentSong
-                    if (_mainWindowViewModel.CurrentSong != _selectedSong)
+                    if (_selectedSong != null && _mainWindowViewModel.CurrentSong != _selectedSong)
                     {
                         _mainWindowViewModel.CurrentSong = _selectedSong;
                     }
                 }
             }
         }
-        
+
         public ObservableCollection<Song>? Songs => CurrentPlaylist?.Songs;
-        
+
         // New commands for adding, editing, and deleting songs
         public AsyncRelayCommand AddSongCommand { get; }
         public RelayCommand EditSongCommand { get; }
@@ -79,7 +87,7 @@ namespace SoundHeaven.ViewModels
             // Initialize CurrentPlaylist
             CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
             SelectedSong = _mainWindowViewModel.CurrentSong;
-            
+
             if (CurrentPlaylist != null)
             {
                 Console.WriteLine($"CurrentPlaylist set to: {CurrentPlaylist.Name}");
@@ -89,7 +97,7 @@ namespace SoundHeaven.ViewModels
                 Console.WriteLine("No playlists available.");
             }
         }
-        
+
         // Add a new song to the current playlist
         public async Task AddSongAsync()
         {
@@ -105,20 +113,10 @@ namespace SoundHeaven.ViewModels
                 }
 
                 // Open the file dialog
-                var filePath = await _openFileDialogService.ShowOpenFileDialogAsync(parentWindow);
+                string? filePath = await _openFileDialogService.ShowOpenFileDialogAsync(parentWindow);
                 if (!string.IsNullOrEmpty(filePath))
                 {
-                    // Optionally, extract metadata using TagLib#
-                    var file = TagLib.File.Create(filePath);
-                    var newSong = new Song(_audioPlayerService)
-                    {
-                        Title = file.Tag.Title ?? System.IO.Path.GetFileNameWithoutExtension(filePath),
-                        Artist = string.Join(", ", file.Tag.Performers),
-                        Duration = file.Properties.Duration,
-                        FilePath = filePath,
-                        Year = (int)file.Tag.Year
-                    };
-
+                    var newSong = Mp3ToSongHelper.GetSongFromMp3(filePath);
                     CurrentPlaylist.Songs.Add(newSong);
                     Console.WriteLine($"Added song: {newSong.Title} to playlist: {CurrentPlaylist.Name}");
                 }
@@ -147,7 +145,7 @@ namespace SoundHeaven.ViewModels
                 // SelectedSong = null; // Clear selection after deletion
             }
         }
-        
+
         private void MainWindowViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
