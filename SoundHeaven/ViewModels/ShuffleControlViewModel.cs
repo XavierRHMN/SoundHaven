@@ -13,8 +13,6 @@ namespace SoundHeaven.ViewModels
         {
             _mainWindowViewModel = mainWindowViewModel;
 
-            IsShuffleEnabled = false;
-
             ToggleShuffleCommand = new RelayCommand(ToggleShuffle);
         }
 

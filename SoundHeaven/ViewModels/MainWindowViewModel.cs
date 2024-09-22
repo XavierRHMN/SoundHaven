@@ -24,6 +24,7 @@ namespace SoundHeaven.ViewModels
     public class MainWindowViewModel : ViewModelBase
     {
         public PlaylistViewModel PlaylistViewModel { get; set; }
+        public HomeViewModel HomeViewModel { get; set; }
 
         public ObservableCollection<Playlist> PlaylistCollection => PlaylistStore.Playlists;
 
@@ -179,6 +180,7 @@ namespace SoundHeaven.ViewModels
             _songStore = new SongStore();
             PlaylistStore = new PlaylistStore(this);
             PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
+            HomeViewModel = new HomeViewModel(this);
 
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
 
@@ -199,7 +201,7 @@ namespace SoundHeaven.ViewModels
 
 
             // Set initial CurrentViewModel
-            CurrentViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
+            CurrentViewModel = PlaylistViewModel;
         }
 
         private void InitializeSeekTimer()

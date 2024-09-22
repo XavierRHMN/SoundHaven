@@ -30,13 +30,7 @@ namespace SoundHeaven.ViewModels
                 if (_currentPlaylist != value)
                 {
                     _currentPlaylist = value;
-                    OnPropertyChanged();
                     OnPropertyChanged(nameof(Songs));
-
-                    // Suppress selection change events
-                    _suppressSelectionChange = true;
-                    // Do not change SelectedSong
-                    _suppressSelectionChange = false;
                 }
             }
         }
@@ -84,7 +78,7 @@ namespace SoundHeaven.ViewModels
             // Subscribe to changes in MainWindowViewModel.CurrentPlaylist
             _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
 
-            // Initialize CurrentPlaylist
+            // Initialize CurrentPlaylist & Selected song
             CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
             SelectedSong = _mainWindowViewModel.CurrentSong;
         }
