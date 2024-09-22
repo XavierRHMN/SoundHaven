@@ -128,9 +128,9 @@ namespace SoundHeaven.ViewModels
         {
             if (CurrentPlaylist != null)
             {
-                if (CurrentPlaylist.Songs.Count == 0)
+                if (CurrentPlaylist.Songs.Count is 0 or 1)
                 {
-                    Console.WriteLine("The playlist is empty.");
+                    Console.WriteLine("The playlist is empty or no next song available");
                     // Optionally, display a message to the user or disable playback controls.
                     return;
                 }
