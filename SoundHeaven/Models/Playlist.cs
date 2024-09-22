@@ -31,29 +31,29 @@ namespace SoundHeaven.Models
 
         public Playlist() => Songs = new ObservableCollection<Song>();
 
-        public Song? GetNextSong(Song? currentSong)
+        public Song? GetPreviousNextSong(Song? currentSong, PlaybackControlViewModel.Direction direction)
         {
-            if (currentSong == null || Songs == null)
+            // Check for nulls and ensure the Songs list is not empty
+            if (currentSong == null || Songs == null || Songs.Count == 0)
                 return null;
 
+            // Find the index of the current song
             int index = Songs.IndexOf(currentSong);
-            if (index >= 0 && index < Songs.Count - 1)
-                return Songs[index + 1];
-
-            return Songs.FirstOrDefault(); // Or loop back to the first song if desired
-        }
-
-        public Song? GetPreviousSong(Song? currentSong)
-        {
-            if (currentSong == null || Songs == null)
+    
+            // If the current song is not found in the list, return null
+            if (index == -1)
                 return null;
 
+            // Calculate the new index based on the direction
+            int newIndex = (index + (int)direction) % Songs.Count;
 
-            int index = Songs.IndexOf(currentSong);
-            if (index > 0)
-                return Songs[index - 1];
+            // Handle negative indices to ensure they wrap correctly
+            if (newIndex < 0)
+                newIndex += Songs.Count;
 
-            return Songs.LastOrDefault(); // Or loop back to the last song if desired
+            // Return the song at the new index
+            return Songs[newIndex];
         }
+
     }
 }

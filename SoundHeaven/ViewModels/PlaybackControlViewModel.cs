@@ -8,6 +8,12 @@ namespace SoundHeaven.ViewModels
 {
     public class PlaybackControlViewModel : ViewModelBase
     {
+        public enum Direction
+        {
+            Previous = -1,
+            Next = 1
+        }
+        
         private AudioPlayerService _audioPlayerService => _mainWindowViewModel.AudioService;
         private readonly MainWindowViewModel _mainWindowViewModel;
         
@@ -126,51 +132,45 @@ namespace SoundHeaven.ViewModels
 
         private void NextTrack()
         {
-            if (CurrentPlaylist != null)
+            var currentPlaybackPlaylist = _mainWindowViewModel.CurrentPlaybackPlaylist;
+                
+            if (currentPlaybackPlaylist == null || currentPlaybackPlaylist.Songs.Count is 0 or 1)
             {
-                if (CurrentPlaylist.Songs.Count is 0 or 1)
-                {
-                    Console.WriteLine("The playlist is empty or no next song available");
-                    // Optionally, display a message to the user or disable playback controls.
-                    return;
-                }
+                Console.WriteLine("The playlist is empty or there's no next song");
+                return;
+            }
                 
+
+            Song? nextSong = null;
+
+            if (IsShuffleEnabled)
+            {
+                // Get a random song from the playlist
+                int index = Random.Shared.Next(currentPlaybackPlaylist.Songs.Count);
                 var currentSong = _mainWindowViewModel.CurrentSong;
-                var songs = CurrentPlaylist.Songs;
+                var songs = currentPlaybackPlaylist.Songs;
                 
-                Song? nextSong = null;
-
-                if (IsShuffleEnabled)
+                if (index == songs.IndexOf(currentSong))
                 {
-                    // Get a random song from the playlist
-                    var random = new Random();
-                    int index = random.Next(songs.Count);
-                    if (index == songs.IndexOf(currentSong))
-                    {
-                        index = (index + 1) % songs.Count;
-                    }
-                    nextSong = songs[index];
+                    index = (index + 1) % songs.Count;
                 }
-                else
-                {
-                    // Get the next song in the playlist
-                    nextSong = CurrentPlaylist.GetNextSong(currentSong);
-                }
-
-                if (nextSong != null)
-                {
-                    _mainWindowViewModel.CurrentSong = nextSong;
-                    _audioPlayerService.Start(nextSong.FilePath);
-                    IsPlaying = true;
-                }
-                else
-                {
-                    Console.WriteLine("No next song available.");
-                }
+                nextSong = currentPlaybackPlaylist.Songs[index];
             }
             else
             {
-                Console.WriteLine("No playlist available.");
+                // Get the next song in the playlist
+                nextSong = currentPlaybackPlaylist.GetPreviousNextSong(_mainWindowViewModel.CurrentSong, Direction.Next);
+            }
+
+            if (nextSong != null)
+            {
+                _mainWindowViewModel.CurrentSong = nextSong;
+                _audioPlayerService.Start(nextSong.FilePath);
+                IsPlaying = true;
+            }
+            else
+            {
+                Console.WriteLine("No next song available.");
             }
         }
 
@@ -179,40 +179,62 @@ namespace SoundHeaven.ViewModels
 
         private void PreviousTrack()
         {
-            if (CurrentPlaylist == null)
+            var currentPlaybackPlaylist = _mainWindowViewModel.CurrentPlaybackPlaylist;
+
+            if (currentPlaybackPlaylist == null || currentPlaybackPlaylist.Songs.Count == 0)
             {
-                Console.WriteLine("No playlist available.");
+                Console.WriteLine("The playlist is empty.");
                 return;
             }
 
-            var previousSong = CurrentPlaylist.GetPreviousSong(_mainWindowViewModel.CurrentSong);
+            Song? previousSong = null;
 
-            if (previousSong == null)
+            if (IsShuffleEnabled)
             {
-                Console.WriteLine("No previous song available.");
-                return;
-            }
-            
-            
-            if (_mainWindowViewModel.SeekPosition > 3)
-            {
-                _audioPlayerService.Restart(_mainWindowViewModel.CurrentSong);
+                // Get a random song from the playlist
+                int index = Random.Shared.Next(currentPlaybackPlaylist.Songs.Count);
+                var currentSong = _mainWindowViewModel.CurrentSong;
+                var songs = currentPlaybackPlaylist.Songs;
+
+                if (index == songs.IndexOf(currentSong))
+                {
+                    index = (index - 1 + songs.Count) % songs.Count;
+                }
+                previousSong = currentPlaybackPlaylist.Songs[index];
             }
             else
             {
-                _mainWindowViewModel.CurrentSong = previousSong;
-                _audioPlayerService.Start(previousSong.FilePath);
-                IsPlaying = true;
+                // Get the previous song in the playlist
+                previousSong = currentPlaybackPlaylist.GetPreviousNextSong(_mainWindowViewModel.CurrentSong, Direction.Previous);
             }
-            _mainWindowViewModel.SeekPosition = 0;
+
+            if (previousSong != null)
+            {
+                if (_mainWindowViewModel.SeekPosition > 3)
+                {
+                    _audioPlayerService.Restart(_mainWindowViewModel.CurrentSong);
+                    _mainWindowViewModel.SeekPosition = 0;
+                }
+                else if (currentPlaybackPlaylist.Songs.Count > 1)
+                {
+                    _mainWindowViewModel.CurrentSong = previousSong;
+                    _audioPlayerService.Start(previousSong.FilePath);
+                    IsPlaying = true;
+                }
+            }
+            else
+            {
+                Console.WriteLine("No previous song available.");
+            }
         }
+
 
 
         private void MainWindowViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
             {
-                CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
+                // CurrentPlaylist = _mainWindowViewModel.CurrentPlaybackPlaylist;
             }
             else if (e.PropertyName == nameof(MainWindowViewModel.CurrentSong))
             {
@@ -223,3 +245,4 @@ namespace SoundHeaven.ViewModels
         private bool CanPreviousTrack() => CurrentPlaylist?.Songs.Count > 1;
     }
 }
+
