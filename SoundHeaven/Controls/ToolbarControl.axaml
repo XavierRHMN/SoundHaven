@@ -62,7 +62,7 @@
             <ListBox Margin="0 0 0 0"
                      FlowDirection="LeftToRight"
                      ItemsSource="{Binding PlaylistCollection}"
-                     SelectedItem="{Binding CurrentPlaylist, Mode=TwoWay}"
+                     SelectedItem="{Binding ToolbarSelectedPlaylist, Mode=TwoWay}"
                      Width="200"
                      Classes="ToolbarText">
                 

@@ -16,19 +16,19 @@ namespace SoundHeaven.ViewModels
         private readonly MainWindowViewModel _mainWindowViewModel;
 
         // Current Playlist binding for ToolbarControl.axaml
-        private Playlist? _currentPlaylist;
-        public Playlist? CurrentPlaylist
+        private Playlist? _toolbarSelectedPlaylist;
+        public Playlist? ToolbarSelectedPlaylist
         {
-            get => _currentPlaylist;
+            get => _toolbarSelectedPlaylist;
             set
             {
-                if (_currentPlaylist != value)
+                if (_toolbarSelectedPlaylist != value)
                 {
-                    _currentPlaylist = value;
+                    _toolbarSelectedPlaylist = value;
                     OnPropertyChanged();
 
-                    // Update MainWindowViewModel's CurrentPlaylist
-                    _mainWindowViewModel.CurrentPlaylist = _currentPlaylist;
+                    // Update MainWindowViewModel's MainWindowViewModelCurrentPlaylist
+                    _mainWindowViewModel.CurrentPlaylist = _toolbarSelectedPlaylist;
 
                     // Switch to PlaylistViewModel
                     _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlaylistViewModel;

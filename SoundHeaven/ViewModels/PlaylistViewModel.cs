@@ -4,11 +4,9 @@ using SoundHeaven.Commands;
 using SoundHeaven.Helpers;
 using SoundHeaven.Models;
 using SoundHeaven.Services;
-using SoundHeaven.Stores;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace SoundHeaven.ViewModels
@@ -18,25 +16,8 @@ namespace SoundHeaven.ViewModels
         private readonly IOpenFileDialogService _openFileDialogService;
         private readonly MainWindowViewModel _mainWindowViewModel;
 
-        // Current Playlist binding for PlaylistView.axaml
-        private Playlist? _currentPlaylist;
-        private bool _suppressSelectionChange;
+        public Playlist? MainWindowViewModelCurrentPlaylist => _mainWindowViewModel.CurrentPlaylist;
 
-        public Playlist? CurrentPlaylist
-        {
-            get => _currentPlaylist;
-            set
-            {
-                if (_currentPlaylist != value)
-                {
-                    _currentPlaylist = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(Songs));
-                }
-            }
-        }
-
-        // The currently selected song in the DataGrid
         private Song? _selectedSong;
         public Song? SelectedSong
         {
@@ -56,9 +37,8 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        public ObservableCollection<Song>? Songs => CurrentPlaylist?.Songs;
+        public ObservableCollection<Song>? Songs => MainWindowViewModelCurrentPlaylist?.Songs;
 
-        // New commands for adding, editing, and deleting songs
         public AsyncRelayCommand AddSongCommand { get; }
         public RelayCommand EditSongCommand { get; }
         public RelayCommand DeleteSongCommand { get; }
@@ -68,25 +48,19 @@ namespace SoundHeaven.ViewModels
             _mainWindowViewModel = mainWindowViewModel;
             _openFileDialogService = openFileDialogService;
 
-            // Define new commands for song management
             AddSongCommand = new AsyncRelayCommand(AddSongAsync);
             EditSongCommand = new RelayCommand(EditSong);
             DeleteSongCommand = new RelayCommand(DeleteSong);
 
-            // Subscribe to changes in MainWindowViewModel.CurrentPlaylist
             _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
 
-            // Initialize CurrentPlaylist & Selected song
-            CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
             SelectedSong = _mainWindowViewModel.CurrentSong;
         }
 
-        // Add a new song to the current playlist
         public async Task AddSongAsync()
         {
-            if (CurrentPlaylist != null)
+            if (MainWindowViewModelCurrentPlaylist != null)
             {
-                // Get the parent window from MainWindowViewModel
                 var applicationLifetime = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
                 var parentWindow = applicationLifetime.MainWindow;
                 if (parentWindow == null)
@@ -95,37 +69,32 @@ namespace SoundHeaven.ViewModels
                     return;
                 }
 
-                // Open the file dialog
                 string? filePath = await _openFileDialogService.ShowOpenFileDialogAsync(parentWindow);
                 if (!string.IsNullOrEmpty(filePath))
                 {
                     var newSong = Mp3ToSongHelper.GetSongFromMp3(filePath);
-                    CurrentPlaylist.Songs.Add(newSong);
-                    Console.WriteLine($"Added song: {newSong.Title} to playlist: {CurrentPlaylist.Name}");
+                    MainWindowViewModelCurrentPlaylist.Songs.Add(newSong);
+                    Console.WriteLine($"Added song: {newSong.Title} to playlist: {MainWindowViewModelCurrentPlaylist.Name}");
                 }
             }
         }
 
-        // Edit the currently selected song
         private void EditSong()
         {
             if (SelectedSong != null)
             {
-                // Example of editing the selected song - you could show a dialog here to edit song information
                 SelectedSong.Title = "Edited Song Title";
                 OnPropertyChanged(nameof(SelectedSong));
                 Console.WriteLine($"Edited song: {SelectedSong.Title}");
             }
         }
 
-        // Delete the currently selected song from the current playlist
         private void DeleteSong()
         {
-            if (CurrentPlaylist != null && SelectedSong != null)
+            if (MainWindowViewModelCurrentPlaylist != null && SelectedSong != null)
             {
-                Console.WriteLine($"Deleted song: {SelectedSong.Title} from playlist: {CurrentPlaylist.Name}");
-                CurrentPlaylist.Songs.Remove(SelectedSong);
-                // SelectedSong = null; // Clear selection after deletion
+                Console.WriteLine($"Deleted song: {SelectedSong.Title} from playlist: {MainWindowViewModelCurrentPlaylist.Name}");
+                MainWindowViewModelCurrentPlaylist.Songs.Remove(SelectedSong);
             }
         }
 
@@ -133,11 +102,8 @@ namespace SoundHeaven.ViewModels
         {
             if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
             {
-                // Update CurrentPlaylist for the view
-                CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
-
-                // Do NOT set CurrentPlaybackPlaylist here
-                // Ensure that CurrentPlaybackPlaylist remains unchanged
+                OnPropertyChanged(nameof(MainWindowViewModelCurrentPlaylist));
+                OnPropertyChanged(nameof(Songs));
             }
             else if (e.PropertyName == nameof(MainWindowViewModel.CurrentSong))
             {

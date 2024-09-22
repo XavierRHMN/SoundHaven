@@ -13,11 +13,10 @@ namespace SoundHeaven.ViewModels
             Previous = -1,
             Next = 1
         }
-        
+
         private AudioPlayerService _audioPlayerService => _mainWindowViewModel.AudioService;
         private readonly MainWindowViewModel _mainWindowViewModel;
-        
-                
+
         private bool _isShuffleEnabled;
         public bool IsShuffleEnabled
         {
@@ -46,20 +45,6 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private Playlist? _currentPlaylist;
-        public Playlist? CurrentPlaylist
-        {
-            get => _currentPlaylist;
-            set
-            {
-                if (_currentPlaylist != value)
-                {
-                    _currentPlaylist = value;
-                    OnPropertyChanged(nameof(CurrentPlaylist));
-                }
-            }
-        }
-
         public RelayCommand PlayCommand { get; private set; }
         public RelayCommand PauseCommand { get; private set; }
         public RelayCommand NextCommand { get; private set; }
@@ -71,10 +56,6 @@ namespace SoundHeaven.ViewModels
 
             InitializeCommands();
 
-            // Set initial CurrentPlaylist
-            CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
-
-            // Subscribe to changes in MainWindowViewModel.CurrentPlaylist
             _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
         }
 
@@ -102,11 +83,10 @@ namespace SoundHeaven.ViewModels
                 }
                 IsPlaying = true;
             }
-            else if (CurrentPlaylist?.Songs.Count > 0)
+            else if (_mainWindowViewModel.CurrentPlaylist?.Songs.Count > 0)
             {
-                // Play the first song in the playlist
-                song = CurrentPlaylist.Songs[0];
-                _mainWindowViewModel.CurrentSong = song; // Update CurrentSong
+                song = _mainWindowViewModel.CurrentPlaylist.Songs[0];
+                _mainWindowViewModel.CurrentSong = song;
                 _audioPlayerService.Start(song.FilePath);
                 IsPlaying = true;
             }
@@ -117,8 +97,6 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private bool CanPlay() => !IsPlaying && (CurrentPlaylist?.Songs.Count > 0 || _mainWindowViewModel.CurrentSong != null);
-
         private void Pause()
         {
             if (_audioPlayerService.IsPlaying())
@@ -128,38 +106,33 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private bool CanPause() => IsPlaying;
-
         private void NextTrack()
         {
-            var currentPlaybackPlaylist = _mainWindowViewModel.CurrentPlaylist;
-            
-            if (currentPlaybackPlaylist == null || currentPlaybackPlaylist.Songs.Count is 0 or 1)
+            var currentPlaylist = _mainWindowViewModel.CurrentPlaylist;
+
+            if (currentPlaylist == null || currentPlaylist.Songs.Count is 0 or 1)
             {
                 Console.WriteLine("The playlist is empty or there's no next song");
                 return;
             }
-                
 
             Song? nextSong = null;
 
             if (IsShuffleEnabled)
             {
-                // Get a random song from the playlist
-                int index = Random.Shared.Next(currentPlaybackPlaylist.Songs.Count);
+                int index = Random.Shared.Next(currentPlaylist.Songs.Count);
                 var currentSong = _mainWindowViewModel.CurrentSong;
-                var songs = currentPlaybackPlaylist.Songs;
-                
+                var songs = currentPlaylist.Songs;
+
                 if (index == songs.IndexOf(currentSong))
                 {
                     index = (index + 1) % songs.Count;
                 }
-                nextSong = currentPlaybackPlaylist.Songs[index];
+                nextSong = currentPlaylist.Songs[index];
             }
             else
             {
-                // Get the next song in the playlist
-                nextSong = currentPlaybackPlaylist.GetPreviousNextSong(_mainWindowViewModel.CurrentSong, Direction.Next);
+                nextSong = currentPlaylist.GetPreviousNextSong(_mainWindowViewModel.CurrentSong, Direction.Next);
             }
 
             if (nextSong != null)
@@ -174,14 +147,11 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-
-        private bool CanNextTrack() => CurrentPlaylist?.Songs.Count > 1;
-
         private void PreviousTrack()
         {
-            var currentPlaybackPlaylist = _mainWindowViewModel.CurrentPlaylist;
+            var currentPlaylist = _mainWindowViewModel.CurrentPlaylist;
 
-            if (currentPlaybackPlaylist == null || currentPlaybackPlaylist.Songs.Count == 0)
+            if (currentPlaylist == null || currentPlaylist.Songs.Count == 0)
             {
                 Console.WriteLine("The playlist is empty.");
                 return;
@@ -191,21 +161,19 @@ namespace SoundHeaven.ViewModels
 
             if (IsShuffleEnabled)
             {
-                // Get a random song from the playlist
-                int index = Random.Shared.Next(currentPlaybackPlaylist.Songs.Count);
+                int index = Random.Shared.Next(currentPlaylist.Songs.Count);
                 var currentSong = _mainWindowViewModel.CurrentSong;
-                var songs = currentPlaybackPlaylist.Songs;
+                var songs = currentPlaylist.Songs;
 
                 if (index == songs.IndexOf(currentSong))
                 {
                     index = (index - 1 + songs.Count) % songs.Count;
                 }
-                previousSong = currentPlaybackPlaylist.Songs[index];
+                previousSong = currentPlaylist.Songs[index];
             }
             else
             {
-                // Get the previous song in the playlist
-                previousSong = currentPlaybackPlaylist.GetPreviousNextSong(_mainWindowViewModel.CurrentSong, Direction.Previous);
+                previousSong = currentPlaylist.GetPreviousNextSong(_mainWindowViewModel.CurrentSong, Direction.Previous);
             }
 
             if (previousSong != null)
@@ -215,7 +183,7 @@ namespace SoundHeaven.ViewModels
                     _audioPlayerService.Restart(_mainWindowViewModel.CurrentSong);
                     _mainWindowViewModel.SeekPosition = 0;
                 }
-                else if (currentPlaybackPlaylist.Songs.Count > 1)
+                else if (currentPlaylist.Songs.Count > 1)
                 {
                     _mainWindowViewModel.CurrentSong = previousSong;
                     _audioPlayerService.Start(previousSong.FilePath);
@@ -228,21 +196,9 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-
-
         private void MainWindowViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
-            {
-                CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
-            }
-            else if (e.PropertyName == nameof(MainWindowViewModel.CurrentSong))
-            {
-                // Optionally, update playback status or other properties
-            }
+            // Handle property changes if needed
         }
-
-        private bool CanPreviousTrack() => CurrentPlaylist?.Songs.Count > 1;
     }
 }
-
