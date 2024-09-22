@@ -190,7 +190,7 @@ namespace SoundHeaven.ViewModels
 
             var example = new Playlist()
             {
-                Name = "example",
+                Name = "Playlist #1",
                 Songs = _songStore.Songs
             };
             PlaylistStore.AddPlaylist(example);

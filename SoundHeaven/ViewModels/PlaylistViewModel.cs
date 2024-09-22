@@ -20,7 +20,7 @@ namespace SoundHeaven.ViewModels
 
         // Current Playlist binding for PlaylistView.axaml
         private Playlist? _currentPlaylist;
-        private bool _suppressSelectionChange = false;
+        private bool _suppressSelectionChange;
 
         public Playlist? CurrentPlaylist
         {
@@ -30,6 +30,7 @@ namespace SoundHeaven.ViewModels
                 if (_currentPlaylist != value)
                 {
                     _currentPlaylist = value;
+                    OnPropertyChanged();
                     OnPropertyChanged(nameof(Songs));
                 }
             }
@@ -44,9 +45,6 @@ namespace SoundHeaven.ViewModels
             {
                 if (_selectedSong != value)
                 {
-                    if (_suppressSelectionChange && value == null)
-                        return;
-
                     _selectedSong = value;
                     OnPropertyChanged();
 
@@ -135,7 +133,11 @@ namespace SoundHeaven.ViewModels
         {
             if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
             {
+                // Update CurrentPlaylist for the view
                 CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
+
+                // Do NOT set CurrentPlaybackPlaylist here
+                // Ensure that CurrentPlaybackPlaylist remains unchanged
             }
             else if (e.PropertyName == nameof(MainWindowViewModel.CurrentSong))
             {

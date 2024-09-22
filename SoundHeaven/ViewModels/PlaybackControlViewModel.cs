@@ -132,8 +132,8 @@ namespace SoundHeaven.ViewModels
 
         private void NextTrack()
         {
-            var currentPlaybackPlaylist = _mainWindowViewModel.CurrentPlaybackPlaylist;
-                
+            var currentPlaybackPlaylist = _mainWindowViewModel.CurrentPlaylist;
+            
             if (currentPlaybackPlaylist == null || currentPlaybackPlaylist.Songs.Count is 0 or 1)
             {
                 Console.WriteLine("The playlist is empty or there's no next song");
@@ -179,7 +179,7 @@ namespace SoundHeaven.ViewModels
 
         private void PreviousTrack()
         {
-            var currentPlaybackPlaylist = _mainWindowViewModel.CurrentPlaybackPlaylist;
+            var currentPlaybackPlaylist = _mainWindowViewModel.CurrentPlaylist;
 
             if (currentPlaybackPlaylist == null || currentPlaybackPlaylist.Songs.Count == 0)
             {
@@ -234,7 +234,7 @@ namespace SoundHeaven.ViewModels
         {
             if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
             {
-                // CurrentPlaylist = _mainWindowViewModel.CurrentPlaybackPlaylist;
+                CurrentPlaylist = _mainWindowViewModel.CurrentPlaylist;
             }
             else if (e.PropertyName == nameof(MainWindowViewModel.CurrentSong))
             {
