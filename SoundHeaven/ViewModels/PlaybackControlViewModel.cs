@@ -55,8 +55,6 @@ namespace SoundHeaven.ViewModels
             _mainWindowViewModel = mainWindowViewModel;
 
             InitializeCommands();
-
-            _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
         }
 
         private void InitializeCommands()
@@ -194,11 +192,6 @@ namespace SoundHeaven.ViewModels
             {
                 Console.WriteLine("No previous song available.");
             }
-        }
-
-        private void MainWindowViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            // Handle property changes if needed
         }
     }
 }
