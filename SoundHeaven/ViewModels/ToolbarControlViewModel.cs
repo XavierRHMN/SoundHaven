@@ -1,4 +1,5 @@
-﻿using Avalonia.Threading;
+﻿using Avalonia.Controls;
+using Avalonia.Threading;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using SoundHeaven.Models;
@@ -93,6 +94,7 @@ namespace SoundHeaven.ViewModels
         private void ShowHomeView()
         {
             Console.WriteLine("Switching to HomeView");
+            ToolbarSelectedPlaylist = null; // Deselect the current playlist
             _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.HomeViewModel;
         }
 

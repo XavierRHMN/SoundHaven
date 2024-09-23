@@ -178,6 +178,36 @@ namespace SoundHeaven.Models
         [JsonProperty("name")]
         public string Name { get; set; }
     }
+    
+    // Models for Track Search
+    public class TrackSearchResponse
+    {
+        [JsonProperty("results")]
+        public TrackSearchResults Results { get; set; }
+    }
+
+    public class TrackSearchResults
+    {
+        [JsonProperty("trackmatches")]
+        public TrackMatches TrackMatches { get; set; }
+    }
+
+    public class TrackMatches
+    {
+        [JsonProperty("track")]
+        public List<TrackSearchResult> TrackList { get; set; }
+    }
+
+    public class TrackSearchResult
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("artist")]
+        public string Artist { get; set; }
+
+        // Add other properties if needed
+    }
 
     // Additional Models for Recommended Tracks (if needed)
     // If you plan to extend functionality in the future, consider adding more models here.

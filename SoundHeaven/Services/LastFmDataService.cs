@@ -27,7 +27,8 @@ namespace SoundHeaven.Services
 
         public async Task<IEnumerable<Song>> GetTopTracksAsync()
         {
-            var url = $"?method=chart.gettoptracks&api_key={_apiKey}&format=json";
+            var limit = 20; // Limit to 20 top tracks
+            var url = $"?method=chart.gettoptracks&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
@@ -37,7 +38,7 @@ namespace SoundHeaven.Services
 
                 var songs = new List<Song>();
 
-                foreach (var track in topTracksResponse.Tracks.TrackList)
+                foreach (var track in topTracksResponse.Tracks.TrackList.Take(limit))
                 {
                     var song = new Song
                     {
@@ -81,32 +82,30 @@ namespace SoundHeaven.Services
             {
                 var content = await response.Content.ReadAsStringAsync();
 
-                // Parse the response to extract the album image URL
                 var trackInfoResponse = JsonConvert.DeserializeObject<TrackInfoResponse>(content);
 
                 var album = trackInfoResponse?.Track?.Album;
 
-                var imageUrl = album?.Images?.FirstOrDefault(img => img.Size == "large")?.Url;
+                var imageUrl = album?.Images?.FirstOrDefault(img => img.Size == "large")?.Url
+                    ?? album?.Images?.FirstOrDefault(img => img.Size == "medium")?.Url;
 
-                // If the large image URL is empty, try medium
-                if (string.IsNullOrEmpty(imageUrl))
+                if (string.IsNullOrEmpty(imageUrl) || IsPlaceholderImage(imageUrl))
                 {
-                    imageUrl = album?.Images?.FirstOrDefault(img => img.Size == "medium")?.Url;
+                    // Attempt to find an album image by searching for other tracks with the same name
+                    imageUrl = await GetAlbumImageUrlByTrackSearchAsync(trackName);
                 }
 
-                // If still empty, attempt to fetch the artist's image
                 if (string.IsNullOrEmpty(imageUrl))
                 {
                     imageUrl = await GetArtistImageUrlAsync(artistName);
                 }
 
-                // If still empty, set to null
                 if (string.IsNullOrEmpty(imageUrl))
                 {
-                    imageUrl = null;
+                    // Set to default image
+                    imageUrl = "https://example.com/default-artwork.png"; // Replace with your default image URL
                 }
 
-                // Cache the image URL (even if null to prevent repeated API calls)
                 _albumImageCache[cacheKey] = imageUrl;
 
                 return imageUrl;
@@ -114,9 +113,69 @@ namespace SoundHeaven.Services
             else
             {
                 Console.WriteLine($"Error fetching album info for {trackName} by {artistName}: {response.StatusCode}");
-                return null;
+                return "https://example.com/default-artwork.png"; // Replace with your default image URL
             }
         }
+
+        private async Task<string> GetAlbumImageUrlByTrackSearchAsync(string trackName)
+        {
+            var searchLimit = 5; // Limit the number of tracks to check
+            var url = $"?method=track.search&track={Uri.EscapeDataString(trackName)}&api_key={_apiKey}&format=json&limit={searchLimit}";
+            var response = await _httpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var trackSearchResponse = JsonConvert.DeserializeObject<TrackSearchResponse>(content);
+
+                foreach (var track in trackSearchResponse.Results.TrackMatches.TrackList)
+                {
+                    var artistName = track.Artist;
+                    var trackTitle = track.Name;
+
+                    var imageUrl = await GetAlbumImageFromTrackAsync(artistName, trackTitle);
+
+                    if (!string.IsNullOrEmpty(imageUrl) && !IsPlaceholderImage(imageUrl))
+                    {
+                        return imageUrl;
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Error searching for tracks with name {trackName}: {response.StatusCode}");
+            }
+
+            return null;
+        }
+
+        private async Task<string> GetAlbumImageFromTrackAsync(string artistName, string trackName)
+        {
+            var url = $"?method=track.getInfo&api_key={_apiKey}&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&format=json";
+            var response = await _httpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var trackInfoResponse = JsonConvert.DeserializeObject<TrackInfoResponse>(content);
+
+                var album = trackInfoResponse?.Track?.Album;
+                var imageUrl = album?.Images?.FirstOrDefault(img => img.Size == "large")?.Url
+                    ?? album?.Images?.FirstOrDefault(img => img.Size == "medium")?.Url;
+
+                if (!string.IsNullOrEmpty(imageUrl) && !IsPlaceholderImage(imageUrl))
+                {
+                    return imageUrl;
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Error fetching track info for {trackName} by {artistName}: {response.StatusCode}");
+            }
+
+            return null;
+        }
+
 
         public async Task<string> GetArtistImageUrlAsync(string artistName)
         {
@@ -155,6 +214,7 @@ namespace SoundHeaven.Services
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     
+
                     var artistInfoResponse = JsonConvert.DeserializeObject<ArtistInfoResponse>(content);
 
                     if (artistInfoResponse?.Error != 0 || artistInfoResponse?.Artist == null)
@@ -164,9 +224,10 @@ namespace SoundHeaven.Services
                     }
 
                     var imageUrl = artistInfoResponse.Artist.Images?
-                        .FirstOrDefault(img => img.Size == "mega")?.Url
-                        ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "extralarge")?.Url
-                        ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "large")?.Url;
+                        .FirstOrDefault(img => img.Size == "extralarge")?.Url
+                        ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "large")?.Url
+                        ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "medium")?.Url
+                        ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "small")?.Url;
 
                     Console.WriteLine($"Artist image URL for '{nameVariant}': {imageUrl}");
 
@@ -174,6 +235,10 @@ namespace SoundHeaven.Services
                     {
                         _artistImageCache[artistName] = imageUrl;
                         return imageUrl;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"No valid image found for '{nameVariant}'. Attempting next variant.");
                     }
                 }
                 else
@@ -184,6 +249,7 @@ namespace SoundHeaven.Services
 
             // If no valid image URL found, set to null or default image
             _artistImageCache[artistName] = null;
+            Console.WriteLine($"No valid artist image found for '{artistName}'. Setting ArtworkUrl to null.");
             return null;
         }
 
@@ -192,14 +258,20 @@ namespace SoundHeaven.Services
             var placeholderImageUrls = new HashSet<string>
             {
                 "https://lastfm.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
+                "https://lastfm.freetls.fastly.net/i/u/174s/empty-star.png",
+                "https://lastfm.freetls.fastly.net/i/u/300x300/empty-star.png",
                 // Add other known placeholder URLs
             };
 
-            return placeholderImageUrls.Contains(imageUrl);
+            if (placeholderImageUrls.Contains(imageUrl))
+                return true;
+
+            // Additional heuristic checks
+            if (imageUrl.Contains("empty-star") || imageUrl.Contains("no-image"))
+                return true;
+
+            return false;
         }
-
-
-
 
         public async Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(string username)
         {
@@ -208,7 +280,8 @@ namespace SoundHeaven.Services
                 throw new ArgumentException("Username cannot be null or empty.", nameof(username));
             }
 
-            var url = $"?method=user.getrecenttracks&user={Uri.EscapeDataString(username)}&api_key={_apiKey}&format=json";
+            var limit = 20; // Limit to 20 recent tracks
+            var url = $"?method=user.getrecenttracks&user={Uri.EscapeDataString(username)}&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
@@ -218,7 +291,7 @@ namespace SoundHeaven.Services
 
                 var songs = new List<Song>();
 
-                foreach (var track in recentTracksResponse.RecentTracks.TrackList)
+                foreach (var track in recentTracksResponse.RecentTracks.TrackList.Take(limit))
                 {
                     var song = new Song
                     {
@@ -247,25 +320,31 @@ namespace SoundHeaven.Services
         {
             var topTracks = await GetTopTracksAsync();
             var recommendedTracks = new List<Song>();
+            var maxRecommended = 20;
+            var perTrackLimit = 4; // To ensure total does not exceed 20 (5 top tracks * 4 similar each)
 
-            foreach (var track in topTracks.Take(5)) // Limit the number of top tracks to process
+            foreach (var track in topTracks.Take(maxRecommended / perTrackLimit))
             {
-                var similarTracks = await GetSimilarTracksAsync(track.Artist, track.Title);
+                var similarTracks = await GetSimilarTracksAsync(track.Artist, track.Title, perTrackLimit);
                 recommendedTracks.AddRange(similarTracks);
+                
+                if (recommendedTracks.Count >= maxRecommended)
+                    break;
             }
 
-            // Remove duplicates based on title and artist
+            // Remove duplicates based on title and artist and limit to 20
             recommendedTracks = recommendedTracks
                 .GroupBy(t => new { t.Title, t.Artist })
                 .Select(g => g.First())
+                .Take(maxRecommended)
                 .ToList();
 
             return recommendedTracks;
         }
         
-        private async Task<IEnumerable<Song>> GetSimilarTracksAsync(string artistName, string trackName)
+        private async Task<IEnumerable<Song>> GetSimilarTracksAsync(string artistName, string trackName, int limit = 10)
         {
-            var url = $"?method=track.getsimilar&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&api_key={_apiKey}&format=json";
+            var url = $"?method=track.getsimilar&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
@@ -275,7 +354,7 @@ namespace SoundHeaven.Services
 
                 var songs = new List<Song>();
 
-                foreach (var track in similarTracksResponse.SimilarTracks.TrackList)
+                foreach (var track in similarTracksResponse.SimilarTracks.TrackList.Take(limit))
                 {
                     var song = new Song
                     {

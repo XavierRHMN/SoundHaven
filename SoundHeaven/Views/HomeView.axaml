@@ -71,7 +71,7 @@
             
             <!-- Recommended for You Section -->
             <TextBlock HorizontalAlignment="Center"
-                       Text="Recommended for You" 
+                       Text="Recently Played" 
                        FontSize="24" 
                        FontWeight="Bold" 
                        Margin="0,20,0,10"/>
@@ -83,7 +83,7 @@
                           Background="Transparent"
                           Foreground="White">
                         
-                <ItemsControl ItemsSource="{Binding RecommendedTracks}">
+                <ItemsControl ItemsSource="{Binding RecentlyPlayedTracks}">
                     <!-- Horizontal StackPanel for Items -->
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
