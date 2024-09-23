@@ -4,7 +4,6 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
-using ReactiveUI;
 using SoundHeaven.Commands;
 using SoundHeaven.Converters;
 using System.Collections.ObjectModel;
@@ -23,14 +22,10 @@ namespace SoundHeaven.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        public PlaylistViewModel PlaylistViewModel { get; set; }
-        public HomeViewModel HomeViewModel { get; set; }
-
         public ObservableCollection<Playlist> PlaylistCollection => PlaylistStore.Playlists;
 
         public AudioPlayerService AudioService { get; set; }
         public PlaylistStore PlaylistStore { get; set; }
-        private readonly SongStore _songStore;
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _scrollTimer;
 
@@ -161,6 +156,8 @@ namespace SoundHeaven.ViewModels
             }
         }
 
+        public PlaylistViewModel PlaylistViewModel { get; set; }
+        public HomeViewModel HomeViewModel { get; set; }
         public ToolBarControlViewModel ToolBarControlViewModel { get; set; }
         public PlaybackControlViewModel PlaybackControlViewModel { get; set; }
         public ShuffleControlViewModel ShuffleControlViewModel { get; }
@@ -176,32 +173,43 @@ namespace SoundHeaven.ViewModels
 
         public MainWindowViewModel()
         {
+            // Initialize ApiKeyService
+            IApiKeyProvider apiKeyProvider = new ApiKeyService("API_KEY.txt");
+            string apiKey = apiKeyProvider.GetApiKey();
+            var dataService = new LastFmDataService(apiKey);
+            
             AudioService = new AudioPlayerService();
-            _songStore = new SongStore();
             PlaylistStore = new PlaylistStore(this);
-            PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
-            HomeViewModel = new HomeViewModel(this);
 
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
 
-            _songStore.LoadSongs();
+            InitializeExamplePlaylist();
+
+
+            ToolBarControlViewModel = new ToolBarControlViewModel(this);
+            PlaybackControlViewModel = new PlaybackControlViewModel(this);
+            ShuffleControlViewModel = new ShuffleControlViewModel(this);
+            PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
+            HomeViewModel = new HomeViewModel(this, dataService);
+
+
+            // Set initial CurrentViewModel
+            CurrentViewModel = HomeViewModel;
+        }
+
+        private void InitializeExamplePlaylist()
+        {
+            SongStore songStore = new SongStore();
+            songStore.LoadSongs();
             InitializeSeekTimer();
             InitializeScrollTimer();
 
             var example = new Playlist()
             {
                 Name = "Playlist #1",
-                Songs = _songStore.Songs
+                Songs = songStore.Songs
             };
             PlaylistStore.AddPlaylist(example);
-
-            ToolBarControlViewModel = new ToolBarControlViewModel(this);
-            PlaybackControlViewModel = new PlaybackControlViewModel(this);
-            ShuffleControlViewModel = new ShuffleControlViewModel(this);
-
-
-            // Set initial CurrentViewModel
-            CurrentViewModel = PlaylistViewModel;
         }
 
         private void InitializeSeekTimer()

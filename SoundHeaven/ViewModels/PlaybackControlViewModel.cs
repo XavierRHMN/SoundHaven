@@ -6,7 +6,15 @@ using System.ComponentModel;
 
 namespace SoundHeaven.ViewModels
 {
-    public class PlaybackControlViewModel : ViewModelBase
+    public interface IPlaybackControlViewModel
+    {
+        public RelayCommand PlayCommand { get; }
+        public RelayCommand PauseCommand { get; }
+        public RelayCommand NextCommand { get; }
+        public RelayCommand PreviousCommand { get; }
+    }
+    
+    public class PlaybackControlViewModel : ViewModelBase, IPlaybackControlViewModel
     {
         public enum Direction
         {

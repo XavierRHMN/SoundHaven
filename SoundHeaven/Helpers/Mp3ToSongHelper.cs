@@ -46,10 +46,10 @@ namespace SoundHeaven.Helpers
                     string? artworkFilePath = Path.Combine(CoversPath, artworkFileName);
 
                     // Use System.IO.File to save the artwork
-                    using (var fileStream = System.IO.File.Create(artworkFilePath))
-                    {
-                        artwork.Save(fileStream);
-                    }
+                    // using (var fileStream = System.IO.File.Create(artworkFilePath))
+                    // {
+                    //     artwork.Save(fileStream);
+                    // }
 
                     // Set the Image control's source to the saved artwork
                     song.Artwork = new Image { Source = new Bitmap(artworkFilePath) };
@@ -63,9 +63,8 @@ namespace SoundHeaven.Helpers
             // Use System.IO.File to check file existence
             if (!System.IO.File.Exists(filePath))
                 throw new FileNotFoundException("MP3 file not found.", filePath);
-
-            var _audioService = new AudioPlayerService();
-            var song = new Song(_audioService);
+            
+            var song = new Song();
             // Use TagLib.File to read the MP3 metadata
             var file = TagLib.File.Create(filePath);
 
@@ -79,7 +78,7 @@ namespace SoundHeaven.Helpers
             song.FilePath = filePath;
 
             // TODO - Fix this cause it throws exception
-            // SaveAlbumCover(song);
+            SaveAlbumCover(song);
 
             return song;
         }

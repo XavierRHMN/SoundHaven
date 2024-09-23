@@ -1,97 +1,130 @@
-﻿<!-- HomeView.axaml -->
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl x:Class="SoundHeaven.Views.HomeView"
+             xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
-             mc:Ignorable="d"
-             x:Class="SoundHeaven.Views.HomeView"
-             x:DataType="viewModels:HomeViewModel">
+             xmlns:vm="clr-namespace:SoundHeaven.ViewModels"
+             xmlns:models="clr-namespace:SoundHeaven.Models"
+             xmlns:converters="clr-namespace:SoundHeaven.Converters"
+             xmlns:controls="clr-namespace:SoundHeaven.Controls"
+             x:Name="Root"
+             x:DataType="vm:HomeViewModel">
 
-    <!-- Root ScrollViewer to allow scrolling -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="16" Spacing="24">
-            <!-- Welcome Message -->
-            <TextBlock Text="Welcome to SoundHeaven!"
-                       FontSize="32"
-                       FontWeight="Bold"
-                       Foreground="{DynamicResource PrimaryColor}" />
-
-            <!-- Recently Played Songs -->
-            <StackPanel>
-                <TextBlock Text="Recently Played"
-                           FontSize="24"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,8" />
-                <ItemsControl ItemsSource="{Binding RecentlyPlayedSongs}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border CornerRadius="8" Background="{DynamicResource MaterialBackground}">
-                                <Button Background="Transparent" BorderThickness="0">
-                                    <StackPanel Orientation="Horizontal" Margin="8">
-                                        <Image Source="{Binding Artwork}" Width="50" Height="50" />
-                                        <StackPanel Margin="8,0,0,0">
-                                            <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" />
-                                            <TextBlock Text="{Binding Artist}" FontSize="14" Foreground="Gray" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Button>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
-
-            <!-- Top Playlists -->
-            <StackPanel>
-                <TextBlock Text="Top Playlists"
-                           FontSize="24"
-                           FontWeight="SemiBold"
-                           Margin="0,16,0,8" />
-                <ItemsControl ItemsSource="{Binding RecentlyPlayedSongs}">
+    <!-- Main Vertical ScrollViewer with ToolbarColor Background -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  Theme="{StaticResource MaterialModernScrollViewer}" 
+                  Background="{StaticResource ToolBarColor}">
+        <StackPanel Margin="20">
+            
+            <!-- Recently Played Section -->
+            <TextBlock HorizontalAlignment="Center"
+                       Text="Top Tracks" 
+                       FontSize="24" 
+                       FontWeight="Bold" 
+                       Margin="0,0,0,10"/>
+            
+            <!-- Horizontal ScrollViewer for Recently Played Albums -->
+            <ScrollViewer Theme="{StaticResource MaterialModernScrollViewer}"
+                          Background="Transparent"
+                          Foreground="White"
+                          HorizontalScrollBarVisibility="Auto" 
+                          VerticalScrollBarVisibility="Disabled"
+                          Margin="0,0,0,20"> <!-- Added bottom margin for spacing -->
+                <ItemsControl ItemsSource="{Binding TopTracks}">
+                    <!-- Horizontal StackPanel for Items -->
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <WrapPanel ItemWidth="150" ItemHeight="200" />
+                            <StackPanel Orientation="Horizontal"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
+                    
+                    <!-- DataTemplate for Each Song -->
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Background="Transparent" BorderThickness="0">
-                                <StackPanel>
-                                    <!-- <Image Source="{Binding CoverImage}" Width="150" Height="150" /> -->
-                                    <TextBlock Text="Placeholder" FontSize="16" FontWeight="Bold"
-                                               TextAlignment="Center" Margin="0,8,0,0" />
-                                </StackPanel>
-                            </Button>
+                        <DataTemplate x:DataType="models:Song">
+                            <StackPanel Orientation="Vertical" 
+                                        Margin="10" 
+                                        Width="150"> <!-- Fixed width for consistency -->
+                                
+                                <!-- Rounded Album Artwork -->
+                                <Border CornerRadius="15" 
+                                        ClipToBounds="True"
+                                        Background="Transparent">
+                                    <controls:AsyncImageControl Width="150" 
+                                                               Height="150" 
+                                                               SourceUrl="{Binding ArtworkUrl}" 
+                                                               Stretch="UniformToFill" />
+                                </Border>
+                                
+                                <!-- Song Title -->
+                                <TextBlock Text="{Binding Title}" 
+                                           FontWeight="Bold" 
+                                           TextAlignment="Center" 
+                                           Margin="0,5,0,0"/>
+                                
+                                <!-- Artist Name -->
+                                <TextBlock Text="{Binding Artist}" 
+                                           Foreground="Gray" 
+                                           TextAlignment="Center"/>
+                            </StackPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-            </StackPanel>
-
-            <!-- Recommended for You -->
-            <StackPanel>
-                <TextBlock Text="Recommended for You"
-                           FontSize="24"
-                           FontWeight="SemiBold"
-                           Margin="0,16,0,8" />
-                <ItemsControl ItemsSource="{Binding RecommendedSongs}">
+            </ScrollViewer>
+            
+            <!-- Recommended for You Section -->
+            <TextBlock HorizontalAlignment="Center"
+                       Text="Recommended for You" 
+                       FontSize="24" 
+                       FontWeight="Bold" 
+                       Margin="0,20,0,10"/>
+            
+            <!-- Horizontal ScrollViewer for Recommended Songs -->
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" 
+                          VerticalScrollBarVisibility="Disabled"
+                          Theme="{StaticResource MaterialModernScrollViewer}"
+                          Background="Transparent"
+                          Foreground="White">
+                        
+                <ItemsControl ItemsSource="{Binding RecommendedTracks}">
+                    <!-- Horizontal StackPanel for Items -->
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    
+                    <!-- DataTemplate for Each Recommended Song -->
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border CornerRadius="8" Background="{DynamicResource MaterialBackground}">
-                                <Button Background="Transparent" BorderThickness="0">
-                                    <StackPanel Orientation="Horizontal" Margin="8">
-                                        <Image Source="{Binding Artwork}" Width="50" Height="50" />
-                                        <StackPanel Margin="8,0,0,0">
-                                            <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" />
-                                            <TextBlock Text="{Binding Artist}" FontSize="14" Foreground="Gray" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Button>
-                            </Border>
+                        <DataTemplate x:DataType="models:Song">
+                            <StackPanel Orientation="Vertical" 
+                                        Margin="10" 
+                                        Width="150"> <!-- Fixed width for consistency -->
+                                
+                                <!-- Rounded Album Artwork -->
+                                <Border CornerRadius="15" 
+                                        ClipToBounds="True"
+                                        Background="Transparent">
+                                    <controls:AsyncImageControl Width="150" 
+                                                               Height="150" 
+                                                               SourceUrl="{Binding ArtworkUrl}" 
+                                                               Stretch="UniformToFill" />
+                                </Border>
+                                
+                                <!-- Song Title -->
+                                <TextBlock Text="{Binding Title}" 
+                                           FontWeight="Bold" 
+                                           TextAlignment="Center" 
+                                           Margin="0,5,0,0"/>
+                                
+                                <!-- Artist Name -->
+                                <TextBlock Text="{Binding Artist}" 
+                                           Foreground="Gray" 
+                                           TextAlignment="Center"/>
+                            </StackPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-            </StackPanel>
+            </ScrollViewer>
+            
         </StackPanel>
     </ScrollViewer>
+    
 </UserControl>

@@ -1,11 +1,24 @@
-﻿using System.Collections.ObjectModel;
+﻿// ViewModels/HomeViewModel.cs
+using SoundHeaven.Commands;
 using SoundHeaven.Models;
+using SoundHeaven.Services;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace SoundHeaven.ViewModels
 {
     public class HomeViewModel : ViewModelBase
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
+        private readonly IDataService _dataService;
+        public PlaybackControlViewModel PlaybackControlViewModel => _mainWindowViewModel.PlaybackControlViewModel;
+        
+        public ObservableCollection<Song> TopTracks { get;  }
+        public ObservableCollection<Song> RecentlyPlayedTracks { get; }
+        public ObservableCollection<Song> RecommendedTracks { get; }
 
         private Song _currentSong;
         public Song CurrentSong
@@ -18,42 +31,65 @@ namespace SoundHeaven.ViewModels
                     _currentSong = value;
                     OnPropertyChanged();
 
-                    // Set the MainWindowViewModel's CurrentSong to the selected song from the playlist
                     _mainWindowViewModel.CurrentSong = _currentSong;
                 }
             }
         }
+        
+        public ICommand PlayCommand => PlaybackControlViewModel.PlayCommand;
+        public ICommand PauseCommand => PlaybackControlViewModel.PauseCommand;
+        public ICommand NextCommand => PlaybackControlViewModel.NextCommand;
+        public ICommand PreviousCommand => PlaybackControlViewModel.PreviousCommand;
 
-        // Observable collection to hold recently played songs
-        public ObservableCollection<Song> RecentlyPlayedSongs { get; }
-
-        // Observable collection to hold recommended songs
-        public ObservableCollection<Song> RecommendedSongs { get; }
-
-        // Constructor accepting MainWindowViewModel
-        public HomeViewModel(MainWindowViewModel mainWindowViewModel)
+        public ICommand PlaySongCommand { get; }
+        
+        public HomeViewModel(MainWindowViewModel mainWindowViewModel, IDataService dataService)
         {
             _mainWindowViewModel = mainWindowViewModel;
+            _dataService = dataService;
 
-            // Initialize collections
-            RecentlyPlayedSongs = new ObservableCollection<Song>();
-            RecommendedSongs = new ObservableCollection<Song>();
-
-            // Load data into collections
-            // TODO fix this
-            // LoadData();
+            TopTracks = new ObservableCollection<Song>();
+            RecentlyPlayedTracks = new ObservableCollection<Song>();
+            RecommendedTracks = new ObservableCollection<Song>();
+            
+            PlaySongCommand = new RelayCommand<Song>(PlaySong);
+            
+            LoadDataAsync();
         }
 
-        // Method to load sample data (replace with real data fetching)
-        private void LoadData()
+        private async void LoadDataAsync()
         {
-// Sample data for recently played songs
-// RecentlyPlayedSongs.Add(new Song { Title = "Song 1", Artist = "Artist A", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
-// RecentlyPlayedSongs.Add(new Song { Title = "Song 2", Artist = "Artist B", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
-//
-// // Sample data for recommended songs
-// RecommendedSongs.Add(new Song { Title = "Song 3", Artist = "Artist C", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
-// RecommendedSongs.Add(new Song { Title = "Song 4", Artist = "Artist D", Artwork = new Avalonia.Controls.Image { Source = new Avalonia.Media.Imaging.Bitmap("SoundHeaven/Assets/Covers/MissingAlbum.png") } });
+            var topTracks = await _dataService.GetTopTracksAsync();
+            var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync("NavFan");
+            var recommendedTracks = await _dataService.GetRecommendedTracksAsync();
+            
+            TopTracks.Clear();
+            RecentlyPlayedTracks.Clear();
+            RecommendedTracks.Clear();
+
+            foreach (var song in topTracks)
+            {
+                TopTracks.Add(song);
+            }
+            
+            foreach (var song in recentlyPlayedTracks)
+            {
+                RecentlyPlayedTracks.Add(song);
+            }
+            
+            foreach (var song in recommendedTracks)
+            {
+                RecommendedTracks.Add(song);
+            }
+        }
+        
+        private void PlaySong(Song song)
+        {
+            if (song != null)
+            {
+                _mainWindowViewModel.CurrentSong = song;
+                PlaybackControlViewModel.PlayCommand.Execute(null);
+            }
         }
     }
 }

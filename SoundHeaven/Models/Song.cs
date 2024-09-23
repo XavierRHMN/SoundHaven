@@ -12,36 +12,19 @@ namespace SoundHeaven.Models
         public TimeSpan Duration { get; set; }
         public string? FilePath { get; set; }
         public Image? Artwork { get; set; }
-        public string? ArtworkFilePath { get; set; }
+        public string? ArtworkUrl { get; set; }
         public string? Genre { get; set; }
         public int Year { get; set; }
-        public double Length => Duration.TotalSeconds;
-
-        private AudioPlayerService _audioPlayerService;
-
-        public Song(AudioPlayerService audioPlayerService) => _audioPlayerService = audioPlayerService;
-
-        public void Play()
+        private double _length;
+        public double Length
         {
-            if (!string.IsNullOrEmpty(FilePath))
+            get => Duration.TotalSeconds;
+            set
             {
-                _audioPlayerService.Start(FilePath);
+                _length = value;
             }
         }
 
-        public void Pause()
-        {
-            _audioPlayerService.Pause();
-        }
-
-        public void Resume()
-        {
-            _audioPlayerService.Resume();
-        }
-
-        public void Stop()
-        {
-            _audioPlayerService.Stop();
-        }
+        public Song() { }
     }
 }

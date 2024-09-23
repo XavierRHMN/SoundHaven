@@ -1,7 +1,5 @@
 ﻿using Avalonia.Threading;
-using ReactiveUI;
 using System.Collections.ObjectModel;
-using System.Reactive;
 using System.Threading.Tasks;
 using SoundHeaven.Models;
 using SoundHeaven.Services;
