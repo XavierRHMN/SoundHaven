@@ -46,6 +46,12 @@ namespace SoundHeaven.ViewModels
                     Volume = AudioService.GetCurrentVolume();
                     MuteCommand.RaiseCanExecuteChanged();
                     PlaybackControlViewModel.IsPlaying = true;
+
+                    // Update text width based on the new song title
+                    TextWidth = ExtractTextWidth(CurrentSong?.Title, "Nunito", 14);
+                    
+                    // Initialize scroll positions
+                    InitializeScrollPositions();
                 }
             }
         }
@@ -131,13 +137,24 @@ namespace SoundHeaven.ViewModels
         }
 
         // For the scrolling text
-        private double _titleScrollPosition = 200;
-        public double TitleScrollPosition
+        private double _titleScrollPosition1;
+        public double TitleScrollPosition1
         {
-            get => _titleScrollPosition;
+            get => _titleScrollPosition1;
             set
             {
-                _titleScrollPosition = value;
+                _titleScrollPosition1 = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private double _titleScrollPosition2;
+        public double TitleScrollPosition2
+        {
+            get => _titleScrollPosition2;
+            set
+            {
+                _titleScrollPosition2 = value;
                 OnPropertyChanged();
             }
         }
@@ -162,10 +179,18 @@ namespace SoundHeaven.ViewModels
         public PlaybackControlViewModel PlaybackControlViewModel { get; set; }
         public ShuffleControlViewModel ShuffleControlViewModel { get; }
 
-        public double TextWidth => ExtractTextWidth(CurrentSong?.Title, "Nunito", 15);
+        private double _textWidth;
+        public double TextWidth
+        {
+            get => _textWidth;
+            set
+            {
+                _textWidth = value;
+                OnPropertyChanged();
+            }
+        }
 
-        // public double TextWidth { get; set; } = 200; // Estimated width of the text
-        public double ControlWidth { get; set; } = 200; // Width of the canvas/border
+        public double ControlWidth { get; set; } = 200 * 2; // Width of the canvas/border
 
         // Commands
         public RelayCommand MuteCommand { get; }
@@ -185,16 +210,17 @@ namespace SoundHeaven.ViewModels
 
             InitializeExamplePlaylist();
 
-
             ToolBarControlViewModel = new ToolBarControlViewModel(this);
             PlaybackControlViewModel = new PlaybackControlViewModel(this);
             ShuffleControlViewModel = new ShuffleControlViewModel(this);
             PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
             HomeViewModel = new HomeViewModel(this, dataService);
 
-
             // Set initial CurrentViewModel
             CurrentViewModel = HomeViewModel;
+
+            // Initialize scroll positions
+            InitializeScrollPositions();
         }
 
         private void InitializeExamplePlaylist()
@@ -226,23 +252,46 @@ namespace SoundHeaven.ViewModels
             _scrollTimer.Start();
         }
 
+        private void InitializeScrollPositions()
+        {
+            // Initialize the scroll positions based on the text width
+            // Assuming the first TextBlock starts at 0 and the second starts after the first one with some spacing
+            const double spacing = 50; // Adjust spacing as needed
+
+            TitleScrollPosition1 = ControlWidth;
+            TitleScrollPosition2 = ControlWidth + TextWidth + spacing;
+        }
+
         private void ScrollText()
         {
-            // Adjust the scroll positions
-            TitleScrollPosition -= 2;
+            const double scrollSpeed = 2; // Adjust scroll speed as needed
+            const double spacing = 50; // Spacing between the two TextBlocks
 
-            // Reset Title Scroll Position when it goes off screen
-            if (TitleScrollPosition <= -TextWidth)
+            // Update both scroll positions
+            TitleScrollPosition1 -= scrollSpeed;
+            TitleScrollPosition2 -= scrollSpeed;
+
+            // Reset the first TextBlock if it's completely out of view
+            if (TitleScrollPosition1 <= -TextWidth)
             {
-                TitleScrollPosition = ControlWidth;
+                TitleScrollPosition1 = TitleScrollPosition2 + TextWidth + spacing;
             }
+
+            // Reset the second TextBlock if it's completely out of view
+            if (TitleScrollPosition2 <= -TextWidth)
+            {
+                TitleScrollPosition2 = TitleScrollPosition1 + TextWidth + spacing;
+            }
+
+            // Notify property changes
+            OnPropertyChanged(nameof(TitleScrollPosition1));
+            OnPropertyChanged(nameof(TitleScrollPosition2));
         }
 
         private void UpdateSeekPosition(object sender, EventArgs e)
         {
             if (CurrentSong != null)
             {
-
                 if (AudioService.IsStopped())
                 {
                     PlaybackControlViewModel.IsPlaying = false;

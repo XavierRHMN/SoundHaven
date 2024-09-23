@@ -6,16 +6,29 @@
              x:DataType="viewModels:MainWindowViewModel">
 
     <StackPanel Orientation="Vertical">
-        <!-- Title with scrolling effect -->
+        <!-- Title with continuous scrolling effect -->
         <Border ClipToBounds="True" Width="{Binding ControlWidth}" Height="25" Background="Transparent">
-            <Canvas Width="{Binding ControlWidth}">
-                <TextBlock Text="{Binding CurrentSong.Title}" FontSize="14" FontWeight="Bold" Foreground="White"
-                           Canvas.Left="{Binding TitleScrollPosition}" />
+            <Canvas Width="{Binding ControlWidth}" Height="25">
+                <!-- First TextBlock -->
+                <TextBlock Text="{Binding CurrentSong.Title}" 
+                           FontSize="14" 
+                           FontWeight="Bold" 
+                           Foreground="White"
+                           Canvas.Left="{Binding TitleScrollPosition1}" />
+
+                <!-- Second TextBlock, positioned to the right of the first -->
+                <TextBlock Text="{Binding CurrentSong.Title}" 
+                           FontSize="14" 
+                           FontWeight="Bold" 
+                           Foreground="White"
+                           Canvas.Left="{Binding TitleScrollPosition2}" />
             </Canvas>
         </Border>
 
         <!-- Artist and Year combined -->
-        <TextBlock FontSize="14" Foreground="Gray" HorizontalAlignment="Left"
+        <TextBlock FontSize="14" 
+                   Foreground="Gray" 
+                   HorizontalAlignment="Left"
                    IsVisible="{Binding CurrentSongExists, Converter={StaticResource BooleanToVisibilityConverter}}">
             <TextBlock.Text>
                 <MultiBinding StringFormat="{}{0} - {1}">
