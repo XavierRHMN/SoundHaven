@@ -3,128 +3,162 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:SoundHeaven.ViewModels"
              xmlns:models="clr-namespace:SoundHeaven.Models"
-             xmlns:converters="clr-namespace:SoundHeaven.Converters"
              xmlns:controls="clr-namespace:SoundHeaven.Controls"
              x:Name="Root"
              x:DataType="vm:HomeViewModel">
 
-    <!-- Main Vertical ScrollViewer with ToolbarColor Background -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  Theme="{StaticResource MaterialModernScrollViewer}" 
-                  Background="{StaticResource ToolBarColor}">
-        <StackPanel Margin="20">
-            
-            <!-- Recently Played Section -->
-            <TextBlock HorizontalAlignment="Center"
-                       Text="Top Tracks" 
-                       FontSize="24" 
-                       FontWeight="Bold" 
-                       Margin="0,0,0,10"/>
-            
-            <!-- Horizontal ScrollViewer for Recently Played Albums -->
-            <ScrollViewer Theme="{StaticResource MaterialModernScrollViewer}"
-                          Background="Transparent"
-                          Foreground="White"
-                          HorizontalScrollBarVisibility="Auto" 
-                          VerticalScrollBarVisibility="Disabled"
-                          Margin="0,0,0,20"> <!-- Added bottom margin for spacing -->
-                <ItemsControl ItemsSource="{Binding TopTracks}">
-                    <!-- Horizontal StackPanel for Items -->
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    
-                    <!-- DataTemplate for Each Song -->
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="models:Song">
-                            <StackPanel Orientation="Vertical" 
-                                        Margin="10" 
-                                        Width="150"> <!-- Fixed width for consistency -->
-                                
-                                <!-- Rounded Album Artwork -->
-                                <Border CornerRadius="15" 
-                                        ClipToBounds="True"
-                                        Background="Transparent">
-                                    <controls:AsyncImageControl Width="150" 
-                                                               Height="150" 
-                                                               SourceUrl="{Binding ArtworkUrl}" 
-                                                               Stretch="UniformToFill" />
+    <!-- Main Grid with ToolBarColor Background -->
+    <Grid Background="{StaticResource ToolBarColor}">
+        <!-- Define the grid with 2 rows and 2 columns -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Banner row -->
+            <RowDefinition Height="*"/>    <!-- Content row -->
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/> <!-- Left column -->
+            <ColumnDefinition Width="*"/> <!-- Right column -->
+        </Grid.ColumnDefinitions>
+
+        <!-- First Row: Banner spanning 2 columns -->
+        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                   Text="Welcome, Home"
+                   HorizontalAlignment="Center"
+                   FontSize="32"
+                   FontWeight="Bold"
+                   Margin="0,20"/>
+
+        <!-- Second Row, First Column: StackPanel with two Grids -->
+        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Center">
+            <!-- First Grid: Recommended for you -->
+            <Grid Margin="0,0,0,20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- Title -->
+                    <RowDefinition Height="Auto"/> <!-- Album Artworks -->
+                </Grid.RowDefinitions>
+
+                <!-- Title -->
+                <TextBlock Text="Recommended for you"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,10"/>
+
+                <!-- Album Artworks in ScrollViewer -->
+                <ScrollViewer Grid.Row="1"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              Theme="{StaticResource MaterialModernScrollViewer}"
+                              Height="220" 
+                              Margin="0">
+                    <ItemsControl ItemsSource="{Binding RecommendedTracks}">
+                        <!-- Define the ItemsPanel as a UniformGrid with 2 columns -->
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2"/> <!-- Removed Rows="2" -->
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+        
+                        <!-- Simplify the ItemTemplate to display a single image -->
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:Song">
+                                <Border CornerRadius="15"
+                                        Margin="5"
+                                        Background="Transparent"
+                                        ClipToBounds="True"> <!-- Ensures rounded corners -->
+                                    <controls:AsyncImageControl Width="100"
+                                                                Height="100"
+                                                                SourceUrl="{Binding ArtworkUrl}"
+                                                                Stretch="UniformToFill" />
                                 </Border>
-                                
-                                <!-- Song Title -->
-                                <TextBlock Text="{Binding Title}" 
-                                           FontWeight="Bold" 
-                                           TextAlignment="Center" 
-                                           Margin="0,5,0,0"/>
-                                
-                                <!-- Artist Name -->
-                                <TextBlock Text="{Binding Artist}" 
-                                           Foreground="Gray" 
-                                           TextAlignment="Center"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-            
-            <!-- Recommended for You Section -->
-            <TextBlock HorizontalAlignment="Center"
-                       Text="Recently Played" 
-                       FontSize="24" 
-                       FontWeight="Bold" 
-                       Margin="0,20,0,10"/>
-            
-            <!-- Horizontal ScrollViewer for Recommended Songs -->
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" 
-                          VerticalScrollBarVisibility="Disabled"
-                          Theme="{StaticResource MaterialModernScrollViewer}"
-                          Background="Transparent"
-                          Foreground="White">
-                        
-                <ItemsControl ItemsSource="{Binding RecentlyPlayedTracks}">
-                    <!-- Horizontal StackPanel for Items -->
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    
-                    <!-- DataTemplate for Each Recommended Song -->
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="models:Song">
-                            <StackPanel Orientation="Vertical" 
-                                        Margin="10" 
-                                        Width="150"> <!-- Fixed width for consistency -->
-                                
-                                <!-- Rounded Album Artwork -->
-                                <Border CornerRadius="15" 
-                                        ClipToBounds="True"
-                                        Background="Transparent">
-                                    <controls:AsyncImageControl Width="150" 
-                                                               Height="150" 
-                                                               SourceUrl="{Binding ArtworkUrl}" 
-                                                               Stretch="UniformToFill" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Second Grid: Top Tracks -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- Title -->
+                    <RowDefinition Height="Auto"/> <!-- Album Artworks -->
+                </Grid.RowDefinitions>
+
+                <!-- Title -->
+                <TextBlock Text="Top Tracks"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,10"/>
+
+                <!-- Album Artworks in ScrollViewer -->
+                <ScrollViewer Grid.Row="1"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              Theme="{StaticResource MaterialModernScrollViewer}"
+                              Height="220" 
+                              Margin="0">
+                    <ItemsControl ItemsSource="{Binding TopTracks}">
+                        <!-- Define the ItemsPanel as a UniformGrid with 2 columns -->
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2"/> <!-- Removed Rows="2" -->
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+        
+                        <!-- Simplify the ItemTemplate to display a single image -->
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:Song">
+                                <Border CornerRadius="15"
+                                        Margin="5"
+                                        Background="Transparent"
+                                        ClipToBounds="True"> <!-- Ensures rounded corners -->
+                                    <controls:AsyncImageControl Width="100"
+                                                                Height="100"
+                                                                SourceUrl="{Binding ArtworkUrl}"
+                                                                Stretch="UniformToFill" />
                                 </Border>
-                                
-                                <!-- Song Title -->
-                                <TextBlock Text="{Binding Title}" 
-                                           FontWeight="Bold" 
-                                           TextAlignment="Center" 
-                                           Margin="0,5,0,0"/>
-                                
-                                <!-- Artist Name -->
-                                <TextBlock Text="{Binding Artist}" 
-                                           Foreground="Gray" 
-                                           TextAlignment="Center"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-            
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
         </StackPanel>
-    </ScrollViewer>
-    
+
+        <!-- Second Row, Second Column: Recently Played Tracks -->
+        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
+            <TextBlock Text="Recently Played Tracks"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,10"/>
+            <!-- ScrollViewer with Material UI Scrollbar -->
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          Theme="{StaticResource MaterialModernScrollViewer}">
+                <ItemsControl ItemsSource="{Binding RecentlyPlayedTracks}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:Song">
+                            <StackPanel Orientation="Horizontal" Margin="0,5">
+                                <!-- Album Artwork -->
+                                <Border CornerRadius="5"
+                                        Margin="5"
+                                        Background="Transparent"
+                                        ClipToBounds="True"> <!-- Ensures rounded corners -->
+                                    <controls:AsyncImageControl Width="50"
+                                                               Height="50"
+                                                               SourceUrl="{Binding ArtworkUrl}"
+                                                               Stretch="UniformToFill" />
+                                </Border>
+                                <!-- Song Details -->
+                                <StackPanel Orientation="Vertical" Margin="10,0,0,0">
+                                    <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Artist}" Foreground="Gray"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </StackPanel>
+    </Grid>
 </UserControl>

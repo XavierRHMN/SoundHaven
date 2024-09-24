@@ -15,6 +15,7 @@ namespace SoundHeaven.Models
         public string? ArtworkUrl { get; set; }
         public string? Genre { get; set; }
         public int Year { get; set; }
+        public int PlayCount { get; set; }
         private double _length;
         public double Length
         {

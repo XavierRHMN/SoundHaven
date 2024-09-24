@@ -208,6 +208,58 @@ namespace SoundHeaven.Models
 
         // Add other properties if needed
     }
+    
+    // Models for User's Top Tracks
+    public class UserTopTracksResponse
+    {
+        [JsonProperty("toptracks")]
+        public UserTopTracks TopTracks { get; set; }
+    }
+
+    public class UserTopTracks
+    {
+        [JsonProperty("track")]
+        public List<UserTopTrack> TrackList { get; set; }
+
+        [JsonProperty("@attr")]
+        public TopTracksAttr Attr { get; set; }
+    }
+
+    public class UserTopTrack
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("playcount")]
+        public int PlayCount { get; set; }
+
+        [JsonProperty("artist")]
+        public SimpleArtist Artist { get; set; }
+
+        [JsonProperty("duration")]
+        public string Duration { get; set; }
+
+        // Add other properties if needed
+    }
+
+    public class TopTracksAttr
+    {
+        [JsonProperty("user")]
+        public string User { get; set; }
+
+        [JsonProperty("page")]
+        public string Page { get; set; }
+
+        [JsonProperty("perPage")]
+        public string PerPage { get; set; }
+
+        [JsonProperty("totalPages")]
+        public string TotalPages { get; set; }
+
+        [JsonProperty("total")]
+        public string Total { get; set; }
+    }
+
 
     // Additional Models for Recommended Tracks (if needed)
     // If you plan to extend functionality in the future, consider adding more models here.

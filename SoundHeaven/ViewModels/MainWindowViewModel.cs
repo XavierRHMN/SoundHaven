@@ -190,7 +190,6 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        public double ControlWidth { get; set; } = 200 * 2; // Width of the canvas/border
 
         // Commands
         public RelayCommand MuteCommand { get; }
@@ -252,18 +251,23 @@ namespace SoundHeaven.ViewModels
             _scrollTimer.Start();
         }
 
+        public double ControlWidth { get; set; } = 200 * 2; // Width of the canvas/border
+
         private void InitializeScrollPositions()
         {
             // Initialize the scroll positions based on the text width
             // Assuming the first TextBlock starts at 0 and the second starts after the first one with some spacing
             const double spacing = 50; // Adjust spacing as needed
-
-            TitleScrollPosition1 = ControlWidth;
-            TitleScrollPosition2 = ControlWidth + TextWidth + spacing;
+            const double spaceFromLeft = 300;
+            
+            TitleScrollPosition1 = spaceFromLeft;
+            TitleScrollPosition2 =  spaceFromLeft + TextWidth + spacing;
         }
-
+        
+        
         private void ScrollText()
         {
+            
             const double scrollSpeed = 2; // Adjust scroll speed as needed
             const double spacing = 50; // Spacing between the two TextBlocks
 

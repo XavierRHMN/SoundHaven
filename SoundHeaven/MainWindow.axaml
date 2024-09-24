@@ -36,8 +36,8 @@
         <Grid x:Name="SongInfoSeekbarVolumebar" Grid.Row="1" Grid.Column="1"
               Background="{StaticResource PlayerBarColor}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" MinWidth="150" MaxWidth="250"/>
+                <ColumnDefinition Width="*" MinWidth="150"/>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="250" />
             </Grid.ColumnDefinitions>
@@ -46,8 +46,7 @@
 
             <controls:SeekSliderControl Grid.Row="0" Grid.Column="1" />
             
-            <controls:ShuffleControl Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
-                                     DataContext="{Binding ShuffleControlViewModel}" />
+            <controls:ShuffleControl Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"/>
 
             <controls:VolumeControl Grid.Row="0" Grid.Column="3" VerticalAlignment="Center" />
         </Grid>

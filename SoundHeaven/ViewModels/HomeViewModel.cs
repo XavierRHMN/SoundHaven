@@ -59,8 +59,9 @@ namespace SoundHeaven.ViewModels
 
         private async void LoadDataAsync()
         {
+            var username = "NavFan";
             var topTracks = await _dataService.GetTopTracksAsync();
-            var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync("NavFan");
+            var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync(username);
             var recommendedTracks = await _dataService.GetRecommendedTracksAsync();
             
             TopTracks.Clear();
