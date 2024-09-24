@@ -16,13 +16,13 @@ namespace SoundHeaven.Models
 
         private MainWindowViewModel _mainWindowViewModel;
         private ToolBarControlViewModel _toolBarControlViewModel;
-        private AudioPlayerService _audioPlayerService;
+        private AudioService _audioService;
 
         public PlaylistStore(MainWindowViewModel mainWindowViewModel)
         {
             Playlists = new ObservableCollection<Playlist>();
             _mainWindowViewModel = mainWindowViewModel;
-            _audioPlayerService = _mainWindowViewModel.AudioService;
+            _audioService = _mainWindowViewModel.AudioService;
             _toolBarControlViewModel = _mainWindowViewModel.ToolBarControlViewModel;
         }
 

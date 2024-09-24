@@ -22,7 +22,7 @@ namespace SoundHeaven.ViewModels
             Next = 1
         }
 
-        private AudioPlayerService _audioPlayerService => _mainWindowViewModel.AudioService;
+        private AudioService AudioService => _mainWindowViewModel.AudioService;
         private readonly MainWindowViewModel _mainWindowViewModel;
 
         private bool _isShuffleEnabled;
@@ -79,13 +79,13 @@ namespace SoundHeaven.ViewModels
 
             if (song != null)
             {
-                if (_audioPlayerService.IsStopped())
+                if (AudioService.IsStopped())
                 {
-                    _audioPlayerService.Start(song.FilePath);
+                    AudioService.Start(song.FilePath);
                 }
                 else
                 {
-                    _audioPlayerService.Resume();
+                    AudioService.Resume();
                 }
                 IsPlaying = true;
             }
@@ -93,7 +93,7 @@ namespace SoundHeaven.ViewModels
             {
                 song = _mainWindowViewModel.CurrentPlaylist.Songs[0];
                 _mainWindowViewModel.CurrentSong = song;
-                _audioPlayerService.Start(song.FilePath);
+                AudioService.Start(song.FilePath);
                 IsPlaying = true;
             }
             else
@@ -105,9 +105,9 @@ namespace SoundHeaven.ViewModels
 
         private void Pause()
         {
-            if (_audioPlayerService.IsPlaying())
+            if (AudioService.IsPlaying())
             {
-                _audioPlayerService.Pause();
+                AudioService.Pause();
                 IsPlaying = false;
             }
         }
@@ -144,7 +144,7 @@ namespace SoundHeaven.ViewModels
             if (nextSong != null)
             {
                 _mainWindowViewModel.CurrentSong = nextSong;
-                _audioPlayerService.Start(nextSong.FilePath);
+                AudioService.Start(nextSong.FilePath);
                 IsPlaying = true;
             }
             else
@@ -186,13 +186,13 @@ namespace SoundHeaven.ViewModels
             {
                 if (_mainWindowViewModel.SeekPosition > 3)
                 {
-                    _audioPlayerService.Restart(_mainWindowViewModel.CurrentSong);
+                    AudioService.Restart(_mainWindowViewModel.CurrentSong);
                     _mainWindowViewModel.SeekPosition = 0;
                 }
                 else if (currentPlaylist.Songs.Count > 1)
                 {
                     _mainWindowViewModel.CurrentSong = previousSong;
-                    _audioPlayerService.Start(previousSong.FilePath);
+                    AudioService.Start(previousSong.FilePath);
                     IsPlaying = true;
                 }
             }

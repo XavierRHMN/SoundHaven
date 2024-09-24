@@ -24,7 +24,7 @@ namespace SoundHeaven.ViewModels
     {
         public ObservableCollection<Playlist> PlaylistCollection => PlaylistStore.Playlists;
 
-        public AudioPlayerService AudioService { get; set; }
+        public AudioService AudioService { get; set; }
         public PlaylistStore PlaylistStore { get; set; }
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _scrollTimer;
@@ -202,7 +202,7 @@ namespace SoundHeaven.ViewModels
             string apiKey = apiKeyProvider.GetApiKey();
             var dataService = new LastFmDataService(apiKey);
             
-            AudioService = new AudioPlayerService();
+            AudioService = new AudioService();
             PlaylistStore = new PlaylistStore(this);
 
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);

@@ -4,13 +4,13 @@ using System;
 
 namespace SoundHeaven.Services
 {
-    public class AudioPlayerService : IDisposable
+    public class AudioService : IDisposable
     {
         private IWavePlayer _waveOutDevice;
         private AudioFileReader _audioFileReader;
         private double _audioVolume = 0.1;
 
-        public AudioPlayerService() => _waveOutDevice = new WaveOutEvent(); // You can replace this with a different output device if needed
+        public AudioService() => _waveOutDevice = new WaveOutEvent(); // You can replace this with a different output device if needed
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
 

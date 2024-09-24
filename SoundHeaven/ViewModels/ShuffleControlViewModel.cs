@@ -1,5 +1,6 @@
 ﻿using SoundHeaven.Commands;
 using SoundHeaven.Models;
+using SoundHeaven.Services;
 using System;
 using System.Windows.Input;
 
