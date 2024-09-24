@@ -259,6 +259,75 @@ namespace SoundHeaven.Models
         [JsonProperty("total")]
         public string Total { get; set; }
     }
+    
+    // Similar Artists Models
+    public class SimilarArtistsResponse
+    {
+        [JsonProperty("similarartists")]
+        public SimilarArtists SimilarArtists { get; set; }
+    }
+
+    public class SimilarArtists
+    {
+        [JsonProperty("artist")]
+        public List<SimilarArtist> ArtistList { get; set; }
+    }
+
+    public class SimilarArtist
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        // Add other properties if needed
+    }
+
+    // User's Top Artists Models
+    public class UserTopArtistsResponse
+    {
+        [JsonProperty("topartists")]
+        public UserTopArtists TopArtists { get; set; }
+    }
+
+    public class UserTopArtists
+    {
+        [JsonProperty("artist")]
+        public List<UserTopArtist> ArtistList { get; set; }
+    }
+
+    public class UserTopArtist
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        // Add other properties if needed
+    }
+
+    // Artist's Top Tracks Models
+    public class ArtistTopTracksResponse
+    {
+        [JsonProperty("toptracks")]
+        public ArtistTopTracks TopTracks { get; set; }
+    }
+
+    public class ArtistTopTracks
+    {
+        [JsonProperty("track")]
+        public List<ArtistTopTrack> TrackList { get; set; }
+    }
+
+    public class ArtistTopTrack
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("duration")]
+        public string Duration { get; set; }
+
+        // Add other properties if needed
+    }
+
+
+
 
 
     // Additional Models for Recommended Tracks (if needed)

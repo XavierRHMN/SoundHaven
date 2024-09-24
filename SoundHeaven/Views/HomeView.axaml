@@ -14,8 +14,8 @@
             <RowDefinition Height="*"/>    <!-- Content row -->
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/> <!-- Left column -->
-            <ColumnDefinition Width="*"/> <!-- Middle column -->
+            <ColumnDefinition Width="*" MinWidth="400"/> <!-- Left column -->
+            <ColumnDefinition Width="*" MinWidth="300"/> <!-- Middle column -->
             <ColumnDefinition Width="*"/> <!-- Right column -->
         </Grid.ColumnDefinitions>
 
@@ -28,28 +28,28 @@
                    Margin="0,30"/>
 
         <!-- Left Column: Recommended and Top Tracks -->
-        <Grid Grid.Row="1" Grid.Column="0" Margin="20,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <!-- Recommended Tracks -->
-            <Grid Grid.Row="0">
+        <ScrollViewer Grid.Row="1" Grid.Column="0" 
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Theme="{StaticResource MaterialModernScrollViewer}">
+            <Grid Margin="20,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="Recommended for you"
-                           FontSize="24" FontWeight="Bold"
-                           HorizontalAlignment="Left" Margin="0,0,0,10"/>
+                <!-- Recommended Tracks -->
+                <Grid Grid.Row="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <ScrollViewer Grid.Row="1"
-                              HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto"
-                              Theme="{StaticResource MaterialModernScrollViewer}">
-                    <ItemsControl ItemsSource="{Binding RecommendedTracks}">
+                    <TextBlock Grid.Row="0" Text="Recommended for you"
+                               FontSize="24" FontWeight="Bold"
+                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
+                    <ItemsControl Grid.Row="1" ItemsSource="{Binding RecommendedTracks}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <UniformGrid Columns="2"/>
@@ -58,8 +58,10 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="models:Song">
                                 <StackPanel Margin="5">
-                                    <Border CornerRadius="15"
-                                            ClipToBounds="True">
+                                    <Border CornerRadius="10"
+                                            ClipToBounds="True"
+                                            Width="150"
+                                            Height="150">
                                         <controls:AsyncImageControl Stretch="UniformToFill">
                                             <controls:AsyncImageControl.SourceUrl>
                                                 <Binding Path="ArtworkUrl"/>
@@ -69,33 +71,30 @@
                                     <TextBlock Text="{Binding Title}"
                                                FontWeight="Bold"
                                                TextWrapping="Wrap"
-                                               Margin="0,5,0,0"/>
+                                               Margin="0,5,0,0"
+                                               MaxWidth="150"/>
                                     <TextBlock Text="{Binding Artist}"
                                                Foreground="Gray"
-                                               TextWrapping="Wrap"/>
+                                               TextWrapping="Wrap"
+                                               MaxWidth="150"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </ScrollViewer>
-            </Grid>
+                </Grid>
 
-            <!-- Top Tracks -->
-            <Grid Grid.Row="1">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+                <!-- Top Tracks -->
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="Top Tracks"
-                           FontSize="24" FontWeight="Bold"
-                           HorizontalAlignment="Left" Margin="0,20,0,10"/>
+                    <TextBlock Grid.Row="0" Text="Top Tracks"
+                               FontSize="24" FontWeight="Bold"
+                               HorizontalAlignment="Left" Margin="0,20,0,10"/>
 
-                <ScrollViewer Grid.Row="1"
-                              HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto"
-                              Theme="{StaticResource MaterialModernScrollViewer}">
-                    <ItemsControl ItemsSource="{Binding TopTracks}">
+                    <ItemsControl Grid.Row="1" ItemsSource="{Binding TopTracks}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <UniformGrid Columns="2"/>
@@ -104,8 +103,10 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="models:Song">
                                 <StackPanel Margin="5">
-                                    <Border CornerRadius="15"
-                                            ClipToBounds="True">
+                                    <Border CornerRadius="10"
+                                            ClipToBounds="True"
+                                            Width="150"
+                                            Height="150">
                                         <controls:AsyncImageControl Stretch="UniformToFill">
                                             <controls:AsyncImageControl.SourceUrl>
                                                 <Binding Path="ArtworkUrl"/>
@@ -115,18 +116,19 @@
                                     <TextBlock Text="{Binding Title}"
                                                FontWeight="Bold"
                                                TextWrapping="Wrap"
-                                               Margin="0,5,0,0"/>
+                                               Margin="0,5,0,0"
+                                               MaxWidth="150"/>
                                     <TextBlock Text="{Binding Artist}"
                                                Foreground="Gray"
-                                               TextWrapping="Wrap"/>
+                                               TextWrapping="Wrap"
+                                               MaxWidth="150"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </ScrollViewer>
+                </Grid>
             </Grid>
-        </Grid>
-        
+        </ScrollViewer>
         <!-- Middle Column: Recently Played Tracks -->
         <Grid Grid.Row="1" Grid.Column="1" Margin="20,0">
             <Grid.RowDefinitions>
@@ -189,7 +191,7 @@
             <TextBlock Grid.Row="0" Text="Up Next"
                        FontSize="24"
                        FontWeight="Bold"
-                       HorizontalAlignment="Left"
+                       HorizontalAlignment="Center"
                        Margin="0,0,0,10"/>
 
             <ScrollViewer Grid.Row="1"

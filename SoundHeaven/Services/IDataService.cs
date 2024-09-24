@@ -8,6 +8,6 @@ namespace SoundHeaven.Services
     {
         Task<IEnumerable<Song>> GetTopTracksAsync();
         public Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(string username);
-        Task<IEnumerable<Song>> GetRecommendedTracksAsync();
+        Task<IEnumerable<Song>> GetRecommendedTracksAsync(string username);
     }
 }
