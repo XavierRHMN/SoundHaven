@@ -45,7 +45,7 @@ namespace SoundHeaven.Controls
                         {
                             try
                             {
-                                var bitmap = Bitmap.DecodeToWidth(stream, (int)Width);
+                                var bitmap = new Bitmap(stream);
                                 Source = bitmap;
                             }
                             catch (Exception ex)
