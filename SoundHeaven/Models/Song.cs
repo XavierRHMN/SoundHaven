@@ -1,4 +1,5 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Media.Imaging;
 using SoundHeaven.Services;
 using System;
 
@@ -11,7 +12,7 @@ namespace SoundHeaven.Models
         public string? Album { get; set; }
         public TimeSpan Duration { get; set; }
         public string? FilePath { get; set; }
-        public Image? Artwork { get; set; }
+        public Bitmap? Artwork { get; set; }
         public string? ArtworkUrl { get; set; }
         public string? Genre { get; set; }
         public int Year { get; set; }

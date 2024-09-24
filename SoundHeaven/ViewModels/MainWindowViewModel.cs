@@ -258,7 +258,7 @@ namespace SoundHeaven.ViewModels
             // Initialize the scroll positions based on the text width
             // Assuming the first TextBlock starts at 0 and the second starts after the first one with some spacing
             const double spacing = 50; // Adjust spacing as needed
-            const double spaceFromLeft = 300;
+            const double spaceFromLeft = 200;
             
             TitleScrollPosition1 = spaceFromLeft;
             TitleScrollPosition2 =  spaceFromLeft + TextWidth + spacing;

@@ -20,39 +20,32 @@ namespace SoundHeaven.Helpers
             if (song == null || string.IsNullOrWhiteSpace(song.FilePath))
                 throw new ArgumentException("Invalid song or file path.");
 
-            // Use System.IO.File for file system operations
             if (!System.IO.File.Exists(song.FilePath))
                 throw new FileNotFoundException("MP3 file not found.", song.FilePath);
 
-            // Use TagLib.File to read the MP3 metadata
-            var file = TagLib.File.Create(song.FilePath);
-
-            // Check if the artwork directory exists, if not, create it
-            if (!Directory.Exists(CoversPath))
+            using (var file = TagLib.File.Create(song.FilePath))
             {
-                Directory.CreateDirectory(CoversPath);
-            }
-
-            // Extract and save artwork if available
-            if (file.Tag.Pictures.Length > 0)
-            {
-                var picture = file.Tag.Pictures[0];
-                using (var stream = new MemoryStream(picture.Data.Data))
+                if (file.Tag.Pictures.Length > 0)
                 {
-                    var artwork = new Bitmap(stream);
+                    var picture = file.Tag.Pictures[0];
+                    using (var stream = new MemoryStream(picture.Data.Data))
+                    {
+                        // Create a Bitmap from the stream
+                        var bitmap = new Bitmap(stream);
+                
+                        // Set the Artwork property of the Song object
+                        song.Artwork = bitmap;
 
-                    // Generate a unique file name for the artwork (e.g., based on song title or file name)
-                    string? artworkFileName = $"{Path.GetFileNameWithoutExtension(song.FilePath)}_cover.png";
-                    string? artworkFilePath = Path.Combine(CoversPath, artworkFileName);
-
-                    // Use System.IO.File to save the artwork
-                    // using (var fileStream = System.IO.File.Create(artworkFilePath))
-                    // {
-                    //     artwork.Save(fileStream);
-                    // }
-
-                    // Set the Image control's source to the saved artwork
-                    song.Artwork = new Image { Source = new Bitmap(artworkFilePath) };
+                        // Optionally, if you still want to save the artwork to a file:
+                        string artworkFileName = $"{Path.GetFileNameWithoutExtension(song.FilePath)}_cover.png";
+                        string artworkFilePath = Path.Combine(CoversPath, artworkFileName);
+                        bitmap.Save(artworkFilePath);
+                    }
+                }
+                else
+                {
+                    // Set a default image or null if no artwork is available
+                    song.Artwork = null;
                 }
             }
         }

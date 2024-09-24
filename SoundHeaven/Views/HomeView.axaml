@@ -152,16 +152,16 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-
+                                
                                 <!-- Album Artwork -->
                                 <Border Grid.Column="0"
                                         CornerRadius="5"
                                         ClipToBounds="True"
                                         Margin="0,0,10,0">
-                                    <controls:AsyncImageControl Width="50"
-                                                                Height="50"
-                                                                SourceUrl="{Binding ArtworkUrl}"
-                                                                Stretch="UniformToFill" />
+                                    <Image Width="50"
+                                           Height="50"
+                                           Source="{Binding Artwork}"
+                                           Stretch="UniformToFill" />
                                 </Border>
 
                                 <!-- Song Details -->
@@ -185,7 +185,7 @@
             <TextBlock Text="Recently Played Tracks"
                        FontSize="24"
                        FontWeight="Bold"
-                       HorizontalAlignment="Center"
+                       HorizontalAlignment="Left"
                        Margin="0,0,0,10"/>
             <!-- ScrollViewer with Material UI Scrollbar -->
             <ScrollViewer HorizontalScrollBarVisibility="Auto"
