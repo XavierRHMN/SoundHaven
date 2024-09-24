@@ -94,7 +94,6 @@ namespace SoundHeaven.ViewModels
         private void ShowHomeView()
         {
             Console.WriteLine("Switching to HomeView");
-            ToolbarSelectedPlaylist = null; // Deselect the current playlist
             _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.HomeViewModel;
         }
 

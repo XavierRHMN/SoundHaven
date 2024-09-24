@@ -20,21 +20,29 @@ namespace SoundHeaven.ViewModels
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
         public ObservableCollection<Song> RecommendedTracks { get; }
 
-        private Song _currentSong;
-        public Song CurrentSong
+        public Playlist? MainWindowViewModelCurrentPlaylist => _mainWindowViewModel.CurrentPlaylist;
+        public ObservableCollection<Song>? Songs => MainWindowViewModelCurrentPlaylist?.Songs;
+
+        
+        private Song? _selectedSong;
+        public Song? SelectedSong
         {
-            get => _currentSong;
+            get => _selectedSong;
             set
             {
-                if (_currentSong != value)
+                if (_selectedSong != value)
                 {
-                    _currentSong = value;
+                    _selectedSong = value;
                     OnPropertyChanged();
 
-                    _mainWindowViewModel.CurrentSong = _currentSong;
+                    if (_selectedSong != null && _mainWindowViewModel.CurrentSong != _selectedSong)
+                    {
+                        _mainWindowViewModel.CurrentSong = _selectedSong;
+                    }
                 }
             }
         }
+        
         
         public ICommand PlayCommand => PlaybackControlViewModel.PlayCommand;
         public ICommand PauseCommand => PlaybackControlViewModel.PauseCommand;
