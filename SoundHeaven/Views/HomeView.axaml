@@ -8,6 +8,12 @@
              x:Name="Root" d:DesignWidth="1500" d:DesignHeight="600"
              x:DataType="vm:HomeViewModel">
     
+    <!-- Resource Definitions -->
+    <UserControl.Resources>
+        <!-- Define PlayerColorBrush based on PrimaryColor -->
+        <SolidColorBrush x:Key="PlayerColorBrush" Color="{StaticResource PrimaryColor}" />
+    </UserControl.Resources>
+
     <!-- Consolidated Styles Section -->
     <UserControl.Styles>
         <!-- Header Style -->
@@ -15,14 +21,16 @@
             <Setter Property="FontFamily"
                     Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
             <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Foreground" Value="White" /> <!-- Example: Set a default color if needed -->
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="24" /> <!-- Centralized FontSize -->
         </Style>
         
         <!-- Track Title Style -->
         <Style Selector="TextBlock.TrackTitle">
             <Setter Property="FontFamily"
                     Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
-            <Setter Property="Foreground" Value="White" /> <!-- Example: Set a default color if needed -->
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="16" /> <!-- Optional: Define if needed -->
         </Style>
         
         <!-- Artist Name Style -->
@@ -30,6 +38,7 @@
             <Setter Property="FontFamily"
                     Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
             <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="FontSize" Value="14" /> <!-- Optional: Define if needed -->
         </Style>
     </UserControl.Styles>
     
@@ -39,125 +48,76 @@
             <RowDefinition Height="*"/>    <!-- Content row -->
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="400"/> <!-- Left column -->
+            <ColumnDefinition Width="*" MinWidth="400" MaxWidth="425"/> <!-- Left column -->
             <ColumnDefinition Width="*" MinWidth="300" MaxWidth="350"/> <!-- Middle column -->
             <ColumnDefinition Width="*"/> <!-- Right column -->
         </Grid.ColumnDefinitions>
 
         <!-- Banner -->
-        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
-                   Text="Welcome, Home"
-                   HorizontalAlignment="Center"
-                   FontSize="32"
-                   FontWeight="Bold"
-                   Margin="0,30"
-                   Classes="Headers"/>
+        <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
+                Background="{StaticResource PlayerColorBrush}"
+                CornerRadius="10,10,10,10" 
+                Padding="0,30">
+            <TextBlock Text="Welcome, Home"
+                       HorizontalAlignment="Center"
+                       FontSize="32"
+                       FontWeight="Bold"
+                       Foreground="Black" 
+                       Classes="Headers"/>
+        </Border>
 
-        <!-- Left Column: Recommended and Top Tracks -->
-        <ScrollViewer Grid.Row="1" Grid.Column="0" 
-                      VerticalScrollBarVisibility="Hidden"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Theme="{StaticResource MaterialModernScrollViewer}">
-            <Grid Margin="20,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- Left Column: Recommended Tracks -->
+        <Grid Grid.Row="1" Grid.Column="0" Margin="0,30,0,0"> <!-- Added top margin for spacing -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Header row -->
+                <RowDefinition Height="*"/>    <!-- Scrollable content row -->
+            </Grid.RowDefinitions>
 
-                <!-- Recommended Tracks -->
-                <Grid Grid.Row="0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+            <!-- "Recommended for you" Header -->
+            <TextBlock Grid.Row="0" Text="Recommended for you"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,10"
+                       Classes="Headers"/>
 
-                    <TextBlock Grid.Row="0" Text="Recommended for you"
-                               FontSize="24" FontWeight="Bold"
-                               HorizontalAlignment="Center" Margin="0,0,0,10"
-                               Classes="Headers"/>
-
-                    <ItemsControl Grid.Row="1" ItemsSource="{Binding RecommendedTracks}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="2"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="models:Song">
-                                <StackPanel Margin="5">
-                                    <Border CornerRadius="10"
-                                            ClipToBounds="True"
-                                            Width="150"
-                                            Height="150">
-                                        <controls:AsyncImageControl Stretch="UniformToFill">
-                                            <controls:AsyncImageControl.SourceUrl>
-                                                <Binding Path="ArtworkUrl"/>
-                                            </controls:AsyncImageControl.SourceUrl>
-                                        </controls:AsyncImageControl>
-                                    </Border>
-                                    <TextBlock Text="{Binding Title}"
-                                               Classes="TrackTitle"
-                                               TextWrapping="Wrap"
-                                               Margin="0,5,0,0"
-                                               MaxWidth="150"/>
-                                    <TextBlock Text="{Binding Artist}"
-                                               Classes="ArtistName"
-                                               TextWrapping="Wrap"
-                                               MaxWidth="150"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </Grid>
-
-                <!-- Top Tracks -->
-                <Grid Grid.Row="1">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Text="Top Tracks"
-                               FontSize="24" FontWeight="Bold"
-                               HorizontalAlignment="Center" 
-                               Margin="0,20,0,10"
-                               Classes="Headers"/>
-
-                    <ItemsControl Grid.Row="1" ItemsSource="{Binding TopTracks}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="2"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="models:Song">
-                                <StackPanel Margin="5">
-                                    <Border CornerRadius="10"
-                                            ClipToBounds="True"
-                                            Width="150"
-                                            Height="150">
-                                        <controls:AsyncImageControl Stretch="UniformToFill">
-                                            <controls:AsyncImageControl.SourceUrl>
-                                                <Binding Path="ArtworkUrl"/>
-                                            </controls:AsyncImageControl.SourceUrl>
-                                        </controls:AsyncImageControl>
-                                    </Border>
-                                    <TextBlock Text="{Binding Title}"
-                                               Classes="TrackTitle"
-                                               TextWrapping="Wrap"
-                                               Margin="0,5,0,0"
-                                               MaxWidth="150"/>
-                                    <TextBlock Text="{Binding Artist}"
-                                               Classes="ArtistName"
-                                               TextWrapping="Wrap"
-                                               MaxWidth="150"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </Grid>
-            </Grid>
-        </ScrollViewer>
+            <!-- Scrollable Recommended Tracks -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Hidden"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Theme="{StaticResource MaterialModernScrollViewer}">
+                <ItemsControl ItemsSource="{Binding RecommendedTracks}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:Song">
+                            <StackPanel Margin="5">
+                                <Border CornerRadius="10"
+                                        ClipToBounds="True"
+                                        Width="150"
+                                        Height="150">
+                                    <controls:AsyncImageControl Stretch="UniformToFill">
+                                        <controls:AsyncImageControl.SourceUrl>
+                                            <Binding Path="ArtworkUrl"/>
+                                        </controls:AsyncImageControl.SourceUrl>
+                                    </controls:AsyncImageControl>
+                                </Border>
+                                <TextBlock Text="{Binding Title}"
+                                           Classes="TrackTitle"
+                                           TextWrapping="Wrap"
+                                           Margin="0,5,0,0"
+                                           MaxWidth="150"/>
+                                <TextBlock Text="{Binding Artist}"
+                                           Classes="ArtistName"
+                                           TextWrapping="Wrap"
+                                           MaxWidth="150"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
 
         <!-- Middle Column: Recently Played Tracks -->
         <Grid Grid.Row="1" Grid.Column="1" Margin="20,0">
@@ -168,10 +128,8 @@
 
             <TextBlock Grid.Row="0" 
                        Text="Recently Played Tracks"
-                       FontSize="24"
-                       FontWeight="Bold"
                        HorizontalAlignment="Left"
-                       Margin="0,0,0,10"
+                       Margin="0,30,0,10"
                        Classes="Headers"/>
 
             <ScrollViewer Grid.Row="1"
@@ -220,10 +178,8 @@
             </Grid.RowDefinitions>
 
             <TextBlock Grid.Row="0" Text="Up Next"
-                       FontSize="24"
-                       FontWeight="Bold"
                        HorizontalAlignment="Center"
-                       Margin="0,0,0,10"
+                       Margin="0,30,0,10"
                        Classes="Headers"/>
 
             <ScrollViewer Grid.Row="1"
@@ -235,7 +191,7 @@
                          Theme="{StaticResource MaterialModernListBox}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:Song">
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>

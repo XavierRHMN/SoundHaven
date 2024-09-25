@@ -16,27 +16,27 @@
         <Button Background="Transparent" Foreground="White" Command="{Binding ShowHomeViewCommand}" Width="200"
                 HorizontalContentAlignment="Left">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHeaven/Assets/Icons/home.svg" Width="32" Height="32"
+                <Svg Path="avares://SoundHeaven/Assets/Icons/home.svg" Width="16" Height="16"
                      HorizontalAlignment="Left" />
-                <TextBlock Classes="ToolbarText" Text="Home" VerticalAlignment="Center" Margin="20,5,0,0" />
+                <TextBlock Classes="ToolbarText" Text="Home" VerticalAlignment="Center" Margin="10,5,0,0" />
             </StackPanel>
         </Button>
 
         <Button Background="Transparent" Foreground="White" Command="{Binding ShowSearchViewCommand}" Width="200"
                 HorizontalContentAlignment="Left">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHeaven/Assets/Icons/search.svg" Width="32" Height="32"
+                <Svg Path="avares://SoundHeaven/Assets/Icons/search.svg" Width="16" Height="16"
                      HorizontalAlignment="Left" />
-                <TextBlock Classes="ToolbarText" Text="Search" VerticalAlignment="Center" Margin="20,5,0,0" />
+                <TextBlock Classes="ToolbarText" Text="Search" VerticalAlignment="Center" Margin="10,5,0,0" />
             </StackPanel>
         </Button>
 
         <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlaylistViewCommand}" Width="200"
                 HorizontalContentAlignment="Left">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHeaven/Assets/Icons/playlists.svg" Width="32" Height="32"
+                <Svg Path="avares://SoundHeaven/Assets/Icons/playlists.svg" Width="16" Height="16"
                      HorizontalAlignment="Left" />
-                <TextBlock Classes="ToolbarText" Text="Playlists" VerticalAlignment="Center" Margin="20,0,0,0" />
+                <TextBlock Classes="ToolbarText" Text="Playlists" VerticalAlignment="Center" Margin="10,5,0,0" />
             </StackPanel>
         </Button>
 
@@ -79,15 +79,14 @@
             </ListBox>
         </ScrollViewer>
 
-
         <!-- Styling for TextBlocks in the toolbar -->
         <StackPanel.Styles>
             <Style Selector="TextBlock.ToolbarText">
-                <Setter Property="FontSize" Value="24" />
+                <Setter Property="FontSize" Value="14" />
                 <Setter Property="Foreground" Value="White" />
-                <Setter Property="FontWeight" Value="Medium" />
+                <Setter Property="FontWeight" Value="Light" />
                 <Setter Property="FontFamily"
-                        Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito" />
+                        Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             </Style>
             
             <Style Selector="TextBlock.Playlists">
@@ -96,7 +95,7 @@
                 <Setter Property="Opacity" Value="0.8" />
                 <Setter Property="FontWeight" Value="Light" />
                 <Setter Property="FontFamily"
-                        Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito" />
+                        Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             </Style>
             
             <Style Selector="controls|FloatingButton">
@@ -104,7 +103,7 @@
                 <Setter Property="Foreground" Value="White" />
                 <Setter Property="FontWeight" Value="Light" />
                 <Setter Property="FontFamily"
-                        Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito" />
+                        Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             </Style>
         </StackPanel.Styles>
     </StackPanel>

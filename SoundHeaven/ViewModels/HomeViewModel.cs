@@ -2,9 +2,11 @@
 using SoundHeaven.Commands;
 using SoundHeaven.Models;
 using SoundHeaven.Services;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -19,7 +21,7 @@ namespace SoundHeaven.ViewModels
         public ObservableCollection<Song> TopTracks { get;  }
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
         public ObservableCollection<Song> RecommendedTracks { get; }
-
+        
         public Playlist? MainWindowViewModelCurrentPlaylist => _mainWindowViewModel.CurrentPlaylist;
         public ObservableCollection<Song>? Songs => MainWindowViewModelCurrentPlaylist?.Songs;
 
@@ -68,28 +70,33 @@ namespace SoundHeaven.ViewModels
         private async void LoadDataAsync()
         {
             var username = "NavFan";
-            var topTracks = await _dataService.GetTopTracksAsync();
+            // TODO do something with this
+            // var topTracks = await _dataService.GetTopTracksAsync();
             var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync(username);
             var recommendedTracks = await _dataService.GetRecommendedTracksAsync(username);
             
-            TopTracks.Clear();
+            // TopTracks.Clear();
             RecentlyPlayedTracks.Clear();
             RecommendedTracks.Clear();
-
-            foreach (var song in topTracks)
-            {
-                TopTracks.Add(song);
-            }
             
-            foreach (var song in recentlyPlayedTracks)
+            // Shuffle using LINQ's OrderBy with a random key
+            var shuffledTracks = recommendedTracks.OrderBy(track => new Random().Next()).ToList();
+            
+            RecommendedTracks.Clear();
+            foreach (var song in shuffledTracks)
+            {
+                RecommendedTracks.Add(song);
+            }
+
+            foreach (var song in recentlyPlayedTracks.Skip(1))
             {
                 RecentlyPlayedTracks.Add(song);
             }
             
-            foreach (var song in recommendedTracks)
-            {
-                RecommendedTracks.Add(song);
-            }
+            // foreach (var song in topTracks)
+            // {
+            //     TopTracks.Add(song);
+            // }
         }
         
         private void PlaySong(Song song)
