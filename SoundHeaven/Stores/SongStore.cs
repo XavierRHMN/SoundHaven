@@ -9,12 +9,9 @@ namespace SoundHeaven.Stores
     public class SongStore
     {
         // Collection of songs
-        private ObservableCollection<Song> _songs;
+        private ObservableCollection<Song> _songs = new ObservableCollection<Song>();
         public ObservableCollection<Song> Songs => _songs;
-
-
-        public SongStore() => _songs = new ObservableCollection<Song>();
-
+        
         // Add a song to the collection
         public void AddSong(Song song)
         {
@@ -79,6 +76,8 @@ namespace SoundHeaven.Stores
             {
                 // Get all MP3 files in the directory
                 string[] mp3Files = Directory.GetFiles(tracksPath, "*.mp3");
+                
+                Console.WriteLine(mp3Files.Length);
 
                 // Iterate over each MP3 file
                 foreach (string? mp3File in mp3Files)
@@ -87,7 +86,7 @@ namespace SoundHeaven.Stores
                     {
                         // Convert the MP3 file to a Song object
                         var song = Mp3ToSongHelper.GetSongFromMp3(mp3File);
-
+                        
                         // Add the song to the SongStore
                         AddSong(song);
                     }

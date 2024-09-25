@@ -8,6 +8,31 @@
              x:Name="Root" d:DesignWidth="1500" d:DesignHeight="600"
              x:DataType="vm:HomeViewModel">
     
+    <!-- Consolidated Styles Section -->
+    <UserControl.Styles>
+        <!-- Header Style -->
+        <Style Selector="TextBlock.Headers">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="White" /> <!-- Example: Set a default color if needed -->
+        </Style>
+        
+        <!-- Track Title Style -->
+        <Style Selector="TextBlock.TrackTitle">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="White" /> <!-- Example: Set a default color if needed -->
+        </Style>
+        
+        <!-- Artist Name Style -->
+        <Style Selector="TextBlock.ArtistName">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+            <Setter Property="Foreground" Value="Gray" />
+        </Style>
+    </UserControl.Styles>
+    
     <Grid Background="{StaticResource ToolBarColor}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Banner row -->
@@ -25,11 +50,12 @@
                    HorizontalAlignment="Center"
                    FontSize="32"
                    FontWeight="Bold"
-                   Margin="0,30"/>
+                   Margin="0,30"
+                   Classes="Headers"/>
 
         <!-- Left Column: Recommended and Top Tracks -->
         <ScrollViewer Grid.Row="1" Grid.Column="0" 
-                      VerticalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Hidden"
                       HorizontalScrollBarVisibility="Disabled"
                       Theme="{StaticResource MaterialModernScrollViewer}">
             <Grid Margin="20,0">
@@ -47,7 +73,8 @@
 
                     <TextBlock Grid.Row="0" Text="Recommended for you"
                                FontSize="24" FontWeight="Bold"
-                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                               HorizontalAlignment="Center" Margin="0,0,0,10"
+                               Classes="Headers"/>
 
                     <ItemsControl Grid.Row="1" ItemsSource="{Binding RecommendedTracks}">
                         <ItemsControl.ItemsPanel>
@@ -69,12 +96,12 @@
                                         </controls:AsyncImageControl>
                                     </Border>
                                     <TextBlock Text="{Binding Title}"
-                                               FontWeight="Bold"
+                                               Classes="TrackTitle"
                                                TextWrapping="Wrap"
                                                Margin="0,5,0,0"
                                                MaxWidth="150"/>
                                     <TextBlock Text="{Binding Artist}"
-                                               Foreground="Gray"
+                                               Classes="ArtistName"
                                                TextWrapping="Wrap"
                                                MaxWidth="150"/>
                                 </StackPanel>
@@ -92,7 +119,9 @@
 
                     <TextBlock Grid.Row="0" Text="Top Tracks"
                                FontSize="24" FontWeight="Bold"
-                               HorizontalAlignment="Left" Margin="0,20,0,10"/>
+                               HorizontalAlignment="Center" 
+                               Margin="0,20,0,10"
+                               Classes="Headers"/>
 
                     <ItemsControl Grid.Row="1" ItemsSource="{Binding TopTracks}">
                         <ItemsControl.ItemsPanel>
@@ -114,12 +143,12 @@
                                         </controls:AsyncImageControl>
                                     </Border>
                                     <TextBlock Text="{Binding Title}"
-                                               FontWeight="Bold"
+                                               Classes="TrackTitle"
                                                TextWrapping="Wrap"
                                                Margin="0,5,0,0"
                                                MaxWidth="150"/>
                                     <TextBlock Text="{Binding Artist}"
-                                               Foreground="Gray"
+                                               Classes="ArtistName"
                                                TextWrapping="Wrap"
                                                MaxWidth="150"/>
                                 </StackPanel>
@@ -129,6 +158,7 @@
                 </Grid>
             </Grid>
         </ScrollViewer>
+
         <!-- Middle Column: Recently Played Tracks -->
         <Grid Grid.Row="1" Grid.Column="1" Margin="20,0">
             <Grid.RowDefinitions>
@@ -141,11 +171,12 @@
                        FontSize="24"
                        FontWeight="Bold"
                        HorizontalAlignment="Left"
-                       Margin="0,0,0,10"/>
+                       Margin="0,0,0,10"
+                       Classes="Headers"/>
 
             <ScrollViewer Grid.Row="1"
                           HorizontalScrollBarVisibility="Disabled"
-                          VerticalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Hidden"
                           Theme="{StaticResource MaterialModernScrollViewer}">
                 <ItemsControl ItemsSource="{Binding RecentlyPlayedTracks}">
                     <ItemsControl.ItemTemplate>
@@ -170,9 +201,9 @@
                                             Orientation="Vertical" 
                                             VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Title}" 
-                                               FontWeight="Bold"/>
+                                               Classes="TrackTitle"/>
                                     <TextBlock Text="{Binding Artist}" 
-                                               Foreground="Gray"/>
+                                               Classes="ArtistName"/>
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>
@@ -192,11 +223,12 @@
                        FontSize="24"
                        FontWeight="Bold"
                        HorizontalAlignment="Center"
-                       Margin="0,0,0,10"/>
+                       Margin="0,0,0,10"
+                       Classes="Headers"/>
 
             <ScrollViewer Grid.Row="1"
                           HorizontalScrollBarVisibility="Disabled"
-                          VerticalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Hidden"
                           Theme="{StaticResource MaterialModernScrollViewer}">
                 <ListBox ItemsSource="{Binding Songs}"
                          Background="Transparent"
@@ -223,9 +255,9 @@
                                             Orientation="Vertical" 
                                             VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Title}" 
-                                               FontWeight="Bold"/>
+                                               Classes="TrackTitle"/>
                                     <TextBlock Text="{Binding Artist}" 
-                                               Foreground="Gray"/>
+                                               Classes="ArtistName"/>
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>

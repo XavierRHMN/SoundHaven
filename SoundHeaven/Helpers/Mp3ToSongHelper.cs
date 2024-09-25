@@ -35,11 +35,6 @@ namespace SoundHeaven.Helpers
                 
                         // Set the Artwork property of the Song object
                         song.Artwork = bitmap;
-
-                        // Optionally, if you still want to save the artwork to a file:
-                        string artworkFileName = $"{Path.GetFileNameWithoutExtension(song.FilePath)}_cover.png";
-                        string artworkFilePath = Path.Combine(CoversPath, artworkFileName);
-                        bitmap.Save(artworkFilePath);
                     }
                 }
                 else

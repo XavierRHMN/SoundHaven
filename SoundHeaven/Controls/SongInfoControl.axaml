@@ -10,8 +10,8 @@
         <Border CornerRadius="5"
                 ClipToBounds="True"
                 Margin="0,0,20,0">
-            <Image Width="40"
-                   Height="40"
+            <Image Width="50"
+                   Height="50"
                    Source="{Binding CurrentSong.Artwork}"
                    Stretch="UniformToFill" />
         </Border>

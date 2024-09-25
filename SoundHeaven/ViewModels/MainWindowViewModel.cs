@@ -29,6 +29,7 @@ namespace SoundHeaven.ViewModels
 
         public AudioService AudioService { get; set; }
         public PlaylistStore PlaylistStore { get; set; }
+        public SongStore SongStore { get; set; }
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _scrollTimer;
 
@@ -210,10 +211,11 @@ namespace SoundHeaven.ViewModels
             });
 
             var memoryCache = new MemoryCache(memoryCacheOptions, loggerFactory);
-            var _dataService = new LastFmDataService(apiKey, memoryCache, loggerFactory);
+            var dataService = new LastFmDataService(apiKey, memoryCache, loggerFactory);
             
             AudioService = new AudioService();
             PlaylistStore = new PlaylistStore(this);
+            SongStore = new SongStore();
 
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
             
@@ -221,27 +223,28 @@ namespace SoundHeaven.ViewModels
             PlaybackControlViewModel = new PlaybackControlViewModel(this);
             ShuffleControlViewModel = new ShuffleControlViewModel(this);
             PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
-            HomeViewModel = new HomeViewModel(this, _dataService);
+            HomeViewModel = new HomeViewModel(this, dataService);
             
             // Set initial CurrentViewModel
             CurrentViewModel = HomeViewModel;
 
             InitializeExamplePlaylist();
             InitializeScrollPositions();
+            InitializeSeekTimer();
+            InitializeScrollTimer();
         }
 
         private void InitializeExamplePlaylist()
         {
-            SongStore songStore = new SongStore();
-            songStore.LoadSongs();
-            InitializeSeekTimer();
-            InitializeScrollTimer();
-
+            SongStore.LoadSongs();
+            
             var example = new Playlist()
             {
                 Name = "Playlist #1",
-                Songs = songStore.Songs
+                Songs = SongStore.Songs
+
             };
+            Console.WriteLine(SongStore.Songs);
             PlaylistStore.AddPlaylist(example);
         }
 
@@ -304,7 +307,7 @@ namespace SoundHeaven.ViewModels
         {
             if (CurrentSong != null)
             {
-                if (AudioService.IsStopped())
+                if (AudioService.IsStopped() || !AudioService.IsPlaying())
                 {
                     PlaybackControlViewModel.IsPlaying = false;
                 }
