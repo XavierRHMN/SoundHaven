@@ -33,5 +33,11 @@ namespace SoundHeaven.Controls
         {
             _isDragging = true;
         }
+
+        private void InputElement_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            Console.WriteLine("pressed");
+            throw new NotImplementedException();
+        }
     }
 }

@@ -52,7 +52,7 @@ namespace SoundHeaven.ViewModels
                     PlaybackControlViewModel.IsPlaying = true;
 
                     // Update text width based on the new song title
-                    TextWidth = ExtractTextWidth(CurrentSong?.Title, "Nunito", 14);
+                    TextWidth = ExtractTextWidth(CurrentSong?.Title, "Nunito", 15);
                     
                     // Initialize scroll positions
                     InitializeScrollPositions();
@@ -73,9 +73,7 @@ namespace SoundHeaven.ViewModels
                 }
             }
         }
-
-        private bool _isPlaying => AudioService.IsPlaying();
-
+        
         private double _volume;
         public double Volume
         {
@@ -310,14 +308,15 @@ namespace SoundHeaven.ViewModels
                 if (AudioService.IsStopped())
                 {
                     PlaybackControlViewModel.IsPlaying = false;
-                }
-
-                if (_isPlaying)
-                {
                     SeekPosition = AudioService.GetCurrentTime().TotalSeconds;
                 }
 
-                Console.WriteLine(SeekPosition);
+                if (AudioService.IsPlaying())
+                {
+                    Console.WriteLine(SeekPosition);
+                    Console.WriteLine(CurrentSong.Length);
+                    SeekPosition += 0.25;
+                }
             }
         }
 

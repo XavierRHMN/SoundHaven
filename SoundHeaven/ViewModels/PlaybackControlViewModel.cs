@@ -82,6 +82,7 @@ namespace SoundHeaven.ViewModels
                 if (AudioService.IsStopped())
                 {
                     AudioService.Start(song.FilePath);
+                    _mainWindowViewModel.SeekPosition = 0;
                 }
                 else
                 {
@@ -188,13 +189,14 @@ namespace SoundHeaven.ViewModels
                 {
                     AudioService.Restart(_mainWindowViewModel.CurrentSong);
                     _mainWindowViewModel.SeekPosition = 0;
+                    
                 }
                 else if (currentPlaylist.Songs.Count > 1)
                 {
                     _mainWindowViewModel.CurrentSong = previousSong;
                     AudioService.Start(previousSong.FilePath);
-                    IsPlaying = true;
                 }
+                IsPlaying = true;
             }
             else
             {
