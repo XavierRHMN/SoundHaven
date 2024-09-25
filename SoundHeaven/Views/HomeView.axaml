@@ -40,7 +40,7 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="400"/> <!-- Left column -->
-            <ColumnDefinition Width="*" MinWidth="300"/> <!-- Middle column -->
+            <ColumnDefinition Width="*" MinWidth="300" MaxWidth="350"/> <!-- Middle column -->
             <ColumnDefinition Width="*"/> <!-- Right column -->
         </Grid.ColumnDefinitions>
 

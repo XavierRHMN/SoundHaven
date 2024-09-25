@@ -26,6 +26,9 @@ namespace SoundHeaven.Models
                 _length = value;
             }
         }
+
+        
+
         
         private string? _artworkUrl;
         public string? ArtworkUrl

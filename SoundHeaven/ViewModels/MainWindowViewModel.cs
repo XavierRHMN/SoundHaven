@@ -250,7 +250,7 @@ namespace SoundHeaven.ViewModels
 
         private void InitializeSeekTimer()
         {
-            _seekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            _seekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
             _seekTimer.Tick += UpdateSeekPosition;
             _seekTimer.Start();
         }
@@ -302,20 +302,22 @@ namespace SoundHeaven.ViewModels
             OnPropertyChanged(nameof(TitleScrollPosition1));
             OnPropertyChanged(nameof(TitleScrollPosition2));
         }
-
+        
         private void UpdateSeekPosition(object sender, EventArgs e)
         {
             if (CurrentSong != null)
             {
-                if (AudioService.IsStopped() || !AudioService.IsPlaying())
+                if (AudioService.IsStopped())
                 {
                     PlaybackControlViewModel.IsPlaying = false;
                 }
 
                 if (_isPlaying)
                 {
-                    SeekPosition += 0.1;
+                    SeekPosition = AudioService.GetCurrentTime().TotalSeconds;
                 }
+
+                Console.WriteLine(SeekPosition);
             }
         }
 
