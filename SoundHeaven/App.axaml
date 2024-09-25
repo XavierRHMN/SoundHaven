@@ -8,8 +8,6 @@
              RequestedThemeVariant="Default">
 
     <Application.DataTemplates>
-        <local:ViewLocator />
-
         <!-- DataTemplate for PlaylistViewModel -->
         <DataTemplate DataType="viewModels:PlaylistViewModel">
             <views:PlaylistView />
