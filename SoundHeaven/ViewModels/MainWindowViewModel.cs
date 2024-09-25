@@ -4,6 +4,9 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SoundHeaven.Commands;
 using SoundHeaven.Converters;
 using System.Collections.ObjectModel;
@@ -172,13 +175,8 @@ namespace SoundHeaven.ViewModels
                 }
             }
         }
-
-        public PlaylistViewModel PlaylistViewModel { get; set; }
-        public HomeViewModel HomeViewModel { get; set; }
-        public ToolBarControlViewModel ToolBarControlViewModel { get; set; }
-        public PlaybackControlViewModel PlaybackControlViewModel { get; set; }
-        public ShuffleControlViewModel ShuffleControlViewModel { get; }
-
+        
+        
         private double _textWidth;
         public double TextWidth
         {
@@ -189,36 +187,46 @@ namespace SoundHeaven.ViewModels
                 OnPropertyChanged();
             }
         }
-
-
+        
+        // ViewModels
+        public PlaylistViewModel PlaylistViewModel { get; set; }
+        public HomeViewModel HomeViewModel { get; set; }
+        public ToolBarControlViewModel ToolBarControlViewModel { get; set; }
+        public PlaybackControlViewModel PlaybackControlViewModel { get; set; }
+        public ShuffleControlViewModel ShuffleControlViewModel { get; }
+        
         // Commands
         public RelayCommand MuteCommand { get; }
 
 
         public MainWindowViewModel()
         {
-            // Initialize ApiKeyService
             IApiKeyProvider apiKeyProvider = new ApiKeyService("API_KEY.txt");
             string apiKey = apiKeyProvider.GetApiKey();
-            var dataService = new LastFmDataService(apiKey);
+            var memoryCacheOptions = Options.Create(new MemoryCacheOptions());
+            var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+            });
+
+            var memoryCache = new MemoryCache(memoryCacheOptions, loggerFactory);
+            var _dataService = new LastFmDataService(apiKey, memoryCache, loggerFactory);
             
             AudioService = new AudioService();
             PlaylistStore = new PlaylistStore(this);
 
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
-
-            InitializeExamplePlaylist();
-
+            
             ToolBarControlViewModel = new ToolBarControlViewModel(this);
             PlaybackControlViewModel = new PlaybackControlViewModel(this);
             ShuffleControlViewModel = new ShuffleControlViewModel(this);
             PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
-            HomeViewModel = new HomeViewModel(this, dataService);
-
+            HomeViewModel = new HomeViewModel(this, _dataService);
+            
             // Set initial CurrentViewModel
             CurrentViewModel = HomeViewModel;
 
-            // Initialize scroll positions
+            InitializeExamplePlaylist();
             InitializeScrollPositions();
         }
 

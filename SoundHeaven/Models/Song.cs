@@ -1,11 +1,12 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using SoundHeaven.Services;
+using SoundHeaven.ViewModels;
 using System;
 
 namespace SoundHeaven.Models
 {
-    public class Song
+    public class Song: ViewModelBase
     {
         public string? Title { get; set; }
         public string? Artist { get; set; }
@@ -13,7 +14,6 @@ namespace SoundHeaven.Models
         public TimeSpan Duration { get; set; }
         public string? FilePath { get; set; }
         public Bitmap? Artwork { get; set; }
-        public string? ArtworkUrl { get; set; }
         public string? Genre { get; set; }
         public int Year { get; set; }
         public int PlayCount { get; set; }
@@ -24,6 +24,20 @@ namespace SoundHeaven.Models
             set
             {
                 _length = value;
+            }
+        }
+        
+        private string? _artworkUrl;
+        public string? ArtworkUrl
+        {
+            get => _artworkUrl;
+            set
+            {
+                if (_artworkUrl != value)
+                {
+                    _artworkUrl = value;
+                    OnPropertyChanged();
+                }
             }
         }
 

@@ -4,8 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using SoundHeaven.Models;
+using System.IO;
 
 namespace SoundHeaven.Services
 {
@@ -13,20 +16,23 @@ namespace SoundHeaven.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
+        private readonly IMemoryCache _cache;
+        private readonly ILogger<LastFmDataService> _logger;
+        private readonly MemoryCacheEntryOptions _cacheOptions;
 
-        // Caches to store fetched data and minimize API calls
-        private readonly Dictionary<string, string> _albumImageCache = new Dictionary<string, string>();
-        private readonly Dictionary<string, string> _artistImageCache = new Dictionary<string, string>();
-        private readonly Dictionary<string, string> _userTopArtistsCache = new Dictionary<string, string>();
-        private readonly Dictionary<string, string> _artistTopTracksCache = new Dictionary<string, string>();
-
-        public LastFmDataService(string apiKey)
+        public LastFmDataService(string apiKey, IMemoryCache cache, ILoggerFactory loggerFactory)
         {
             _apiKey = apiKey;
+            _cache = cache;
+            _logger = loggerFactory.CreateLogger<LastFmDataService>();
             _httpClient = new HttpClient
             {
                 BaseAddress = new Uri("https://ws.audioscrobbler.com/2.0/")
             };
+
+            // Define cache options with sliding expiration of 30 minutes
+            _cacheOptions = new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(30));
         }
 
         #region Top Tracks
@@ -36,6 +42,14 @@ namespace SoundHeaven.Services
         /// </summary>
         public async Task<IEnumerable<Song>> GetTopTracksAsync()
         {
+            string cacheKey = "global-top-tracks";
+
+            if (_cache.TryGetValue(cacheKey, out IEnumerable<Song> cachedTopTracks))
+            {
+                Console.WriteLine("Retrieved Top Tracks from cache.");
+                return cachedTopTracks;
+            }
+
             var limit = 20; // Limit to 20 top tracks
             var url = $"?method=chart.gettoptracks&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
@@ -65,6 +79,10 @@ namespace SoundHeaven.Services
                     songs.Add(song);
                 }
 
+                // Add to cache
+                _cache.Set(cacheKey, songs, _cacheOptions);
+                Console.WriteLine("Cached Top Tracks.");
+
                 return songs;
             }
             else
@@ -89,11 +107,12 @@ namespace SoundHeaven.Services
                 throw new ArgumentException("Username cannot be null or empty.", nameof(username));
             }
 
-            var cacheKey = $"user-top-artists-{username}";
-            if (_userTopArtistsCache.TryGetValue(cacheKey, out var cachedArtists))
+            string cacheKey = $"user-top-artists-{username}";
+
+            if (_cache.TryGetValue(cacheKey, out IEnumerable<string> cachedTopArtists))
             {
-                Console.WriteLine($"Using cached top artists for user '{username}'.");
-                return cachedArtists.Split(',');
+                Console.WriteLine($"Retrieved Top Artists for '{username}' from cache.");
+                return cachedTopArtists;
             }
 
             var url = $"?method=user.gettopartists&user={Uri.EscapeDataString(username)}&api_key={_apiKey}&format=json&limit={limit}";
@@ -111,8 +130,8 @@ namespace SoundHeaven.Services
 
                 if (topArtists != null && topArtists.Any())
                 {
-                    _userTopArtistsCache[cacheKey] = string.Join(",", topArtists);
-                    Console.WriteLine($"Fetched and cached top artists for user '{username}'.");
+                    _cache.Set(cacheKey, topArtists, _cacheOptions);
+                    Console.WriteLine($"Fetched and cached Top Artists for '{username}'.");
                     return topArtists;
                 }
                 else
@@ -144,11 +163,12 @@ namespace SoundHeaven.Services
                 return Enumerable.Empty<Song>();
             }
 
-            var cacheKey = $"artist-top-tracks-{artistName}";
-            if (_artistTopTracksCache.TryGetValue(cacheKey, out var cachedTracksJson))
+            string cacheKey = $"artist-top-tracks-{artistName}";
+
+            if (_cache.TryGetValue(cacheKey, out IEnumerable<Song> cachedTopTracks))
             {
-                Console.WriteLine($"Using cached top tracks for artist '{artistName}'.");
-                return JsonConvert.DeserializeObject<List<Song>>(cachedTracksJson);
+                Console.WriteLine($"Retrieved Top Tracks for artist '{artistName}' from cache.");
+                return cachedTopTracks;
             }
 
             var url = $"?method=artist.gettoptracks&artist={Uri.EscapeDataString(artistName)}&api_key={_apiKey}&format=json&limit={limit}";
@@ -172,8 +192,8 @@ namespace SoundHeaven.Services
 
                 if (songs != null && songs.Any())
                 {
-                    _artistTopTracksCache[cacheKey] = JsonConvert.SerializeObject(songs);
-                    Console.WriteLine($"Fetched and cached top tracks for artist '{artistName}'.");
+                    _cache.Set(cacheKey, songs, _cacheOptions);
+                    Console.WriteLine($"Fetched and cached Top Tracks for artist '{artistName}'.");
                     return songs;
                 }
                 else
@@ -251,6 +271,14 @@ namespace SoundHeaven.Services
                 throw new ArgumentException("Username cannot be null or empty.", nameof(username));
             }
 
+            string cacheKey = $"recently-played-{username}";
+
+            if (_cache.TryGetValue(cacheKey, out IEnumerable<Song> cachedRecentlyPlayed))
+            {
+                Console.WriteLine($"Retrieved Recently Played Tracks for '{username}' from cache.");
+                return cachedRecentlyPlayed;
+            }
+
             var limit = 20; // Limit to 20 recent tracks
             var url = $"?method=user.getrecenttracks&user={Uri.EscapeDataString(username)}&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
@@ -277,6 +305,10 @@ namespace SoundHeaven.Services
                     songs.Add(song);
                 }
 
+                // Add to cache
+                _cache.Set(cacheKey, songs, _cacheOptions);
+                Console.WriteLine($"Fetched and cached Recently Played Tracks for '{username}'.");
+
                 return songs;
             }
             else
@@ -291,8 +323,6 @@ namespace SoundHeaven.Services
 
         #region Similar Artists (Optional)
 
-        // If you still want to include similar artists as an additional recommendation strategy
-
         /// <summary>
         /// Fetches similar artists for a given artist.
         /// </summary>
@@ -304,10 +334,12 @@ namespace SoundHeaven.Services
                 return Enumerable.Empty<string>();
             }
 
-            var cacheKey = $"similar-artists-{artistName}";
-            if (_artistImageCache.TryGetValue(cacheKey, out var cachedSimilarArtists))
+            string cacheKey = $"similar-artists-{artistName}";
+
+            if (_cache.TryGetValue(cacheKey, out IEnumerable<string> cachedSimilarArtists))
             {
-                return cachedSimilarArtists.Split(',');
+                Console.WriteLine($"Retrieved Similar Artists for '{artistName}' from cache.");
+                return cachedSimilarArtists;
             }
 
             var url = $"?method=artist.getsimilar&artist={Uri.EscapeDataString(artistName)}&api_key={_apiKey}&format=json&limit={limit}";
@@ -325,8 +357,13 @@ namespace SoundHeaven.Services
 
                 if (similarArtists != null && similarArtists.Any())
                 {
-                    _artistImageCache[cacheKey] = string.Join(",", similarArtists);
+                    _cache.Set(cacheKey, similarArtists, _cacheOptions);
+                    Console.WriteLine($"Fetched and cached Similar Artists for '{artistName}'.");
                     return similarArtists;
+                }
+                else
+                {
+                    Console.WriteLine($"No similar artists found for '{artistName}'.");
                 }
             }
             else
@@ -353,10 +390,11 @@ namespace SoundHeaven.Services
                 return "https://example.com/default-artwork.png"; // Replace with your default image URL
             }
 
-            var cacheKey = $"{artistName}-{trackName}";
+            string cacheKey = $"album-image-{artistName}-{trackName}";
 
-            if (_albumImageCache.TryGetValue(cacheKey, out var cachedImageUrl))
+            if (_cache.TryGetValue(cacheKey, out string cachedImageUrl))
             {
+                Console.WriteLine($"Retrieved Album Image for '{artistName} - {trackName}' from cache.");
                 return cachedImageUrl;
             }
 
@@ -385,13 +423,9 @@ namespace SoundHeaven.Services
                     imageUrl = await GetArtistImageUrlAsync(artistName);
                 }
 
-                if (string.IsNullOrEmpty(imageUrl))
-                {
-                    // Set to default image
-                    imageUrl = "https://example.com/default-artwork.png"; // Replace with your default image URL
-                }
-
-                _albumImageCache[cacheKey] = imageUrl;
+                // Add to cache
+                _cache.Set(cacheKey, imageUrl, _cacheOptions);
+                Console.WriteLine($"Cached Album Image for '{artistName} - {trackName}'.");
 
                 return imageUrl;
             }
@@ -404,37 +438,6 @@ namespace SoundHeaven.Services
         }
 
         /// <summary>
-        /// Retrieves the album image URL from a specific track.
-        /// </summary>
-        private async Task<string> GetAlbumImageFromTrackAsync(string artistName, string trackName)
-        {
-            var url = $"?method=track.getInfo&api_key={_apiKey}&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&format=json";
-            var response = await _httpClient.GetAsync(url);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                var trackInfoResponse = JsonConvert.DeserializeObject<TrackInfoResponse>(content);
-
-                var album = trackInfoResponse?.Track?.Album;
-                var imageUrl = album?.Images?.FirstOrDefault(img => img.Size == "large")?.Url
-                    ?? album?.Images?.FirstOrDefault(img => img.Size == "medium")?.Url;
-
-                if (!string.IsNullOrEmpty(imageUrl) && !IsPlaceholderImage(imageUrl))
-                {
-                    return imageUrl;
-                }
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error fetching track info for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Retrieves the artist's image URL.
         /// </summary>
         public async Task<string> GetArtistImageUrlAsync(string artistName)
@@ -442,12 +445,14 @@ namespace SoundHeaven.Services
             if (string.IsNullOrEmpty(artistName))
             {
                 Console.WriteLine("Artist name is null or empty.");
-                return null;
+                return "https://example.com/default-artwork.png"; // Replace with your default image URL
             }
 
-            if (_artistImageCache.TryGetValue(artistName, out var cachedImageUrl))
+            string cacheKey = $"artist-image-{artistName}";
+
+            if (_cache.TryGetValue(cacheKey, out string cachedImageUrl))
             {
-                Console.WriteLine($"Using cached artist image for '{artistName}': {cachedImageUrl}");
+                Console.WriteLine($"Retrieved Artist Image for '{artistName}' from cache.");
                 return cachedImageUrl;
             }
 
@@ -492,7 +497,8 @@ namespace SoundHeaven.Services
 
                     if (!string.IsNullOrEmpty(imageUrl) && !IsPlaceholderImage(imageUrl))
                     {
-                        _artistImageCache[artistName] = imageUrl;
+                        _cache.Set(cacheKey, imageUrl, _cacheOptions);
+                        Console.WriteLine($"Cached Artist Image for '{artistName}'.");
                         return imageUrl;
                     }
                     else
@@ -507,9 +513,9 @@ namespace SoundHeaven.Services
                 }
             }
 
-            // If no valid image URL found, set to default image or null
-            _artistImageCache[artistName] = null;
-            Console.WriteLine($"No valid artist image found for '{artistName}'. Setting ArtworkUrl to default.");
+            // If no valid image URL found, set to default image
+            _cache.Set(cacheKey, "https://example.com/default-artwork.png", _cacheOptions); // Replace with your default image URL
+            Console.WriteLine($"No valid artist image found for '{artistName}'. Set to default image.");
             return "https://example.com/default-artwork.png"; // Replace with your default image URL
         }
 
@@ -540,8 +546,6 @@ namespace SoundHeaven.Services
 
         #region Similar Tracks (Optional)
 
-        // If you want to retain similar tracks as an additional recommendation source
-
         /// <summary>
         /// Fetches similar tracks for a given artist and track.
         /// </summary>
@@ -551,6 +555,14 @@ namespace SoundHeaven.Services
             {
                 Console.WriteLine("Artist name or track name is null or empty.");
                 return Enumerable.Empty<Song>();
+            }
+
+            string cacheKey = $"similar-tracks-{artistName}-{trackName}";
+
+            if (_cache.TryGetValue(cacheKey, out IEnumerable<Song> cachedSimilarTracks))
+            {
+                Console.WriteLine($"Retrieved Similar Tracks for '{artistName} - {trackName}' from cache.");
+                return cachedSimilarTracks;
             }
 
             var url = $"?method=track.getsimilar&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&api_key={_apiKey}&format=json&limit={limit}";
@@ -577,6 +589,10 @@ namespace SoundHeaven.Services
 
                     songs.Add(song);
                 }
+
+                // Add to cache
+                _cache.Set(cacheKey, songs, _cacheOptions);
+                Console.WriteLine($"Cached Similar Tracks for '{artistName} - {trackName}'.");
 
                 return songs;
             }
@@ -626,6 +642,67 @@ namespace SoundHeaven.Services
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Retrieves the album image URL from a specific track.
+        /// </summary>
+        private async Task<string> GetAlbumImageFromTrackAsync(string artistName, string trackName)
+        {
+            var url = $"?method=track.getInfo&api_key={_apiKey}&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&format=json";
+            var response = await _httpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var trackInfoResponse = JsonConvert.DeserializeObject<TrackInfoResponse>(content);
+
+                var album = trackInfoResponse?.Track?.Album;
+                var imageUrl = album?.Images?.FirstOrDefault(img => img.Size == "large")?.Url
+                    ?? album?.Images?.FirstOrDefault(img => img.Size == "medium")?.Url;
+
+                if (!string.IsNullOrEmpty(imageUrl) && !IsPlaceholderImage(imageUrl))
+                {
+                    return imageUrl;
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error fetching track info for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
+            }
+
+            return null;
+        }
+        
+        private async Task<string> GetImageFromCacheAsync(string imageUrl)
+        {
+            // Create a unique filename based on the URL
+            string fileName = Path.GetFileName(imageUrl);
+            string cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SoundHeaven", "ImageCache");
+
+            if (!Directory.Exists(cacheDirectory))
+            {
+                Directory.CreateDirectory(cacheDirectory);
+            }
+
+            string filePath = Path.Combine(cacheDirectory, fileName);
+
+            if (File.Exists(filePath))
+            {
+                // Load from cache
+                return filePath;
+            }
+            else
+            {
+                // Download the image
+                using (HttpClient client = new HttpClient())
+                {
+                    var imageBytes = await client.GetByteArrayAsync(imageUrl);
+                    await File.WriteAllBytesAsync(filePath, imageBytes);
+                    return filePath;
+                }
+            }
         }
 
         #endregion
