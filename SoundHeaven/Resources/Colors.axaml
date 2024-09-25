@@ -1,5 +1,6 @@
 ﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:colors="clr-namespace:Material.Colors;assembly=Material.Colors">
     <SolidColorBrush x:Key="PlayerBarColor" Color="#060607" />
     <SolidColorBrush x:Key="ToolBarColor" Color="#121319" />
 
