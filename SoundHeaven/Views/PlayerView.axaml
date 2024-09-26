@@ -95,7 +95,7 @@
             <TextBlock Text="{Binding PlayerViewSong.Title}" 
                        Classes="ArtworkTrackTitle"
                        HorizontalAlignment="Center"
-                       Margin="0,10,0,5"/>
+                       Margin="0,15,0,5"/>
             <TextBlock Text="{Binding PlayerViewSong.Artist}" 
                        Classes="ArtworkArtistName"
                        HorizontalAlignment="Center"/>

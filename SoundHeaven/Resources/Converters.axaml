@@ -6,6 +6,5 @@
     <converters:FilePathShortenerConverter x:Key="FilePathShortenerConverter" />
     <converters:BooleanToOpacityConverter x:Key="BooleanToOpacityConverter" />
     <converters:BooleanToBrushConverter  x:Key="BooleanToBrushConverter "/>
-    <converters:AlbumCoverWidthConverter x:Key="AlbumWidthConverter" />
     <converters:ImageConverter x:Key="ImageConverter" />
 </ResourceDictionary>
