@@ -30,7 +30,7 @@ namespace SoundHeaven.ViewModels
                     _mainWindowViewModel.CurrentPlaylist = _toolbarSelectedPlaylist;
 
                     // Switch to PlaylistViewModel
-                    _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlaylistViewModel;
+                    // _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlaylistViewModel;
                 }
             }
         }
@@ -41,6 +41,7 @@ namespace SoundHeaven.ViewModels
         public RelayCommand ShowHomeViewCommand { get; set; }
         public RelayCommand ShowSearchViewCommand { get; set; }
         public RelayCommand ShowPlaylistViewCommand { get; set; }
+        public RelayCommand ShowPlayerViewCommand { get; set; }
         public AsyncRelayCommand CreatePlaylistCommand { get; set; }
 
 
@@ -52,6 +53,7 @@ namespace SoundHeaven.ViewModels
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowSearchViewCommand = new RelayCommand(ShowSearchView);
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
+            ShowPlayerViewCommand = new RelayCommand(ShowPlayerView);
             CreatePlaylistCommand = new AsyncRelayCommand(CreatePlaylistAsync);
         }
 
@@ -88,8 +90,13 @@ namespace SoundHeaven.ViewModels
                 _isCreatingPlaylist = false;
             }
         }
-
-
+        
+        private void ShowPlayerView()
+        {
+            Console.WriteLine("Switching to PlayerView");
+            _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlayerViewModel;
+        }
+        
         // Methods for commands
         private void ShowHomeView()
         {

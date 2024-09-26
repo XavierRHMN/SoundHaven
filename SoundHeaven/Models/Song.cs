@@ -3,6 +3,7 @@ using Avalonia.Media.Imaging;
 using SoundHeaven.Services;
 using SoundHeaven.ViewModels;
 using System;
+using System.IO;
 
 namespace SoundHeaven.Models
 {
@@ -13,7 +14,6 @@ namespace SoundHeaven.Models
         public string? Album { get; set; }
         public TimeSpan Duration { get; set; }
         public string? FilePath { get; set; }
-        public Bitmap? Artwork { get; set; }
         public string? Genre { get; set; }
         public int Year { get; set; }
         public int PlayCount { get; set; }
@@ -26,21 +26,72 @@ namespace SoundHeaven.Models
                 _length = value;
             }
         }
-
         
+        private Bitmap? _artwork;
+        public Bitmap? Artwork
+        {
+            get => _artwork;
+            set
+            {
+                if (SetProperty(ref _artwork, value))
+                {
+                    UpdateAspectRatio();
+                }
+            }
+        }
 
-        
         private string? _artworkUrl;
         public string? ArtworkUrl
         {
             get => _artworkUrl;
             set
             {
-                if (_artworkUrl != value)
+                if (SetProperty(ref _artworkUrl, value))
                 {
-                    _artworkUrl = value;
-                    OnPropertyChanged();
+                    LoadArtwork();
                 }
+            }
+        }
+
+        private double _aspectRatio;
+        public double AspectRatio
+        {
+            get => _aspectRatio;
+            private set => SetProperty(ref _aspectRatio, value);
+        }
+
+        // New Methods
+        private void LoadArtwork()
+        {
+            if (!string.IsNullOrEmpty(ArtworkUrl) && File.Exists(ArtworkUrl))
+            {
+                try
+                {
+                    using (var stream = File.OpenRead(ArtworkUrl))
+                    {
+                        Artwork = new Bitmap(stream);
+                    }
+                }
+                catch
+                {
+                    Artwork = null;
+                }
+            }
+            else
+            {
+                Artwork = null;
+            }
+        }
+
+        private void UpdateAspectRatio()
+        {
+            if (Artwork != null && Artwork.PixelSize.Height != 0)
+            {
+                AspectRatio = Artwork.PixelSize.Width / (double)Artwork.PixelSize.Height;
+            }
+            else
+            {
+                AspectRatio = 1.0; // Default AspectRatio
             }
         }
 

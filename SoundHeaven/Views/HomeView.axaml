@@ -56,11 +56,11 @@
         <!-- Banner -->
         <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
                 Background="{StaticResource PlayerColorBrush}"
-                CornerRadius="10,10,10,10" 
-                Padding="0,30">
+                CornerRadius="0,0,10,10" 
+                Padding="0,15">
             <TextBlock Text="Welcome, Home"
                        HorizontalAlignment="Center"
-                       FontSize="32"
+                       FontSize="28"
                        FontWeight="Bold"
                        Foreground="Black" 
                        Classes="Headers"/>

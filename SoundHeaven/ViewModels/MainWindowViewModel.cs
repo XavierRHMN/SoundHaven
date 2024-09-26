@@ -193,6 +193,7 @@ namespace SoundHeaven.ViewModels
         public ToolBarControlViewModel ToolBarControlViewModel { get; set; }
         public PlaybackControlViewModel PlaybackControlViewModel { get; set; }
         public ShuffleControlViewModel ShuffleControlViewModel { get; }
+        public PlayerViewModel PlayerViewModel { get; set; }
         
         // Commands
         public RelayCommand MuteCommand { get; }
@@ -221,6 +222,7 @@ namespace SoundHeaven.ViewModels
             PlaybackControlViewModel = new PlaybackControlViewModel(this);
             ShuffleControlViewModel = new ShuffleControlViewModel(this);
             PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
+            PlayerViewModel = new PlayerViewModel(this);
             HomeViewModel = new HomeViewModel(this, dataService);
             
             // Set initial CurrentViewModel

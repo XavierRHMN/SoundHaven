@@ -8,6 +8,11 @@
              RequestedThemeVariant="Default">
 
     <Application.DataTemplates>
+        <!-- DataTemplate for PlayerViewModel -->
+        <DataTemplate DataType="viewModels:PlayerViewModel">
+            <views:PlayerView />
+        </DataTemplate>
+        
         <!-- DataTemplate for PlaylistViewModel -->
         <DataTemplate DataType="viewModels:PlaylistViewModel">
             <views:PlaylistView />

@@ -3,12 +3,6 @@
 
     <!-- Slider styles -->
     <Style Selector="Slider">
-        <Setter Property="Foreground">
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <!-- <GradientStop Color="#FF6B6B" Offset="0" /> -->
-                <!-- <GradientStop Color="#4E54C8" Offset="1" /> -->
-            </LinearGradientBrush>
-        </Setter>
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="0" />

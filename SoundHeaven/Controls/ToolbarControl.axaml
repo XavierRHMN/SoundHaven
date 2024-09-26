@@ -31,6 +31,15 @@
             </StackPanel>
         </Button>
 
+        <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlayerViewCommand}" Width="200"
+                HorizontalContentAlignment="Left">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
+                <Svg Path="avares://SoundHeaven/Assets/Icons/player.svg" Width="16" Height="16"
+                     HorizontalAlignment="Left" />
+                <TextBlock Classes="ToolbarText" Text="Player" VerticalAlignment="Center" Margin="10,5,0,0" />
+            </StackPanel>
+        </Button>
+        
         <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlaylistViewCommand}" Width="200"
                 HorizontalContentAlignment="Left">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
