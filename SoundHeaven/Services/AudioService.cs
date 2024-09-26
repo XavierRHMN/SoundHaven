@@ -13,7 +13,7 @@ namespace SoundHeaven.Services
         public AudioService() => _waveOutDevice = new WaveOutEvent(); // You can replace this with a different output device if needed
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
-
+        
         public bool IsPlaying() => _waveOutDevice.PlaybackState == PlaybackState.Playing;
 
         public bool IsStopped() => _waveOutDevice.PlaybackState == PlaybackState.Stopped;
@@ -44,7 +44,7 @@ namespace SoundHeaven.Services
                 Console.WriteLine($"Error playing audio: {ex.Message}");
             }
         }
-
+        
         public void Pause()
         {
             if (_waveOutDevice.PlaybackState == PlaybackState.Playing)

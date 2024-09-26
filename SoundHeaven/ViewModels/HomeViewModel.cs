@@ -16,7 +16,6 @@ namespace SoundHeaven.ViewModels
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
         private readonly IDataService _dataService;
-        public PlaybackControlViewModel PlaybackControlViewModel => _mainWindowViewModel.PlaybackControlViewModel;
         
         public ObservableCollection<Song> TopTracks { get;  }
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
@@ -44,15 +43,6 @@ namespace SoundHeaven.ViewModels
                 }
             }
         }
-        
-        
-        public ICommand PlayCommand => PlaybackControlViewModel.PlayCommand;
-        public ICommand PauseCommand => PlaybackControlViewModel.PauseCommand;
-        public ICommand NextCommand => PlaybackControlViewModel.NextCommand;
-        public ICommand PreviousCommand => PlaybackControlViewModel.PreviousCommand;
-
-        public ICommand PlaySongCommand { get; }
-        
         public HomeViewModel(MainWindowViewModel mainWindowViewModel, IDataService dataService)
         {
             _mainWindowViewModel = mainWindowViewModel;
@@ -61,8 +51,6 @@ namespace SoundHeaven.ViewModels
             TopTracks = new ObservableCollection<Song>();
             RecentlyPlayedTracks = new ObservableCollection<Song>();
             RecommendedTracks = new ObservableCollection<Song>();
-            
-            PlaySongCommand = new RelayCommand<Song>(PlaySong);
             
             LoadDataAsync();
         }
@@ -97,15 +85,6 @@ namespace SoundHeaven.ViewModels
             // {
             //     TopTracks.Add(song);
             // }
-        }
-        
-        private void PlaySong(Song song)
-        {
-            if (song != null)
-            {
-                _mainWindowViewModel.CurrentSong = song;
-                PlaybackControlViewModel.PlayCommand.Execute(null);
-            }
         }
     }
 }

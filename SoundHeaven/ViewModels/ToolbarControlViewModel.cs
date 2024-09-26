@@ -13,6 +13,10 @@ namespace SoundHeaven.ViewModels
     public class ToolBarControlViewModel : ViewModelBase
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
+        private PlaylistViewModel _playlistViewModel;
+        private HomeViewModel _homeViewModel;
+        private PlayerViewModel _playerViewModel;
+        private PlaylistStore _playlistStore;
 
         // Current Playlist binding for ToolbarControl.axaml
         private Playlist? _toolbarSelectedPlaylist;
@@ -46,10 +50,15 @@ namespace SoundHeaven.ViewModels
 
 
         // Constructor
-        public ToolBarControlViewModel(MainWindowViewModel mainWindowViewModel)
+        public ToolBarControlViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
+                                       HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore)
         {
             _mainWindowViewModel = mainWindowViewModel;
-
+            _playlistViewModel = playlistViewModel;
+            _homeViewModel = homeViewModel;
+            _playerViewModel = playerViewModel;
+            _playlistStore = playlistStore;
+            
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowSearchViewCommand = new RelayCommand(ShowSearchView);
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
@@ -79,7 +88,7 @@ namespace SoundHeaven.ViewModels
                     Songs = new ObservableCollection<Song>()
                 };
 
-                _mainWindowViewModel.PlaylistStore.AddPlaylist(newPlaylist);
+                _playlistStore.AddPlaylist(newPlaylist);
             }
             catch (Exception ex)
             {
@@ -93,18 +102,18 @@ namespace SoundHeaven.ViewModels
         
         private void UpdatePlaylistViewAndSwitch(Playlist playlist)
         {
-            if (_mainWindowViewModel.PlaylistViewModel != null)
+            if (_playlistViewModel != null)
             {
-                _mainWindowViewModel.PlaylistViewModel.DisplayedPlaylist = playlist;
+                _playlistViewModel.DisplayedPlaylist = playlist;
             }
-            _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlaylistViewModel;
+            _mainWindowViewModel.CurrentViewModel = _playlistViewModel;
         }
         
         private void ShowPlayerView()
         {
             Console.WriteLine("Switching to PlayerView");
             DeselectCurrentPlaylist();
-            _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlayerViewModel;
+            _mainWindowViewModel.CurrentViewModel = _playerViewModel;
         }
         
         // Methods for commands
@@ -112,7 +121,7 @@ namespace SoundHeaven.ViewModels
         {
             Console.WriteLine("Switching to HomeView");
             DeselectCurrentPlaylist();
-            _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.HomeViewModel;
+            _mainWindowViewModel.CurrentViewModel = _homeViewModel;
         }
 
         private void ShowSearchView()
@@ -124,7 +133,7 @@ namespace SoundHeaven.ViewModels
         private void ShowPlaylistView()
         {
             Console.WriteLine("Switching to PlaylistView");
-            _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlaylistViewModel;
+            _mainWindowViewModel.CurrentViewModel = _playlistViewModel;
         }
         
         private void DeselectCurrentPlaylist()

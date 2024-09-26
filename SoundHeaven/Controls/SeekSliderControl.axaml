@@ -2,15 +2,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SoundHeaven.Controls.SeekSliderControl"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
-             x:DataType="viewModels:MainWindowViewModel">
+             x:DataType="viewModels:SeekSliderControlViewModel">
 
 
     <!-- Your Slider Control -->
     <Slider Height="75"
             Minimum="0"
-            Maximum="{Binding CurrentSong.Length}"
+            Maximum="{Binding MaximumSeekValue}"
             Margin="30,0"
-            Value="{Binding SeekPosition, Mode=TwoWay}"
-            ValueChanged="OnValueChanged"
-            PointerCaptureLost="OnPointerCaptureLost" />
+            Value="{Binding SeekPosition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 </UserControl>

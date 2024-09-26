@@ -22,7 +22,8 @@ namespace SoundHeaven.ViewModels
             Next = 1
         }
 
-        private AudioService AudioService => _mainWindowViewModel.AudioService;
+
+        private AudioService _audioService { get; set; }
         private readonly MainWindowViewModel _mainWindowViewModel;
 
         private bool _isShuffleEnabled;
@@ -59,9 +60,10 @@ namespace SoundHeaven.ViewModels
         public RelayCommand NextCommand { get; private set; }
         public RelayCommand PreviousCommand { get; private set; }
 
-        public PlaybackControlViewModel(MainWindowViewModel mainWindowViewModel)
+        public PlaybackControlViewModel(MainWindowViewModel mainWindowViewModel, AudioService audioService)
         {
             _mainWindowViewModel = mainWindowViewModel;
+            _audioService = audioService;
 
             InitializeCommands();
         }
@@ -80,14 +82,13 @@ namespace SoundHeaven.ViewModels
 
             if (song != null)
             {
-                if (AudioService.IsStopped())
+                if (_audioService.IsStopped())
                 {
-                    AudioService.Start(song.FilePath);
-                    _mainWindowViewModel.SeekPosition = 0;
+                    _audioService.Start(song.FilePath);
                 }
                 else
                 {
-                    AudioService.Resume();
+                    _audioService.Resume();
                 }
                 IsPlaying = true;
             }
@@ -95,7 +96,7 @@ namespace SoundHeaven.ViewModels
             {
                 song = _mainWindowViewModel.CurrentPlaylist.Songs[0];
                 _mainWindowViewModel.CurrentSong = song;
-                AudioService.Start(song.FilePath);
+                _audioService.Start(song.FilePath);
                 IsPlaying = true;
             }
             else
@@ -107,9 +108,9 @@ namespace SoundHeaven.ViewModels
 
         private void Pause()
         {
-            if (AudioService.IsPlaying())
+            if (_audioService.IsPlaying())
             {
-                AudioService.Pause();
+                _audioService.Pause();
                 IsPlaying = false;
             }
         }
@@ -146,7 +147,7 @@ namespace SoundHeaven.ViewModels
             if (nextSong != null)
             {
                 _mainWindowViewModel.CurrentSong = nextSong;
-                AudioService.Start(nextSong.FilePath);
+                _audioService.Start(nextSong.FilePath);
                 IsPlaying = true;
             }
             else
@@ -169,16 +170,14 @@ namespace SoundHeaven.ViewModels
             
             if (previousSong != null)
             {
-                if (_mainWindowViewModel.SeekPosition > 3)
+                if (_mainWindowViewModel.SeekSliderControlViewModel.SeekPosition > 3)
                 {
-                    AudioService.Restart(_mainWindowViewModel.CurrentSong);
-                    _mainWindowViewModel.SeekPosition = 0;
-                    
+                    _audioService.Restart(_mainWindowViewModel.CurrentSong);
                 }
                 else if (currentPlaylist.Songs.Count > 1)
                 {
                     _mainWindowViewModel.CurrentSong = previousSong;
-                    AudioService.Start(previousSong.FilePath);
+                    _audioService.Start(previousSong.FilePath);
                 }
                 IsPlaying = true;
             }

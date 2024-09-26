@@ -18,26 +18,5 @@ namespace SoundHeaven.Controls
         {
             InitializeComponent();
         }
-
-        private void OnValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
-        {
-            if (DataContext is MainWindowViewModel viewModel && _isDragging)
-            {
-                // Set the seek position when dragging stops
-                viewModel.AudioService?.Seek(TimeSpan.FromSeconds(viewModel.SeekPosition));
-                _isDragging = false;
-            }
-        }
-
-        private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
-        {
-            _isDragging = true;
-        }
-
-        private void InputElement_OnPointerPressed(object? sender, PointerPressedEventArgs e)
-        {
-            Console.WriteLine("pressed");
-            throw new NotImplementedException();
-        }
     }
 }

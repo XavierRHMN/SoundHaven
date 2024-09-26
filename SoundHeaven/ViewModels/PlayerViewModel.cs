@@ -8,9 +8,7 @@ namespace SoundHeaven.ViewModels
     public class PlayerViewModel : ViewModelBase
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
-        
         public ObservableCollection<Song> UpNextSongs => _mainWindowViewModel.CurrentPlaylist?.Songs;
-        
         public string ActivePlaylistName => _mainWindowViewModel.CurrentPlaylist?.Name ?? "No Active Playlist";
 
         private Song _playerViewSong;
@@ -23,13 +21,13 @@ namespace SoundHeaven.ViewModels
                 {
                     _playerViewSong = value;
                     OnPropertyChanged();
-                    
+
                     // Update the MainWindowViewModel's CurrentSong
                     _mainWindowViewModel.CurrentSong = value;
                 }
             }
         }
-        
+
         public PlayerViewModel(MainWindowViewModel mainWindowViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;

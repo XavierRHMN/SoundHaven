@@ -46,7 +46,6 @@ namespace SoundHeaven.ViewModels
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(CurrentSongExists));
                     AudioService.Start(_currentSong.FilePath);
-                    SeekPosition = 0;
                     Volume = AudioService.GetCurrentVolume();
                     MuteCommand.RaiseCanExecuteChanged();
                     PlaybackControlViewModel.IsPlaying = true;
@@ -124,20 +123,6 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private double _seekPosition;
-        public double SeekPosition
-        {
-            get => _seekPosition;
-            set
-            {
-                if (_seekPosition != value)
-                {
-                    _seekPosition = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
         // For the scrolling text
         private double _titleScrollPosition1;
         public double TitleScrollPosition1
@@ -194,6 +179,7 @@ namespace SoundHeaven.ViewModels
         public PlaybackControlViewModel PlaybackControlViewModel { get; set; }
         public ShuffleControlViewModel ShuffleControlViewModel { get; }
         public PlayerViewModel PlayerViewModel { get; set; }
+        public SeekSliderControlViewModel SeekSliderControlViewModel { get; set; }
         
         // Commands
         public RelayCommand MuteCommand { get; }
@@ -218,12 +204,14 @@ namespace SoundHeaven.ViewModels
 
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
             
-            ToolBarControlViewModel = new ToolBarControlViewModel(this);
-            PlaybackControlViewModel = new PlaybackControlViewModel(this);
+            
             ShuffleControlViewModel = new ShuffleControlViewModel(this);
+            PlaybackControlViewModel = new PlaybackControlViewModel(this, AudioService);
             PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
             PlayerViewModel = new PlayerViewModel(this);
             HomeViewModel = new HomeViewModel(this, dataService);
+            ToolBarControlViewModel = new ToolBarControlViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore);
+            SeekSliderControlViewModel = new SeekSliderControlViewModel(this, AudioService, PlaybackControlViewModel);
             
             // Make sure to set the initial state of shuffle
             PlaybackControlViewModel.IsShuffleEnabled = ShuffleControlViewModel.IsShuffleEnabled;
@@ -233,7 +221,6 @@ namespace SoundHeaven.ViewModels
 
             InitializeExamplePlaylist();
             InitializeScrollPositions();
-            InitializeSeekTimer();
             InitializeScrollTimer();
         }
 
@@ -250,14 +237,7 @@ namespace SoundHeaven.ViewModels
             Console.WriteLine(SongStore.Songs);
             PlaylistStore.AddPlaylist(example);
         }
-
-        private void InitializeSeekTimer()
-        {
-            _seekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-            _seekTimer.Tick += UpdateSeekPosition;
-            _seekTimer.Start();
-        }
-
+        
         private void InitializeScrollTimer()
         {
             _scrollTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
@@ -306,23 +286,6 @@ namespace SoundHeaven.ViewModels
             OnPropertyChanged(nameof(TitleScrollPosition2));
         }
         
-        private void UpdateSeekPosition(object sender, EventArgs e)
-        {
-            if (CurrentSong != null)
-            {
-                if (AudioService.IsStopped())
-                {
-                    PlaybackControlViewModel.IsPlaying = false;
-                    SeekPosition = AudioService.GetCurrentTime().TotalSeconds;
-                }
-
-                if (AudioService.IsPlaying())
-                {
-                    SeekPosition += 0.25;
-                }
-            }
-        }
-
         private void ToggleMute() => IsMuted = !IsMuted;
 
         private bool CanToggleMute() => CurrentSong != null;

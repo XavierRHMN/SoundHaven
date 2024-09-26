@@ -113,7 +113,7 @@
                 </Grid.ColumnDefinitions>
 
                 <controls:SongInfoControl Grid.Column="0" VerticalAlignment="Center" />
-                <controls:SeekSliderControl Grid.Column="1" />
+                <controls:SeekSliderControl Grid.Column="1" DataContext="{Binding SeekSliderControlViewModel}" />
                 <controls:ShuffleControl Grid.Column="2" DataContext="{Binding ShuffleControlViewModel}"/>
                 <controls:VolumeControl Grid.Column="3" VerticalAlignment="Center" />
             </Grid>
