@@ -14,7 +14,7 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontWeight" Value="ExtraLight" />
             <Setter Property="FontFamily"
-                    Value="avares://SoundHeaven/Assets/Fonts/Nunito/Nunito-VariableFont.ttf#Nunito" />
+                    Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
         </Style>
     </UserControl.Styles>
     

@@ -47,7 +47,8 @@
                                  Theme="{StaticResource MaterialFlatButton}"
                                  IsExtended="True"
                                  Command="{Binding CreatePlaylistCommand}"
-                                 Content="Create Playlist"/>
+                                 Content="Create Playlist"
+                                 FontFamily="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular"/>
 
         <Separator Background="White" Opacity="0.1" />
         

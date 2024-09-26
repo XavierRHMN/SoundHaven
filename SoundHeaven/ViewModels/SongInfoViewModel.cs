@@ -28,7 +28,7 @@ namespace SoundHeaven.ViewModels
                     OnPropertyChanged(nameof(CurrentSongExists));
 
                     // Update text width based on the new song title
-                    TextWidth = ExtractTextWidth(CurrentSong?.Title, "Nunito", 15);
+                    TextWidth = ExtractTextWidth(CurrentSong?.Title, "Circular", 15);
                     
                     // Initialize scroll positions
                     InitializeScrollPositions();

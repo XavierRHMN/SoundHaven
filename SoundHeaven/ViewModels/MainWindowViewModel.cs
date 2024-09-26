@@ -47,8 +47,6 @@ namespace SoundHeaven.ViewModels
                     OnPropertyChanged(nameof(CurrentSongExists));
                     SongInfoViewModel.CurrentSong = value;
                     AudioService.Start(_currentSong.FilePath);
-                    VolumeViewModel.Volume = AudioService.GetCurrentVolume();
-                    VolumeViewModel.MuteCommand.RaiseCanExecuteChanged();
                     PlaybackViewModel.IsPlaying = true;
                 }
             }
@@ -119,10 +117,6 @@ namespace SoundHeaven.ViewModels
             VolumeViewModel = new VolumeViewModel(AudioService);
             SongInfoViewModel = new SongInfoViewModel();
             
-            // Make sure to set the initial state of shuffle
-            PlaybackViewModel.IsShuffleEnabled = ShuffleViewModel.IsShuffleEnabled;
-            
-            // Set initial CurrentViewModel
             CurrentViewModel = HomeViewModel;
 
             InitializeExamplePlaylist();
