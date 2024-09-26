@@ -20,14 +20,13 @@
     
     <!-- Define Custom Resources -->
     <UserControl.Resources>
-        <!-- Override MaterialSelectionBrush with your desired color -->
-        <SolidColorBrush x:Key="MaterialSelectionBrush" Color="{StaticResource PrimaryColor}" Opacity="0.1"/> <!-- Example: Blue -->
+        <SolidColorBrush x:Key="MaterialSelectionBrush" Color="{StaticResource PrimaryColor}" Opacity="0.1"/>
     </UserControl.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Background="{StaticResource ToolBarColor}">
 
-        <!-- TextBox bound to CurrentPlaylist.Name -->
-        <TextBox Grid.Row="0" Grid.Column="0" Text="{Binding MainWindowViewModelCurrentPlaylist.Name, Mode=TwoWay, FallbackValue='No Playlist Selected'}"
+        <!-- TextBox bound to DisplayedPlaylist.Name -->
+        <TextBox Grid.Row="0" Grid.Column="0" Text="{Binding DisplayedPlaylist.Name, Mode=TwoWay, FallbackValue='No Playlist Selected'}"
                  Margin="0 20 0 0"
                  HorizontalAlignment="Center"
                  Classes="PlaylistText"/>
@@ -50,7 +49,7 @@
                     ToolTip.Tip="Delete selected song" Width="60" Height="30" CornerRadius="16" />
         </StackPanel>
 
-        <!-- DataGrid for PlaylistSongs -->
+        <!-- DataGrid for Songs -->
         <DataGrid Grid.Row="2"
                   ItemsSource="{Binding Songs}"
                   AutoGenerateColumns="False"

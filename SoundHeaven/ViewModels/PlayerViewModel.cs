@@ -8,13 +8,28 @@ namespace SoundHeaven.ViewModels
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
         
+        private Playlist _displayedPlaylist;
+        public Playlist DisplayedPlaylist
+        {
+            get => _displayedPlaylist;
+            set
+            {
+                if (_displayedPlaylist != value)
+                {
+                    _displayedPlaylist = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(UpNextSongs));
+                }
+            }
+        }
+
         public ObservableCollection<Song> UpNextSongs => _mainWindowViewModel.CurrentPlaylist?.Songs;
         
         private Song _playerViewSong;
         public Song PlayerViewSong
         {
             get => _playerViewSong;
-            set // Changed from private to public
+            set
             {
                 if (_playerViewSong != value)
                 {
@@ -26,7 +41,6 @@ namespace SoundHeaven.ViewModels
                 }
             }
         }
-        
         public PlayerViewModel(MainWindowViewModel mainWindowViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;

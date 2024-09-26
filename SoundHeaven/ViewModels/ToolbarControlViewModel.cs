@@ -26,14 +26,14 @@ namespace SoundHeaven.ViewModels
                     _toolbarSelectedPlaylist = value;
                     OnPropertyChanged();
 
-                    // Update MainWindowViewModel's MainWindowViewModelCurrentPlaylist
-                    _mainWindowViewModel.CurrentPlaylist = _toolbarSelectedPlaylist;
-
-                    // Switch to PlaylistViewModel
-                    // _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlaylistViewModel;
+                    if (value != null)
+                    {
+                        UpdatePlaylistViewAndSwitch(value);
+                    }
                 }
             }
         }
+
         // Playlists collection
         public ObservableCollection<Playlist> PlaylistCollection => _mainWindowViewModel.PlaylistCollection;
 
@@ -91,9 +91,19 @@ namespace SoundHeaven.ViewModels
             }
         }
         
+        private void UpdatePlaylistViewAndSwitch(Playlist playlist)
+        {
+            if (_mainWindowViewModel.PlaylistViewModel != null)
+            {
+                _mainWindowViewModel.PlaylistViewModel.DisplayedPlaylist = playlist;
+            }
+            _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlaylistViewModel;
+        }
+        
         private void ShowPlayerView()
         {
             Console.WriteLine("Switching to PlayerView");
+            DeselectCurrentPlaylist();
             _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlayerViewModel;
         }
         
@@ -101,18 +111,25 @@ namespace SoundHeaven.ViewModels
         private void ShowHomeView()
         {
             Console.WriteLine("Switching to HomeView");
+            DeselectCurrentPlaylist();
             _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.HomeViewModel;
         }
 
         private void ShowSearchView()
         {
             // Logic to switch to the Search view
+            DeselectCurrentPlaylist();
         }
 
         private void ShowPlaylistView()
         {
             Console.WriteLine("Switching to PlaylistView");
             _mainWindowViewModel.CurrentViewModel = _mainWindowViewModel.PlaylistViewModel;
+        }
+        
+        private void DeselectCurrentPlaylist()
+        {
+            ToolbarSelectedPlaylist = null;
         }
     }
 }
