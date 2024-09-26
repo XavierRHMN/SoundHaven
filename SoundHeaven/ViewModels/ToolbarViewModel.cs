@@ -47,7 +47,7 @@ namespace SoundHeaven.ViewModels
         public RelayCommand ShowPlaylistViewCommand { get; set; }
         public RelayCommand ShowPlayerViewCommand { get; set; }
         public AsyncRelayCommand CreatePlaylistCommand { get; set; }
-
+        public RelayCommand<Playlist> DeletePlaylistCommand { get; set; }
 
         // Constructor
         public ToolbarViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
@@ -64,6 +64,8 @@ namespace SoundHeaven.ViewModels
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
             ShowPlayerViewCommand = new RelayCommand(ShowPlayerView);
             CreatePlaylistCommand = new AsyncRelayCommand(CreatePlaylistAsync);
+            DeletePlaylistCommand = new RelayCommand<Playlist>(DeletePlaylist);
+
         }
 
         private bool _isCreatingPlaylist;
@@ -97,6 +99,27 @@ namespace SoundHeaven.ViewModels
             finally
             {
                 _isCreatingPlaylist = false;
+            }
+        }
+        
+        private void DeletePlaylist(Playlist playlist)
+        {
+            if (playlist != null)
+            {
+                _playlistStore.RemovePlaylist(playlist);
+                
+                // If the deleted playlist was the currently selected one, deselect it
+                if (ToolbarSelectedPlaylist == playlist)
+                {
+                    ToolbarSelectedPlaylist = null;
+                }
+
+                // If we're currently viewing the deleted playlist, switch to home view
+                if (_mainWindowViewModel.CurrentViewModel == _playlistViewModel && 
+                    _playlistViewModel.DisplayedPlaylist == playlist)
+                {
+                    ShowHomeView();
+                }
             }
         }
         

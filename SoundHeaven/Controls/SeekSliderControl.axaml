@@ -5,6 +5,7 @@
              x:DataType="viewModels:SeekSliderViewModel">
 
 
+
     <!-- Your Slider Control -->
     <Slider Height="75"
             Minimum="0"

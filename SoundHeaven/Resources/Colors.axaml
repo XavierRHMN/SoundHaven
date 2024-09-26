@@ -4,7 +4,7 @@
     <SolidColorBrush x:Key="PlayerBarColor" Color="#060607" />
     <SolidColorBrush x:Key="ToolBarColor" Color="#121319" />
 
-    <Color x:Key="PrimaryColor">OrangeRed</Color>
+    <Color x:Key="PrimaryColor">#FF5722</Color>
     <Color x:Key="SecondaryColor">MediumPurple</Color>
 
     <SolidColorBrush x:Key="PrimaryHueMidBrush" Color="{StaticResource PrimaryColor}" />

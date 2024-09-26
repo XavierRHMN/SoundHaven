@@ -3,6 +3,14 @@
         xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
         xmlns:controls="clr-namespace:Material.Styles.Controls;assembly=Material.Styles">
 
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="/Resources/Colors.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
+    
     <!-- Slider styles -->
     <Style Selector="Slider">
         <Setter Property="Background" Value="Transparent" />
@@ -23,5 +31,25 @@
                          StrokeThickness="2" />
             </ControlTemplate>
         </Setter>
+    </Style>
+    
+    <!-- Style for the ProgressBar used as the slider track -->
+    <Style Selector="Slider /template/ ProgressBar#PART_ProgressLayer">
+        <Setter Property="Theme" Value="{StaticResource MaterialSliderTrackBarV2}" />
+        <Style Selector="^ /template/ Border#PART_InactiveState">
+            <Setter Property="Background" Value="{StaticResource PrimaryColor}" />
+            <Setter Property="Opacity" Value="0.3" />
+        </Style>
+        <Style Selector="^ /template/ Border#PART_Indicator">
+            <Setter Property="Background" Value="{StaticResource PrimaryColor}" />
+        </Style>
+    </Style>
+
+    <!-- Thumb style to match the primary color -->
+    <Style Selector="Slider /template/ Thumb#PART_SliderThumb">
+        <Setter Property="Theme" Value="{StaticResource MaterialSliderThumbV2}" />
+        <Style Selector="^ /template/ Border#PART_ThumbGrip">
+            <Setter Property="Background" Value="{StaticResource PrimaryColor}" />
+        </Style>
     </Style>
 </Styles>

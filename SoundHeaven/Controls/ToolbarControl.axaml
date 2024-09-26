@@ -8,6 +8,7 @@
              x:Class="SoundHeaven.Controls.ToolbarControl"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
+             xmlns:local="clr-namespace:SoundHeaven.Controls"
              x:DataType="viewModels:ToolbarViewModel">
 
     <!-- Root Grid for Toolbar -->
@@ -60,27 +61,39 @@
                       MaxHeight="300"
                       Theme="{StaticResource MaterialModernScrollViewer}">
 
-            <!-- ListBox for displaying playlists -->
             <ListBox Margin="0 0 0 0"
                      FlowDirection="LeftToRight"
                      ItemsSource="{Binding PlaylistCollection}"
                      SelectedItem="{Binding ToolbarSelectedPlaylist, Mode=TwoWay}"
                      Width="200"
-                     Classes="ToolbarText">
-                
-                
-                
+                     Classes="ToolbarText"
+                     local:ListBoxHelper.DeleteCommand="{Binding DeletePlaylistCommand}">
+            
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            Text="{Binding Name, Mode=TwoWay}"
-                            Classes="Playlists"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding Name, Mode=TwoWay}"
+                                       Classes="Playlists"/>
+                            <Button Grid.Column="1"
+                                    Background="Transparent"
+                                    Command="{Binding (local:ListBoxHelper.DeleteCommand), RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}"
+                                    VerticalAlignment="Center"
+                                    Margin="5,0,0,0">
+                                <TextBlock Text="×" 
+                                           FontSize="16" 
+                                           Foreground="White" 
+                                           VerticalAlignment="Center"/>
+                            </Button>
+                        </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
         </ScrollViewer>
-
+        
         <!-- Styling for TextBlocks in the toolbar -->
         <StackPanel.Styles>
             <Style Selector="TextBlock.ToolbarText">

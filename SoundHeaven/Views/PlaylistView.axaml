@@ -40,13 +40,19 @@
                     Width="60"
                     Height="30"
                     CornerRadius="16"
-                    HorizontalAlignment="Center" />
+                    HorizontalAlignment="Center" 
+                    Foreground="{StaticResource PrimaryColor}"
+                    BorderBrush="{StaticResource PrimaryColor}"/>
             <Button Command="{Binding EditSongCommand}"
                     Theme="{StaticResource MaterialOutlineButton}" Content="Edit"
-                    ToolTip.Tip="Edit selected song" Width="60" Height="30" CornerRadius="16" />
+                    ToolTip.Tip="Edit selected song" Width="60" Height="30" CornerRadius="16"
+                    Foreground="{StaticResource PrimaryColor}"
+                    BorderBrush="{StaticResource PrimaryColor}"/>
             <Button Command="{Binding DeleteSongCommand}"
                     Theme="{StaticResource MaterialOutlineButton}" Content="Del"
-                    ToolTip.Tip="Delete selected song" Width="60" Height="30" CornerRadius="16" />
+                    ToolTip.Tip="Delete selected song" Width="60" Height="30" CornerRadius="16" 
+                    Foreground="{StaticResource PrimaryColor}"
+                    BorderBrush="{StaticResource PrimaryColor}"/>
         </StackPanel>
 
         <!-- DataGrid for Songs -->
