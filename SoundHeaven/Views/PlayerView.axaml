@@ -76,7 +76,7 @@
                 Background="{StaticResource PrimaryColor}"
                 CornerRadius="0,0,10,10" 
                 Padding="0,15">
-            <TextBlock Text="Player"
+            <TextBlock Text="{Binding ActivePlaylistName}"
                        HorizontalAlignment="Center"
                        FontSize="28"
                        FontWeight="Bold"
@@ -108,10 +108,12 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Text="Up Next"
+            <TextBlock Grid.Row="0" 
                        HorizontalAlignment="Center"
                        Margin="0,30,0,10"
-                       Classes="Headers"/>
+                       Classes="Headers">
+                <Run Text="Up Next:"/>
+            </TextBlock>
 
             <ScrollViewer Grid.Row="1"
                           HorizontalScrollBarVisibility="Disabled"

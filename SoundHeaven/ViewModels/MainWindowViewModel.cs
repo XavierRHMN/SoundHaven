@@ -225,6 +225,9 @@ namespace SoundHeaven.ViewModels
             PlayerViewModel = new PlayerViewModel(this);
             HomeViewModel = new HomeViewModel(this, dataService);
             
+            // Make sure to set the initial state of shuffle
+            PlaybackControlViewModel.IsShuffleEnabled = ShuffleControlViewModel.IsShuffleEnabled;
+            
             // Set initial CurrentViewModel
             CurrentViewModel = HomeViewModel;
 
@@ -315,8 +318,6 @@ namespace SoundHeaven.ViewModels
 
                 if (AudioService.IsPlaying())
                 {
-                    Console.WriteLine(SeekPosition);
-                    Console.WriteLine(CurrentSong.Length);
                     SeekPosition += 0.25;
                 }
             }

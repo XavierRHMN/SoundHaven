@@ -34,11 +34,12 @@ namespace SoundHeaven.ViewModels
                 if (_isShuffleEnabled != value)
                 {
                     _isShuffleEnabled = value;
-                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsShuffleEnabled));
+                    Console.WriteLine($"PlaybackControlViewModel: Shuffle is now {(_isShuffleEnabled ? "enabled" : "disabled")}");
                 }
             }
         }
-
+        
         private bool _isPlaying;
         public bool IsPlaying
         {
@@ -164,25 +165,8 @@ namespace SoundHeaven.ViewModels
                 return;
             }
 
-            Song? previousSong = null;
-
-            if (IsShuffleEnabled)
-            {
-                int index = Random.Shared.Next(currentPlaylist.Songs.Count);
-                var currentSong = _mainWindowViewModel.CurrentSong;
-                var songs = currentPlaylist.Songs;
-
-                if (index == songs.IndexOf(currentSong))
-                {
-                    index = (index - 1 + songs.Count) % songs.Count;
-                }
-                previousSong = currentPlaylist.Songs[index];
-            }
-            else
-            {
-                previousSong = currentPlaylist.GetPreviousNextSong(_mainWindowViewModel.CurrentSong, Direction.Previous);
-            }
-
+            Song? previousSong = currentPlaylist.GetPreviousNextSong(_mainWindowViewModel.CurrentSong, Direction.Previous);
+            
             if (previousSong != null)
             {
                 if (_mainWindowViewModel.SeekPosition > 3)

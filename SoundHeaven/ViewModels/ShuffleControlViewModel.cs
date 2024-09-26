@@ -1,20 +1,22 @@
 ﻿using SoundHeaven.Commands;
-using SoundHeaven.Models;
-using SoundHeaven.Services;
 using System;
 using System.Windows.Input;
+using Avalonia.Threading;
 
 namespace SoundHeaven.ViewModels
 {
     public class ShuffleControlViewModel : ViewModelBase
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
+        private bool _isUpdating = false;
 
         public ShuffleControlViewModel(MainWindowViewModel mainWindowViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
-
             ToggleShuffleCommand = new RelayCommand(ToggleShuffle);
+            
+            // Ensure the initial state is set correctly
+            IsShuffleEnabled = false;
         }
 
         private bool _isShuffleEnabled;
@@ -23,22 +25,33 @@ namespace SoundHeaven.ViewModels
             get => _isShuffleEnabled;
             set
             {
+                if (_isUpdating) return; // Prevent recursive calls
+                _isUpdating = true;
+
                 if (_isShuffleEnabled != value)
                 {
                     _isShuffleEnabled = value;
-                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsShuffleEnabled));
+                    Console.WriteLine($"Shuffle is now {(_isShuffleEnabled ? "enabled" : "disabled")}");
 
                     // Update the PlaybackControlViewModel
                     _mainWindowViewModel.PlaybackControlViewModel.IsShuffleEnabled = _isShuffleEnabled;
+
+                    // Ensure UI update on the UI thread
+                    Dispatcher.UIThread.Post(() => OnPropertyChanged(nameof(IsShuffleEnabled)));
                 }
+
+                _isUpdating = false;
             }
         }
 
-        public RelayCommand ToggleShuffleCommand { get; }
+        public ICommand ToggleShuffleCommand { get; }
 
         private void ToggleShuffle()
         {
-            _isShuffleEnabled = !_isShuffleEnabled;
+            Console.WriteLine("ToggleShuffle called");
+            IsShuffleEnabled = !IsShuffleEnabled;
+            Console.WriteLine($"IsShuffleEnabled is now {IsShuffleEnabled}");
         }
     }
 }

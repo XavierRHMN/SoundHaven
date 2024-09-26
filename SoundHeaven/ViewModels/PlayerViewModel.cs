@@ -1,6 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections;
 using System.ComponentModel;
 using SoundHeaven.Models;
+using System.Collections.ObjectModel;
 
 namespace SoundHeaven.ViewModels
 {
@@ -8,23 +9,10 @@ namespace SoundHeaven.ViewModels
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
         
-        private Playlist _displayedPlaylist;
-        public Playlist DisplayedPlaylist
-        {
-            get => _displayedPlaylist;
-            set
-            {
-                if (_displayedPlaylist != value)
-                {
-                    _displayedPlaylist = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(UpNextSongs));
-                }
-            }
-        }
-
         public ObservableCollection<Song> UpNextSongs => _mainWindowViewModel.CurrentPlaylist?.Songs;
         
+        public string ActivePlaylistName => _mainWindowViewModel.CurrentPlaylist?.Name ?? "No Active Playlist";
+
         private Song _playerViewSong;
         public Song PlayerViewSong
         {
@@ -41,6 +29,7 @@ namespace SoundHeaven.ViewModels
                 }
             }
         }
+        
         public PlayerViewModel(MainWindowViewModel mainWindowViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
@@ -57,6 +46,7 @@ namespace SoundHeaven.ViewModels
             else if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
             {
                 OnPropertyChanged(nameof(UpNextSongs));
+                OnPropertyChanged(nameof(ActivePlaylistName));
             }
         }
 

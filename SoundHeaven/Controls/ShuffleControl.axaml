@@ -4,16 +4,20 @@
              x:Class="SoundHeaven.Controls.ShuffleControl"
              x:DataType="vm:ShuffleControlViewModel">
 
-    <!-- Shuffle Toggle Button -->
-    <ToggleButton x:Name="ShuffleButton"
-                  IsChecked="{Binding IsShuffleEnabled}"
-                  Background="Transparent"
-                  BorderBrush="Transparent"
-                  Width="60" Height="60"
-                  ToolTip.Tip="Toggle Shuffle">
+    <Button x:Name="ShuffleButton"
+            Command="{Binding ToggleShuffleCommand}"
+            Background="Transparent"
+            Width="60" Height="60"
+            CornerRadius="30"
+            ToolTip.Tip="Toggle Shuffle">
 
-        <!-- Use an image or SVG for the shuffle icon -->
         <Svg Path="avares://SoundHeaven/Assets/Icons/shuffle.svg"
-             Opacity="{Binding IsShuffleEnabled, Converter={StaticResource BooleanToOpacityConverter}, ConverterParameter='1,0.5'}" />
-    </ToggleButton>
+             Opacity="{Binding IsShuffleEnabled, Converter={StaticResource BooleanToOpacityConverter}, ConverterParameter='1,0.5'}">
+            <Svg.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                </Transitions>
+            </Svg.Transitions>
+        </Svg>
+    </Button>
 </UserControl>
