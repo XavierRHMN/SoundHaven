@@ -177,7 +177,8 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Text="Up Next"
+            <TextBlock Grid.Row="0" 
+                       Text="Up Next"
                        HorizontalAlignment="Center"
                        Margin="0,30,0,10"
                        Classes="Headers"/>
@@ -186,12 +187,10 @@
                           HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Hidden"
                           Theme="{StaticResource MaterialModernScrollViewer}">
-                <ListBox ItemsSource="{Binding Songs}"
-                         Background="Transparent"
-                         Theme="{StaticResource MaterialModernListBox}">
-                    <ListBox.ItemTemplate>
+                <ItemsControl ItemsSource="{Binding Songs}">
+                    <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="models:Song">
-                            <Grid Margin="0,0">
+                            <Grid Margin="0,5">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
@@ -217,8 +216,8 @@
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </ScrollViewer>
         </Grid>
     </Grid>

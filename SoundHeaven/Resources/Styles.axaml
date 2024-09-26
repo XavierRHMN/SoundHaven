@@ -1,5 +1,7 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
+        xmlns:controls="clr-namespace:Material.Styles.Controls;assembly=Material.Styles">
 
     <!-- Slider styles -->
     <Style Selector="Slider">
@@ -22,7 +24,4 @@
             </ControlTemplate>
         </Setter>
     </Style>
-
-    <!-- Add any other styles you want to include here -->
-
 </Styles>

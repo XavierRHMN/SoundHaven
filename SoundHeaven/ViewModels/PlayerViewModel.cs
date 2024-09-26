@@ -14,12 +14,15 @@ namespace SoundHeaven.ViewModels
         public Song PlayerViewSong
         {
             get => _playerViewSong;
-            private set
+            set // Changed from private to public
             {
                 if (_playerViewSong != value)
                 {
                     _playerViewSong = value;
                     OnPropertyChanged();
+                    
+                    // Update the MainWindowViewModel's CurrentSong
+                    _mainWindowViewModel.CurrentSong = value;
                 }
             }
         }
