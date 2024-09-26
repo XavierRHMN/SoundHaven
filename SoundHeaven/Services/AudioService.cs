@@ -8,16 +8,15 @@ namespace SoundHeaven.Services
     {
         private IWavePlayer _waveOutDevice;
         private AudioFileReader _audioFileReader;
-        private double _audioVolume = 0.1;
+        private float _audioVolume = 0.1f;
 
-        public AudioService() => _waveOutDevice = new WaveOutEvent(); // You can replace this with a different output device if needed
+        public AudioService() => _waveOutDevice = new WaveOutEvent();
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
         
         public bool IsPlaying() => _waveOutDevice.PlaybackState == PlaybackState.Playing;
 
         public bool IsStopped() => _waveOutDevice.PlaybackState == PlaybackState.Stopped;
-
 
         public void Seek(TimeSpan position)
         {
@@ -29,18 +28,17 @@ namespace SoundHeaven.Services
 
         public void Start(string filePath)
         {
-            Stop(); // Ensure any currently playing audio is stopped before starting a new one
+            Stop();
 
             try
             {
                 _audioFileReader = new AudioFileReader(filePath);
-                _audioFileReader.Volume = (float)_audioVolume; // Set the current volume when loading the new song
+                _audioFileReader.Volume = _audioVolume;
                 _waveOutDevice.Init(_audioFileReader);
                 _waveOutDevice.Play();
             }
             catch (Exception ex)
             {
-                // Handle exceptions (e.g., file not found, invalid format)
                 Console.WriteLine($"Error playing audio: {ex.Message}");
             }
         }
@@ -63,12 +61,9 @@ namespace SoundHeaven.Services
 
         public void Stop()
         {
-            if (_waveOutDevice.PlaybackState == PlaybackState.Playing || _waveOutDevice.PlaybackState == PlaybackState.Paused)
-            {
-                _waveOutDevice.Stop();
-                _audioFileReader?.Dispose();
-                _audioFileReader = null;
-            }
+            _waveOutDevice.Stop();
+            _audioFileReader?.Dispose();
+            _audioFileReader = null;
         }
 
         public void Restart(Song song)
@@ -80,22 +75,22 @@ namespace SoundHeaven.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Could restart audio: {ex.Message}");
+                Console.WriteLine($"Could not restart audio: {ex.Message}");
             }
-
         }
 
-        public double GetCurrentVolume()
+        public float GetCurrentVolume()
         {
-            _audioFileReader.Volume = (float)_audioVolume;
-            return _audioFileReader.Volume;
+            return _audioVolume;
         }
 
         public void SetVolume(float volume)
         {
             _audioVolume = volume;
-            _audioFileReader.Volume = (float)_audioVolume;
-
+            if (_audioFileReader != null)
+            {
+                _audioFileReader.Volume = _audioVolume;
+            }
         }
 
         public void Dispose()

@@ -5,7 +5,7 @@
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              mc:Ignorable="d"
              x:Class="SoundHeaven.Controls.VolumeControl"
-             x:DataType="viewModels:MainWindowViewModel">
+             x:DataType="viewModels:VolumeControlViewModel">
 
     <UserControl.Styles>
         <Style Selector="Button">
@@ -27,7 +27,7 @@
             <Svg Path="avares://SoundHeaven/Assets/Icons/volumemute.svg" />
         </Button>
 
-        <Slider Minimum="0" Maximum="1" IsEnabled="{Binding !IsMuted}" Value="{Binding Volume, Mode=TwoWay}" Width="150" Margin="0 0 20  0"/>
+        <Slider Minimum="0" Maximum="1" IsEnabled="{Binding !IsMuted}" Value="{Binding Volume, Mode=TwoWay}" Width="150" Margin="0 0 20 0"/>
     </StackPanel>
 
 </UserControl>

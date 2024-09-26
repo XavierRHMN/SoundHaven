@@ -46,8 +46,8 @@ namespace SoundHeaven.ViewModels
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(CurrentSongExists));
                     AudioService.Start(_currentSong.FilePath);
-                    Volume = AudioService.GetCurrentVolume();
-                    MuteCommand.RaiseCanExecuteChanged();
+                    VolumeControlViewModel.Volume = AudioService.GetCurrentVolume();
+                    VolumeControlViewModel.MuteCommand.RaiseCanExecuteChanged();
                     PlaybackControlViewModel.IsPlaying = true;
 
                     // Update text width based on the new song title
@@ -70,56 +70,6 @@ namespace SoundHeaven.ViewModels
                     _currentPlaylist = value;
                     OnPropertyChanged();
                 }
-            }
-        }
-        
-        private double _volume;
-        public double Volume
-        {
-            get => _volume;
-            set
-            {
-                _volume = value;
-                OnPropertyChanged();
-                if (CurrentSong != null)
-                {
-                    AudioService?.SetVolume((float)_volume);
-                }
-            }
-        }
-
-        private bool _isMuted;
-        public bool IsMuted
-        {
-            get => _isMuted;
-            set
-            {
-                if (_isMuted != value)
-                {
-                    _isMuted = value;
-                    OnPropertyChanged();
-
-                    if (_isMuted)
-                    {
-                        PreviousVolume = (float)Volume;
-                        Volume = 0;
-                    }
-                    else
-                    {
-                        Volume = PreviousVolume;
-                    }
-                }
-            }
-        }
-
-        private float _previousVolume;
-        public float PreviousVolume
-        {
-            get => _previousVolume;
-            set
-            {
-                _previousVolume = value;
-                OnPropertyChanged();
             }
         }
 
@@ -180,10 +130,8 @@ namespace SoundHeaven.ViewModels
         public ShuffleControlViewModel ShuffleControlViewModel { get; }
         public PlayerViewModel PlayerViewModel { get; set; }
         public SeekSliderControlViewModel SeekSliderControlViewModel { get; set; }
+        public VolumeControlViewModel VolumeControlViewModel { get; }
         
-        // Commands
-        public RelayCommand MuteCommand { get; }
-
 
         public MainWindowViewModel()
         {
@@ -201,9 +149,6 @@ namespace SoundHeaven.ViewModels
             AudioService = new AudioService();
             PlaylistStore = new PlaylistStore(this);
             SongStore = new SongStore();
-
-            MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
-            
             
             ShuffleControlViewModel = new ShuffleControlViewModel(this);
             PlaybackControlViewModel = new PlaybackControlViewModel(this, AudioService);
@@ -212,6 +157,7 @@ namespace SoundHeaven.ViewModels
             HomeViewModel = new HomeViewModel(this, dataService);
             ToolBarControlViewModel = new ToolBarControlViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore);
             SeekSliderControlViewModel = new SeekSliderControlViewModel(this, AudioService, PlaybackControlViewModel);
+            VolumeControlViewModel = new VolumeControlViewModel(AudioService);
             
             // Make sure to set the initial state of shuffle
             PlaybackControlViewModel.IsShuffleEnabled = ShuffleControlViewModel.IsShuffleEnabled;
@@ -285,10 +231,6 @@ namespace SoundHeaven.ViewModels
             OnPropertyChanged(nameof(TitleScrollPosition1));
             OnPropertyChanged(nameof(TitleScrollPosition2));
         }
-        
-        private void ToggleMute() => IsMuted = !IsMuted;
-
-        private bool CanToggleMute() => CurrentSong != null;
 
         private double ExtractTextWidth(string text, string fontFamily, double fontSize)
         {

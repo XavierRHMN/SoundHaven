@@ -15,7 +15,8 @@ namespace SoundHeaven.ViewModels
         private DispatcherTimer _debounceTimer;
         private double _seekPosition;
         private bool _isUpdatingFromTimer;
-
+        public double MaximumSeekValue => _mainViewModel.CurrentSong?.Length ?? 0;
+        
         public SeekSliderControlViewModel(MainWindowViewModel mainViewModel, AudioService audioService, PlaybackControlViewModel playbackControlViewModel)
         {
             _mainViewModel = mainViewModel ?? throw new ArgumentNullException(nameof(mainViewModel));
@@ -39,9 +40,7 @@ namespace SoundHeaven.ViewModels
                 }
             }
         }
-
-        public double MaximumSeekValue => _mainViewModel.CurrentSong?.Length ?? 0;
-
+        
         private void InitializeSeekTimer()
         {
             _seekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
