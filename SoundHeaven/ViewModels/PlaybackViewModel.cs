@@ -14,7 +14,7 @@ namespace SoundHeaven.ViewModels
         public RelayCommand PreviousCommand { get; }
     }
     
-    public class PlaybackControlViewModel : ViewModelBase, IPlaybackControlViewModel
+    public class PlaybackViewModel : ViewModelBase, IPlaybackControlViewModel
     {
         public enum Direction
         {
@@ -36,7 +36,7 @@ namespace SoundHeaven.ViewModels
                 {
                     _isShuffleEnabled = value;
                     OnPropertyChanged(nameof(IsShuffleEnabled));
-                    Console.WriteLine($"PlaybackControlViewModel: Shuffle is now {(_isShuffleEnabled ? "enabled" : "disabled")}");
+                    Console.WriteLine($"PlaybackViewModel: Shuffle is now {(_isShuffleEnabled ? "enabled" : "disabled")}");
                 }
             }
         }
@@ -60,7 +60,7 @@ namespace SoundHeaven.ViewModels
         public RelayCommand NextCommand { get; private set; }
         public RelayCommand PreviousCommand { get; private set; }
 
-        public PlaybackControlViewModel(MainWindowViewModel mainWindowViewModel, AudioService audioService)
+        public PlaybackViewModel(MainWindowViewModel mainWindowViewModel, AudioService audioService)
         {
             _mainWindowViewModel = mainWindowViewModel;
             _audioService = audioService;
@@ -170,7 +170,7 @@ namespace SoundHeaven.ViewModels
             
             if (previousSong != null)
             {
-                if (_mainWindowViewModel.SeekSliderControlViewModel.SeekPosition > 3)
+                if (_mainWindowViewModel.SeekSliderViewModel.SeekPosition > 3)
                 {
                     _audioService.Restart(_mainWindowViewModel.CurrentSong);
                 }

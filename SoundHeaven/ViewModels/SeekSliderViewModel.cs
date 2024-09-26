@@ -6,22 +6,22 @@ using System.Diagnostics;
 
 namespace SoundHeaven.ViewModels
 {
-    public class SeekSliderControlViewModel : ViewModelBase, IDisposable
+    public class SeekSliderViewModel : ViewModelBase, IDisposable
     {
         private readonly AudioService _audioService;
         private readonly MainWindowViewModel _mainViewModel;
-        private readonly PlaybackControlViewModel _playbackControlViewModel;
+        private readonly PlaybackViewModel _playbackViewModel;
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _debounceTimer;
         private double _seekPosition;
         private bool _isUpdatingFromTimer;
         public double MaximumSeekValue => _mainViewModel.CurrentSong?.Length ?? 0;
         
-        public SeekSliderControlViewModel(MainWindowViewModel mainViewModel, AudioService audioService, PlaybackControlViewModel playbackControlViewModel)
+        public SeekSliderViewModel(MainWindowViewModel mainViewModel, AudioService audioService, PlaybackViewModel playbackViewModel)
         {
             _mainViewModel = mainViewModel ?? throw new ArgumentNullException(nameof(mainViewModel));
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
-            _playbackControlViewModel = playbackControlViewModel ?? throw new ArgumentException(nameof(playbackControlViewModel));
+            _playbackViewModel = playbackViewModel ?? throw new ArgumentException(nameof(playbackViewModel));
             
             _mainViewModel.PropertyChanged += MainViewModelPropertyChanged;
             InitializeSeekTimer();
@@ -71,7 +71,7 @@ namespace SoundHeaven.ViewModels
 
             if (_audioService.IsStopped())
             {
-                _playbackControlViewModel.IsPlaying = false;
+                _playbackViewModel.IsPlaying = false;
             }
         }
 

@@ -5,12 +5,12 @@ using Avalonia.Threading;
 
 namespace SoundHeaven.ViewModels
 {
-    public class ShuffleControlViewModel : ViewModelBase
+    public class ShuffleViewModel : ViewModelBase
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
         private bool _isUpdating = false;
 
-        public ShuffleControlViewModel(MainWindowViewModel mainWindowViewModel)
+        public ShuffleViewModel(MainWindowViewModel mainWindowViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
             ToggleShuffleCommand = new RelayCommand(ToggleShuffle);
@@ -34,8 +34,8 @@ namespace SoundHeaven.ViewModels
                     OnPropertyChanged(nameof(IsShuffleEnabled));
                     Console.WriteLine($"Shuffle is now {(_isShuffleEnabled ? "enabled" : "disabled")}");
 
-                    // Update the PlaybackControlViewModel
-                    _mainWindowViewModel.PlaybackControlViewModel.IsShuffleEnabled = _isShuffleEnabled;
+                    // Update the PlaybackViewModel
+                    _mainWindowViewModel.PlaybackViewModel.IsShuffleEnabled = _isShuffleEnabled;
 
                     // Ensure UI update on the UI thread
                     Dispatcher.UIThread.Post(() => OnPropertyChanged(nameof(IsShuffleEnabled)));

@@ -31,7 +31,7 @@ namespace SoundHeaven.Models
 
         public Playlist() => Songs = new ObservableCollection<Song>();
 
-        public Song? GetPreviousNextSong(Song? currentSong, PlaybackControlViewModel.Direction direction)
+        public Song? GetPreviousNextSong(Song? currentSong, PlaybackViewModel.Direction direction)
         {
             // Check for nulls and ensure the Songs list is not empty
             if (currentSong == null || Songs == null || Songs.Count == 0)

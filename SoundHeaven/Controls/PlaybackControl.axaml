@@ -6,7 +6,7 @@
              x:Class="SoundHeaven.Controls.PlaybackControl"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              d:DesignWidth="800" d:DesignHeight="450"
-             x:DataType="viewModels:PlaybackControlViewModel">
+             x:DataType="viewModels:PlaybackViewModel">
 
     <!-- Define a style for buttons -->
     <UserControl.Styles>

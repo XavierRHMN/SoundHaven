@@ -5,7 +5,7 @@
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              mc:Ignorable="d"
              x:Class="SoundHeaven.Controls.VolumeControl"
-             x:DataType="viewModels:VolumeControlViewModel">
+             x:DataType="viewModels:VolumeViewModel">
 
     <UserControl.Styles>
         <Style Selector="Button">

@@ -15,7 +15,7 @@ namespace SoundHeaven.Models
         }
 
         private MainWindowViewModel _mainWindowViewModel;
-        private ToolBarControlViewModel _toolBarControlViewModel;
+        private ToolbarViewModel _toolbarViewModel;
         private AudioService _audioService;
 
         public PlaylistStore(MainWindowViewModel mainWindowViewModel)
@@ -23,7 +23,7 @@ namespace SoundHeaven.Models
             Playlists = new ObservableCollection<Playlist>();
             _mainWindowViewModel = mainWindowViewModel;
             _audioService = _mainWindowViewModel.AudioService;
-            _toolBarControlViewModel = _mainWindowViewModel.ToolBarControlViewModel;
+            _toolbarViewModel = _mainWindowViewModel.ToolbarViewModel;
         }
 
         public void AddPlaylist(Playlist playlist)

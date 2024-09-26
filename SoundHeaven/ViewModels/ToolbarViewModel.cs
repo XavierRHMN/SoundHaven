@@ -10,7 +10,7 @@ using System;
 
 namespace SoundHeaven.ViewModels
 {
-    public class ToolBarControlViewModel : ViewModelBase
+    public class ToolbarViewModel : ViewModelBase
     {
         private readonly MainWindowViewModel _mainWindowViewModel;
         private PlaylistViewModel _playlistViewModel;
@@ -50,7 +50,7 @@ namespace SoundHeaven.ViewModels
 
 
         // Constructor
-        public ToolBarControlViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
+        public ToolbarViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
                                        HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore)
         {
             _mainWindowViewModel = mainWindowViewModel;

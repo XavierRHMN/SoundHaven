@@ -89,7 +89,7 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="Gray">
-                <controls:ToolbarControl DataContext="{Binding ToolBarControlViewModel}" />
+                <controls:ToolbarControl DataContext="{Binding ToolbarViewModel}" />
             </Border>
 
             <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" />
@@ -102,7 +102,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <controls:PlaybackControl Grid.Column="0" DataContext="{Binding PlaybackControlViewModel}" />
+            <controls:PlaybackControl Grid.Column="0" DataContext="{Binding PlaybackViewModel}" />
 
             <Grid x:Name="SongInfoSeekbarVolumebar" Grid.Column="1">
                 <Grid.ColumnDefinitions>
@@ -112,10 +112,10 @@
                     <ColumnDefinition Width="250" />
                 </Grid.ColumnDefinitions>
 
-                <controls:SongInfoControl Grid.Column="0" VerticalAlignment="Center" />
-                <controls:SeekSliderControl Grid.Column="1" DataContext="{Binding SeekSliderControlViewModel}" />
-                <controls:ShuffleControl Grid.Column="2" DataContext="{Binding ShuffleControlViewModel}"/>
-                <controls:VolumeControl Grid.Column="3"  DataContext="{Binding VolumeControlViewModel}" VerticalAlignment="Center" />
+                <controls:SongInfoControl Grid.Column="0" DataContext="{Binding SongInfoViewModel}" VerticalAlignment="Center" />
+                <controls:SeekSliderControl Grid.Column="1" DataContext="{Binding SeekSliderViewModel}" />
+                <controls:ShuffleControl Grid.Column="2" DataContext="{Binding ShuffleViewModel}"/>
+                <controls:VolumeControl Grid.Column="3"  DataContext="{Binding VolumeViewModel}" VerticalAlignment="Center" />
             </Grid>
         </Grid>
     </Grid>

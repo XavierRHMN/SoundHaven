@@ -5,7 +5,7 @@ using SoundHeaven.Services;
 
 namespace SoundHeaven.ViewModels
 {
-    public class VolumeControlViewModel : INotifyPropertyChanged
+    public class VolumeViewModel : INotifyPropertyChanged
     {
         private readonly AudioService _audioService;
         private float _volume;
@@ -61,7 +61,7 @@ namespace SoundHeaven.ViewModels
 
         public RelayCommand MuteCommand { get; }
 
-        public VolumeControlViewModel(AudioService audioService)
+        public VolumeViewModel(AudioService audioService)
         {
             _audioService = audioService;
             Volume = _audioService.GetCurrentVolume();

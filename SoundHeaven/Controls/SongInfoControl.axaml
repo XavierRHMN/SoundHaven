@@ -1,9 +1,8 @@
-﻿<!-- SongInfoControl.axaml -->
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:viewModels="clr-namespace:SoundHeaven.ViewModels"
              x:Class="SoundHeaven.Controls.SongInfoControl"
-             x:DataType="viewModels:MainWindowViewModel">
+             x:DataType="viewModels:SongInfoViewModel">
 
     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
         <!-- Album Cover Image -->
