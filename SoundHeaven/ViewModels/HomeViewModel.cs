@@ -1,5 +1,4 @@
-﻿// ViewModels/HomeViewModel.cs
-using SoundHeaven.Commands;
+﻿using SoundHeaven.Commands;
 using SoundHeaven.Models;
 using SoundHeaven.Services;
 using System;
@@ -14,17 +13,16 @@ namespace SoundHeaven.ViewModels
 {
     public class HomeViewModel : ViewModelBase
     {
-        private readonly MainWindowViewModel _mainWindowViewModel;
+        private readonly PlaybackViewModel _playbackViewModel;
         private readonly IDataService _dataService;
         
-        public ObservableCollection<Song> TopTracks { get;  }
+        public ObservableCollection<Song> TopTracks { get; }
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
         public ObservableCollection<Song> RecommendedTracks { get; }
         
-        public Playlist? MainWindowViewModelCurrentPlaylist => _mainWindowViewModel.CurrentPlaylist;
-        public ObservableCollection<Song>? Songs => MainWindowViewModelCurrentPlaylist?.Songs;
+        public Playlist? CurrentPlaylist => _playbackViewModel.CurrentPlaylist;
+        public ObservableCollection<Song>? Songs => CurrentPlaylist?.Songs;
 
-        
         private Song? _selectedSong;
         public Song? SelectedSong
         {
@@ -36,16 +34,17 @@ namespace SoundHeaven.ViewModels
                     _selectedSong = value;
                     OnPropertyChanged();
 
-                    if (_selectedSong != null && _mainWindowViewModel.CurrentSong != _selectedSong)
+                    if (_selectedSong != null && _playbackViewModel.CurrentSong != _selectedSong)
                     {
-                        _mainWindowViewModel.CurrentSong = _selectedSong;
+                        _playbackViewModel.CurrentSong = _selectedSong;
                     }
                 }
             }
         }
-        public HomeViewModel(MainWindowViewModel mainWindowViewModel, IDataService dataService)
+
+        public HomeViewModel(PlaybackViewModel playbackViewModel, IDataService dataService)
         {
-            _mainWindowViewModel = mainWindowViewModel;
+            _playbackViewModel = playbackViewModel;
             _dataService = dataService;
 
             TopTracks = new ObservableCollection<Song>();

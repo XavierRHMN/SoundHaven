@@ -15,8 +15,9 @@ namespace SoundHeaven.ViewModels
     {
         private readonly IOpenFileDialogService _openFileDialogService;
         private readonly MainWindowViewModel _mainWindowViewModel;
+        private readonly PlaybackViewModel _playbackViewModel;
 
-        public Playlist? MainWindowViewModelCurrentPlaylist => _mainWindowViewModel.CurrentPlaylist;
+        public Playlist? CurrentPlaylist => _playbackViewModel.CurrentPlaylist;
 
         private Playlist _displayedPlaylist;
         public Playlist DisplayedPlaylist
@@ -47,9 +48,9 @@ namespace SoundHeaven.ViewModels
                     OnPropertyChanged();
                     if (_selectedSong != null)
                     {
-                        // Update the active playlist and current song in MainWindowViewModel
-                        _mainWindowViewModel.CurrentPlaylist = DisplayedPlaylist;
-                        _mainWindowViewModel.CurrentSong = _selectedSong;
+                        // Update the active playlist and current song in PlaybackViewModel
+                        _playbackViewModel.CurrentPlaylist = DisplayedPlaylist;
+                        _playbackViewModel.CurrentSong = _selectedSong;
                     }
                 }
             }
@@ -59,18 +60,19 @@ namespace SoundHeaven.ViewModels
         public RelayCommand EditSongCommand { get; }
         public RelayCommand DeleteSongCommand { get; }
 
-        public PlaylistViewModel(MainWindowViewModel mainWindowViewModel, IOpenFileDialogService openFileDialogService)
+        public PlaylistViewModel(MainWindowViewModel mainWindowViewModel, PlaybackViewModel playbackViewModel, IOpenFileDialogService openFileDialogService)
         {
             _mainWindowViewModel = mainWindowViewModel;
+            _playbackViewModel = playbackViewModel;
             _openFileDialogService = openFileDialogService;
 
             AddSongCommand = new AsyncRelayCommand(AddSongAsync);
             EditSongCommand = new RelayCommand(EditSong);
             DeleteSongCommand = new RelayCommand(DeleteSong);
 
-            _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
+            _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
 
-            SelectedSong = _mainWindowViewModel.CurrentSong;
+            SelectedSong = _playbackViewModel.CurrentSong;
         }
 
         public async Task AddSongAsync()
@@ -118,12 +120,12 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private void MainWindowViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void PlaybackViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
+            if (e.PropertyName == nameof(PlaybackViewModel.CurrentPlaylist))
             {
-                // Update the displayed playlist when the CurrentPlaylist changes in MainWindowViewModel
-                DisplayedPlaylist = _mainWindowViewModel.CurrentPlaylist;
+                // Update the displayed playlist when the CurrentPlaylist changes in PlaybackViewModel
+                DisplayedPlaylist = _playbackViewModel.CurrentPlaylist;
             }
         }
     }

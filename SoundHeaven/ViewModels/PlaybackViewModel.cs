@@ -3,6 +3,7 @@ using SoundHeaven.Models;
 using SoundHeaven.Services;
 using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace SoundHeaven.ViewModels
 {
@@ -16,15 +17,17 @@ namespace SoundHeaven.ViewModels
     
     public class PlaybackViewModel : ViewModelBase, IPlaybackControlViewModel
     {
+        private readonly object _trackEndedLock = new object();
+        private bool _isTrackEndedProcessing = false;
+        private readonly TimeSpan _debounceDelay = TimeSpan.FromMilliseconds(500);
+        
         public enum Direction
         {
             Previous = -1,
             Next = 1
         }
 
-
         private AudioService _audioService { get; set; }
-        private readonly MainWindowViewModel _mainWindowViewModel;
 
         private bool _isShuffleEnabled;
         public bool IsShuffleEnabled
@@ -36,7 +39,6 @@ namespace SoundHeaven.ViewModels
                 {
                     _isShuffleEnabled = value;
                     OnPropertyChanged(nameof(IsShuffleEnabled));
-                    Console.WriteLine($"PlaybackViewModel: Shuffle is now {(_isShuffleEnabled ? "enabled" : "disabled")}");
                 }
             }
         }
@@ -55,14 +57,48 @@ namespace SoundHeaven.ViewModels
             }
         }
 
+        private Song _currentSong;
+        public Song CurrentSong
+        {
+            get => _currentSong;
+            set
+            {
+                if (_currentSong != value)
+                {
+                    _currentSong = value;
+                    OnPropertyChanged(nameof(CurrentSong));
+                    OnPropertyChanged(nameof(CurrentSongExists));
+                    if (value != null)
+                    {
+                        PlayFromBeginning(value);
+                    }
+                }
+            }
+        }
+
+        public bool CurrentSongExists => CurrentSong != null;
+
+        private Playlist _currentPlaylist;
+        public Playlist CurrentPlaylist
+        {
+            get => _currentPlaylist;
+            set
+            {
+                if (_currentPlaylist != value)
+                {
+                    _currentPlaylist = value;
+                    OnPropertyChanged(nameof(CurrentPlaylist));
+                }
+            }
+        }
+
         public RelayCommand PlayCommand { get; private set; }
         public RelayCommand PauseCommand { get; private set; }
         public RelayCommand NextCommand { get; private set; }
         public RelayCommand PreviousCommand { get; private set; }
 
-        public PlaybackViewModel(MainWindowViewModel mainWindowViewModel, AudioService audioService)
+        public PlaybackViewModel(AudioService audioService)
         {
-            _mainWindowViewModel = mainWindowViewModel;
             _audioService = audioService;
 
             InitializeCommands();
@@ -78,13 +114,11 @@ namespace SoundHeaven.ViewModels
 
         private void Play()
         {
-            var song = _mainWindowViewModel.CurrentSong;
-
-            if (song != null)
+            if (CurrentSong != null)
             {
                 if (_audioService.IsStopped())
                 {
-                    _audioService.Start(song.FilePath);
+                    PlayFromBeginning(CurrentSong);
                 }
                 else
                 {
@@ -92,11 +126,10 @@ namespace SoundHeaven.ViewModels
                 }
                 IsPlaying = true;
             }
-            else if (_mainWindowViewModel.CurrentPlaylist?.Songs.Count > 0)
+            else if (CurrentPlaylist?.Songs.Count > 0)
             {
-                song = _mainWindowViewModel.CurrentPlaylist.Songs[0];
-                _mainWindowViewModel.CurrentSong = song;
-                _audioService.Start(song.FilePath);
+                CurrentSong = CurrentPlaylist.Songs[0];
+                PlayFromBeginning(CurrentSong);
                 IsPlaying = true;
             }
             else
@@ -117,9 +150,7 @@ namespace SoundHeaven.ViewModels
 
         private void NextTrack()
         {
-            var currentPlaylist = _mainWindowViewModel.CurrentPlaylist;
-
-            if (currentPlaylist == null || currentPlaylist.Songs.Count is 0 or 1)
+            if (CurrentPlaylist == null || CurrentPlaylist.Songs.Count is 0 or 1)
             {
                 Console.WriteLine("The playlist is empty or there's no next song");
                 return;
@@ -129,25 +160,24 @@ namespace SoundHeaven.ViewModels
 
             if (IsShuffleEnabled)
             {
-                int index = Random.Shared.Next(currentPlaylist.Songs.Count);
-                var currentSong = _mainWindowViewModel.CurrentSong;
-                var songs = currentPlaylist.Songs;
+                int index = Random.Shared.Next(CurrentPlaylist.Songs.Count);
+                var songs = CurrentPlaylist.Songs;
 
-                if (index == songs.IndexOf(currentSong))
+                if (index == songs.IndexOf(CurrentSong))
                 {
                     index = (index + 1) % songs.Count;
                 }
-                nextSong = currentPlaylist.Songs[index];
+                nextSong = CurrentPlaylist.Songs[index];
             }
             else
             {
-                nextSong = currentPlaylist.GetPreviousNextSong(_mainWindowViewModel.CurrentSong, Direction.Next);
+                nextSong = CurrentPlaylist.GetPreviousNextSong(CurrentSong, Direction.Next);
             }
 
             if (nextSong != null)
             {
-                _mainWindowViewModel.CurrentSong = nextSong;
-                _audioService.Start(nextSong.FilePath);
+                CurrentSong = nextSong;
+                PlayFromBeginning(nextSong);
                 IsPlaying = true;
             }
             else
@@ -158,26 +188,24 @@ namespace SoundHeaven.ViewModels
 
         private void PreviousTrack()
         {
-            var currentPlaylist = _mainWindowViewModel.CurrentPlaylist;
-
-            if (currentPlaylist == null || currentPlaylist.Songs.Count == 0)
+            if (CurrentPlaylist == null || CurrentPlaylist.Songs.Count == 0)
             {
                 Console.WriteLine("The playlist is empty.");
                 return;
             }
 
-            Song? previousSong = currentPlaylist.GetPreviousNextSong(_mainWindowViewModel.CurrentSong, Direction.Previous);
+            Song? previousSong = CurrentPlaylist.GetPreviousNextSong(CurrentSong, Direction.Previous);
             
             if (previousSong != null)
             {
-                if (_mainWindowViewModel.SeekSliderViewModel.SeekPosition > 3)
+                if (_audioService.GetCurrentTime().TotalSeconds > 3)
                 {
-                    _audioService.Restart(_mainWindowViewModel.CurrentSong);
+                    PlayFromBeginning(CurrentSong);
                 }
-                else if (currentPlaylist.Songs.Count > 1)
+                else if (CurrentPlaylist.Songs.Count > 1)
                 {
-                    _mainWindowViewModel.CurrentSong = previousSong;
-                    _audioService.Start(previousSong.FilePath);
+                    CurrentSong = previousSong;
+                    PlayFromBeginning(previousSong);
                 }
                 IsPlaying = true;
             }
@@ -186,5 +214,36 @@ namespace SoundHeaven.ViewModels
                 Console.WriteLine("No previous song available.");
             }
         }
+
+        private void PlayFromBeginning(Song song)
+        {
+            _audioService.Seek(TimeSpan.Zero);
+            _audioService.Start(song.FilePath);
+            IsPlaying = true;
+        }
+
+        private async Task HandleTrackEndedAsync()
+        {
+            lock (_trackEndedLock)
+            {
+                if (_isTrackEndedProcessing)
+                {
+                    return;
+                }
+                _isTrackEndedProcessing = true;
+            }
+
+            await Task.Delay(_debounceDelay);
+
+            try
+            {
+                NextTrack();
+            }
+            finally
+            {
+                _isTrackEndedProcessing = false;
+            }
+        }
+
     }
 }

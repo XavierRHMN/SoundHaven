@@ -34,52 +34,20 @@ namespace SoundHeaven.ViewModels
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _scrollTimer;
 
-        public bool CurrentSongExists => CurrentSong != null;
-        private Song _currentSong;
-        public Song CurrentSong
-        {
-            get => _currentSong;
-            set
-            {
-                if (_currentSong != value)
-                {
-                    _currentSong = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(CurrentSongExists));
-                    SongInfoViewModel.CurrentSong = value;
-                    AudioService.Start(_currentSong.FilePath);
-                    PlaybackViewModel.IsPlaying = true;
-                }
-            }
-        }
-
-        private Playlist? _currentPlaylist;
-        public Playlist? CurrentPlaylist
-        {
-            get => _currentPlaylist;
-            set
-            {
-                if (_currentPlaylist != value)
-                {
-                    _currentPlaylist = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
         private ViewModelBase _currentViewModel;
         public ViewModelBase CurrentViewModel
         {
             get => _currentViewModel;
             set
             {
-                if (_currentViewModel != value) // Check if the new value is different
+                if (_currentViewModel != value)
                 {
                     _currentViewModel = value;
-                    OnPropertyChanged(nameof(CurrentViewModel)); // Notify the UI of the property change
+                    OnPropertyChanged(nameof(CurrentViewModel));
                 }
             }
         }
+
         // ViewModels
         public PlaylistViewModel PlaylistViewModel { get; set; }
         public HomeViewModel HomeViewModel { get; set; }
@@ -105,23 +73,27 @@ namespace SoundHeaven.ViewModels
 
             var memoryCache = new MemoryCache(memoryCacheOptions, loggerFactory);
             var dataService = new LastFmDataService(apiKey, memoryCache, loggerFactory);
-            
+        
+            // Services
             AudioService = new AudioService();
+            
+            // Stores
             PlaylistStore = new PlaylistStore(this);
             SongStore = new SongStore();
             
+            // ViewModels
+            RepeatViewModel = new RepeatViewModel();
+            PlaybackViewModel = new PlaybackViewModel(AudioService);
             ShuffleViewModel = new ShuffleViewModel(this);
-            PlaybackViewModel = new PlaybackViewModel(this, AudioService);
-            PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
-            PlayerViewModel = new PlayerViewModel(this);
-            HomeViewModel = new HomeViewModel(this, dataService);
+            PlaylistViewModel = new PlaylistViewModel(this, PlaybackViewModel, new OpenFileDialogService());
+            PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
+            HomeViewModel = new HomeViewModel(PlaybackViewModel, dataService);
             ThemesViewModel = new ThemesViewModel(this);
             ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, ThemesViewModel);
-            SeekSliderViewModel = new SeekSliderViewModel(this, AudioService, PlaybackViewModel);
+            SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
-            SongInfoViewModel = new SongInfoViewModel();
-            RepeatViewModel = new RepeatViewModel();
-            
+            SongInfoViewModel = new SongInfoViewModel(PlaybackViewModel);
+        
             CurrentViewModel = HomeViewModel;
 
             InitializeExamplePlaylist();
@@ -135,10 +107,10 @@ namespace SoundHeaven.ViewModels
             {
                 Name = "Playlist #1",
                 Songs = SongStore.Songs
-
             };
             Console.WriteLine(SongStore.Songs);
             PlaylistStore.AddPlaylist(example);
+            PlaybackViewModel.CurrentPlaylist = example;
         }
     }
 }

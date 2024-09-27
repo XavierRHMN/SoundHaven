@@ -7,9 +7,9 @@ namespace SoundHeaven.ViewModels
 {
     public class PlayerViewModel : ViewModelBase
     {
-        private readonly MainWindowViewModel _mainWindowViewModel;
-        public ObservableCollection<Song> UpNextSongs => _mainWindowViewModel.CurrentPlaylist?.Songs;
-        public string ActivePlaylistName => _mainWindowViewModel.CurrentPlaylist?.Name ?? "No Active Playlist";
+        private readonly PlaybackViewModel _playbackViewModel;
+        public ObservableCollection<Song> UpNextSongs => _playbackViewModel.CurrentPlaylist?.Songs;
+        public string ActivePlaylistName => _playbackViewModel.CurrentPlaylist?.Name ?? "No Active Playlist";
 
         private Song _playerViewSong;
         public Song PlayerViewSong
@@ -22,26 +22,26 @@ namespace SoundHeaven.ViewModels
                     _playerViewSong = value;
                     OnPropertyChanged();
 
-                    // Update the MainWindowViewModel's CurrentSong
-                    _mainWindowViewModel.CurrentSong = value;
+                    // Update the PlaybackViewModel's CurrentSong
+                    _playbackViewModel.CurrentSong = value;
                 }
             }
         }
 
-        public PlayerViewModel(MainWindowViewModel mainWindowViewModel)
+        public PlayerViewModel(PlaybackViewModel playbackViewModel)
         {
-            _mainWindowViewModel = mainWindowViewModel;
-            _mainWindowViewModel.PropertyChanged += MainWindowViewModel_PropertyChanged;
+            _playbackViewModel = playbackViewModel;
+            _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
             UpdatePlayerViewSong();
         }
 
-        private void MainWindowViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void PlaybackViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(MainWindowViewModel.CurrentSong))
+            if (e.PropertyName == nameof(PlaybackViewModel.CurrentSong))
             {
                 UpdatePlayerViewSong();
             }
-            else if (e.PropertyName == nameof(MainWindowViewModel.CurrentPlaylist))
+            else if (e.PropertyName == nameof(PlaybackViewModel.CurrentPlaylist))
             {
                 OnPropertyChanged(nameof(UpNextSongs));
                 OnPropertyChanged(nameof(ActivePlaylistName));
@@ -50,12 +50,12 @@ namespace SoundHeaven.ViewModels
 
         private void UpdatePlayerViewSong()
         {
-            PlayerViewSong = _mainWindowViewModel.CurrentSong;
+            PlayerViewSong = _playbackViewModel.CurrentSong;
         }
 
         public void Dispose()
         {
-            _mainWindowViewModel.PropertyChanged -= MainWindowViewModel_PropertyChanged;
+            _playbackViewModel.PropertyChanged -= PlaybackViewModel_PropertyChanged;
         }
     }
 }

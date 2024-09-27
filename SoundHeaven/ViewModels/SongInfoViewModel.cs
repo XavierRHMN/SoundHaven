@@ -8,8 +8,9 @@ using System.Runtime.CompilerServices;
 
 namespace SoundHeaven.ViewModels
 {
-    public class SongInfoViewModel : ViewModelBase
+    public class SongInfoViewModel : ViewModelBase, IDisposable
     {
+        private readonly PlaybackViewModel _playbackViewModel;
         private Song _currentSong;
         private double _titleScrollPosition1;
         private double _titleScrollPosition2;
@@ -19,7 +20,7 @@ namespace SoundHeaven.ViewModels
         public Song CurrentSong
         {
             get => _currentSong;
-            set
+            private set
             {
                 if (_currentSong != value)
                 {
@@ -70,9 +71,23 @@ namespace SoundHeaven.ViewModels
 
         public double ControlWidth { get; set; } = 200 * 2; // Width of the canvas/border
 
-        public SongInfoViewModel()
+        public SongInfoViewModel(PlaybackViewModel playbackViewModel)
         {
+            _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
+            _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
+            
+            // Initialize with the current song from PlaybackViewModel
+            CurrentSong = _playbackViewModel.CurrentSong;
+            
             InitializeScrollTimer();
+        }
+
+        private void PlaybackViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PlaybackViewModel.CurrentSong))
+            {
+                CurrentSong = _playbackViewModel.CurrentSong;
+            }
         }
 
         private void InitializeScrollTimer()
@@ -131,6 +146,13 @@ namespace SoundHeaven.ViewModels
             );
 
             return formattedText.Width;
+        }
+
+        public void Dispose()
+        {
+            _playbackViewModel.PropertyChanged -= PlaybackViewModel_PropertyChanged;
+            _scrollTimer?.Stop();
+            _scrollTimer = null;
         }
     }
 }
