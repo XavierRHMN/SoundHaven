@@ -1,0 +1,33 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:SoundHeaven.ViewModels"
+             x:Class="SoundHeaven.Controls.RepeatControl"
+             x:DataType="vm:RepeatViewModel">
+
+    <Button x:Name="RepeatButton"
+            Command="{Binding ToggleRepeatCommand}"
+            Background="Transparent"
+            Width="60" Height="60"
+            CornerRadius="30">
+
+        <Panel>
+            <Svg Path="avares://SoundHeaven/Assets/Icons/repeat.svg"
+                 IsVisible="{Binding RepeatMode, Converter={StaticResource RepeatModeToVisibilityConverter}, ConverterParameter=General}"
+                 Opacity="{Binding RepeatMode, Converter={StaticResource RepeatModeToOpacityConverter}}">
+                <Svg.Transitions>
+                    <Transitions>
+                        <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                    </Transitions>
+                </Svg.Transitions>
+            </Svg>
+            <Svg Path="avares://SoundHeaven/Assets/Icons/repeat_one.svg"
+                 IsVisible="{Binding RepeatMode, Converter={StaticResource RepeatModeToVisibilityConverter}, ConverterParameter=One}">
+                <Svg.Transitions>
+                    <Transitions>
+                        <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                    </Transitions>
+                </Svg.Transitions>
+            </Svg>
+        </Panel>
+    </Button>
+</UserControl>

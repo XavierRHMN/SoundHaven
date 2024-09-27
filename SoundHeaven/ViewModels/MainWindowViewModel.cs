@@ -91,6 +91,7 @@ namespace SoundHeaven.ViewModels
         public VolumeViewModel VolumeViewModel { get; }
         public SongInfoViewModel SongInfoViewModel { get; set; }
         public ThemesViewModel ThemesViewModel { get; set; }
+        public RepeatViewModel RepeatViewModel { get; set; }
 
         public MainWindowViewModel()
         {
@@ -119,6 +120,7 @@ namespace SoundHeaven.ViewModels
             SeekSliderViewModel = new SeekSliderViewModel(this, AudioService, PlaybackViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
             SongInfoViewModel = new SongInfoViewModel();
+            RepeatViewModel = new RepeatViewModel();
             
             CurrentViewModel = HomeViewModel;
 

@@ -109,13 +109,15 @@
                     <ColumnDefinition Width="*" MinWidth="150" MaxWidth="250"/>
                     <ColumnDefinition Width="*" MinWidth="150"/>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="250" />
                 </Grid.ColumnDefinitions>
 
                 <controls:SongInfoControl Grid.Column="0" DataContext="{Binding SongInfoViewModel}" VerticalAlignment="Center" />
                 <controls:SeekSliderControl Grid.Column="1" DataContext="{Binding SeekSliderViewModel}" />
-                <controls:ShuffleControl Grid.Column="2" DataContext="{Binding ShuffleViewModel}"/>
-                <controls:VolumeControl Grid.Column="3"  DataContext="{Binding VolumeViewModel}" VerticalAlignment="Center" />
+                <controls:RepeatControl Grid.Column="2" DataContext="{Binding RepeatViewModel}"/>
+                <controls:ShuffleControl Grid.Column="3" DataContext="{Binding ShuffleViewModel}"/>
+                <controls:VolumeControl Grid.Column="4"  DataContext="{Binding VolumeViewModel}" VerticalAlignment="Center" />
             </Grid>
         </Grid>
     </Grid>

@@ -7,4 +7,6 @@
     <converters:BooleanToOpacityConverter x:Key="BooleanToOpacityConverter" />
     <converters:BooleanToBrushConverter  x:Key="BooleanToBrushConverter "/>
     <converters:ImageConverter x:Key="ImageConverter" />
+    <converters:RepeatModeToOpacityConverter x:Key="RepeatModeToOpacityConverter" />
+    <converters:RepeatModeToVisibilityConverter x:Key="RepeatModeToVisibilityConverter" />
 </ResourceDictionary>
