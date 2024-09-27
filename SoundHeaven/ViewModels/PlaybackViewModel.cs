@@ -3,6 +3,7 @@ using SoundHeaven.Models;
 using SoundHeaven.Services;
 using System;
 using System.ComponentModel;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SoundHeaven.ViewModels
@@ -17,9 +18,11 @@ namespace SoundHeaven.ViewModels
     
     public class PlaybackViewModel : ViewModelBase, IPlaybackControlViewModel
     {
-        private readonly object _trackEndedLock = new object();
-        private bool _isTrackEndedProcessing = false;
+        private readonly SemaphoreSlim _trackEndedSemaphore = new SemaphoreSlim(1, 1);
         private readonly TimeSpan _debounceDelay = TimeSpan.FromMilliseconds(500);
+        private readonly TimeSpan _cooldownPeriod = TimeSpan.FromSeconds(2);
+        private DateTime _lastTrackEndedTime = DateTime.MinValue;
+        public event EventHandler SeekPositionReset;
         
         public enum Direction
         {
@@ -53,6 +56,8 @@ namespace SoundHeaven.ViewModels
                 {
                     _isPlaying = value;
                     OnPropertyChanged(nameof(IsPlaying));
+                    PlayCommand.RaiseCanExecuteChanged();
+                    PauseCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -68,6 +73,8 @@ namespace SoundHeaven.ViewModels
                     _currentSong = value;
                     OnPropertyChanged(nameof(CurrentSong));
                     OnPropertyChanged(nameof(CurrentSongExists));
+                    PlayCommand.RaiseCanExecuteChanged();
+                    PauseCommand.RaiseCanExecuteChanged();
                     if (value != null)
                     {
                         PlayFromBeginning(value);
@@ -92,24 +99,35 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        public RelayCommand PlayCommand { get; private set; }
-        public RelayCommand PauseCommand { get; private set; }
-        public RelayCommand NextCommand { get; private set; }
-        public RelayCommand PreviousCommand { get; private set; }
+        public RelayCommand PlayCommand { get; set; }
+        public RelayCommand PauseCommand { get; set; }
+        public RelayCommand NextCommand { get; set; }
+        public RelayCommand PreviousCommand { get; set; }
 
         public PlaybackViewModel(AudioService audioService)
         {
-            _audioService = audioService;
+            _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
+            _audioService.TrackEnded += OnTrackEndedRobust;
 
             InitializeCommands();
         }
 
         private void InitializeCommands()
         {
-            PlayCommand = new RelayCommand(Play);
-            PauseCommand = new RelayCommand(Pause);
+            PlayCommand = new RelayCommand(Play, CanPlay);
+            PauseCommand = new RelayCommand(Pause, CanPause);
             NextCommand = new RelayCommand(NextTrack);
             PreviousCommand = new RelayCommand(PreviousTrack);
+        }
+
+        private bool CanPlay()
+        {
+            return CurrentSong != null && !IsPlaying;
+        }
+
+        private bool CanPause()
+        {
+            return CurrentSong != null && IsPlaying;
         }
 
         private void Play()
@@ -148,15 +166,21 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        private void NextTrack()
+        public bool IsTransitioningTracks { get; set; }
+
+        public void NextTrack()
         {
             if (CurrentPlaylist == null || CurrentPlaylist.Songs.Count is 0 or 1)
             {
                 Console.WriteLine("The playlist is empty or there's no next song");
+                IsPlaying = false;
                 return;
             }
-
+    
             Song? nextSong = null;
+            
+            SeekPositionReset?.Invoke(this, EventArgs.Empty);
+
 
             if (IsShuffleEnabled)
             {
@@ -183,6 +207,7 @@ namespace SoundHeaven.ViewModels
             else
             {
                 Console.WriteLine("No next song available.");
+                IsPlaying = false;
             }
         }
 
@@ -217,33 +242,48 @@ namespace SoundHeaven.ViewModels
 
         private void PlayFromBeginning(Song song)
         {
-            _audioService.Seek(TimeSpan.Zero);
             _audioService.Start(song.FilePath);
             IsPlaying = true;
         }
 
-        private async Task HandleTrackEndedAsync()
+        private async void OnTrackEndedRobust(object sender, EventArgs e)
         {
-            lock (_trackEndedLock)
+            if (!await _trackEndedSemaphore.WaitAsync(0))
             {
-                if (_isTrackEndedProcessing)
-                {
-                    return;
-                }
-                _isTrackEndedProcessing = true;
+                // If we can't acquire the semaphore immediately, it means another instance is already running
+                return;
             }
-
-            await Task.Delay(_debounceDelay);
 
             try
             {
-                NextTrack();
+                var now = DateTime.UtcNow;
+                if (now - _lastTrackEndedTime < _cooldownPeriod)
+                {
+                    // If we're within the cooldown period, don't process this event
+                    return;
+                }
+
+                await Task.Delay(_debounceDelay);
+
+                // Update the last track ended time
+                _lastTrackEndedTime = DateTime.UtcNow;
+
+                // Only call NextTrack if we're still playing
+                if (IsPlaying)
+                {
+                    NextTrack();
+                }
             }
             finally
             {
-                _isTrackEndedProcessing = false;
+                _trackEndedSemaphore.Release();
             }
         }
-
+        
+        public override void Dispose()
+        {
+            _audioService.TrackEnded -= OnTrackEndedRobust;
+            _trackEndedSemaphore.Dispose();
+        }
     }
 }

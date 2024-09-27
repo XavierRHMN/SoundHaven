@@ -9,8 +9,15 @@ namespace SoundHeaven.Services
         private IWavePlayer _waveOutDevice;
         private AudioFileReader _audioFileReader;
         private float _audioVolume = 0.1f;
+        public event EventHandler TrackEnded;
 
-        public AudioService() => _waveOutDevice = new WaveOutEvent();
+
+        public AudioService()
+        {
+            _waveOutDevice = new WaveOutEvent();
+            _waveOutDevice.PlaybackStopped += OnPlaybackStopped;
+        }
+
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
         
@@ -18,6 +25,14 @@ namespace SoundHeaven.Services
 
         public bool IsStopped() => _waveOutDevice.PlaybackState == PlaybackState.Stopped;
 
+        private void OnPlaybackStopped(object sender, StoppedEventArgs e)
+        {
+            if (_audioFileReader != null && _audioFileReader.Position >= _audioFileReader.Length)
+            {
+                TrackEnded?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        
         public void Seek(TimeSpan position)
         {
             if (_audioFileReader != null)
@@ -36,6 +51,8 @@ namespace SoundHeaven.Services
                 _audioFileReader.Volume = _audioVolume;
                 _waveOutDevice.Init(_audioFileReader);
                 _waveOutDevice.Play();
+            
+                // Small delay to allow the audio to start properly
             }
             catch (Exception ex)
             {
@@ -95,6 +112,7 @@ namespace SoundHeaven.Services
 
         public void Dispose()
         {
+            _waveOutDevice.PlaybackStopped -= OnPlaybackStopped;
             _waveOutDevice?.Dispose();
             _audioFileReader?.Dispose();
         }

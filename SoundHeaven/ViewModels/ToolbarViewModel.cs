@@ -69,8 +69,6 @@ namespace SoundHeaven.ViewModels
             ShowThemesViewCommand = new RelayCommand(ShowThemesView);
             CreatePlaylistCommand = new AsyncRelayCommand(CreatePlaylistAsync);
             DeletePlaylistCommand = new RelayCommand<Playlist>(DeletePlaylist);
-            
-
         }
 
         private bool _isCreatingPlaylist;

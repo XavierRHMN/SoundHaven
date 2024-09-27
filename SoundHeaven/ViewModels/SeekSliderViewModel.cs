@@ -6,6 +6,7 @@ using System.Diagnostics;
 
 namespace SoundHeaven.ViewModels
 {
+    
     public class SeekSliderViewModel : ViewModelBase, IDisposable
     {
         private readonly AudioService _audioService;
@@ -22,6 +23,7 @@ namespace SoundHeaven.ViewModels
             _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
             
             _playbackViewModel.PropertyChanged += PlaybackViewModelPropertyChanged;
+            _playbackViewModel.SeekPositionReset += OnSeekPositionReset;
             InitializeSeekTimer();
             InitializeDebounceTimer();
         }
@@ -41,7 +43,7 @@ namespace SoundHeaven.ViewModels
         
         private void InitializeSeekTimer()
         {
-            _seekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            _seekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(10) };
             _seekTimer.Tick += UpdateSeekPosition;
             _seekTimer.Start();
         }
@@ -58,26 +60,24 @@ namespace SoundHeaven.ViewModels
 
         private void UpdateSeekPosition(object sender, EventArgs e)
         {
-            if (_playbackViewModel.CurrentSong != null && !_debounceTimer.IsEnabled)
+            if (_playbackViewModel.CurrentSong != null && !_debounceTimer.IsEnabled && !_playbackViewModel.IsTransitioningTracks)
             {
                 _isUpdatingFromTimer = true;
                 var currentTime = _audioService.GetCurrentTime();
                 SeekPosition = currentTime.TotalSeconds;
                 _isUpdatingFromTimer = false;
-                Debug.WriteLine($"UpdateSeekPosition: {SeekPosition}");
-            }
-
-            if (_audioService.IsStopped())
-            {
-                _playbackViewModel.IsPlaying = false;
             }
         }
-
-
+        
         private void OnSeekPositionChanged(double newPosition)
         {
-            Debug.WriteLine($"OnSeekPositionChanged: {newPosition}");
+            Console.WriteLine($"OnSeekPositionChanged: {newPosition}");
             _audioService.Seek(TimeSpan.FromSeconds(newPosition));
+        }
+        
+        private void OnSeekPositionReset(object sender, EventArgs e)
+        {
+            SeekPosition = 0;
         }
 
         private void PlaybackViewModelPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -88,9 +88,10 @@ namespace SoundHeaven.ViewModels
             }
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             _playbackViewModel.PropertyChanged -= PlaybackViewModelPropertyChanged;
+            _playbackViewModel.SeekPositionReset -= OnSeekPositionReset;
             _seekTimer.Stop();
             _seekTimer = null;
             _debounceTimer.Stop();
