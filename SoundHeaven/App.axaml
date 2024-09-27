@@ -22,6 +22,10 @@
         <DataTemplate DataType="viewModels:HomeViewModel">
             <views:HomeView />
         </DataTemplate>
+        
+        <DataTemplate DataType="viewModels:ThemesViewModel">
+            <views:ThemesView />
+        </DataTemplate>
 
         <!-- Add more DataTemplates as needed -->
     </Application.DataTemplates>

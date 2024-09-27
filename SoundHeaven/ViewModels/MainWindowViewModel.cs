@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Material.Styles.Themes;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -89,6 +90,7 @@ namespace SoundHeaven.ViewModels
         public SeekSliderViewModel SeekSliderViewModel { get; set; }
         public VolumeViewModel VolumeViewModel { get; }
         public SongInfoViewModel SongInfoViewModel { get; set; }
+        public ThemesViewModel ThemesViewModel { get; set; }
 
         public MainWindowViewModel()
         {
@@ -112,7 +114,8 @@ namespace SoundHeaven.ViewModels
             PlaylistViewModel = new PlaylistViewModel(this, new OpenFileDialogService());
             PlayerViewModel = new PlayerViewModel(this);
             HomeViewModel = new HomeViewModel(this, dataService);
-            ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore);
+            ThemesViewModel = new ThemesViewModel(this);
+            ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, ThemesViewModel);
             SeekSliderViewModel = new SeekSliderViewModel(this, AudioService, PlaybackViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
             SongInfoViewModel = new SongInfoViewModel();

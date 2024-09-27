@@ -27,7 +27,7 @@
     <Style Selector="Slider /template/ Thumb">
         <Setter Property="Template">
             <ControlTemplate>
-                <Ellipse Width="12" Height="12" Fill="White" Stroke="{StaticResource PrimaryHueMidBrush}"
+                <Ellipse Width="12" Height="12" Fill="White" Stroke="{DynamicResource PrimaryColor}"
                          StrokeThickness="2" />
             </ControlTemplate>
         </Setter>
@@ -37,11 +37,11 @@
     <Style Selector="Slider /template/ ProgressBar#PART_ProgressLayer">
         <Setter Property="Theme" Value="{StaticResource MaterialSliderTrackBarV2}" />
         <Style Selector="^ /template/ Border#PART_InactiveState">
-            <Setter Property="Background" Value="{StaticResource PrimaryColor}" />
+            <Setter Property="Background" Value="{DynamicResource PrimaryColor}" />
             <Setter Property="Opacity" Value="0.3" />
         </Style>
         <Style Selector="^ /template/ Border#PART_Indicator">
-            <Setter Property="Background" Value="{StaticResource PrimaryColor}" />
+            <Setter Property="Background" Value="{DynamicResource PrimaryColor}" />
         </Style>
     </Style>
 
@@ -49,7 +49,7 @@
     <Style Selector="Slider /template/ Thumb#PART_SliderThumb">
         <Setter Property="Theme" Value="{StaticResource MaterialSliderThumbV2}" />
         <Style Selector="^ /template/ Border#PART_ThumbGrip">
-            <Setter Property="Background" Value="{StaticResource PrimaryColor}" />
+            <Setter Property="Background" Value="{DynamicResource PrimaryColor}" />
         </Style>
     </Style>
 </Styles>

@@ -17,6 +17,7 @@ namespace SoundHeaven.ViewModels
         private HomeViewModel _homeViewModel;
         private PlayerViewModel _playerViewModel;
         private PlaylistStore _playlistStore;
+        private ThemesViewModel _themesViewModel;
 
         // Current Playlist binding for ToolbarControl.axaml
         private Playlist? _toolbarSelectedPlaylist;
@@ -48,23 +49,27 @@ namespace SoundHeaven.ViewModels
         public RelayCommand ShowPlayerViewCommand { get; set; }
         public AsyncRelayCommand CreatePlaylistCommand { get; set; }
         public RelayCommand<Playlist> DeletePlaylistCommand { get; set; }
+        public RelayCommand ShowThemesViewCommand { get; set; }
 
         // Constructor
         public ToolbarViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
-                                       HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore)
+                                       HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore, ThemesViewModel themesViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
             _playlistViewModel = playlistViewModel;
             _homeViewModel = homeViewModel;
             _playerViewModel = playerViewModel;
             _playlistStore = playlistStore;
+            _themesViewModel = themesViewModel;
             
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowSearchViewCommand = new RelayCommand(ShowSearchView);
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
             ShowPlayerViewCommand = new RelayCommand(ShowPlayerView);
+            ShowThemesViewCommand = new RelayCommand(ShowThemesView);
             CreatePlaylistCommand = new AsyncRelayCommand(CreatePlaylistAsync);
             DeletePlaylistCommand = new RelayCommand<Playlist>(DeletePlaylist);
+            
 
         }
 
@@ -130,6 +135,13 @@ namespace SoundHeaven.ViewModels
                 _playlistViewModel.DisplayedPlaylist = playlist;
             }
             _mainWindowViewModel.CurrentViewModel = _playlistViewModel;
+        }
+        
+        private void ShowThemesView()
+        {
+            Console.WriteLine("Switching to ThemesView");
+            DeselectCurrentPlaylist();
+            _mainWindowViewModel.CurrentViewModel = _themesViewModel;
         }
         
         private void ShowPlayerView()
