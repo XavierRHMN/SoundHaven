@@ -9,7 +9,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <AvaloniaResource Include="Assets\Images\avalonia-logo.ico"/>
         <AvaloniaResource Include="Assets\**"/>
     </ItemGroup>
 

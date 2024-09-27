@@ -22,11 +22,12 @@
             </Style>
             
             <Style Selector="TextBlock.Playlists">
-                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontSize" Value="11" />
                 <Setter Property="Foreground" Value="White" />
                 <Setter Property="Opacity" Value="0.8" />
                 <Setter Property="FontFamily"
-                        Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+                        Value="avares://SoundHeaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                <Setter Property="TextAlignment" Value="Center" />
             </Style>
             
             <Style Selector="controls|FloatingButton">
@@ -112,8 +113,7 @@
                       MaxHeight="300"
                       Theme="{StaticResource MaterialModernScrollViewer}">
 
-            <ListBox Margin="0 0 0 0"
-                     FlowDirection="LeftToRight"
+            <ListBox Margin="0"
                      ItemsSource="{Binding PlaylistCollection}"
                      SelectedItem="{Binding ToolbarSelectedPlaylist, Mode=TwoWay}"
                      Width="200"
@@ -122,27 +122,29 @@
             
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Grid.Column="0"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Text="{Binding Name, Mode=TwoWay}"
-                                       Classes="Playlists"/>
-                            <Button Grid.Column="1"
+                        <DockPanel LastChildFill="True">
+                            <Button DockPanel.Dock="Left"
                                     Background="Transparent"
                                     Command="{Binding (local:ListBoxHelper.DeleteCommand), RelativeSource={RelativeSource AncestorType=ListBox}}"
                                     CommandParameter="{Binding}"
-                                    VerticalAlignment="Center"
-                                    Margin="5,0,0,0">
+                                    VerticalAlignment="Stretch"
+                                    Padding="0,0"
+                                    Margin="0 0 10 0">
                                 <TextBlock Text="×" 
-                                           FontSize="16" 
+                                           FontSize="14" 
                                            Foreground="White" 
-                                           VerticalAlignment="Center"/>
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
                             </Button>
-                        </Grid>
+                            <TextBlock Text="{Binding Name, Mode=TwoWay}"
+                                       Classes="Playlists"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       Margin="0 4 0 0 "/>
+                        </DockPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
-            </ListBox>
+            </ListBox>        
         </ScrollViewer>
     </StackPanel>
 </UserControl>
