@@ -50,7 +50,7 @@ namespace SoundHeaven.ViewModels
 
         private void InitializeDebounceTimer()
         {
-            _debounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(10) };
+            _debounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
             _debounceTimer.Tick += (s, e) =>
             {
                 _debounceTimer.Stop();

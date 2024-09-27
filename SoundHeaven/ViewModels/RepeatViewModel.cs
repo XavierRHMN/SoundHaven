@@ -38,6 +38,11 @@ namespace SoundHeaven.ViewModels
                 _ => RepeatMode.Off
             };
         }
+        
+        public void SetRepeatModeOff()
+        {
+            RepeatMode = RepeatMode.Off;
+        }
     }
 
     public enum RepeatMode

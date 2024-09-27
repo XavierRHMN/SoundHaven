@@ -18,10 +18,7 @@ namespace SoundHeaven.ViewModels
     
     public class PlaybackViewModel : ViewModelBase, IPlaybackControlViewModel
     {
-        private readonly SemaphoreSlim _trackEndedSemaphore = new SemaphoreSlim(1, 1);
-        private readonly TimeSpan _debounceDelay = TimeSpan.FromMilliseconds(500);
-        private readonly TimeSpan _cooldownPeriod = TimeSpan.FromSeconds(2);
-        private DateTime _lastTrackEndedTime = DateTime.MinValue;
+        private RepeatViewModel _repeatViewModel;
         public event EventHandler SeekPositionReset;
         
         public enum Direction
@@ -104,10 +101,11 @@ namespace SoundHeaven.ViewModels
         public RelayCommand NextCommand { get; set; }
         public RelayCommand PreviousCommand { get; set; }
 
-        public PlaybackViewModel(AudioService audioService)
+        public PlaybackViewModel(AudioService audioService, RepeatViewModel repeatViewModel)
         {
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
             _audioService.TrackEnded += OnTrackEndedRobust;
+            _repeatViewModel = repeatViewModel;
 
             InitializeCommands();
         }
@@ -246,44 +244,27 @@ namespace SoundHeaven.ViewModels
             IsPlaying = true;
         }
 
-        private async void OnTrackEndedRobust(object sender, EventArgs e)
+        private void OnTrackEndedRobust(object sender, EventArgs e)
         {
-            if (!await _trackEndedSemaphore.WaitAsync(0))
+            switch (_repeatViewModel.RepeatMode)
             {
-                // If we can't acquire the semaphore immediately, it means another instance is already running
-                return;
-            }
-
-            try
-            {
-                var now = DateTime.UtcNow;
-                if (now - _lastTrackEndedTime < _cooldownPeriod)
-                {
-                    // If we're within the cooldown period, don't process this event
-                    return;
-                }
-
-                await Task.Delay(_debounceDelay);
-
-                // Update the last track ended time
-                _lastTrackEndedTime = DateTime.UtcNow;
-
-                // Only call NextTrack if we're still playing
-                if (IsPlaying)
-                {
+                case RepeatMode.One:
+                    PreviousTrack();
+                    _repeatViewModel.SetRepeatModeOff();
+                    break;
+                case RepeatMode.All:
+                    PreviousTrack();
+                    break;
+                case RepeatMode.Off:
+                    // Do nothing, just move to the next track
                     NextTrack();
-                }
-            }
-            finally
-            {
-                _trackEndedSemaphore.Release();
+                    break;
             }
         }
         
         public override void Dispose()
         {
             _audioService.TrackEnded -= OnTrackEndedRobust;
-            _trackEndedSemaphore.Dispose();
         }
     }
 }

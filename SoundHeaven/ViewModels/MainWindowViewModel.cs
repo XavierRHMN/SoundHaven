@@ -83,7 +83,7 @@ namespace SoundHeaven.ViewModels
             
             // ViewModels
             RepeatViewModel = new RepeatViewModel();
-            PlaybackViewModel = new PlaybackViewModel(AudioService);
+            PlaybackViewModel = new PlaybackViewModel(AudioService, RepeatViewModel);
             ShuffleViewModel = new ShuffleViewModel(this);
             PlaylistViewModel = new PlaylistViewModel(this, PlaybackViewModel, new OpenFileDialogService());
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
