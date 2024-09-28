@@ -5,21 +5,15 @@ namespace SoundHaven.Services
 {
     public interface IApiKeyProvider
     {
-        string GetApiKey();
+        string GetApiKey(string fileName);
     }
 
     public class ApiKeyService : IApiKeyProvider
     {
-        private readonly string _filePath;
-
-        public ApiKeyService(string fileName = "API_KEY.txt")
+        public string GetApiKey(string fileName)
         {
-            // Combine the base directory with the file name to get the full path
-            _filePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", fileName);
-        }
-
-        public string GetApiKey()
-        {
+            var _filePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", fileName);
+            
             if (!File.Exists(_filePath))
             {
                 throw new FileNotFoundException($"API key file not found at {_filePath}");

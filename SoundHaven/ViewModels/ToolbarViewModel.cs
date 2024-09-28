@@ -17,6 +17,7 @@ namespace SoundHaven.ViewModels
         private HomeViewModel _homeViewModel;
         private PlayerViewModel _playerViewModel;
         private PlaylistStore _playlistStore;
+        private SearchViewModel _searchViewModel;
         private ThemesViewModel _themesViewModel;
 
         // Current Playlist binding for ToolbarControl.axaml
@@ -53,7 +54,7 @@ namespace SoundHaven.ViewModels
 
         // Constructor
         public ToolbarViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
-                                       HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore, ThemesViewModel themesViewModel)
+                                       HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore, SearchViewModel searchViewModel,  ThemesViewModel themesViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
             _playlistViewModel = playlistViewModel;
@@ -61,6 +62,7 @@ namespace SoundHaven.ViewModels
             _playerViewModel = playerViewModel;
             _playlistStore = playlistStore;
             _themesViewModel = themesViewModel;
+            _searchViewModel = searchViewModel;
             
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowSearchViewCommand = new RelayCommand(ShowSearchView);
@@ -159,7 +161,7 @@ namespace SoundHaven.ViewModels
 
         private void ShowSearchView()
         {
-            // Logic to switch to the Search view
+            _mainWindowViewModel.CurrentViewModel = _searchViewModel;
             DeselectCurrentPlaylist();
         }
 

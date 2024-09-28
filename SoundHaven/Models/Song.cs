@@ -4,11 +4,14 @@ using SoundHaven.ViewModels;
 using SoundHaven.Services;
 using System;
 using System.IO;
+using System.Threading.Tasks;
+using System.Net.Http;
 
 namespace SoundHaven.Models
 {
-    public class Song: ViewModelBase
+    public class Song : ViewModelBase
     {
+        // Existing properties
         public string? Title { get; set; }
         public string? Artist { get; set; }
         public string? Album { get; set; }
@@ -17,16 +20,19 @@ namespace SoundHaven.Models
         public string? Genre { get; set; }
         public int Year { get; set; }
         public int PlayCount { get; set; }
+
         private double _length;
         public double Length
         {
             get => Duration.TotalSeconds;
-            set
-            {
-                _length = value;
-            }
+            set => _length = value;
         }
-        
+
+        // New YouTube-specific properties
+        public string? VideoId { get; set; }
+        public string? ThumbnailUrl { get; set; }
+        public string? ChannelTitle { get; set; }
+
         private Bitmap? _artwork;
         public Bitmap? Artwork
         {
@@ -60,7 +66,7 @@ namespace SoundHaven.Models
             private set => SetProperty(ref _aspectRatio, value);
         }
 
-        // New Methods
+        // Existing methods
         private void LoadArtwork()
         {
             if (!string.IsNullOrEmpty(ArtworkUrl) && File.Exists(ArtworkUrl))
@@ -95,6 +101,31 @@ namespace SoundHaven.Models
             }
         }
 
-        public Song() { }
+        // New method for loading YouTube thumbnail
+        public async Task LoadYouTubeThumbnail()
+        {
+            if (!string.IsNullOrEmpty(ThumbnailUrl))
+            {
+                try
+                {
+                    using (var httpClient = new HttpClient())
+                    {
+                        var imageBytes = await httpClient.GetByteArrayAsync(ThumbnailUrl);
+                        using (var memoryStream = new MemoryStream(imageBytes))
+                        {
+                            Artwork = new Bitmap(memoryStream);
+                        }
+                    }
+                }
+                catch
+                {
+                    Artwork = null;
+                }
+            }
+            else
+            {
+                Artwork = null;
+            }
+        }
     }
 }

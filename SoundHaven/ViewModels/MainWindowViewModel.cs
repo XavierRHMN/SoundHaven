@@ -61,11 +61,13 @@ namespace SoundHaven.ViewModels
         public SongInfoViewModel SongInfoViewModel { get; set; }
         public ThemesViewModel ThemesViewModel { get; set; }
         public RepeatViewModel RepeatViewModel { get; set; }
+        public SearchViewModel SearchViewModel { get; set; }
 
         public MainWindowViewModel()
         {
-            IApiKeyProvider apiKeyProvider = new ApiKeyService("API_KEY.txt");
-            string apiKey = apiKeyProvider.GetApiKey();
+            IApiKeyProvider apiKeyProvider = new ApiKeyService();
+            string lastFmApiKey = apiKeyProvider.GetApiKey("LASTFM_API_KEY.txt");
+            string youtubeApiKey = apiKeyProvider.GetApiKey("YT_API_KEY.txt");
             var memoryCacheOptions = Options.Create(new MemoryCacheOptions());
             var loggerFactory = LoggerFactory.Create(builder =>
             {
@@ -73,7 +75,8 @@ namespace SoundHaven.ViewModels
             });
 
             var memoryCache = new MemoryCache(memoryCacheOptions, loggerFactory);
-            var dataService = new LastFmDataService(apiKey, memoryCache, loggerFactory);
+            var lastFmDataService = new LastFmDataService(lastFmApiKey, memoryCache, loggerFactory);
+            var youtubeApiService = new YouTubeApiService(youtubeApiKey);
         
             // Services
             AudioService = new AudioService();
@@ -88,13 +91,14 @@ namespace SoundHaven.ViewModels
             ShuffleViewModel = new ShuffleViewModel(this);
             PlaylistViewModel = new PlaylistViewModel(this, PlaybackViewModel, new OpenFileDialogService());
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
-            HomeViewModel = new HomeViewModel(PlaybackViewModel, dataService);
+            HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
+            SearchViewModel = new SearchViewModel(youtubeApiService);
             ThemesViewModel = new ThemesViewModel(this);
-            ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, ThemesViewModel);
+            ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel,  ThemesViewModel);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
             SongInfoViewModel = new SongInfoViewModel(PlaybackViewModel);
-        
+            
             CurrentViewModel = HomeViewModel;
 
             InitializeExamplePlaylist();

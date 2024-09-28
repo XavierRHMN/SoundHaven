@@ -1,0 +1,34 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:SoundHaven.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="SoundHaven.Views.SearchView"
+             x:DataType="vm:SearchViewModel"
+             Background="{StaticResource ToolBarColor}">
+    <Grid RowDefinitions="Auto,*">
+        <TextBox Grid.Row="0" Text="{Binding SearchQuery, Mode=TwoWay}" 
+                 Watermark="Search for songs..." Margin="10"/>
+        <Button Grid.Row="0" Content="Search" Command="{Binding SearchCommand}"
+                HorizontalAlignment="Right" Margin="10"/>
+        
+        <ListBox Grid.Row="1" ItemsSource="{Binding SearchResults}" Margin="10">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5">
+                        <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60" Margin="0,0,10,0"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding Artist}" Opacity="0.6"/>
+                        </StackPanel>
+                        <Button Grid.Column="2" Content="Play" 
+                                Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).PlaySongCommand}" 
+                                CommandParameter="{Binding}" 
+                                Margin="10,0,0,0"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>
