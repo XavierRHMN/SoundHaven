@@ -1,0 +1,53 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
+             x:Class="SoundHaven.Controls.SongInfoControl"
+             x:DataType="viewModels:SongInfoViewModel">
+
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <!-- Album Cover Image -->
+        <Border CornerRadius="5"
+                ClipToBounds="True"
+                Margin="0,0,20,0">
+            <Image Width="50"
+                   Height="50"
+                   Source="{Binding CurrentSong.Artwork}"
+                   Stretch="UniformToFill" />
+        </Border>
+        
+        <!-- Song Information -->
+        <StackPanel Orientation="Vertical">
+            <!-- Title with continuous scrolling effect -->
+            <Border ClipToBounds="True" Width="{Binding ControlWidth}" Height="25" Background="Transparent">
+                <Canvas Width="{Binding ControlWidth}" Height="25">
+                    <!-- First TextBlock -->
+                    <TextBlock Text="{Binding CurrentSong.Title}" 
+                               FontSize="14" 
+                               FontWeight="Bold" 
+                               Foreground="White"
+                               Canvas.Left="{Binding TitleScrollPosition1}" />
+
+                    <!-- Second TextBlock, positioned to the right of the first -->
+                    <TextBlock Text="{Binding CurrentSong.Title}" 
+                               FontSize="14" 
+                               FontWeight="Bold" 
+                               Foreground="White"
+                               Canvas.Left="{Binding TitleScrollPosition2}" />
+                </Canvas>
+            </Border>
+
+            <!-- Artist and Year combined -->
+            <TextBlock FontSize="14" 
+                       Foreground="Gray" 
+                       HorizontalAlignment="Left"
+                       IsVisible="{Binding CurrentSongExists, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock.Text>
+                    <MultiBinding StringFormat="{}{0} - {1}">
+                        <Binding Path="CurrentSong.Artist" />
+                        <Binding Path="CurrentSong.Year" />
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

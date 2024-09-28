@@ -1,0 +1,33 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
+             mc:Ignorable="d"
+             x:Class="SoundHaven.Controls.VolumeControl"
+             x:DataType="viewModels:VolumeViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Button">
+            <Setter Property="Width" Value="60" />
+            <Setter Property="Height" Value="60" />
+        </Style>
+    </UserControl.Styles>
+
+    <StackPanel Orientation="Horizontal">
+        <Button Command="{Binding MuteCommand}" Margin="10 0"
+                Background="Transparent"
+                IsVisible="{Binding !IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Svg Path="avares://SoundHaven/Assets/Icons/volumehigh.svg" />
+        </Button>
+
+        <Button Command="{Binding MuteCommand}" Margin="10 0"
+                Background="Transparent"
+                IsVisible="{Binding IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Svg Path="avares://SoundHaven/Assets/Icons/volumemute.svg" />
+        </Button>
+
+        <Slider Minimum="0" Maximum="1" IsEnabled="{Binding !IsMuted}" Value="{Binding Volume, Mode=TwoWay}" Width="150" Margin="0 0 20 0"/>
+    </StackPanel>
+
+</UserControl>

@@ -1,0 +1,82 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="SoundHaven.Views.PlaylistView"
+             x:DataType="viewModels:PlaylistViewModel">
+    
+    <!-- Styling for TextBlocks in the toolbar -->
+    <UserControl.Styles>
+        <Style Selector="TextBox.PlaylistText">
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="ExtraLight" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+        </Style>
+    </UserControl.Styles>
+    
+    <!-- Define Custom Resources -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="MaterialSelectionBrush" Color="{StaticResource PrimaryColor}" Opacity="0.1"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Background="{StaticResource ToolBarColor}">
+
+        <!-- TextBox bound to DisplayedPlaylist.Name -->
+        <TextBox Grid.Row="0" Grid.Column="0" Text="{Binding DisplayedPlaylist.Name, Mode=TwoWay, FallbackValue='No Playlist Selected'}"
+                 Margin="0 20 0 0"
+                 HorizontalAlignment="Center"
+                 Classes="PlaylistText"/>
+
+        <!-- StackPanel for Buttons -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="16">
+            <Button Command="{Binding AddSongCommand}"
+                    Theme="{StaticResource MaterialOutlineButton}"
+                    Content="Add"
+                    ToolTip.Tip="Add a new song"
+                    Width="60"
+                    Height="30"
+                    CornerRadius="16"
+                    HorizontalAlignment="Center" 
+                    Foreground="{StaticResource PrimaryColor}"
+                    BorderBrush="{StaticResource PrimaryColor}"/>
+            <Button Command="{Binding EditSongCommand}"
+                    Theme="{StaticResource MaterialOutlineButton}" Content="Edit"
+                    ToolTip.Tip="Edit selected song" Width="60" Height="30" CornerRadius="16"
+                    Foreground="{StaticResource PrimaryColor}"
+                    BorderBrush="{StaticResource PrimaryColor}"/>
+            <Button Command="{Binding DeleteSongCommand}"
+                    Theme="{StaticResource MaterialOutlineButton}" Content="Del"
+                    ToolTip.Tip="Delete selected song" Width="60" Height="30" CornerRadius="16" 
+                    Foreground="{StaticResource PrimaryColor}"
+                    BorderBrush="{StaticResource PrimaryColor}"/>
+        </StackPanel>
+
+        <!-- DataGrid for Songs -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Songs}"
+                  AutoGenerateColumns="False"
+                  CanUserReorderColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  GridLinesVisibility="None"
+                  SelectionMode="Single"
+                  IsReadOnly="True"
+                  BorderBrush="{StaticResource ToolBarColor}"
+                  SelectedItem="{Binding SelectedSong, Mode=TwoWay}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*" />
+                <DataGridTextColumn Header="Artist" Binding="{Binding Artist}" Width="120" />
+                <DataGridTextColumn Header="Duration"
+                                    Binding="{Binding Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}"
+                                    Width="Auto" />
+                <DataGridTextColumn Header="File Path"
+                                    Binding="{Binding FilePath, Converter={StaticResource FilePathShortenerConverter}}"
+                                    Width="2*" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>
