@@ -61,4 +61,8 @@
         <UpToDateCheckInput Remove="Themes\SliderColors.axaml"/>
         <UpToDateCheckInput Remove="Resources\SliderStyle\.axaml"/>
     </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="API_KEY.txt" />
+    </ItemGroup>
 </Project>
