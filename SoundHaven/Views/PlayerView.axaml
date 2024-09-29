@@ -13,21 +13,20 @@
     <UserControl.Styles>
         <!-- Override Selected Item Foreground and Background -->
         <Style Selector="ListBoxItem:selected">
-            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}" /> <!-- Optional: Set text color -->
-            <Setter Property="Background" Value="Transparent" /> <!-- Make background transparent -->
+            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}" />
+            <Setter Property="Background" Value="Transparent" />
         </Style>
 
         <!-- Override the Opacity of PART_HoverEffect to Remove Grayish Tint -->
         <Style Selector="ListBoxItem:selected /template/ Border#PART_HoverEffect">
-            <Setter Property="Opacity" Value="0" /> <!-- Remove hover effect opacity -->
+            <Setter Property="Opacity" Value="0" />
         </Style>
 
-        <!-- **New Style to Remove Ripple Effect** -->
+        <!-- Remove Ripple Effect -->
         <Style Selector="ListBoxItem:pressed /template/ ripple|RippleEffect#PART_Ripple">
             <Setter Property="RippleFill" Value="Transparent" />
             <Setter Property="Opacity" Value="1.0" />
         </Style>
-
 
         <!-- Header Style -->
         <Style Selector="TextBlock.Headers">
@@ -35,7 +34,7 @@
                     Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontSize" Value="20" /> <!-- Centralized FontSize -->
+            <Setter Property="FontSize" Value="20" />
         </Style>
 
         <!-- Track Title Style -->
@@ -43,7 +42,7 @@
             <Setter Property="FontFamily"
                     Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontSize" Value="16" /> <!-- Increased FontSize -->
+            <Setter Property="FontSize" Value="16" />
         </Style>
 
         <!-- Artist Name Style -->
@@ -70,9 +69,9 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*,*" Background="{StaticResource ToolbarColor}">
-
-        <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+    <Grid RowDefinitions="Auto, *" Background="{StaticResource ToolbarColor}">
+        <!-- Playlist Banner -->
+        <Border Grid.Row="0"
                 Background="{StaticResource PrimaryColor}"
                 CornerRadius="0,0,10,10"
                 Padding="0,15">
@@ -84,76 +83,104 @@
                        Classes="Headers" />
         </Border>
 
-        <!-- Left Column: Album Cover and Song Info -->
-        <StackPanel Grid.Row="1" Grid.Column="0" Margin="20" HorizontalAlignment="Center">
-            <Border x:Name="AlbumCoverBorder"
-                    CornerRadius="10" ClipToBounds="True"
-                    HorizontalAlignment="Center"
-                    Margin="0,20,0,0">
-                <Image Source="{Binding PlayerViewSong.Artwork}" Stretch="UniformToFill" />
-            </Border>
-            <TextBlock Text="{Binding PlayerViewSong.Title}"
-                       Classes="ArtworkTrackTitle"
-                       HorizontalAlignment="Center"
-                       Margin="0,15,0,5" />
-            <TextBlock Text="{Binding PlayerViewSong.Artist}"
-                       Classes="ArtworkArtistName"
-                       HorizontalAlignment="Center" />
-        </StackPanel>
+        <!-- Content Grid -->
+        <Grid Grid.Row="1" MinWidth="900">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="800"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto" MinWidth="40"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Right Column: Up Next List -->
-        <Grid Grid.Row="1" Grid.Column="1" Margin="20,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+            <!-- Left Column: Album Cover and Song Info -->
+            <Grid Grid.Column="0" RowDefinitions="Auto,Auto,*">
+                <Border Grid.Row="0"
+                        x:Name="AlbumCoverBorder"
+                        CornerRadius="10" ClipToBounds="True"
+                        HorizontalAlignment="Center"
+                        Margin="20,20,20,0">
+                    <Image Source="{Binding PlayerViewSong.Artwork}" Stretch="UniformToFill" />
+                </Border>
+                <TextBlock Grid.Row="1"
+                           Text="{Binding PlayerViewSong.Title}"
+                           Classes="ArtworkTrackTitle"
+                           HorizontalAlignment="Center"
+                           Margin="0,15,0,5" />
+                <TextBlock Grid.Row="2"
+                           Text="{Binding PlayerViewSong.Artist}"
+                           Classes="ArtworkArtistName"
+                           HorizontalAlignment="Center" />
+            </Grid>
 
-            <TextBlock Grid.Row="0"
-                       HorizontalAlignment="Center"
-                       Margin="0,30,0,10"
-                       Classes="Headers">
-                <Run Text="Up Next:" />
-            </TextBlock>
+            <!-- GridSplitter -->
+            <GridSplitter Grid.Column="1"
+                          Width="10"
+                          Background="Transparent"
+                          ResizeBehavior="PreviousAndNext"
+                          ResizeDirection="Columns"
+                          Margin="0 20"/>
 
-            <ScrollViewer Grid.Row="1"
-                          HorizontalScrollBarVisibility="Disabled"
-                          VerticalScrollBarVisibility="Hidden"
-                          Theme="{StaticResource MaterialModernScrollViewer}">
-                <ListBox ItemsSource="{Binding UpNextSongs}"
-                         Background="Transparent"
-                         Theme="{StaticResource MaterialModernListBox}"
-                         SelectedItem="{Binding PlayerViewSong}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="models:Song">
-                            <Grid Margin="0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+            <!-- Right Column: Up Next List -->
+            <Grid Grid.Column="2" Margin="20,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-                                <Border Grid.Column="0"
-                                        CornerRadius="5"
-                                        ClipToBounds="True"
-                                        Margin="0,0,10,0">
-                                    <Image Width="50"
-                                           Height="50"
-                                           Source="{Binding Artwork}"
-                                           Stretch="UniformToFill" />
-                                </Border>
+                <TextBlock Grid.Row="0"
+                           HorizontalAlignment="Center"
+                           Margin="0,30,0,10"
+                           Classes="Headers">
+                    <Run Text="Up Next:" />
+                </TextBlock>
 
-                                <StackPanel Grid.Column="1"
-                                            Orientation="Vertical"
-                                            VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Title}"
-                                               Classes="SongTrackTitle" />
-                                    <TextBlock Text="{Binding Artist}"
-                                               Classes="SongArtistName" />
-                                </StackPanel>
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </ScrollViewer>
+                <!-- Separator between "Up Next" and ListBox -->
+                <Rectangle Grid.Row="1"
+                           Height="1"
+                           Fill="White"
+                           Opacity="0.1"
+                           IsHitTestVisible="False" />
+
+                <ScrollViewer Grid.Row="2"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Hidden"
+                              Theme="{StaticResource MaterialModernScrollViewer}">
+                    <ListBox ItemsSource="{Binding UpNextSongs}"
+                             Background="Transparent"
+                             Theme="{StaticResource MaterialModernListBox}"
+                             SelectedItem="{Binding PlayerViewSong}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:Song">
+                                <Grid Margin="0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0"
+                                            CornerRadius="5"
+                                            ClipToBounds="True"
+                                            Margin="0,0,10,0">
+                                        <Image Width="50"
+                                               Height="50"
+                                               Source="{Binding Artwork}"
+                                               Stretch="UniformToFill" />
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Vertical"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Title}"
+                                                   Classes="SongTrackTitle" />
+                                        <TextBlock Text="{Binding Artist}"
+                                                   Classes="SongArtistName" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

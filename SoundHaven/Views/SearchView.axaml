@@ -93,7 +93,8 @@
                                             Theme="{StaticResource MaterialOutlineButton}"
                                             Foreground="{StaticResource PrimaryColor}"
                                             BorderBrush="{StaticResource PrimaryColor}"
-                                            CornerRadius="16" />
+                                            CornerRadius="16" 
+                                            Margin="0 0 10 0"/>
                                     <ProgressBar Classes="circular" 
                                                  IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloading}}"
                                                  Value="{Binding DownloadProgress}" 
