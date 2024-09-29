@@ -52,76 +52,88 @@ namespace SoundHaven.Services
             return videos ?? Enumerable.Empty<YouTubeVideoInfo>();
         }
 
-        private async Task<List<YouTubeVideoInfo>> SearchVideoByName(string query)
+        public async Task<List<YouTubeVideoInfo>> SearchVideoByName(string query)
         {
-            List<YouTubeVideoInfo> videos = new List<YouTubeVideoInfo>();
             try
             {
-                using (var client = new HttpClient())
-                {
-                    var queryEncoded = query.Contains("//:") ? query : HttpUtility.UrlEncode(query);
-                    string response = await client.GetStringAsync(YouTubeSearchUrl + queryEncoded);
-                    if (response != null)
-                    {
-                        string start = "var ytInitialData = ";
-                        string end = "};";
-                        var startIndex = response.IndexOf(start) + start.Length;
-                        var endIndex = response.IndexOf(end, startIndex);
-
-                        var initialData = JObject.Parse(response.Substring(startIndex, endIndex + 1 - startIndex));
-
-                        var results = initialData?["contents"]?["twoColumnSearchResultsRenderer"]?["primaryContents"]?["sectionListRenderer"]?["contents"]?[0]?["itemSectionRenderer"]?["contents"];
-
-                        if (results != null)
-                        {
-                            foreach (var item in results)
-                            {
-                                var video_info = item["videoRenderer"];
-                                var title = video_info?["title"]?["runs"]?[0]?["text"];
-                                var url = video_info?["navigationEndpoint"]?["commandMetadata"]?["webCommandMetadata"]?["url"];
-                                var length = video_info?["lengthText"]?["simpleText"];
-                                var views = video_info?["shortViewCountText"]?["simpleText"];
-                                var channel = video_info?["ownerText"]?["runs"]?[0]?["text"];
-
-                                if (title != null && url != null && length != null
-                                    && channel != null && views != null)
-                                {
-                                    videos.Add(new YouTubeVideoInfo
-                                    {
-                                        Title = GetSafeFileName(title.ToString()),
-                                        VideoId = url.ToString().Replace("/watch?v=", ""),
-                                        Duration = length.ToString(),
-                                        ChannelTitle = channel.ToString(),
-                                        ViewCount = views.ToString(),
-                                        ThumbnailUrl = video_info?["thumbnail"]?["thumbnails"]?[0]?["url"]?.ToString()
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
+                var response = await FetchYouTubeSearchResults(query);
+                var initialData = ExtractInitialData(response);
+                return ParseSearchResults(initialData);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while searching YouTube videos");
                 return null;
             }
+        }
+
+        private async Task<string> FetchYouTubeSearchResults(string query)
+        {
+            using var client = new HttpClient();
+            var encodedQuery = query.Contains("//:") ? query : HttpUtility.UrlEncode(query);
+            return await client.GetStringAsync(YouTubeSearchUrl + encodedQuery);
+        }
+
+        private JObject ExtractInitialData(string response)
+        {
+            const string start = "var ytInitialData = ";
+            const string end = "};";
+            var startIndex = response.IndexOf(start) + start.Length;
+            var endIndex = response.IndexOf(end, startIndex);
+            var jsonData = response.Substring(startIndex, endIndex + 1 - startIndex);
+            return JObject.Parse(jsonData);
+        }
+
+        private List<YouTubeVideoInfo> ParseSearchResults(JObject initialData)
+        {
+            var videos = new List<YouTubeVideoInfo>();
+            var results = initialData?["contents"]?["twoColumnSearchResultsRenderer"]?["primaryContents"]?["sectionListRenderer"]?["contents"]?[0]?["itemSectionRenderer"]?["contents"];
+
+            if (results == null) return videos;
+
+            foreach (var item in results)
+            {
+                var videoInfo = ParseVideoInfo(item["videoRenderer"]);
+                if (videoInfo != null)
+                {
+                    videos.Add(videoInfo);
+                }
+            }
 
             return videos;
         }
 
-        private string GetSafeFileName(string fileName)
+        private YouTubeVideoInfo ParseVideoInfo(JToken videoRenderer)
         {
-            return string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
+            var title = videoRenderer?["title"]?["runs"]?[0]?["text"]?.ToString();
+            var url = videoRenderer?["navigationEndpoint"]?["commandMetadata"]?["webCommandMetadata"]?["url"]?.ToString();
+            var length = videoRenderer?["lengthText"]?["simpleText"]?.ToString();
+            var views = videoRenderer?["shortViewCountText"]?["simpleText"]?.ToString();
+            var channel = videoRenderer?["ownerText"]?["runs"]?[0]?["text"]?.ToString();
+            var thumbnailUrl = videoRenderer?["thumbnail"]?["thumbnails"]?[0]?["url"]?.ToString();
+
+            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(url) || string.IsNullOrEmpty(length) || 
+                string.IsNullOrEmpty(channel) || string.IsNullOrEmpty(views))
+            {
+                return null;
+            }
+
+            return new YouTubeVideoInfo
+            {
+                Title = GetSafeFileName(title),
+                VideoId = url.Replace("/watch?v=", ""),
+                Duration = length,
+                ChannelTitle = channel,
+                ViewCount = views,
+                ThumbnailUrl = thumbnailUrl
+            };
         }
 
-        private ulong ParseViewCount(string viewCountString)
-        {
-            // Remove non-digit characters and parse
-            string digitsOnly = new string(viewCountString.Where(c => char.IsDigit(c)).ToArray());
-            return ulong.TryParse(digitsOnly, out ulong result) ? result : 0;
+            private string GetSafeFileName(string fileName)
+            {
+                return string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
+            }
         }
-    }
 
     public class YouTubeVideoInfo
     {
