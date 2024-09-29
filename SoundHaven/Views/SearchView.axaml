@@ -53,7 +53,12 @@
         <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,0,0,0">
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="10,0">
                 <TextBox Grid.Column="0" Text="{Binding SearchQuery, Mode=TwoWay}"
-                         Watermark="Search for songs..." />
+                         Watermark="Search for songs...">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Enter"
+                                    Command="{Binding SearchCommand}"/>
+                    </TextBox.KeyBindings>
+                </TextBox>
                 <Button Grid.Column="1" Content="Search" Command="{Binding SearchCommand}"
                         Margin="10,0,0,0"
                         Width="90"
@@ -65,8 +70,8 @@
             </Grid>
 
             <ScrollViewer Grid.Row="1" Margin="10" Theme="{StaticResource MaterialModernScrollViewer}">
-                <ListBox ItemsSource="{Binding SearchResults}">
-                    <ListBox.ItemTemplate>
+                <ItemsControl ItemsSource="{Binding SearchResults}">
+                    <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,3">
                                 <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60"
@@ -113,8 +118,8 @@
                                 </Grid>
                             </Grid>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </ScrollViewer>
         </Grid>
     </Grid>

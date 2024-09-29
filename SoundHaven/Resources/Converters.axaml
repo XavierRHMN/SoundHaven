@@ -9,7 +9,5 @@
     <converters:ImageConverter x:Key="ImageConverter" />
     <converters:RepeatModeToOpacityConverter x:Key="RepeatModeToOpacityConverter" />
     <converters:RepeatModeToVisibilityConverter x:Key="RepeatModeToVisibilityConverter" />
-    <converters:ViewCountConverter x:Key="ViewCountConverter" />
-    <converters:VideoDurationConverter x:Key="VideoDurationConverter" />
     <converters:EnumEqualityConverter x:Key="EnumEqualityConverter"/>
 </ResourceDictionary>
