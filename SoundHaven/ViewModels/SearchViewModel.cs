@@ -18,6 +18,7 @@ namespace SoundHaven.ViewModels
         private readonly IOpenFileDialogService _openFileDialogService;
         private string _searchQuery;
         private ObservableCollection<Song> _searchResults;
+        private bool _isLoading;
 
         public string SearchQuery
         {
@@ -29,6 +30,12 @@ namespace SoundHaven.ViewModels
         {
             get => _searchResults;
             set => SetProperty(ref _searchResults, value);
+        }
+
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set => SetProperty(ref _isLoading, value);
         }
 
         public RelayCommand SearchCommand { get; }
@@ -53,22 +60,37 @@ namespace SoundHaven.ViewModels
         {
             if (string.IsNullOrWhiteSpace(SearchQuery)) return;
 
-            var results = await _youtubeSearchService.SearchVideos(SearchQuery);
+            IsLoading = true;
             SearchResults.Clear();
-            foreach (var result in results)
+
+            try
             {
-                var song = new Song
+                var results = await _youtubeSearchService.SearchVideos(SearchQuery);
+                foreach (var result in results)
                 {
-                    Title = result.Title,
-                    Artist = result.ChannelTitle,
-                    VideoId = result.VideoId,
-                    ThumbnailUrl = result.ThumbnailUrl,
-                    ChannelTitle = result.ChannelTitle,
-                    Views = result.ViewCount,
-                    VideoDuration = result.Duration
-                };
-                await song.LoadYouTubeThumbnail();
-                SearchResults.Add(song);
+                    var song = new Song
+                    {
+                        Title = result.Title,
+                        Artist = result.ChannelTitle,
+                        VideoId = result.VideoId,
+                        ThumbnailUrl = result.ThumbnailUrl,
+                        ChannelTitle = result.ChannelTitle,
+                        Views = result.ViewCount,
+                        VideoDuration = result.Duration
+                    };
+                    await song.LoadYouTubeThumbnail();
+                    SearchResults.Add(song);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that occur during the search
+                Debug.WriteLine($"Error during search: {ex.Message}");
+                // You might want to show an error message to the user here
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 

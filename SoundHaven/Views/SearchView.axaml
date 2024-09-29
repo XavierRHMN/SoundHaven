@@ -49,7 +49,7 @@
                        Classes="Headers" />
         </Border>
 
-        <!-- Search Box -->
+        <!-- Search Box and Results -->
         <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,0,0,0">
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="10,0">
                 <TextBox Grid.Column="0" Text="{Binding SearchQuery, Mode=TwoWay}"
@@ -69,58 +69,70 @@
                         BorderBrush="{StaticResource PrimaryColor}" />
             </Grid>
 
-            <ScrollViewer Grid.Row="1" Margin="10" Theme="{StaticResource MaterialModernScrollViewer}">
-                <ItemsControl ItemsSource="{Binding SearchResults}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,3">
-                                <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60"
-                                       Margin="0,0,10,0" />
-                                <Grid Grid.Column="1" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
-                                    <TextBlock Grid.Row="0" Text="{Binding Title}" Classes="TrackTitle" />
-                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="5">
-                                        <TextBlock Text="{Binding Artist}" Classes="ExtraInfo" />
-                                        <TextBlock Text="•" Classes="ExtraInfo" />
-                                        <TextBlock
-                                            Text="{Binding Views}"
-                                            Classes="ExtraInfo" />
-                                        <TextBlock Text="•" Classes="ExtraInfo" />
-                                        <TextBlock
-                                            Text="{Binding VideoDuration}"
-                                            Classes="ExtraInfo" />
-                                    </StackPanel>
+            <Grid Grid.Row="1">
+                <!-- New ProgressBar for loading indication -->
+                <ProgressBar Classes="circular" 
+                             IsVisible="{Binding IsLoading}"
+                             IsIndeterminate="True"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             Width="40" 
+                             Height="40"
+                             Foreground="{StaticResource PrimaryColor}"/>
+
+                <ScrollViewer IsVisible="{Binding !IsLoading}" Margin="10" Theme="{StaticResource MaterialModernScrollViewer}">
+                    <ItemsControl ItemsSource="{Binding SearchResults}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,3">
+                                    <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60"
+                                           Margin="0,0,10,0" />
+                                    <Grid Grid.Column="1" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
+                                        <TextBlock Grid.Row="0" Text="{Binding Title}" Classes="TrackTitle" />
+                                        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="5">
+                                            <TextBlock Text="{Binding Artist}" Classes="ExtraInfo" />
+                                            <TextBlock Text="•" Classes="ExtraInfo" />
+                                            <TextBlock
+                                                Text="{Binding Views}"
+                                                Classes="ExtraInfo" />
+                                            <TextBlock Text="•" Classes="ExtraInfo" />
+                                            <TextBlock
+                                                Text="{Binding VideoDuration}"
+                                                Classes="ExtraInfo" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid Grid.Column="2" Width="110" Height="30">
+                                        <Button Content="Download"
+                                                Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
+                                                CommandParameter="{Binding}"
+                                                IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.NotDownloaded}}"
+                                                Theme="{StaticResource MaterialOutlineButton}"
+                                                Foreground="{StaticResource PrimaryColor}"
+                                                BorderBrush="{StaticResource PrimaryColor}"
+                                                CornerRadius="16" 
+                                                Margin="0 0 10 0"/>
+                                        <ProgressBar Classes="circular" 
+                                                     IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloading}}"
+                                                     Value="{Binding DownloadProgress}" 
+                                                     ShowProgressText="True"
+                                                     Foreground="{StaticResource PrimaryColor}"
+                                                     Width="30" Height="30" />
+                                        <Button IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
+                                                Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).OpenFolderCommand}"
+                                                CommandParameter="{Binding}"
+                                                Background="Transparent"
+                                                Width="30" Height="30"
+                                                Padding="3"
+                                                CornerRadius="15">
+                                            <Svg Path="avares://SoundHaven/Assets/Icons/folder.svg" Stretch="Uniform" />
+                                        </Button>
+                                    </Grid>
                                 </Grid>
-                                <Grid Grid.Column="2" Width="110" Height="30">
-                                    <Button Content="Download"
-                                            Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
-                                            CommandParameter="{Binding}"
-                                            IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.NotDownloaded}}"
-                                            Theme="{StaticResource MaterialOutlineButton}"
-                                            Foreground="{StaticResource PrimaryColor}"
-                                            BorderBrush="{StaticResource PrimaryColor}"
-                                            CornerRadius="16" 
-                                            Margin="0 0 10 0"/>
-                                    <ProgressBar Classes="circular" 
-                                                 IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloading}}"
-                                                 Value="{Binding DownloadProgress}" 
-                                                 ShowProgressText="True"
-                                                 Foreground="{StaticResource PrimaryColor}"
-                                                 Width="30" Height="30" />
-                                    <Button IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
-                                            Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).OpenFolderCommand}"
-                                            CommandParameter="{Binding}"
-                                            Background="Transparent"
-                                            Width="30" Height="30"
-                                            Padding="3"
-                                            CornerRadius="15">
-                                        <Svg Path="avares://SoundHaven/Assets/Icons/folder.svg" Stretch="Uniform" />
-                                    </Button>
-                                </Grid>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>
