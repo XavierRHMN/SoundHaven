@@ -17,10 +17,11 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Button Command="{Binding $parent[UserControl].((vm:ThemesViewModel)DataContext).ChangeThemeCommand}"
-                            CommandParameter="{Binding}"
-                            Width="100" Height="100" Margin="10"
-                            CornerRadius="10">
+                    <Button
+                        Command="{Binding $parent[UserControl].((vm:ThemesViewModel)DataContext).ChangeThemeCommand}"
+                        CommandParameter="{Binding}"
+                        Width="100" Height="100" Margin="10"
+                        CornerRadius="10">
                         <Button.Background>
                             <SolidColorBrush Color="{Binding}" />
                         </Button.Background>

@@ -10,7 +10,7 @@ namespace SoundHaven.Stores
     {
         // Collection of songs
         public ObservableCollection<Song> Songs { get; } = new ObservableCollection<Song>();
-        
+
         // Add a song to the collection
         public void AddSong(Song? song)
         {
@@ -28,7 +28,7 @@ namespace SoundHaven.Stores
                 Songs.Remove(song);
             }
         }
-        
+
         // Load songs from the Tracks directory
         public void LoadSongs()
         {

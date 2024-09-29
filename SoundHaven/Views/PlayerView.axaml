@@ -8,7 +8,7 @@
              xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
              xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
              x:DataType="viewModels:PlayerViewModel">
-    
+
     <!-- Consolidated Styles Section -->
     <UserControl.Styles>
         <!-- Override Selected Item Foreground and Background -->
@@ -21,14 +21,14 @@
         <Style Selector="ListBoxItem:selected /template/ Border#PART_HoverEffect">
             <Setter Property="Opacity" Value="0" /> <!-- Remove hover effect opacity -->
         </Style>
-        
+
         <!-- **New Style to Remove Ripple Effect** -->
         <Style Selector="ListBoxItem:pressed /template/ ripple|RippleEffect#PART_Ripple">
             <Setter Property="RippleFill" Value="Transparent" />
             <Setter Property="Opacity" Value="1.0" />
         </Style>
 
-        
+
         <!-- Header Style -->
         <Style Selector="TextBlock.Headers">
             <Setter Property="FontFamily"
@@ -37,7 +37,7 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="20" /> <!-- Centralized FontSize -->
         </Style>
-        
+
         <!-- Track Title Style -->
         <Style Selector="TextBlock.ArtworkTrackTitle">
             <Setter Property="FontFamily"
@@ -45,74 +45,74 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="16" /> <!-- Increased FontSize -->
         </Style>
-        
+
         <!-- Artist Name Style -->
         <Style Selector="TextBlock.ArtworkArtistName">
             <Setter Property="FontFamily"
                     Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
             <Setter Property="Foreground" Value="Gray" />
-            <Setter Property="FontSize" Value="16" /> 
+            <Setter Property="FontSize" Value="16" />
         </Style>
-        
+
         <!-- Track Title Style -->
         <Style Selector="TextBlock.SongTrackTitle">
             <Setter Property="FontFamily"
                     Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
-            <Setter Property="FontSize" Value="16" /> 
+            <Setter Property="FontSize" Value="16" />
         </Style>
-        
+
         <!-- Artist Name Style -->
         <Style Selector="TextBlock.SongArtistName">
             <Setter Property="FontFamily"
                     Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
             <Setter Property="Foreground" Value="Gray" />
-            <Setter Property="FontSize" Value="14" /> 
+            <Setter Property="FontSize" Value="14" />
         </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*,*" Background="{StaticResource ToolbarColor}">
-        
+
         <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                 Background="{StaticResource PrimaryColor}"
-                CornerRadius="0,0,10,10" 
+                CornerRadius="0,0,10,10"
                 Padding="0,15">
             <TextBlock Text="{Binding ActivePlaylistName}"
                        HorizontalAlignment="Center"
                        FontSize="28"
                        FontWeight="Bold"
-                       Foreground="Black" 
-                       Classes="Headers"/>
+                       Foreground="Black"
+                       Classes="Headers" />
         </Border>
-        
+
         <!-- Left Column: Album Cover and Song Info -->
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="20" HorizontalAlignment="Center">
             <Border x:Name="AlbumCoverBorder"
                     CornerRadius="10" ClipToBounds="True"
                     HorizontalAlignment="Center"
-                    Margin="0,20,0,0"> 
-                <Image Source="{Binding PlayerViewSong.Artwork}" Stretch="UniformToFill"/>
+                    Margin="0,20,0,0">
+                <Image Source="{Binding PlayerViewSong.Artwork}" Stretch="UniformToFill" />
             </Border>
-            <TextBlock Text="{Binding PlayerViewSong.Title}" 
+            <TextBlock Text="{Binding PlayerViewSong.Title}"
                        Classes="ArtworkTrackTitle"
                        HorizontalAlignment="Center"
-                       Margin="0,15,0,5"/>
-            <TextBlock Text="{Binding PlayerViewSong.Artist}" 
+                       Margin="0,15,0,5" />
+            <TextBlock Text="{Binding PlayerViewSong.Artist}"
                        Classes="ArtworkArtistName"
-                       HorizontalAlignment="Center"/>
+                       HorizontalAlignment="Center" />
         </StackPanel>
 
         <!-- Right Column: Up Next List -->
         <Grid Grid.Row="1" Grid.Column="1" Margin="20,0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" 
+            <TextBlock Grid.Row="0"
                        HorizontalAlignment="Center"
                        Margin="0,30,0,10"
                        Classes="Headers">
-                <Run Text="Up Next:"/>
+                <Run Text="Up Next:" />
             </TextBlock>
 
             <ScrollViewer Grid.Row="1"
@@ -127,10 +127,10 @@
                         <DataTemplate x:DataType="models:Song">
                             <Grid Margin="0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <Border Grid.Column="0"
                                         CornerRadius="5"
                                         ClipToBounds="True"
@@ -141,13 +141,13 @@
                                            Stretch="UniformToFill" />
                                 </Border>
 
-                                <StackPanel Grid.Column="1" 
-                                            Orientation="Vertical" 
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Vertical"
                                             VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Title}" 
-                                               Classes="SongTrackTitle"/>
-                                    <TextBlock Text="{Binding Artist}" 
-                                               Classes="SongArtistName"/>
+                                    <TextBlock Text="{Binding Title}"
+                                               Classes="SongTrackTitle" />
+                                    <TextBlock Text="{Binding Artist}"
+                                               Classes="SongArtistName" />
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>

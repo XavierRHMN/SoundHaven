@@ -67,22 +67,22 @@ namespace SoundHaven.ViewModels
         {
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             IApiKeyProvider apiKeyProvider = new ApiKeyService();
-            
+
             string lastFmApiKey = apiKeyProvider.GetApiKey("LASTFM_API_KEY.txt");
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var lastFmDataService = new LastFmDataService(lastFmApiKey, memoryCache, loggerFactory);
-            
+
             string youtubeApiKey = apiKeyProvider.GetApiKey("YT_API_KEY.txt");
             var youtubeLoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var youtubeApiService = new YouTubeApiService(youtubeApiKey, youtubeLoggerFactory, memoryCache);
-        
+
             // Services
             AudioService = new AudioService();
-            
+
             // Stores
             PlaylistStore = new PlaylistStore(this);
             SongStore = new SongStore();
-            
+
             // ViewModels
             RepeatViewModel = new RepeatViewModel();
             PlaybackViewModel = new PlaybackViewModel(AudioService, RepeatViewModel);
@@ -92,11 +92,11 @@ namespace SoundHaven.ViewModels
             HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
             SearchViewModel = new SearchViewModel(youtubeApiService);
             ThemesViewModel = new ThemesViewModel(this);
-            ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel,  ThemesViewModel);
+            ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
             SongInfoViewModel = new SongInfoViewModel(PlaybackViewModel);
-            
+
             CurrentViewModel = HomeViewModel;
 
             InitializeExamplePlaylist();
@@ -105,7 +105,7 @@ namespace SoundHaven.ViewModels
         private void InitializeExamplePlaylist()
         {
             SongStore.LoadSongs();
-            
+
             var example = new Playlist()
             {
                 Name = "Playlist #1",

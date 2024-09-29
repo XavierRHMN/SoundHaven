@@ -15,20 +15,23 @@
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Headers">
-            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="Black" />
             <Setter Property="FontSize" Value="28" />
         </Style>
-        
+
         <Style Selector="TextBlock.TrackTitle">
-            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="16" />
         </Style>
-        
+
         <Style Selector="TextBlock.ExtraInfo">
-            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             <Setter Property="Foreground" Value="Gray" />
             <Setter Property="FontSize" Value="14" />
         </Style>
@@ -38,17 +41,17 @@
         <!-- Search Banner -->
         <Border Grid.Row="0"
                 Background="{StaticResource PlayerColorBrush}"
-                CornerRadius="0,0,10,10" 
+                CornerRadius="0,0,10,10"
                 Padding="0,15">
             <TextBlock Text="Search"
                        HorizontalAlignment="Center"
-                       Classes="Headers"/>
+                       Classes="Headers" />
         </Border>
 
         <!-- Search Box -->
-        <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,0,0,0"> 
+        <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,0,0,0">
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="10,0">
-                <TextBox Grid.Column="0" Text="{Binding SearchQuery, Mode=TwoWay}" 
+                <TextBox Grid.Column="0" Text="{Binding SearchQuery, Mode=TwoWay}"
                          Watermark="Search for songs..." />
                 <Button Grid.Column="1" Content="Search" Command="{Binding SearchCommand}"
                         Margin="10,0,0,0"
@@ -57,35 +60,40 @@
                         CornerRadius="16"
                         Theme="{StaticResource MaterialOutlineButton}"
                         Foreground="{StaticResource PrimaryColor}"
-                        BorderBrush="{StaticResource PrimaryColor}"/>
+                        BorderBrush="{StaticResource PrimaryColor}" />
             </Grid>
-            
+
             <ScrollViewer Grid.Row="1" Margin="10" Theme="{StaticResource MaterialModernScrollViewer}">
                 <ListBox ItemsSource="{Binding SearchResults}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,3">
-                                <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60" Margin="0,0,10,0"/>
+                                <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60"
+                                       Margin="0,0,10,0" />
                                 <Grid Grid.Column="1" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
-                                    <TextBlock Grid.Row="0" Text="{Binding Title}" Classes="TrackTitle"/>
+                                    <TextBlock Grid.Row="0" Text="{Binding Title}" Classes="TrackTitle" />
                                     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="5">
-                                        <TextBlock Text="{Binding Artist}" Classes="ExtraInfo"/>
-                                        <TextBlock Text="•" Classes="ExtraInfo"/>
-                                        <TextBlock Text="{Binding Views, Converter={StaticResource ViewCountConverter}, StringFormat='{}{0} views'}" Classes="ExtraInfo" />
-                                        <TextBlock Text="•" Classes="ExtraInfo"/>
-                                        <TextBlock Text="{Binding VideoDuration, Converter={StaticResource VideoDurationConverter}}" Classes="ExtraInfo"/>
+                                        <TextBlock Text="{Binding Artist}" Classes="ExtraInfo" />
+                                        <TextBlock Text="•" Classes="ExtraInfo" />
+                                        <TextBlock
+                                            Text="{Binding Views, Converter={StaticResource ViewCountConverter}, StringFormat='{}{0} views'}"
+                                            Classes="ExtraInfo" />
+                                        <TextBlock Text="•" Classes="ExtraInfo" />
+                                        <TextBlock
+                                            Text="{Binding VideoDuration, Converter={StaticResource VideoDurationConverter}}"
+                                            Classes="ExtraInfo" />
                                     </StackPanel>
                                 </Grid>
-                                <Button Grid.Column="2" Content="Play" 
-                                        Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).PlaySongCommand}" 
-                                        CommandParameter="{Binding}" 
+                                <Button Grid.Column="2" Content="Play"
+                                        Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).PlaySongCommand}"
+                                        CommandParameter="{Binding}"
                                         Margin="10,0,10,0"
                                         Width="60"
                                         Height="30"
                                         CornerRadius="16"
                                         Theme="{StaticResource MaterialOutlineButton}"
                                         Foreground="{StaticResource PrimaryColor}"
-                                        BorderBrush="{StaticResource PrimaryColor}"/>
+                                        BorderBrush="{StaticResource PrimaryColor}" />
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

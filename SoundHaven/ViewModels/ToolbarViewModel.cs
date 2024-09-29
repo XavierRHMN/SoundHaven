@@ -54,7 +54,7 @@ namespace SoundHaven.ViewModels
 
         // Constructor
         public ToolbarViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
-                                       HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore, SearchViewModel searchViewModel,  ThemesViewModel themesViewModel)
+                                HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore, SearchViewModel searchViewModel, ThemesViewModel themesViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
             _playlistViewModel = playlistViewModel;
@@ -63,7 +63,7 @@ namespace SoundHaven.ViewModels
             _playlistStore = playlistStore;
             _themesViewModel = themesViewModel;
             _searchViewModel = searchViewModel;
-            
+
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowSearchViewCommand = new RelayCommand(ShowSearchView);
             ShowPlaylistViewCommand = new RelayCommand(ShowPlaylistView);
@@ -86,7 +86,7 @@ namespace SoundHaven.ViewModels
             {
                 Console.WriteLine("Creating new playlist");
 
-                await Task.Delay(50); 
+                await Task.Delay(50);
 
                 var newPlaylist = new Playlist
                 {
@@ -106,13 +106,13 @@ namespace SoundHaven.ViewModels
                 _isCreatingPlaylist = false;
             }
         }
-        
+
         private void DeletePlaylist(Playlist playlist)
         {
             if (playlist != null)
             {
                 _playlistStore.RemovePlaylist(playlist);
-                
+
                 // If the deleted playlist was the currently selected one, deselect it
                 if (ToolbarSelectedPlaylist == playlist)
                 {
@@ -120,14 +120,13 @@ namespace SoundHaven.ViewModels
                 }
 
                 // If we're currently viewing the deleted playlist, switch to home view
-                if (_mainWindowViewModel.CurrentViewModel == _playlistViewModel && 
-                    _playlistViewModel.DisplayedPlaylist == playlist)
+                if (_mainWindowViewModel.CurrentViewModel == _playlistViewModel && _playlistViewModel.DisplayedPlaylist == playlist)
                 {
                     ShowHomeView();
                 }
             }
         }
-        
+
         private void UpdatePlaylistViewAndSwitch(Playlist playlist)
         {
             if (_playlistViewModel != null)
@@ -136,21 +135,21 @@ namespace SoundHaven.ViewModels
             }
             _mainWindowViewModel.CurrentViewModel = _playlistViewModel;
         }
-        
+
         private void ShowThemesView()
         {
             Console.WriteLine("Switching to ThemesView");
             DeselectCurrentPlaylist();
             _mainWindowViewModel.CurrentViewModel = _themesViewModel;
         }
-        
+
         private void ShowPlayerView()
         {
             Console.WriteLine("Switching to PlayerView");
             DeselectCurrentPlaylist();
             _mainWindowViewModel.CurrentViewModel = _playerViewModel;
         }
-        
+
         // Methods for commands
         private void ShowHomeView()
         {
@@ -170,7 +169,7 @@ namespace SoundHaven.ViewModels
             Console.WriteLine("Switching to PlaylistView");
             _mainWindowViewModel.CurrentViewModel = _playlistViewModel;
         }
-        
+
         private void DeselectCurrentPlaylist()
         {
             ToolbarSelectedPlaylist = null;

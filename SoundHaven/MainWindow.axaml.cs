@@ -11,7 +11,7 @@ namespace SoundHaven
             InitializeComponent();
             DataContext = new MainWindowViewModel();
         }
-        
+
         private void MinimizeButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             this.WindowState = WindowState.Minimized;
@@ -21,7 +21,7 @@ namespace SoundHaven
         {
             this.WindowState = this.WindowState == WindowState.Normal ? WindowState.Maximized : WindowState.Normal;
         }
-        
+
         private void OnPointerPressedTitleBar(object sender, PointerPressedEventArgs e)
         {
             BeginMoveDrag(e);

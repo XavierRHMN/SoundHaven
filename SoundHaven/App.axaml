@@ -12,7 +12,7 @@
         <DataTemplate DataType="viewModels:PlayerViewModel">
             <views:PlayerView />
         </DataTemplate>
-        
+
         <!-- DataTemplate for PlaylistViewModel -->
         <DataTemplate DataType="viewModels:PlaylistViewModel">
             <views:PlaylistView />
@@ -22,11 +22,11 @@
         <DataTemplate DataType="viewModels:HomeViewModel">
             <views:HomeView />
         </DataTemplate>
-        
+
         <DataTemplate DataType="viewModels:SearchViewModel">
             <views:SearchView />
         </DataTemplate>
-        
+
         <DataTemplate DataType="viewModels:ThemesViewModel">
             <views:ThemesView />
         </DataTemplate>
@@ -35,7 +35,7 @@
     </Application.DataTemplates>
 
     <Application.Styles>
-        <themes:MaterialTheme BaseTheme="Dark" PrimaryColor="Grey"/>
+        <themes:MaterialTheme BaseTheme="Dark" PrimaryColor="Grey" />
         <StyleInclude Source="/Resources/Styles.axaml" />
     </Application.Styles>
 

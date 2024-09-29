@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace SoundHaven.ViewModels
 {
-    
+
     public class SeekSliderViewModel : ViewModelBase, IDisposable
     {
         private readonly AudioService _audioService;
@@ -16,12 +16,12 @@ namespace SoundHaven.ViewModels
         private double _seekPosition;
         private bool _isUpdatingFromTimer;
         public double MaximumSeekValue => _playbackViewModel.CurrentSong?.Length ?? 0;
-        
+
         public SeekSliderViewModel(AudioService audioService, PlaybackViewModel playbackViewModel)
         {
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
             _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
-            
+
             _playbackViewModel.PropertyChanged += PlaybackViewModelPropertyChanged;
             _playbackViewModel.SeekPositionReset += OnSeekPositionReset;
             InitializeSeekTimer();
@@ -40,7 +40,7 @@ namespace SoundHaven.ViewModels
                 }
             }
         }
-        
+
         private void InitializeSeekTimer()
         {
             _seekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
@@ -68,13 +68,13 @@ namespace SoundHaven.ViewModels
                 _isUpdatingFromTimer = false;
             }
         }
-        
+
         private void OnSeekPositionChanged(double newPosition)
         {
             Console.WriteLine($"OnSeekPositionChanged: {newPosition}");
             _audioService.Seek(TimeSpan.FromSeconds(newPosition));
         }
-        
+
         private void OnSeekPositionReset(object sender, EventArgs e)
         {
             SeekPosition = 0;

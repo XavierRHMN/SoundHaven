@@ -32,7 +32,7 @@ namespace SoundHaven.Helpers
                     {
                         // Create a Bitmap from the stream
                         var bitmap = new Bitmap(stream);
-                
+
                         // Set the Artwork property of the Song object
                         song.Artwork = bitmap;
                     }
@@ -51,7 +51,7 @@ namespace SoundHaven.Helpers
             // Use System.IO.File to check file existence
             if (!System.IO.File.Exists(filePath))
                 throw new FileNotFoundException("MP3 file not found.", filePath);
-            
+
             var song = new Song();
             // Use TagLib.File to read the MP3 metadata
             var file = TagLib.File.Create(filePath);
@@ -65,7 +65,6 @@ namespace SoundHaven.Helpers
             song.Duration = file.Properties.Duration;
             song.FilePath = filePath;
 
-            // TODO - Fix this cause it throws exception
             SaveAlbumCover(song);
 
             return song;

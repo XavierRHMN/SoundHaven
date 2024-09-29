@@ -14,7 +14,7 @@ namespace SoundHaven.ViewModels
         {
             _mainWindowViewModel = mainWindowViewModel;
             ToggleShuffleCommand = new RelayCommand(ToggleShuffle);
-            
+
             // Ensure the initial state is set correctly
             IsShuffleEnabled = false;
         }
@@ -26,6 +26,7 @@ namespace SoundHaven.ViewModels
             set
             {
                 if (_isUpdating) return; // Prevent recursive calls
+
                 _isUpdating = true;
 
                 if (_isShuffleEnabled != value)

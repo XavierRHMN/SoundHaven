@@ -30,7 +30,7 @@ namespace SoundHaven.ViewModels
 
                     // Update text width based on the new song title
                     TextWidth = ExtractTextWidth(CurrentSong?.Title, "Circular", 15);
-                    
+
                     InitializeScrollPositions();
                 }
             }
@@ -74,10 +74,10 @@ namespace SoundHaven.ViewModels
         {
             _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
             _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
-            
+
             // Initialize with the current song from PlaybackViewModel
             CurrentSong = _playbackViewModel.CurrentSong;
-            
+
             InitializeScrollTimer();
         }
 
@@ -100,7 +100,7 @@ namespace SoundHaven.ViewModels
         {
             const double spacing = 50; // Adjust spacing as needed
             const double spaceFromLeft = 200;
-            
+
             TitleScrollPosition1 = spaceFromLeft;
             TitleScrollPosition2 = spaceFromLeft + TextWidth + spacing;
         }

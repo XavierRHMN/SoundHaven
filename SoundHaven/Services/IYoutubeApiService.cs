@@ -14,6 +14,7 @@ namespace SoundHaven.Services
         Task<IEnumerable<YouTubeVideoInfo>> SearchVideos(string query);
     }
 
+
     public class YouTubeApiService : IYouTubeApiService
     {
         private readonly YouTubeService _youtubeService;
@@ -58,7 +59,7 @@ namespace SoundHaven.Services
                 return Enumerable.Empty<YouTubeVideoInfo>();
             }
 
-           try
+            try
             {
                 _logger.LogInformation($"Querying YouTube API for: {query}");
 
@@ -105,6 +106,7 @@ namespace SoundHaven.Services
             }
         }
     }
+
 
     public class YouTubeVideoInfo
     {

@@ -10,7 +10,7 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Styles.Resources>
-    
+
     <!-- Slider styles -->
     <Style Selector="Slider">
         <Setter Property="Background" Value="Transparent" />
@@ -53,8 +53,8 @@
                         </Ellipse.Transitions>
                     </Ellipse>
                     <!-- Original thumb design -->
-                    <Ellipse Width="12" Height="12" 
-                             Fill="White" 
+                    <Ellipse Width="12" Height="12"
+                             Fill="White"
                              Stroke="{DynamicResource PrimaryColor}"
                              StrokeThickness="2" />
                 </Grid>

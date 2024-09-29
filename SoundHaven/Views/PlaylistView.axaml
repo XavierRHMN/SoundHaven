@@ -8,7 +8,7 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="SoundHaven.Views.PlaylistView"
              x:DataType="viewModels:PlaylistViewModel">
-    
+
     <!-- Styling for TextBlocks in the toolbar -->
     <UserControl.Styles>
         <Style Selector="TextBox.PlaylistText">
@@ -18,7 +18,7 @@
             <Setter Property="FontFamily"
                     Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
         </Style>
-        
+
         <Style Selector="CheckBox">
             <Setter Property="Template">
                 <ControlTemplate>
@@ -66,19 +66,20 @@
             <Setter Property="Background" Value="{StaticResource PrimaryColor}" />
         </Style>
     </UserControl.Styles>
-    
+
     <!-- Define Custom Resources -->
     <UserControl.Resources>
-        <SolidColorBrush x:Key="MaterialSelectionBrush" Color="{StaticResource PrimaryColor}" Opacity="0.1"/>
+        <SolidColorBrush x:Key="MaterialSelectionBrush" Color="{StaticResource PrimaryColor}" Opacity="0.1" />
     </UserControl.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Background="{StaticResource ToolbarColor}">
 
         <!-- TextBox bound to DisplayedPlaylist.Name -->
-        <TextBox Grid.Row="0" Grid.Column="0" Text="{Binding DisplayedPlaylist.Name, Mode=TwoWay, FallbackValue='No Playlist Selected'}"
+        <TextBox Grid.Row="0" Grid.Column="0"
+                 Text="{Binding DisplayedPlaylist.Name, Mode=TwoWay, FallbackValue='No Playlist Selected'}"
                  Margin="0 20 0 0"
                  HorizontalAlignment="Center"
-                 Classes="PlaylistText"/>
+                 Classes="PlaylistText" />
 
         <!-- StackPanel for Buttons -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="16">
@@ -89,34 +90,34 @@
                     Width="80"
                     Height="30"
                     CornerRadius="16"
-                    HorizontalAlignment="Center" 
+                    HorizontalAlignment="Center"
                     Foreground="{StaticResource PrimaryColor}"
-                    BorderBrush="{StaticResource PrimaryColor}"/>
+                    BorderBrush="{StaticResource PrimaryColor}" />
             <Button Command="{Binding ToggleEditModeCommand}"
-                    Theme="{StaticResource MaterialOutlineButton}" 
+                    Theme="{StaticResource MaterialOutlineButton}"
                     Content="{Binding EditButtonContent}"
-                    ToolTip.Tip="Toggle edit mode" 
-                    Width="80" 
-                    Height="30" 
+                    ToolTip.Tip="Toggle edit mode"
+                    Width="80"
+                    Height="30"
                     CornerRadius="16"
                     Foreground="{StaticResource PrimaryColor}"
-                    BorderBrush="{StaticResource PrimaryColor}"/>
+                    BorderBrush="{StaticResource PrimaryColor}" />
             <Button Command="{Binding DeleteSelectedSongsCommand}"
-                    Theme="{StaticResource MaterialOutlineButton}" 
+                    Theme="{StaticResource MaterialOutlineButton}"
                     Content="Delete"
-                    ToolTip.Tip="Delete selected songs" 
-                    Width="80" 
-                    Height="30" 
-                    CornerRadius="16" 
+                    ToolTip.Tip="Delete selected songs"
+                    Width="80"
+                    Height="30"
+                    CornerRadius="16"
                     Foreground="{StaticResource PrimaryColor}"
                     BorderBrush="{StaticResource PrimaryColor}"
-                    IsEnabled="{Binding IsEditMode}"/>
+                    IsEnabled="{Binding IsEditMode}" />
         </StackPanel>
 
 
         <!-- DataGrid for Songs -->
         <DataGrid Grid.Row="2"
-                ItemsSource="{Binding Songs}"
+                  ItemsSource="{Binding Songs}"
                   SelectedItem="{Binding SelectedSong}"
                   AutoGenerateColumns="False"
                   CanUserReorderColumns="True"
@@ -128,14 +129,14 @@
                   BorderBrush="{StaticResource ToolbarColor}"
                   helpers:DataGridHelper.SelectedItems="{Binding SelectedItems}">
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="Select" 
+                <DataGridTemplateColumn Header="Select"
                                         Width="Auto"
                                         IsVisible="{Binding IsEditMode}">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
                                       HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"/>
+                                      VerticalAlignment="Center" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

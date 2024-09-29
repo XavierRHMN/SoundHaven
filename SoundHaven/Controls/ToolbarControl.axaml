@@ -20,7 +20,7 @@
                 <Setter Property="FontFamily"
                         Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             </Style>
-            
+
             <Style Selector="TextBlock.Playlists">
                 <Setter Property="FontSize" Value="11" />
                 <Setter Property="Foreground" Value="White" />
@@ -29,15 +29,15 @@
                         Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
                 <Setter Property="TextAlignment" Value="Center" />
             </Style>
-            
+
             <Style Selector="controls|FloatingButton">
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="Foreground" Value="White" />
                 <Setter Property="FontWeight" Value="Light" />
                 <Setter Property="FontFamily"
                         Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
-        </Style>
-            
+            </Style>
+
             <!-- Override Selected Item Foreground and Background -->
             <Style Selector="ListBoxItem:selected TextBlock.Playlists">
                 <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
@@ -48,7 +48,7 @@
             <Style Selector="ListBoxItem:selected /template/ Border#PART_HoverEffect">
                 <Setter Property="Opacity" Value="0" /> <!-- Remove hover effect opacity -->
             </Style>
-        
+
             <!-- **New Style to Remove Ripple Effect** -->
             <Style Selector="ListBoxItem:pressed /template/ ripple|RippleEffect#PART_Ripple">
                 <Setter Property="RippleFill" Value="Transparent" />
@@ -84,7 +84,7 @@
                 <TextBlock Classes="ToolbarText" Text="Player" VerticalAlignment="Center" Margin="10,5,0,0" />
             </StackPanel>
         </Button>
-        
+
         <Button Background="Transparent" Foreground="White" Command="{Binding ShowThemesViewCommand}" Width="200"
                 HorizontalContentAlignment="Left">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
@@ -101,10 +101,10 @@
                                  IsExtended="True"
                                  Command="{Binding CreatePlaylistCommand}"
                                  Content="Create Playlist"
-                                 FontFamily="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular"/>
+                                 FontFamily="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
 
         <Separator Background="White" Opacity="0.1" />
-        
+
         <!-- ScrollViewer for ListBox -->
         <ScrollViewer Margin="0 0 0 0"
                       FlowDirection="RightToLeft"
@@ -119,7 +119,7 @@
                      Width="200"
                      Classes="ToolbarText"
                      local:ListBoxHelper.DeleteCommand="{Binding DeletePlaylistCommand}">
-            
+
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <DockPanel LastChildFill="True">
@@ -130,21 +130,21 @@
                                     VerticalAlignment="Stretch"
                                     Padding="0,0"
                                     Margin="0 0 10 0">
-                                <TextBlock Text="×" 
-                                           FontSize="14" 
-                                           Foreground="White" 
+                                <TextBlock Text="×"
+                                           FontSize="14"
+                                           Foreground="White"
                                            VerticalAlignment="Center"
-                                           HorizontalAlignment="Center"/>
+                                           HorizontalAlignment="Center" />
                             </Button>
                             <TextBlock Text="{Binding Name, Mode=TwoWay}"
                                        Classes="Playlists"
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Center"
-                                       Margin="0 4 0 0 "/>
+                                       Margin="0 4 0 0 " />
                         </DockPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
-            </ListBox>        
+            </ListBox>
         </ScrollViewer>
     </StackPanel>
 </UserControl>

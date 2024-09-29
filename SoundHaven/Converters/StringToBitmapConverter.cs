@@ -46,6 +46,7 @@ namespace SoundHaven.Converters
         }
     }
 
+
     // Helper class to support async loading in bindings
     public class TaskCompletionNotifier<T> : System.ComponentModel.INotifyPropertyChanged
     {
@@ -77,7 +78,6 @@ namespace SoundHaven.Converters
         public T Result => Task.Status == TaskStatus.RanToCompletion ? Task.Result : default;
 
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string propertyName)
-            => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
     }
 }

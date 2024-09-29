@@ -488,7 +488,7 @@ namespace SoundHaven.Services
                     }
 
                     var imageUrl = artistInfoResponse.Artist.Images?
-                        .FirstOrDefault(img => img.Size == "extralarge")?.Url
+                            .FirstOrDefault(img => img.Size == "extralarge")?.Url
                         ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "large")?.Url
                         ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "medium")?.Url
                         ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "small")?.Url;
@@ -674,7 +674,7 @@ namespace SoundHaven.Services
 
             return null;
         }
-        
+
         private async Task<string> GetImageFromCacheAsync(string imageUrl)
         {
             // Create a unique filename based on the URL
@@ -706,5 +706,6 @@ namespace SoundHaven.Services
         }
 
         #endregion
+
     }
 }

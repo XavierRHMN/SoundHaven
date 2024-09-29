@@ -15,11 +15,11 @@ namespace SoundHaven.ViewModels
     {
         private readonly PlaybackViewModel _playbackViewModel;
         private readonly IDataService _dataService;
-        
+
         public ObservableCollection<Song> TopTracks { get; }
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
         public ObservableCollection<Song> RecommendedTracks { get; }
-        
+
         public Playlist? CurrentPlaylist => _playbackViewModel.CurrentPlaylist;
         public ObservableCollection<Song>? Songs => CurrentPlaylist?.Songs;
 
@@ -50,7 +50,7 @@ namespace SoundHaven.ViewModels
             TopTracks = new ObservableCollection<Song>();
             RecentlyPlayedTracks = new ObservableCollection<Song>();
             RecommendedTracks = new ObservableCollection<Song>();
-            
+
             LoadDataAsync();
         }
 
@@ -61,14 +61,14 @@ namespace SoundHaven.ViewModels
             // var topTracks = await _dataService.GetTopTracksAsync();
             var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync(username);
             var recommendedTracks = await _dataService.GetRecommendedTracksAsync(username);
-            
+
             // TopTracks.Clear();
             RecentlyPlayedTracks.Clear();
             RecommendedTracks.Clear();
-            
+
             // Shuffle using LINQ's OrderBy with a random key
             var shuffledTracks = recommendedTracks.OrderBy(track => new Random().Next()).ToList();
-            
+
             RecommendedTracks.Clear();
             foreach (var song in shuffledTracks)
             {
@@ -79,7 +79,7 @@ namespace SoundHaven.ViewModels
             {
                 RecentlyPlayedTracks.Add(song);
             }
-            
+
             // foreach (var song in topTracks)
             // {
             //     TopTracks.Add(song);

@@ -19,7 +19,7 @@ namespace SoundHaven.Services
         }
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
-        
+
         public bool IsPlaying() => _waveOutDevice.PlaybackState == PlaybackState.Playing;
 
         public bool IsStopped() => _waveOutDevice.PlaybackState == PlaybackState.Stopped;
@@ -31,7 +31,7 @@ namespace SoundHaven.Services
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
         }
-        
+
         public void Seek(TimeSpan position)
         {
             if (_audioFileReader != null)
@@ -54,7 +54,7 @@ namespace SoundHaven.Services
                 var silenceDuration = TimeSpan.FromSeconds(0.25);
 
                 // Combine silence and audio
-                var combinedStream = new ConcatenatingSampleProvider(new[] 
+                var combinedStream = new ConcatenatingSampleProvider(new[]
                 {
                     silenceProvider.ToSampleProvider().Take(silenceDuration),
                     _audioFileReader.ToSampleProvider()
@@ -68,7 +68,7 @@ namespace SoundHaven.Services
                 Console.WriteLine($"Error playing audio: {ex.Message}");
             }
         }
-        
+
         public void Pause()
         {
             if (_waveOutDevice.PlaybackState == PlaybackState.Playing)

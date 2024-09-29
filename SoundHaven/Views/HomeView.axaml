@@ -7,7 +7,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              x:Name="Root" d:DesignWidth="1500" d:DesignHeight="600"
              x:DataType="vm:HomeViewModel">
-    
+
     <!-- Resource Definitions -->
     <UserControl.Resources>
         <!-- Define PlayerColorBrush based on PrimaryColor -->
@@ -24,7 +24,7 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="24" /> <!-- Centralized FontSize -->
         </Style>
-        
+
         <!-- Track Title Style -->
         <Style Selector="TextBlock.TrackTitle">
             <Setter Property="FontFamily"
@@ -32,7 +32,7 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="16" /> <!-- Optional: Define if needed -->
         </Style>
-        
+
         <!-- Artist Name Style -->
         <Style Selector="TextBlock.ArtistName">
             <Setter Property="FontFamily"
@@ -41,43 +41,43 @@
             <Setter Property="FontSize" Value="14" /> <!-- Optional: Define if needed -->
         </Style>
     </UserControl.Styles>
-    
+
     <Grid Background="{StaticResource ToolbarColor}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- Banner row -->
-            <RowDefinition Height="*"/>    <!-- Content row -->
+            <RowDefinition Height="Auto" /> <!-- Banner row -->
+            <RowDefinition Height="*" />    <!-- Content row -->
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="400" MaxWidth="425"/> <!-- Left column -->
-            <ColumnDefinition Width="*" MinWidth="300" MaxWidth="350"/> <!-- Middle column -->
-            <ColumnDefinition Width="*"/> <!-- Right column -->
+            <ColumnDefinition Width="*" MinWidth="400" MaxWidth="425" /> <!-- Left column -->
+            <ColumnDefinition Width="*" MinWidth="300" MaxWidth="350" /> <!-- Middle column -->
+            <ColumnDefinition Width="*" /> <!-- Right column -->
         </Grid.ColumnDefinitions>
 
         <!-- Banner -->
         <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
                 Background="{StaticResource PlayerColorBrush}"
-                CornerRadius="0,0,10,10" 
+                CornerRadius="0,0,10,10"
                 Padding="0,15">
             <TextBlock Text="Welcome, Home"
                        HorizontalAlignment="Center"
                        FontSize="28"
                        FontWeight="Bold"
-                       Foreground="Black" 
-                       Classes="Headers"/>
+                       Foreground="Black"
+                       Classes="Headers" />
         </Border>
 
         <!-- Left Column: Recommended Tracks -->
         <Grid Grid.Row="1" Grid.Column="0" Margin="0,30,0,0"> <!-- Added top margin for spacing -->
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/> <!-- Header row -->
-                <RowDefinition Height="*"/>    <!-- Scrollable content row -->
+                <RowDefinition Height="Auto" /> <!-- Header row -->
+                <RowDefinition Height="*" />    <!-- Scrollable content row -->
             </Grid.RowDefinitions>
 
             <!-- "Recommended for you" Header -->
             <TextBlock Grid.Row="0" Text="Recommended for you"
                        HorizontalAlignment="Center"
                        Margin="0,0,0,10"
-                       Classes="Headers"/>
+                       Classes="Headers" />
 
             <!-- Scrollable Recommended Tracks -->
             <ScrollViewer Grid.Row="1"
@@ -87,7 +87,7 @@
                 <ItemsControl ItemsSource="{Binding RecommendedTracks}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <UniformGrid Columns="2"/>
+                            <UniformGrid Columns="2" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
@@ -99,7 +99,7 @@
                                         Height="150">
                                     <controls:AsyncImageControl Stretch="UniformToFill">
                                         <controls:AsyncImageControl.SourceUrl>
-                                            <Binding Path="ArtworkUrl"/>
+                                            <Binding Path="ArtworkUrl" />
                                         </controls:AsyncImageControl.SourceUrl>
                                     </controls:AsyncImageControl>
                                 </Border>
@@ -107,11 +107,11 @@
                                            Classes="TrackTitle"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0"
-                                           MaxWidth="150"/>
+                                           MaxWidth="150" />
                                 <TextBlock Text="{Binding Artist}"
                                            Classes="ArtistName"
                                            TextWrapping="Wrap"
-                                           MaxWidth="150"/>
+                                           MaxWidth="150" />
                             </StackPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -122,15 +122,15 @@
         <!-- Middle Column: Recently Played Tracks -->
         <Grid Grid.Row="1" Grid.Column="1" Margin="20,0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" 
+            <TextBlock Grid.Row="0"
                        Text="Recently Played Tracks"
                        HorizontalAlignment="Left"
                        Margin="0,30,0,10"
-                       Classes="Headers"/>
+                       Classes="Headers" />
 
             <ScrollViewer Grid.Row="1"
                           HorizontalScrollBarVisibility="Disabled"
@@ -141,27 +141,27 @@
                         <DataTemplate x:DataType="models:Song">
                             <Grid Margin="0,5">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <Border Grid.Column="0"
                                         CornerRadius="5"
                                         ClipToBounds="True"
                                         Margin="0,0,10,0">
                                     <controls:AsyncImageControl Width="50"
-                                                               Height="50"
-                                                               SourceUrl="{Binding ArtworkUrl}"
-                                                               Stretch="UniformToFill" />
+                                                                Height="50"
+                                                                SourceUrl="{Binding ArtworkUrl}"
+                                                                Stretch="UniformToFill" />
                                 </Border>
 
-                                <StackPanel Grid.Column="1" 
-                                            Orientation="Vertical" 
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Vertical"
                                             VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Title}" 
-                                               Classes="TrackTitle"/>
-                                    <TextBlock Text="{Binding Artist}" 
-                                               Classes="ArtistName"/>
+                                    <TextBlock Text="{Binding Title}"
+                                               Classes="TrackTitle" />
+                                    <TextBlock Text="{Binding Artist}"
+                                               Classes="ArtistName" />
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>
@@ -173,15 +173,15 @@
         <!-- Right Column: Up Next -->
         <Grid Grid.Row="1" Grid.Column="2" Margin="20,0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" 
+            <TextBlock Grid.Row="0"
                        Text="Up Next"
                        HorizontalAlignment="Center"
                        Margin="0,30,0,10"
-                       Classes="Headers"/>
+                       Classes="Headers" />
 
             <ScrollViewer Grid.Row="1"
                           HorizontalScrollBarVisibility="Disabled"
@@ -192,10 +192,10 @@
                         <DataTemplate x:DataType="models:Song">
                             <Grid Margin="0,5">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <Border Grid.Column="0"
                                         CornerRadius="5"
                                         ClipToBounds="True"
@@ -206,13 +206,13 @@
                                            Stretch="UniformToFill" />
                                 </Border>
 
-                                <StackPanel Grid.Column="1" 
-                                            Orientation="Vertical" 
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Vertical"
                                             VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Title}" 
-                                               Classes="TrackTitle"/>
-                                    <TextBlock Text="{Binding Artist}" 
-                                               Classes="ArtistName"/>
+                                    <TextBlock Text="{Binding Title}"
+                                               Classes="TrackTitle" />
+                                    <TextBlock Text="{Binding Artist}"
+                                               Classes="ArtistName" />
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>

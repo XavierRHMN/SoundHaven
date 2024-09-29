@@ -15,17 +15,20 @@ namespace SoundHaven.ViewModels
         public RelayCommand NextCommand { get; }
         public RelayCommand PreviousCommand { get; }
     }
-    
+
+
     public class PlaybackViewModel : ViewModelBase, IPlaybackControlViewModel
     {
         private RepeatViewModel _repeatViewModel;
         public event EventHandler SeekPositionReset;
-        
+
+
         public enum Direction
         {
             Previous = -1,
             Next = 1
         }
+
 
         private AudioService _audioService { get; set; }
 
@@ -42,7 +45,7 @@ namespace SoundHaven.ViewModels
                 }
             }
         }
-        
+
         private bool _isPlaying;
         public bool IsPlaying
         {
@@ -174,9 +177,9 @@ namespace SoundHaven.ViewModels
                 IsPlaying = false;
                 return;
             }
-    
+
             Song? nextSong = null;
-            
+
             SeekPositionReset?.Invoke(this, EventArgs.Empty);
 
 
@@ -218,7 +221,7 @@ namespace SoundHaven.ViewModels
             }
 
             Song? previousSong = CurrentPlaylist.GetPreviousNextSong(CurrentSong, Direction.Previous);
-            
+
             if (previousSong != null)
             {
                 if (_audioService.GetCurrentTime().TotalSeconds > 3)
@@ -260,7 +263,7 @@ namespace SoundHaven.ViewModels
                     break;
             }
         }
-        
+
         public override void Dispose()
         {
             _audioService.TrackEnded -= OnTrackEndedRobust;

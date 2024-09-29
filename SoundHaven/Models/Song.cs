@@ -35,7 +35,7 @@ namespace SoundHaven.Models
         public string? ChannelTitle { get; set; }
         public ulong? Views { get; set; }
         public string? VideoDuration { get; set; }
-        
+
         private bool _isSelected;
         public bool IsSelected
         {
@@ -49,7 +49,7 @@ namespace SoundHaven.Models
                 }
             }
         }
-        
+
         private Bitmap? _artwork;
         public Bitmap? Artwork
         {

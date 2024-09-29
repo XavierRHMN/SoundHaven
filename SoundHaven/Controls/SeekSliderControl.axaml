@@ -5,11 +5,10 @@
              x:DataType="viewModels:SeekSliderViewModel">
 
 
-
     <!-- Your Slider Control -->
     <Slider Height="75"
             Minimum="0"
             Maximum="{Binding MaximumSeekValue}"
             Margin="30,0"
-            Value="{Binding SeekPosition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+            Value="{Binding SeekPosition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 </UserControl>
