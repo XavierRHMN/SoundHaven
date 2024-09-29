@@ -21,23 +21,27 @@
             <Setter Property="FontSize" Value="28" />
         </Style>
         
-        <!-- Track Title Style -->
         <Style Selector="TextBlock.TrackTitle">
             <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="16" />
         </Style>
         
-        <!-- Artist Name Style -->
         <Style Selector="TextBlock.ArtistName">
             <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
             <Setter Property="Foreground" Value="Gray" />
             <Setter Property="FontSize" Value="14" />
         </Style>
+        
+        <Style Selector="TextBlock.ExtraInfo">
+            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+            <Setter Property="Foreground" Value="LightGray" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*">
-        <!-- Banner -->
+        <!-- Search Banner -->
         <Border Grid.Row="0"
                 Background="{StaticResource PlayerColorBrush}"
                 CornerRadius="0,0,10,10" 
@@ -47,8 +51,8 @@
                        Classes="Headers"/>
         </Border>
 
-        <!-- Existing content -->
-        <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,30,0,0">
+        <!-- Search Box -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,0,0,0"> 
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="10,0">
                 <TextBox Grid.Column="0" Text="{Binding SearchQuery, Mode=TwoWay}" 
                          Watermark="Search for songs..." />
@@ -66,12 +70,18 @@
                 <ListBox ItemsSource="{Binding SearchResults}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5">
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
                                 <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60" Margin="0,0,10,0"/>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Title}" Classes="TrackTitle"/>
-                                    <TextBlock Text="{Binding Artist}" Classes="ArtistName"/>
-                                </StackPanel>
+                                <Grid Grid.Column="1" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
+                                    <TextBlock Grid.Row="0" Text="{Binding Title}" Classes="TrackTitle"/>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="5">
+                                        <TextBlock Text="{Binding Artist}" Classes="ArtistName"/>
+                                        <TextBlock Text="•" Classes="ArtistName"/>
+                                        <TextBlock Text="{Binding Views, Converter={StaticResource ViewCountConverter}}" Classes="ArtistName" />
+                                        <TextBlock Text="•" Classes="ArtistName"/>
+                                        <TextBlock Text="{Binding VideoDuration, Converter={StaticResource VideoDurationConverter}}" Classes="ArtistName"/>
+                                    </StackPanel>
+                                </Grid>
                                 <Button Grid.Column="2" Content="Play" 
                                         Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).PlaySongCommand}" 
                                         CommandParameter="{Binding}" 

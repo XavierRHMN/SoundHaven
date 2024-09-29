@@ -51,7 +51,9 @@ namespace SoundHaven.ViewModels
                     Artist = result.ChannelTitle,
                     VideoId = result.VideoId,
                     ThumbnailUrl = result.ThumbnailUrl,
-                    ChannelTitle = result.ChannelTitle
+                    ChannelTitle = result.ChannelTitle,
+                    Views = result.ViewCount,
+                    VideoDuration = result.Duration
                 };
                 await song.LoadYouTubeThumbnail();
                 SearchResults.Add(song);

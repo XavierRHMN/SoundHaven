@@ -30,7 +30,7 @@ namespace SoundHaven.Services
                 ApiKey = apiKey,
                 ApplicationName = "SoundHaven"
             });
-            _logger = logger.CreateLogger<YouTubeApiService>();;
+            _logger = logger.CreateLogger<YouTubeApiService>();
             _cache = memoryCache;
         }
 
@@ -58,7 +58,7 @@ namespace SoundHaven.Services
                 return Enumerable.Empty<YouTubeVideoInfo>();
             }
 
-            try
+           try
             {
                 _logger.LogInformation($"Querying YouTube API for: {query}");
 
@@ -71,14 +71,26 @@ namespace SoundHaven.Services
                 var searchListResponse = await searchListRequest.ExecuteAsync();
 
                 _dailyRequestCount++;
-                _logger.LogInformation($"YouTube API request completed. Total requests today: {_dailyRequestCount}");
+                _logger.LogInformation($"YouTube API search request completed. Total requests today: {_dailyRequestCount}");
 
-                var results = searchListResponse.Items.Select(item => new YouTubeVideoInfo
+                var videoIds = string.Join(",", searchListResponse.Items.Select(item => item.Id.VideoId));
+
+                var videosListRequest = _youtubeService.Videos.List("snippet,statistics,contentDetails");
+                videosListRequest.Id = videoIds;
+
+                var videosListResponse = await videosListRequest.ExecuteAsync();
+
+                _dailyRequestCount++;
+                _logger.LogInformation($"YouTube API video details request completed. Total requests today: {_dailyRequestCount}");
+
+                var results = videosListResponse.Items.Select(item => new YouTubeVideoInfo
                 {
                     Title = item.Snippet.Title,
                     ChannelTitle = item.Snippet.ChannelTitle,
                     ThumbnailUrl = item.Snippet.Thumbnails.Default__.Url,
-                    VideoId = item.Id.VideoId
+                    VideoId = item.Id,
+                    ViewCount = item.Statistics.ViewCount ?? 0,
+                    Duration = item.ContentDetails.Duration
                 }).ToList();
 
                 // Cache the results
@@ -100,5 +112,7 @@ namespace SoundHaven.Services
         public string? ChannelTitle { get; set; }
         public string? ThumbnailUrl { get; set; }
         public string? VideoId { get; set; }
+        public ulong? ViewCount { get; set; }
+        public string? Duration { get; set; }
     }
 }

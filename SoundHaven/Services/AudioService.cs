@@ -1,4 +1,5 @@
 ﻿using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using SoundHaven.Models;
 using System;
 
@@ -11,13 +12,11 @@ namespace SoundHaven.Services
         private float _audioVolume = 0.1f;
         public event EventHandler TrackEnded;
 
-
         public AudioService()
         {
             _waveOutDevice = new WaveOutEvent();
             _waveOutDevice.PlaybackStopped += OnPlaybackStopped;
         }
-
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
         
@@ -49,10 +48,20 @@ namespace SoundHaven.Services
             {
                 _audioFileReader = new AudioFileReader(filePath);
                 _audioFileReader.Volume = _audioVolume;
-                _waveOutDevice.Init(_audioFileReader);
+
+                // Create a silent WaveProvider for 0.5 milliseconds
+                var silenceProvider = new SilenceProvider(_audioFileReader.WaveFormat);
+                var silenceDuration = TimeSpan.FromSeconds(0.25);
+
+                // Combine silence and audio
+                var combinedStream = new ConcatenatingSampleProvider(new[] 
+                {
+                    silenceProvider.ToSampleProvider().Take(silenceDuration),
+                    _audioFileReader.ToSampleProvider()
+                });
+
+                _waveOutDevice.Init(combinedStream);
                 _waveOutDevice.Play();
-            
-                // Small delay to allow the audio to start properly
             }
             catch (Exception ex)
             {

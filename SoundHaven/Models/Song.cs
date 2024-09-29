@@ -33,7 +33,9 @@ namespace SoundHaven.Models
         public string? VideoId { get; set; }
         public string? ThumbnailUrl { get; set; }
         public string? ChannelTitle { get; set; }
-
+        public ulong? Views { get; set; }
+        public string? VideoDuration { get; set; }
+        
         private bool _isSelected;
         public bool IsSelected
         {
