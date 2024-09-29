@@ -76,8 +76,8 @@
                              IsIndeterminate="True"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"
-                             Width="40" 
-                             Height="40"
+                             Width="80" 
+                             Height="80"
                              Foreground="{StaticResource PrimaryColor}"/>
 
                 <ScrollViewer IsVisible="{Binding !IsLoading}" Margin="10" Theme="{StaticResource MaterialModernScrollViewer}">
@@ -101,29 +101,30 @@
                                                 Classes="ExtraInfo" />
                                         </StackPanel>
                                     </Grid>
-                                    <Grid Grid.Column="2" Width="110" Height="30">
-                                        <Button Content="Download"
-                                                Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
+                                    <Grid Grid.Column="2" Width="40" Height="40" Margin="0 0 20 0">
+                                        <Button Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
                                                 CommandParameter="{Binding}"
                                                 IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.NotDownloaded}}"
-                                                Theme="{StaticResource MaterialOutlineButton}"
-                                                Foreground="{StaticResource PrimaryColor}"
-                                                BorderBrush="{StaticResource PrimaryColor}"
-                                                CornerRadius="16" 
-                                                Margin="0 0 10 0"/>
+                                                Background="Transparent"
+                                                Width="40" Height="40"
+                                                Padding="5"
+                                                CornerRadius="20">
+                                            <Svg Path="avares://SoundHaven/Assets/Icons/download.svg" 
+                                                 Stretch="Uniform"/>
+                                        </Button>
                                         <ProgressBar Classes="circular" 
                                                      IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloading}}"
                                                      Value="{Binding DownloadProgress}" 
                                                      ShowProgressText="True"
-                                                     Foreground="{StaticResource PrimaryColor}"
+                                                     Foreground="White"
                                                      Width="30" Height="30" />
                                         <Button IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
                                                 Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).OpenFolderCommand}"
                                                 CommandParameter="{Binding}"
                                                 Background="Transparent"
-                                                Width="30" Height="30"
-                                                Padding="3"
-                                                CornerRadius="15">
+                                                Width="40" Height="40"
+                                                Padding="5"
+                                                CornerRadius="20">
                                             <Svg Path="avares://SoundHaven/Assets/Icons/folder.svg" Stretch="Uniform" />
                                         </Button>
                                     </Grid>
