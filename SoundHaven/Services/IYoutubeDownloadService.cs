@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
 using FFMpegCore;
@@ -32,6 +33,9 @@ namespace SoundHaven.Services
 
         public async Task<Song> DownloadAudioAsync(string videoId, IProgress<double> progress)
         {
+            // Clean up the video ID
+            videoId = CleanVideoId(videoId);
+
             var video = await _youtubeClient.Videos.GetAsync(videoId);
             var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(videoId);
             var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
@@ -96,7 +100,6 @@ namespace SoundHaven.Services
                 tagFile.Tag.Album = video.Author.ChannelTitle;
                 tagFile.Tag.Year = (uint)video.UploadDate.Year;
                 
-
                 // Download and set thumbnail
                 var thumbnailUrl = video.Thumbnails.OrderByDescending(t => t.Resolution.Area).FirstOrDefault()?.Url;
                 if (!string.IsNullOrEmpty(thumbnailUrl))
@@ -121,6 +124,33 @@ namespace SoundHaven.Services
         {
             var invalidChars = Path.GetInvalidFileNameChars();
             return new string(fileName.Where(ch => !invalidChars.Contains(ch)).ToArray());
+        }
+
+        private string CleanVideoId(string videoId)
+        {
+            // Remove any parameters after '&'
+            int ampersandIndex = videoId.IndexOf('&');
+            if (ampersandIndex != -1)
+            {
+                videoId = videoId.Substring(0, ampersandIndex);
+            }
+
+            // If the ID is a full URL, extract just the ID
+            if (videoId.Contains("youtube.com") || videoId.Contains("youtu.be"))
+            {
+                Uri uri = new Uri(videoId);
+                if (uri.Host == "youtu.be")
+                {
+                    videoId = uri.AbsolutePath.Trim('/');
+                }
+                else
+                {
+                    var query = HttpUtility.ParseQueryString(uri.Query);
+                    videoId = query["v"] ?? videoId;
+                }
+            }
+
+            return videoId;
         }
     }
 }
