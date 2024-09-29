@@ -62,7 +62,7 @@
                         BorderBrush="{StaticResource PrimaryColor}"/>
             </Grid>
             
-            <ScrollViewer Grid.Row="1" Margin="10">
+            <ScrollViewer Grid.Row="1" Margin="10" Theme="{StaticResource MaterialModernScrollViewer}">
                 <ListBox ItemsSource="{Binding SearchResults}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>

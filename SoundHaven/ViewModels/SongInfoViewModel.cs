@@ -31,7 +31,6 @@ namespace SoundHaven.ViewModels
                     // Update text width based on the new song title
                     TextWidth = ExtractTextWidth(CurrentSong?.Title, "Circular", 15);
                     
-                    // Initialize scroll positions
                     InitializeScrollPositions();
                 }
             }
@@ -69,7 +68,7 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        public double ControlWidth { get; set; } = 200 * 2; // Width of the canvas/border
+        public double ControlWidth { get; set; } = 200 * 2; // Width of the Song Info Control
 
         public SongInfoViewModel(PlaybackViewModel playbackViewModel)
         {

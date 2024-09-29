@@ -1,23 +1,23 @@
 ﻿using Avalonia;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using SoundHaven.Commands;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.Services;
-using System;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Threading.Tasks;
 
 namespace SoundHaven.ViewModels
 {
     public class PlaylistViewModel : ViewModelBase
     {
-        private readonly IOpenFileDialogService _openFileDialogService;
         private readonly MainWindowViewModel _mainWindowViewModel;
         private readonly PlaybackViewModel _playbackViewModel;
-
-        public Playlist? CurrentPlaylist => _playbackViewModel.CurrentPlaylist;
+        private readonly IOpenFileDialogService _openFileDialogService;
 
         private Playlist _displayedPlaylist;
         public Playlist DisplayedPlaylist
@@ -34,7 +34,36 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        public ObservableCollection<Song> Songs => DisplayedPlaylist?.Songs;
+        public ObservableCollection<Song> Songs => DisplayedPlaylist?.Songs ?? new ObservableCollection<Song>();
+
+        private bool _isEditMode;
+        public bool IsEditMode
+        {
+            get => _isEditMode;
+            set
+            {
+                if (_isEditMode != value)
+                {
+                    _isEditMode = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(EditButtonContent));
+                }
+            }
+        }
+
+        public string EditButtonContent => IsEditMode ? "Done" : "Edit";
+
+        private ObservableCollection<object> _selectedItems;
+        public ObservableCollection<object> SelectedItems
+        {
+            get => _selectedItems;
+            set
+            {
+                _selectedItems = value;
+                OnPropertyChanged();
+                UpdateSelectedSongs();
+            }
+        }
 
         private Song _selectedSong;
         public Song SelectedSong
@@ -46,19 +75,17 @@ namespace SoundHaven.ViewModels
                 {
                     _selectedSong = value;
                     OnPropertyChanged();
-                    if (_selectedSong != null)
+                    if (_selectedSong != null && !IsEditMode)
                     {
-                        // Update the active playlist and current song in PlaybackViewModel
-                        _playbackViewModel.CurrentPlaylist = DisplayedPlaylist;
-                        _playbackViewModel.CurrentSong = _selectedSong;
+                        SetCurrentSong(_selectedSong);
                     }
                 }
             }
         }
 
         public AsyncRelayCommand AddSongCommand { get; }
-        public RelayCommand EditSongCommand { get; }
-        public RelayCommand DeleteSongCommand { get; }
+        public RelayCommand ToggleEditModeCommand { get; }
+        public RelayCommand DeleteSelectedSongsCommand { get; }
 
         public PlaylistViewModel(MainWindowViewModel mainWindowViewModel, PlaybackViewModel playbackViewModel, IOpenFileDialogService openFileDialogService)
         {
@@ -67,15 +94,18 @@ namespace SoundHaven.ViewModels
             _openFileDialogService = openFileDialogService;
 
             AddSongCommand = new AsyncRelayCommand(AddSongAsync);
-            EditSongCommand = new RelayCommand(EditSong);
-            DeleteSongCommand = new RelayCommand(DeleteSong);
+            ToggleEditModeCommand = new RelayCommand(ToggleEditMode);
+            DeleteSelectedSongsCommand = new RelayCommand(DeleteSelectedSongs);
+            SelectedItems = new ObservableCollection<object>();
 
-            _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
-
-            SelectedSong = _playbackViewModel.CurrentSong;
+            // Initialize with an empty playlist if needed
+            if (DisplayedPlaylist == null)
+            {
+                DisplayedPlaylist = new Playlist { Name = "New Playlist", Songs = new ObservableCollection<Song>() };
+            }
         }
 
-        public async Task AddSongAsync()
+        private async Task AddSongAsync()
         {
             if (DisplayedPlaylist != null)
             {
@@ -101,31 +131,51 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        private void EditSong()
+        private void ToggleEditMode()
         {
-            if (SelectedSong != null)
+            IsEditMode = !IsEditMode;
+            if (!IsEditMode)
             {
-                SelectedSong.Title = "Edited Song Title";
-                OnPropertyChanged(nameof(SelectedSong));
-                Console.WriteLine($"Edited song: {SelectedSong.Title}");
+                // Clear all selections when exiting edit mode
+                foreach (var song in Songs)
+                {
+                    song.IsSelected = false;
+                }
+                SelectedItems.Clear();
             }
         }
 
-        private void DeleteSong()
+        private void DeleteSelectedSongs()
         {
-            if (DisplayedPlaylist != null && SelectedSong != null)
+            if (DisplayedPlaylist != null)
             {
-                Console.WriteLine($"Deleted song: {SelectedSong.Title} from playlist: {DisplayedPlaylist.Name}");
-                DisplayedPlaylist.Songs.Remove(SelectedSong);
+                var songsToRemove = Songs.Where(s => s.IsSelected).ToList();
+                foreach (var song in songsToRemove)
+                {
+                    DisplayedPlaylist.Songs.Remove(song);
+                    Console.WriteLine($"Deleted song: {song.Title} from playlist: {DisplayedPlaylist.Name}");
+                }
+                SelectedItems.Clear();
             }
         }
 
-        private void PlaybackViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void UpdateSelectedSongs()
         {
-            if (e.PropertyName == nameof(PlaybackViewModel.CurrentPlaylist))
+            if (Songs != null)
             {
-                // Update the displayed playlist when the CurrentPlaylist changes in PlaybackViewModel
-                DisplayedPlaylist = _playbackViewModel.CurrentPlaylist;
+                foreach (var song in Songs)
+                {
+                    song.IsSelected = SelectedItems.Contains(song);
+                }
+            }
+        }
+
+        private void SetCurrentSong(Song song)
+        {
+            if (_playbackViewModel != null)
+            {
+                _playbackViewModel.CurrentPlaylist = DisplayedPlaylist;
+                _playbackViewModel.CurrentSong = song;
             }
         }
     }

@@ -3,6 +3,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
+             xmlns:visualBasic="clr-namespace:Microsoft.VisualBasic;assembly=Microsoft.VisualBasic.Core"
+             xmlns:helpers="clr-namespace:SoundHaven.Helpers"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="SoundHaven.Views.PlaylistView"
              x:DataType="viewModels:PlaylistViewModel">
@@ -37,37 +39,59 @@
                     Theme="{StaticResource MaterialOutlineButton}"
                     Content="Add"
                     ToolTip.Tip="Add a new song"
-                    Width="60"
+                    Width="80"
                     Height="30"
                     CornerRadius="16"
                     HorizontalAlignment="Center" 
                     Foreground="{StaticResource PrimaryColor}"
                     BorderBrush="{StaticResource PrimaryColor}"/>
-            <Button Command="{Binding EditSongCommand}"
-                    Theme="{StaticResource MaterialOutlineButton}" Content="Edit"
-                    ToolTip.Tip="Edit selected song" Width="60" Height="30" CornerRadius="16"
+            <Button Command="{Binding ToggleEditModeCommand}"
+                    Theme="{StaticResource MaterialOutlineButton}" 
+                    Content="{Binding EditButtonContent}"
+                    ToolTip.Tip="Toggle edit mode" 
+                    Width="80" 
+                    Height="30" 
+                    CornerRadius="16"
                     Foreground="{StaticResource PrimaryColor}"
                     BorderBrush="{StaticResource PrimaryColor}"/>
-            <Button Command="{Binding DeleteSongCommand}"
-                    Theme="{StaticResource MaterialOutlineButton}" Content="Del"
-                    ToolTip.Tip="Delete selected song" Width="60" Height="30" CornerRadius="16" 
+            <Button Command="{Binding DeleteSelectedSongsCommand}"
+                    Theme="{StaticResource MaterialOutlineButton}" 
+                    Content="Delete"
+                    ToolTip.Tip="Delete selected songs" 
+                    Width="80" 
+                    Height="30" 
+                    CornerRadius="16" 
                     Foreground="{StaticResource PrimaryColor}"
-                    BorderBrush="{StaticResource PrimaryColor}"/>
+                    BorderBrush="{StaticResource PrimaryColor}"
+                    IsEnabled="{Binding IsEditMode}"/>
         </StackPanel>
+
 
         <!-- DataGrid for Songs -->
         <DataGrid Grid.Row="2"
                   ItemsSource="{Binding Songs}"
+                  SelectedItem="{Binding SelectedSong}"
                   AutoGenerateColumns="False"
                   CanUserReorderColumns="True"
                   CanUserResizeColumns="True"
                   CanUserSortColumns="True"
                   GridLinesVisibility="None"
-                  SelectionMode="Single"
+                  SelectionMode="Extended"
                   IsReadOnly="True"
                   BorderBrush="{StaticResource ToolbarColor}"
-                  SelectedItem="{Binding SelectedSong, Mode=TwoWay}">
+                  helpers:DataGridHelper.SelectedItems="{Binding SelectedItems}">
             <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Select" 
+                                        Width="Auto"
+                                        IsVisible="{Binding IsEditMode}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*" />
                 <DataGridTextColumn Header="Artist" Binding="{Binding Artist}" Width="120" />
                 <DataGridTextColumn Header="Duration"

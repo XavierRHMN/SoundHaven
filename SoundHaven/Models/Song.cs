@@ -3,6 +3,7 @@ using Avalonia.Media.Imaging;
 using SoundHaven.ViewModels;
 using SoundHaven.Services;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
 using System.Net.Http;
@@ -33,6 +34,20 @@ namespace SoundHaven.Models
         public string? ThumbnailUrl { get; set; }
         public string? ChannelTitle { get; set; }
 
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        
         private Bitmap? _artwork;
         public Bitmap? Artwork
         {
