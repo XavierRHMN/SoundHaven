@@ -13,7 +13,7 @@ namespace SoundHaven.ViewModels
 {
     public class SearchViewModel : ViewModelBase
     {
-        private readonly IYouTubeApiService _youTubeApiService;
+        private readonly IYoutubeSearchService _youtubeSearchService;
         private readonly IYouTubeDownloadService _youTubeDownloadService;
         private readonly IOpenFileDialogService _openFileDialogService;
         private string _searchQuery;
@@ -36,9 +36,9 @@ namespace SoundHaven.ViewModels
         public RelayCommand<Song> DownloadSongCommand { get; }
         public RelayCommand<Song> OpenFolderCommand { get; }
 
-        public SearchViewModel(IYouTubeApiService youTubeApiService, IYouTubeDownloadService youTubeDownloadService, IOpenFileDialogService openFileDialogService)
+        public SearchViewModel(IYoutubeSearchService youtubeSearchService, IYouTubeDownloadService youTubeDownloadService, IOpenFileDialogService openFileDialogService)
         {
-            _youTubeApiService = youTubeApiService;
+            _youtubeSearchService = youtubeSearchService;
             _youTubeDownloadService = youTubeDownloadService;
             _openFileDialogService = openFileDialogService;
             SearchResults = new ObservableCollection<Song>();
@@ -53,7 +53,7 @@ namespace SoundHaven.ViewModels
         {
             if (string.IsNullOrWhiteSpace(SearchQuery)) return;
 
-            var results = await _youTubeApiService.SearchVideos(SearchQuery);
+            var results = await _youtubeSearchService.SearchVideos(SearchQuery);
             SearchResults.Clear();
             foreach (var result in results)
             {

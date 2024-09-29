@@ -77,11 +77,11 @@
                                         <TextBlock Text="{Binding Artist}" Classes="ExtraInfo" />
                                         <TextBlock Text="•" Classes="ExtraInfo" />
                                         <TextBlock
-                                            Text="{Binding Views, Converter={StaticResource ViewCountConverter}, StringFormat='{}{0} views'}"
+                                            Text="{Binding Views}"
                                             Classes="ExtraInfo" />
                                         <TextBlock Text="•" Classes="ExtraInfo" />
                                         <TextBlock
-                                            Text="{Binding VideoDuration, Converter={StaticResource VideoDurationConverter}}"
+                                            Text="{Binding VideoDuration}"
                                             Classes="ExtraInfo" />
                                     </StackPanel>
                                 </Grid>

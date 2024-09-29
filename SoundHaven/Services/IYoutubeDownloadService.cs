@@ -76,7 +76,7 @@ namespace SoundHaven.Services
             song.VideoId = videoId;
             song.ThumbnailUrl = video.Thumbnails.OrderByDescending(t => t.Resolution.Area).FirstOrDefault()?.Url;
             song.ChannelTitle = video.Author.ChannelTitle;
-            song.Views = (ulong?)video.Engagement.ViewCount;
+            song.Views = video.Engagement.ViewCount.ToString();
 
             return song;
         }
