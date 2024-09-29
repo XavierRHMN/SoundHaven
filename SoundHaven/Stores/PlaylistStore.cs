@@ -13,17 +13,10 @@ namespace SoundHaven.Stores
             get => _playlists;
             set => _playlists = value;
         }
-
-        private MainWindowViewModel _mainWindowViewModel;
-        private ToolbarViewModel _toolbarViewModel;
-        private AudioService _audioService;
-
-        public PlaylistStore(MainWindowViewModel mainWindowViewModel)
+        
+        public PlaylistStore()
         {
             Playlists = new ObservableCollection<Playlist>();
-            _mainWindowViewModel = mainWindowViewModel;
-            _audioService = _mainWindowViewModel.AudioService;
-            _toolbarViewModel = _mainWindowViewModel.ToolbarViewModel;
         }
 
         public void AddPlaylist(Playlist playlist)

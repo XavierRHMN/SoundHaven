@@ -84,11 +84,11 @@
                                             Classes="ExtraInfo" />
                                     </StackPanel>
                                 </Grid>
-                                <Button Grid.Column="2" Content="Play"
-                                        Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).PlaySongCommand}"
+                                <Button Grid.Column="2" Content="Download"
+                                        Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
                                         CommandParameter="{Binding}"
                                         Margin="10,0,10,0"
-                                        Width="60"
+                                        Width="110"
                                         Height="30"
                                         CornerRadius="16"
                                         Theme="{StaticResource MaterialOutlineButton}"

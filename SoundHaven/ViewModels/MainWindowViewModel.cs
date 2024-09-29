@@ -62,6 +62,7 @@ namespace SoundHaven.ViewModels
         public ThemesViewModel ThemesViewModel { get; set; }
         public RepeatViewModel RepeatViewModel { get; set; }
         public SearchViewModel SearchViewModel { get; set; }
+        public YouTubeDownloadService YouTubeDownloadService { get; set; }
 
         public MainWindowViewModel()
         {
@@ -78,9 +79,10 @@ namespace SoundHaven.ViewModels
 
             // Services
             AudioService = new AudioService();
+            YouTubeDownloadService = new YouTubeDownloadService();
 
             // Stores
-            PlaylistStore = new PlaylistStore(this);
+            PlaylistStore = new PlaylistStore();
             SongStore = new SongStore();
 
             // ViewModels
@@ -90,7 +92,7 @@ namespace SoundHaven.ViewModels
             PlaylistViewModel = new PlaylistViewModel(this, PlaybackViewModel, new OpenFileDialogService());
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
             HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
-            SearchViewModel = new SearchViewModel(youtubeApiService);
+            SearchViewModel = new SearchViewModel(youtubeApiService, YouTubeDownloadService);
             ThemesViewModel = new ThemesViewModel(this);
             ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
