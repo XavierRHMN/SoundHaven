@@ -36,6 +36,19 @@ namespace SoundHaven.Models
         public ulong? Views { get; set; }
         public string? VideoDuration { get; set; }
 
+        private DownloadState _downloadState = DownloadState.NotDownloaded;
+        public DownloadState CurrentDownloadState
+        {
+            get => _downloadState;
+            set => SetProperty(ref _downloadState, value);
+        }
+
+        private double _downloadProgress;
+        public double DownloadProgress
+        {
+            get => _downloadProgress;
+            set => SetProperty(ref _downloadProgress, value);
+        }
         private bool _isSelected;
         public bool IsSelected
         {

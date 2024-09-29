@@ -146,7 +146,7 @@
                                     Binding="{Binding Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}"
                                     Width="Auto" />
                 <DataGridTextColumn Header="File Path"
-                                    Binding="{Binding FilePath, Converter={StaticResource FilePathShortenerConverter}}"
+                                    Binding="{Binding FilePath}"
                                     Width="2*" />
             </DataGrid.Columns>
         </DataGrid>

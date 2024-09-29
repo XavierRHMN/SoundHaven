@@ -92,7 +92,7 @@ namespace SoundHaven.ViewModels
             PlaylistViewModel = new PlaylistViewModel(this, PlaybackViewModel, new OpenFileDialogService());
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
             HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
-            SearchViewModel = new SearchViewModel(youtubeApiService, YouTubeDownloadService);
+            SearchViewModel = new SearchViewModel(youtubeApiService, YouTubeDownloadService, new OpenFileDialogService());
             ThemesViewModel = new ThemesViewModel(this);
             ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
@@ -101,7 +101,7 @@ namespace SoundHaven.ViewModels
 
             CurrentViewModel = HomeViewModel;
 
-            InitializeExamplePlaylist();
+            // InitializeExamplePlaylist();
         }
 
         private void InitializeExamplePlaylist()

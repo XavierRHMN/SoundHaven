@@ -1,10 +1,13 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using SoundHaven.Commands;
 using SoundHaven.Models;
 using SoundHaven.Services;
-using System;
+using SoundHaven.Helpers;
 
 namespace SoundHaven.ViewModels
 {
@@ -12,6 +15,7 @@ namespace SoundHaven.ViewModels
     {
         private readonly IYouTubeApiService _youTubeApiService;
         private readonly IYouTubeDownloadService _youTubeDownloadService;
+        private readonly IOpenFileDialogService _openFileDialogService;
         private string _searchQuery;
         private ObservableCollection<Song> _searchResults;
 
@@ -30,16 +34,19 @@ namespace SoundHaven.ViewModels
         public RelayCommand SearchCommand { get; }
         public RelayCommand<Song> PlaySongCommand { get; }
         public RelayCommand<Song> DownloadSongCommand { get; }
+        public RelayCommand<Song> OpenFolderCommand { get; }
 
-        public SearchViewModel(IYouTubeApiService youTubeApiService, IYouTubeDownloadService youTubeDownloadService)
+        public SearchViewModel(IYouTubeApiService youTubeApiService, IYouTubeDownloadService youTubeDownloadService, IOpenFileDialogService openFileDialogService)
         {
             _youTubeApiService = youTubeApiService;
             _youTubeDownloadService = youTubeDownloadService;
+            _openFileDialogService = openFileDialogService;
             SearchResults = new ObservableCollection<Song>();
 
             SearchCommand = new RelayCommand(ExecuteSearch);
             PlaySongCommand = new RelayCommand<Song>(ExecutePlaySong);
             DownloadSongCommand = new RelayCommand<Song>(ExecuteDownloadSong);
+            OpenFolderCommand = new RelayCommand<Song>(ExecuteOpenFolder);
         }
 
         private async void ExecuteSearch()
@@ -77,25 +84,55 @@ namespace SoundHaven.ViewModels
 
             try
             {
+                song.CurrentDownloadState = DownloadState.Downloading;
                 var progress = new Progress<double>(p => 
                 {
-                    // Update UI with download progress
-                    Console.WriteLine($"Download progress: {p:P}");
+                    song.DownloadProgress = p * 100; // Convert to percentage
                 });
 
                 Song downloadedSong = await _youTubeDownloadService.DownloadAudioAsync(song.VideoId, progress);
                 Console.WriteLine($"Song downloaded: {downloadedSong.Title} by {downloadedSong.Artist}");
                 Console.WriteLine($"File path: {downloadedSong.FilePath}");
 
-                // You can now use the downloadedSong object to update your UI or add it to a playlist
-                // For example:
-                // AddToLibrary(downloadedSong);
-                // or
-                // UpdateUIWithDownloadedSong(downloadedSong);
+                // Update the original song in the search results with the downloaded information
+                song.FilePath = downloadedSong.FilePath;
+                song.Title = downloadedSong.Title;
+                song.Artist = downloadedSong.Artist;
+                song.CurrentDownloadState = DownloadState.Downloaded;
+                // ... update other properties as needed
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error downloading song: {ex.Message}");
+                song.CurrentDownloadState = DownloadState.NotDownloaded;
+            }
+            finally
+            {
+                song.DownloadProgress = 0;
+            }
+        }
+        
+        private void ExecuteOpenFolder(Song song)
+        {
+            if (song == null || string.IsNullOrEmpty(song.FilePath)) return;
+
+            try
+            {
+                string folder = Path.GetDirectoryName(song.FilePath);
+                if (folder != null)
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = folder,
+                        UseShellExecute = true,
+                        Verb = "open"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error opening folder: {ex.Message}");
+                // You might want to show an error message to the user here
             }
         }
     }

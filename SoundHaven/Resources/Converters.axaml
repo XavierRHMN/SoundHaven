@@ -11,4 +11,5 @@
     <converters:RepeatModeToVisibilityConverter x:Key="RepeatModeToVisibilityConverter" />
     <converters:ViewCountConverter x:Key="ViewCountConverter" />
     <converters:VideoDurationConverter x:Key="VideoDurationConverter" />
+    <converters:EnumEqualityConverter x:Key="EnumEqualityConverter"/>
 </ResourceDictionary>

@@ -82,4 +82,8 @@
     <ItemGroup>
         <None Remove="Behaviors\**"/>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Tracks\" />
+    </ItemGroup>
 </Project>

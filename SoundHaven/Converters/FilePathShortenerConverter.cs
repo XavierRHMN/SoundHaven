@@ -11,8 +11,7 @@ namespace SoundHaven.Converters
         {
             if (value is string filePath)
             {
-                string fileName = Path.GetFileName(filePath);
-                return $"SoundHaven/Tracks/{fileName}";
+                return filePath;
             }
             return string.Empty;
         }

@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:SoundHaven.ViewModels"
              xmlns:material="using:Material.Styles"
+             xmlns:models="clr-namespace:SoundHaven.Models"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="SoundHaven.Views.SearchView"
              x:DataType="vm:SearchViewModel"
@@ -84,16 +85,31 @@
                                             Classes="ExtraInfo" />
                                     </StackPanel>
                                 </Grid>
-                                <Button Grid.Column="2" Content="Download"
-                                        Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
-                                        CommandParameter="{Binding}"
-                                        Margin="10,0,10,0"
-                                        Width="110"
-                                        Height="30"
-                                        CornerRadius="16"
-                                        Theme="{StaticResource MaterialOutlineButton}"
-                                        Foreground="{StaticResource PrimaryColor}"
-                                        BorderBrush="{StaticResource PrimaryColor}" />
+                                <Grid Grid.Column="2" Width="110" Height="30">
+                                    <Button Content="Download"
+                                            Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
+                                            CommandParameter="{Binding}"
+                                            IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.NotDownloaded}}"
+                                            Theme="{StaticResource MaterialOutlineButton}"
+                                            Foreground="{StaticResource PrimaryColor}"
+                                            BorderBrush="{StaticResource PrimaryColor}"
+                                            CornerRadius="16" />
+                                    <ProgressBar Classes="circular" 
+                                                 IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloading}}"
+                                                 Value="{Binding DownloadProgress}" 
+                                                 ShowProgressText="True"
+                                                 Foreground="{StaticResource PrimaryColor}"
+                                                 Width="30" Height="30" />
+                                    <Button IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
+                                            Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).OpenFolderCommand}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            Width="30" Height="30"
+                                            Padding="3"
+                                            CornerRadius="15">
+                                        <Svg Path="avares://SoundHaven/Assets/Icons/folder.svg" Stretch="Uniform" />
+                                    </Button>
+                                </Grid>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
