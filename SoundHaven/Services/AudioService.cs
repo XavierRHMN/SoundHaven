@@ -92,19 +92,6 @@ namespace SoundHaven.Services
             _audioFileReader = null;
         }
 
-        public void Restart(Song song)
-        {
-            try
-            {
-                Stop();
-                Start(song.FilePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Could not restart audio: {ex.Message}");
-            }
-        }
-
         public float GetCurrentVolume()
         {
             return _audioVolume;

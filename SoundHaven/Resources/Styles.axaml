@@ -24,15 +24,6 @@
         <Setter Property="Background" Value="Transparent" />
     </Style>
 
-    <Style Selector="Slider /template/ Thumb">
-        <Setter Property="Template">
-            <ControlTemplate>
-                <Ellipse Width="12" Height="12" Fill="White" Stroke="{DynamicResource PrimaryColor}"
-                         StrokeThickness="2" />
-            </ControlTemplate>
-        </Setter>
-    </Style>
-    
     <!-- Style for the ProgressBar used as the slider track -->
     <Style Selector="Slider /template/ ProgressBar#PART_ProgressLayer">
         <Setter Property="Theme" Value="{StaticResource MaterialSliderTrackBarV2}" />
@@ -45,11 +36,39 @@
         </Style>
     </Style>
 
-    <!-- Thumb style to match the primary color -->
+    <!-- Updated Thumb style with custom design and glow effect -->
     <Style Selector="Slider /template/ Thumb#PART_SliderThumb">
-        <Setter Property="Theme" Value="{StaticResource MaterialSliderThumbV2}" />
-        <Style Selector="^ /template/ Border#PART_ThumbGrip">
-            <Setter Property="Background" Value="{DynamicResource PrimaryColor}" />
-        </Style>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid>
+                    <!-- Glow effect -->
+                    <Ellipse Name="PART_GlowEffect"
+                             Width="28" Height="28"
+                             Fill="{DynamicResource PrimaryColor}"
+                             Opacity="0">
+                        <Ellipse.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.25" Easing="CircularEaseOut" />
+                            </Transitions>
+                        </Ellipse.Transitions>
+                    </Ellipse>
+                    <!-- Original thumb design -->
+                    <Ellipse Width="12" Height="12" 
+                             Fill="White" 
+                             Stroke="{DynamicResource PrimaryColor}"
+                             StrokeThickness="2" />
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <!-- Glow effect on hover -->
+    <Style Selector="Slider /template/ Thumb#PART_SliderThumb:pointerover /template/ Ellipse#PART_GlowEffect">
+        <Setter Property="Opacity" Value="0.3" />
+    </Style>
+
+    <!-- Glow effect on press -->
+    <Style Selector="Slider /template/ Thumb#PART_SliderThumb:pressed /template/ Ellipse#PART_GlowEffect">
+        <Setter Property="Opacity" Value="0.5" />
     </Style>
 </Styles>
