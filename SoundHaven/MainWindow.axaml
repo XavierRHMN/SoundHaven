@@ -15,7 +15,8 @@
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
-        Background="Transparent">
+        Background="Transparent"
+        WindowStartupLocation="CenterScreen">
 
     <Window.Styles>
         <Style Selector="Window">

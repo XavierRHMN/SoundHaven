@@ -13,7 +13,7 @@ namespace SoundHaven.Services
     {
         public string GetApiKey(string fileName)
         {
-            var _filePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", fileName);
+            var _filePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..","ApiKeys", fileName);
 
             if (!File.Exists(_filePath))
             {
