@@ -156,6 +156,7 @@ namespace SoundHaven.ViewModels
                     Console.WriteLine($"Deleted song: {song.Title} from playlist: {DisplayedPlaylist.Name}");
                 }
                 SelectedItems.Clear();
+                IsEditMode = false;
             }
         }
 

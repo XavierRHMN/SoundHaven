@@ -43,14 +43,14 @@ namespace SoundHaven.ViewModels
         
         private void InitializeSeekTimer()
         {
-            _seekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(10) };
+            _seekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _seekTimer.Tick += UpdateSeekPosition;
             _seekTimer.Start();
         }
 
         private void InitializeDebounceTimer()
         {
-            _debounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+            _debounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _debounceTimer.Tick += (s, e) =>
             {
                 _debounceTimer.Stop();

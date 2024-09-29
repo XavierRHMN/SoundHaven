@@ -27,16 +27,10 @@
             <Setter Property="FontSize" Value="16" />
         </Style>
         
-        <Style Selector="TextBlock.ArtistName">
-            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+        <Style Selector="TextBlock.ExtraInfo">
+            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             <Setter Property="Foreground" Value="Gray" />
             <Setter Property="FontSize" Value="14" />
-        </Style>
-        
-        <Style Selector="TextBlock.ExtraInfo">
-            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
-            <Setter Property="Foreground" Value="LightGray" />
-            <Setter Property="FontSize" Value="12" />
         </Style>
     </UserControl.Styles>
 
@@ -70,22 +64,22 @@
                 <ListBox ItemsSource="{Binding SearchResults}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,3">
                                 <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60" Margin="0,0,10,0"/>
                                 <Grid Grid.Column="1" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
                                     <TextBlock Grid.Row="0" Text="{Binding Title}" Classes="TrackTitle"/>
                                     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="5">
-                                        <TextBlock Text="{Binding Artist}" Classes="ArtistName"/>
-                                        <TextBlock Text="•" Classes="ArtistName"/>
-                                        <TextBlock Text="{Binding Views, Converter={StaticResource ViewCountConverter}}" Classes="ArtistName" />
-                                        <TextBlock Text="•" Classes="ArtistName"/>
-                                        <TextBlock Text="{Binding VideoDuration, Converter={StaticResource VideoDurationConverter}}" Classes="ArtistName"/>
+                                        <TextBlock Text="{Binding Artist}" Classes="ExtraInfo"/>
+                                        <TextBlock Text="•" Classes="ExtraInfo"/>
+                                        <TextBlock Text="{Binding Views, Converter={StaticResource ViewCountConverter}, StringFormat='{}{0} views'}" Classes="ExtraInfo" />
+                                        <TextBlock Text="•" Classes="ExtraInfo"/>
+                                        <TextBlock Text="{Binding VideoDuration, Converter={StaticResource VideoDurationConverter}}" Classes="ExtraInfo"/>
                                     </StackPanel>
                                 </Grid>
                                 <Button Grid.Column="2" Content="Play" 
                                         Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).PlaySongCommand}" 
                                         CommandParameter="{Binding}" 
-                                        Margin="10,0,0,0"
+                                        Margin="10,0,10,0"
                                         Width="60"
                                         Height="30"
                                         CornerRadius="16"

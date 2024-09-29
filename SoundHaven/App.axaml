@@ -35,7 +35,7 @@
     </Application.DataTemplates>
 
     <Application.Styles>
-        <themes:MaterialTheme BaseTheme="Dark" PrimaryColor="DeepOrange"/>
+        <themes:MaterialTheme BaseTheme="Dark" PrimaryColor="Grey"/>
         <StyleInclude Source="/Resources/Styles.axaml" />
     </Application.Styles>
 

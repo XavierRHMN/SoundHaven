@@ -18,6 +18,53 @@
             <Setter Property="FontFamily"
                     Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
         </Style>
+        
+        <Style Selector="CheckBox">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Grid x:Name="RootGrid" ColumnDefinitions="Auto,*">
+                        <Border x:Name="PART_Border"
+                                Grid.Column="0"
+                                Width="20"
+                                Height="20"
+                                Background="Transparent"
+                                BorderBrush="{StaticResource PrimaryColor}"
+                                BorderThickness="2"
+                                CornerRadius="10">
+                            <Ellipse x:Name="PART_CheckGlyph"
+                                     Width="12"
+                                     Height="12"
+                                     Fill="{StaticResource PrimaryColor}"
+                                     Opacity="0" />
+                        </Border>
+                        <ContentPresenter x:Name="PART_ContentPresenter"
+                                          Grid.Column="1"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          Content="{TemplateBinding Content}"
+                                          Margin="{TemplateBinding Padding}"
+                                          RecognizesAccessKey="True"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="CheckBox:pointerover /template/ Border#PART_Border">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <SolidColorBrush Color="{StaticResource PrimaryColor}" Opacity="0.1" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style Selector="CheckBox:checked /template/ Ellipse#PART_CheckGlyph">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+
+        <Style Selector="CheckBox:indeterminate /template/ Border#PART_Border">
+            <Setter Property="Background" Value="{StaticResource PrimaryColor}" />
+        </Style>
     </UserControl.Styles>
     
     <!-- Define Custom Resources -->
@@ -69,7 +116,7 @@
 
         <!-- DataGrid for Songs -->
         <DataGrid Grid.Row="2"
-                  ItemsSource="{Binding Songs}"
+                ItemsSource="{Binding Songs}"
                   SelectedItem="{Binding SelectedSong}"
                   AutoGenerateColumns="False"
                   CanUserReorderColumns="True"
