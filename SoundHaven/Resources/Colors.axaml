@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:colors="clr-namespace:Material.Colors;assembly=Material.Colors">
     <SolidColorBrush x:Key="PlayerBarColor" Color="#060607" />
-    <SolidColorBrush x:Key="ToolBarColor" Color="#121319" />
+    <SolidColorBrush x:Key="ToolbarColor" Color="#121319" />
 
     <Color x:Key="PrimaryColor">#FF5722</Color>
     <Color x:Key="SecondaryColor">MediumPurple</Color>

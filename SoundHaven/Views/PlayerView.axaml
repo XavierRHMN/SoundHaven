@@ -70,7 +70,7 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*,*" Background="{StaticResource ToolBarColor}">
+    <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*,*" Background="{StaticResource ToolbarColor}">
         
         <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                 Background="{StaticResource PrimaryColor}"

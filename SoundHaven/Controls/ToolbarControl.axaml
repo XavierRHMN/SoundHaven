@@ -12,7 +12,7 @@
              x:DataType="viewModels:ToolbarViewModel">
 
     <!-- Root Grid for Toolbar -->
-    <StackPanel Background="{StaticResource ToolBarColor}">
+    <StackPanel Background="{StaticResource ToolbarColor}">
         <StackPanel.Styles>
             <Style Selector="TextBlock.ToolbarText">
                 <Setter Property="FontSize" Value="14" />

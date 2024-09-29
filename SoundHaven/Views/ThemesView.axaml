@@ -6,7 +6,7 @@
              x:Class="SoundHaven.Views.ThemesView"
              xmlns:vm="using:SoundHaven.ViewModels"
              x:DataType="vm:ThemesViewModel"
-             Background="{StaticResource ToolBarColor}">
+             Background="{StaticResource ToolbarColor}">
 
     <ScrollViewer>
         <ItemsControl ItemsSource="{Binding ThemeColors}">

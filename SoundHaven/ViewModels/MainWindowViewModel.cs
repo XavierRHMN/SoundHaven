@@ -65,18 +65,16 @@ namespace SoundHaven.ViewModels
 
         public MainWindowViewModel()
         {
+            var memoryCache = new MemoryCache(new MemoryCacheOptions());
             IApiKeyProvider apiKeyProvider = new ApiKeyService();
+            
             string lastFmApiKey = apiKeyProvider.GetApiKey("LASTFM_API_KEY.txt");
-            string youtubeApiKey = apiKeyProvider.GetApiKey("YT_API_KEY.txt");
-            var memoryCacheOptions = Options.Create(new MemoryCacheOptions());
-            var loggerFactory = LoggerFactory.Create(builder =>
-            {
-                builder.AddConsole();
-            });
-
-            var memoryCache = new MemoryCache(memoryCacheOptions, loggerFactory);
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var lastFmDataService = new LastFmDataService(lastFmApiKey, memoryCache, loggerFactory);
-            var youtubeApiService = new YouTubeApiService(youtubeApiKey);
+            
+            string youtubeApiKey = apiKeyProvider.GetApiKey("YT_API_KEY.txt");
+            var youtubeLoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            var youtubeApiService = new YouTubeApiService(youtubeApiKey, youtubeLoggerFactory, memoryCache);
         
             // Services
             AudioService = new AudioService();

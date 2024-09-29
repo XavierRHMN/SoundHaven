@@ -3,32 +3,90 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:SoundHaven.ViewModels"
+             xmlns:material="using:Material.Styles"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="SoundHaven.Views.SearchView"
              x:DataType="vm:SearchViewModel"
-             Background="{StaticResource ToolBarColor}">
-    <Grid RowDefinitions="Auto,*">
-        <TextBox Grid.Row="0" Text="{Binding SearchQuery, Mode=TwoWay}" 
-                 Watermark="Search for songs..." Margin="10"/>
-        <Button Grid.Row="0" Content="Search" Command="{Binding SearchCommand}"
-                HorizontalAlignment="Right" Margin="10"/>
+             Background="{StaticResource ToolbarColor}">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="PlayerColorBrush" Color="{StaticResource PrimaryColor}" />
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.Headers">
+            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="FontSize" Value="28" />
+        </Style>
         
-        <ListBox Grid.Row="1" ItemsSource="{Binding SearchResults}" Margin="10">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5">
-                        <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60" Margin="0,0,10,0"/>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                            <TextBlock Text="{Binding Artist}" Opacity="0.6"/>
-                        </StackPanel>
-                        <Button Grid.Column="2" Content="Play" 
-                                Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).PlaySongCommand}" 
-                                CommandParameter="{Binding}" 
-                                Margin="10,0,0,0"/>
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <!-- Track Title Style -->
+        <Style Selector="TextBlock.TrackTitle">
+            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="16" />
+        </Style>
+        
+        <!-- Artist Name Style -->
+        <Style Selector="TextBlock.ArtistName">
+            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+            <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Banner -->
+        <Border Grid.Row="0"
+                Background="{StaticResource PlayerColorBrush}"
+                CornerRadius="0,0,10,10" 
+                Padding="0,15">
+            <TextBlock Text="Search"
+                       HorizontalAlignment="Center"
+                       Classes="Headers"/>
+        </Border>
+
+        <!-- Existing content -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,30,0,0">
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="10,0">
+                <TextBox Grid.Column="0" Text="{Binding SearchQuery, Mode=TwoWay}" 
+                         Watermark="Search for songs..." />
+                <Button Grid.Column="1" Content="Search" Command="{Binding SearchCommand}"
+                        Margin="10,0,0,0"
+                        Width="90"
+                        Height="30"
+                        CornerRadius="16"
+                        Theme="{StaticResource MaterialOutlineButton}"
+                        Foreground="{StaticResource PrimaryColor}"
+                        BorderBrush="{StaticResource PrimaryColor}"/>
+            </Grid>
+            
+            <ScrollViewer Grid.Row="1" Margin="10">
+                <ListBox ItemsSource="{Binding SearchResults}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5">
+                                <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60" Margin="0,0,10,0"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}" Classes="TrackTitle"/>
+                                    <TextBlock Text="{Binding Artist}" Classes="ArtistName"/>
+                                </StackPanel>
+                                <Button Grid.Column="2" Content="Play" 
+                                        Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).PlaySongCommand}" 
+                                        CommandParameter="{Binding}" 
+                                        Margin="10,0,0,0"
+                                        Width="60"
+                                        Height="30"
+                                        CornerRadius="16"
+                                        Theme="{StaticResource MaterialOutlineButton}"
+                                        Foreground="{StaticResource PrimaryColor}"
+                                        BorderBrush="{StaticResource PrimaryColor}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </UserControl>

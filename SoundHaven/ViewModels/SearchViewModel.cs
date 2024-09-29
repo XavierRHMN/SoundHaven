@@ -16,13 +16,7 @@ namespace SoundHaven.ViewModels
         public string SearchQuery
         {
             get => _searchQuery;
-            set
-            {
-                if (SetProperty(ref _searchQuery, value))
-                {
-                    SearchCommand.Execute(null);
-                }
-            }
+            set => SetProperty(ref _searchQuery, value);
         }
 
         public ObservableCollection<Song> SearchResults
@@ -39,11 +33,11 @@ namespace SoundHaven.ViewModels
             _youTubeApiService = youTubeApiService;
             SearchResults = new ObservableCollection<Song>();
 
-            SearchCommand = new RelayCommand(async () => await ExecuteSearch());
+            SearchCommand = new RelayCommand(ExecuteSearch);
             PlaySongCommand = new RelayCommand<Song>(ExecutePlaySong);
         }
 
-        private async Task ExecuteSearch()
+        private async void ExecuteSearch()
         {
             if (string.IsNullOrWhiteSpace(SearchQuery)) return;
 

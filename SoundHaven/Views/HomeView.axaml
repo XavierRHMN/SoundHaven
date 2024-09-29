@@ -42,7 +42,7 @@
         </Style>
     </UserControl.Styles>
     
-    <Grid Background="{StaticResource ToolBarColor}">
+    <Grid Background="{StaticResource ToolbarColor}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Banner row -->
             <RowDefinition Height="*"/>    <!-- Content row -->
