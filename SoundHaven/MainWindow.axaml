@@ -8,7 +8,7 @@
         d:DesignWidth="1500" d:DesignHeight="600"
         x:Class="SoundHaven.MainWindow"
         x:DataType="viewModels:MainWindowViewModel"
-        Icon="/Assets/Icons/cloud_icon.ico"
+        Icon="/Assets/Icons/SoundHaven.ico"
         Title="SoundHaven"
         Width="1500" Height="600"
         ExtendClientAreaToDecorationsHint="True"
@@ -66,7 +66,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Image Grid.Column="0" Source="/Assets/Icons/cloud_icon.ico" Width="20" Height="20" Margin="5" />
+            <Image Grid.Column="0" Source="/Assets/Icons/SoundHaven.png" Margin="5" />
             <TextBlock Grid.Column="1" Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}" 
                        VerticalAlignment="Center" Margin="5" Foreground="White" />
             
