@@ -75,11 +75,9 @@ namespace SoundHaven.ViewModels
         {
             if (_playbackViewModel.CurrentSong != null && _playbackViewModel.CurrentSong.VideoId != null && !_debounceTimer.IsEnabled && !_playbackViewModel.IsTransitioningTracks)
             {
-                Console.WriteLine(_playbackViewModel.CurrentSong.VideoId);
                 _isUpdatingFromTimer = true;
                 var currentTime = _audioService.CurrentPosition;
                 SeekPosition = currentTime.TotalSeconds;
-                Console.WriteLine(SeekPosition);
                 _isUpdatingFromTimer = false;
             }
             else if (_playbackViewModel.CurrentSong != null && !_debounceTimer.IsEnabled && !_playbackViewModel.IsTransitioningTracks)
@@ -93,7 +91,7 @@ namespace SoundHaven.ViewModels
 
         private void OnSeekPositionChanged(double newPosition)
         {
-            Console.WriteLine($"OnSeekPositionChanged: {newPosition}");
+            // Console.WriteLine($"OnSeekPositionChanged: {newPosition}");
             _audioService.Seek(TimeSpan.FromSeconds(newPosition));
         }
 

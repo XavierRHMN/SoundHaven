@@ -150,22 +150,6 @@ namespace SoundHaven.Services
                         {
                             year = currentDate.Year - number;
                         }
-                        else if (unit.StartsWith("month"))
-                        {
-                            var date = currentDate.AddMonths(-number);
-                            year = date.Year;
-                        }
-                        else if (unit.StartsWith("week"))
-                        {
-                            var date = currentDate.AddDays(-number * 7);
-                            year = date.Year;
-                        }
-                        else if (unit.StartsWith("day"))
-                        {
-                            var date = currentDate.AddDays(-number);
-                            year = date.Year;
-                        }
-                        // Additional units like "hour", "minute", "second" can be added if needed
                     }
                 }
             }

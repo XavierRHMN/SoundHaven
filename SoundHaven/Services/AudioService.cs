@@ -205,7 +205,7 @@ namespace SoundHaven.Services
 
         private void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
-            if ((_audioFileReader != null && _audioFileReader.Position + 1 >= _audioFileReader.Length) || (_bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering))
+            if ((_audioFileReader != null && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds) || (_bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering))
             {
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
@@ -321,7 +321,7 @@ namespace SoundHaven.Services
         {
             if (_bufferedWaveProvider != null)
             {
-                Console.WriteLine($"Buffer status: {_bufferedWaveProvider.BufferedBytes} / {_bufferedWaveProvider.BufferLength} bytes");
+                // Console.WriteLine($"Buffer status: {_bufferedWaveProvider.BufferedBytes} / {_bufferedWaveProvider.BufferLength} bytes");
 
                 var bufferThreshold = _bufferedWaveProvider.WaveFormat.AverageBytesPerSecond * 2; // 2 seconds of audio
                 if (_bufferedWaveProvider.BufferedBytes < bufferThreshold && !_isBuffering)
