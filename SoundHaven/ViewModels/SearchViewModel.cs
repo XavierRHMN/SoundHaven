@@ -96,7 +96,8 @@ namespace SoundHaven.ViewModels
                         ThumbnailUrl = result.ThumbnailUrl,
                         ChannelTitle = result.ChannelTitle,
                         Views = result.ViewCount,
-                        VideoDuration = result.Duration
+                        VideoDuration = result.Duration,
+                        Year = result.Year
                     };
                     await song.LoadYouTubeThumbnail();
                     SearchResults.Add(song);

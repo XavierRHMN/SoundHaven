@@ -19,7 +19,7 @@ namespace SoundHaven.Models
         public TimeSpan Duration { get; set; }
         public string? FilePath { get; set; }
         public string? Genre { get; set; }
-        public int Year { get; set; }
+        public int? Year { get; set; }
         public int PlayCount { get; set; }
 
         private double _length;

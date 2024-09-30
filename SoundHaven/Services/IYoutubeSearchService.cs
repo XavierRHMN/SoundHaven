@@ -112,8 +112,10 @@ namespace SoundHaven.Services
             var views = videoRenderer?["shortViewCountText"]?["simpleText"]?.ToString();
             var channel = videoRenderer?["ownerText"]?["runs"]?[0]?["text"]?.ToString();
             var thumbnailUrl = videoRenderer?["thumbnail"]?["thumbnails"]?[0]?["url"]?.ToString();
+            var publishedTimeText = videoRenderer?["publishedTimeText"]?["simpleText"]?.ToString();
+            var year = ExtractYear(publishedTimeText);
 
-            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(url) || string.IsNullOrEmpty(length) || string.IsNullOrEmpty(channel) || string.IsNullOrEmpty(views))
+            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(url) || string.IsNullOrEmpty(length) || string.IsNullOrEmpty(channel) || string.IsNullOrEmpty(views) || year == null)
             {
                 return null;
             }
@@ -125,8 +127,49 @@ namespace SoundHaven.Services
                 Duration = length,
                 ChannelTitle = channel,
                 ViewCount = views,
-                ThumbnailUrl = thumbnailUrl
+                ThumbnailUrl = thumbnailUrl,
+                Year = year
             };
+        }
+
+        private int? ExtractYear(string? publishedTimeText)
+        {
+            int? year = null;
+            if (!string.IsNullOrEmpty(publishedTimeText))
+            {
+                // Parse the publishedTimeText to estimate the year
+                var timeParts = publishedTimeText.Split(' ');
+                if (timeParts.Length >= 2)
+                {
+                    if (int.TryParse(timeParts[0], out int number))
+                    {
+                        var unit = timeParts[1].ToLower();
+                        var currentDate = DateTime.Now;
+
+                        if (unit.StartsWith("year"))
+                        {
+                            year = currentDate.Year - number;
+                        }
+                        else if (unit.StartsWith("month"))
+                        {
+                            var date = currentDate.AddMonths(-number);
+                            year = date.Year;
+                        }
+                        else if (unit.StartsWith("week"))
+                        {
+                            var date = currentDate.AddDays(-number * 7);
+                            year = date.Year;
+                        }
+                        else if (unit.StartsWith("day"))
+                        {
+                            var date = currentDate.AddDays(-number);
+                            year = date.Year;
+                        }
+                        // Additional units like "hour", "minute", "second" can be added if needed
+                    }
+                }
+            }
+            return year;
         }
 
         private string GetSafeFileName(string fileName)
@@ -144,5 +187,6 @@ namespace SoundHaven.Services
         public string VideoId { get; set; }
         public string ViewCount { get; set; }
         public string Duration { get; set; }
+        public int? Year { get; set; }
     }
 }
