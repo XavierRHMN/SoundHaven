@@ -80,9 +80,12 @@
                              Height="80"
                              Foreground="{StaticResource PrimaryColor}"/>
 
+
                 <ScrollViewer IsVisible="{Binding !IsLoading}" Margin="10" Theme="{StaticResource MaterialModernScrollViewer}">
-                    <ItemsControl ItemsSource="{Binding SearchResults}">
-                        <ItemsControl.ItemTemplate>
+                    <ListBox ItemsSource="{Binding SearchResults}"
+                             SelectedItem="{Binding SelectedSong}"
+                             Background="Transparent">
+                        <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,3">
                                     <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60"
@@ -130,8 +133,8 @@
                                     </Grid>
                                 </Grid>
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </ScrollViewer>
             </Grid>
         </Grid>
