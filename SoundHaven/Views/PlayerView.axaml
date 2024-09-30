@@ -87,7 +87,7 @@
         <Grid Grid.Row="1" MinWidth="900">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="800" />
-                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" MinWidth="40" />
             </Grid.ColumnDefinitions>
 
@@ -97,7 +97,7 @@
                         x:Name="AlbumCoverBorder"
                         CornerRadius="10" ClipToBounds="True"
                         HorizontalAlignment="Center"
-                        Margin="20,20,20,0">
+                        Margin="20,20,10,0">
                     <Image Source="{Binding PlayerViewSong.Artwork}" Stretch="UniformToFill" />
                 </Border>
                 <TextBlock Grid.Row="1"
@@ -113,14 +113,40 @@
 
             <!-- GridSplitter -->
             <GridSplitter Grid.Column="1"
-                          Width="10"
-                          Background="Transparent"
+                          Width="30"
                           ResizeBehavior="PreviousAndNext"
                           ResizeDirection="Columns"
-                          Margin="0 20" />
+                          Background="Transparent">
+                <GridSplitter.Template>
+                    <ControlTemplate>
+                        <Grid Background="{TemplateBinding Background}">
+                            <Rectangle x:Name="SplitterLine"
+                                       Width="1" 
+                                       Fill="White" 
+                                       Opacity="0" 
+                                       VerticalAlignment="Stretch"
+                                       HorizontalAlignment="Center" />
+                            <Svg x:Name="SplitterIcon"
+                                 Path="avares://SoundHaven/Assets/Icons/splitter.svg"
+                                 Width="30" Height="30"
+                                 VerticalAlignment="Center"
+                                 HorizontalAlignment="Center"
+                                 Opacity="0" />
+                        </Grid>
+                    </ControlTemplate>
+                </GridSplitter.Template>
+                <GridSplitter.Styles>
+                    <Style Selector="GridSplitter:pointerover /template/ Rectangle#SplitterLine">
+                        <Setter Property="Opacity" Value="0.1" />
+                    </Style>
+                    <Style Selector="GridSplitter:pointerover /template/ Svg#SplitterIcon">
+                        <Setter Property="Opacity" Value="1" />
+                    </Style>
+                </GridSplitter.Styles>
+            </GridSplitter>
 
             <!-- Right Column: Up Next List -->
-            <Grid Grid.Column="2" Margin="20,0">
+            <Grid Grid.Column="2" Margin="0,0 20 0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
