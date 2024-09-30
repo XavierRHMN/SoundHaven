@@ -2,6 +2,7 @@
 using SoundHaven.Models;
 using SoundHaven.Services;
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,12 +17,10 @@ namespace SoundHaven.ViewModels
         public RelayCommand PreviousCommand { get; }
     }
 
-
     public class PlaybackViewModel : ViewModelBase, IPlaybackControlViewModel
     {
         private RepeatViewModel _repeatViewModel;
         public event EventHandler SeekPositionReset;
-
 
         public enum Direction
         {
@@ -29,8 +28,7 @@ namespace SoundHaven.ViewModels
             Next = 1
         }
 
-
-        private AudioService _audioService { get; set; }
+        private AudioService _audioService;
 
         private bool _isShuffleEnabled;
         public bool IsShuffleEnabled
@@ -46,21 +44,7 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        private bool _isPlaying;
-        public bool IsPlaying
-        {
-            get => _isPlaying;
-            set
-            {
-                if (_isPlaying != value)
-                {
-                    _isPlaying = value;
-                    OnPropertyChanged(nameof(IsPlaying));
-                    PlayCommand.RaiseCanExecuteChanged();
-                    PauseCommand.RaiseCanExecuteChanged();
-                }
-            }
-        }
+        public bool IsPlaying => _audioService.IsPlaying();
 
         private Song _currentSong;
         public Song CurrentSong
@@ -79,7 +63,6 @@ namespace SoundHaven.ViewModels
                     {
                         PlayFromBeginning(value);
                     }
-                    IsPlaying = true;
                 }
             }
         }
@@ -108,6 +91,7 @@ namespace SoundHaven.ViewModels
         public PlaybackViewModel(AudioService audioService, RepeatViewModel repeatViewModel)
         {
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
+            _audioService.PlaybackStateChanged += OnPlaybackStateChanged;
             _audioService.TrackEnded += OnTrackEndedRobust;
             _repeatViewModel = repeatViewModel;
 
@@ -132,7 +116,7 @@ namespace SoundHaven.ViewModels
             return CurrentSong != null && IsPlaying;
         }
 
-        private void Play()
+        public void Play()
         {
             if (CurrentSong != null)
             {
@@ -144,18 +128,15 @@ namespace SoundHaven.ViewModels
                 {
                     _audioService.Resume();
                 }
-                IsPlaying = true;
             }
             else if (CurrentPlaylist?.Songs.Count > 0)
             {
                 CurrentSong = CurrentPlaylist.Songs[0];
                 PlayFromBeginning(CurrentSong);
-                IsPlaying = true;
             }
             else
             {
                 Console.WriteLine("No song or playlist available to play.");
-                IsPlaying = false;
             }
         }
 
@@ -164,7 +145,6 @@ namespace SoundHaven.ViewModels
             if (_audioService.IsPlaying())
             {
                 _audioService.Pause();
-                IsPlaying = false;
             }
         }
 
@@ -175,14 +155,12 @@ namespace SoundHaven.ViewModels
             if (CurrentPlaylist == null || CurrentPlaylist.Songs.Count is 0 or 1)
             {
                 Console.WriteLine("The playlist is empty or there's no next song");
-                IsPlaying = false;
                 return;
             }
 
             Song? nextSong = null;
 
             SeekPositionReset?.Invoke(this, EventArgs.Empty);
-
 
             if (IsShuffleEnabled)
             {
@@ -204,12 +182,10 @@ namespace SoundHaven.ViewModels
             {
                 CurrentSong = nextSong;
                 PlayFromBeginning(nextSong);
-                IsPlaying = true;
             }
             else
             {
                 Console.WriteLine("No next song available.");
-                IsPlaying = false;
             }
         }
 
@@ -234,7 +210,6 @@ namespace SoundHaven.ViewModels
                     CurrentSong = previousSong;
                     PlayFromBeginning(previousSong);
                 }
-                IsPlaying = true;
             }
             else
             {
@@ -242,7 +217,6 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        // In PlaybackViewModel.cs
         public async Task PlayFromBeginning(Song song)
         {
             if (song == null || string.IsNullOrEmpty(song.FilePath))
@@ -252,7 +226,20 @@ namespace SoundHaven.ViewModels
 
             await _audioService.StartAsync(song.FilePath);
         }
-
+        
+        public void AddToUpNext(Song song)
+        {
+            if (CurrentPlaylist == null)
+            {
+                CurrentPlaylist = new Playlist { Name = "Streaming from YouTube", Songs = new ObservableCollection<Song>() };
+            }
+    
+            if (!CurrentPlaylist.Songs.Contains(song))
+            {
+                CurrentPlaylist.Songs.Add(song);
+                OnPropertyChanged(nameof(CurrentPlaylist));
+            }
+        }
 
         private void OnTrackEndedRobust(object sender, EventArgs e)
         {
@@ -271,9 +258,17 @@ namespace SoundHaven.ViewModels
             }
         }
 
+        private void OnPlaybackStateChanged(object sender, EventArgs e)
+        {
+            OnPropertyChanged(nameof(IsPlaying));
+            PlayCommand.RaiseCanExecuteChanged();
+            PauseCommand.RaiseCanExecuteChanged();
+        }
+
         public override void Dispose()
         {
             _audioService.TrackEnded -= OnTrackEndedRobust;
+            _audioService.PlaybackStateChanged -= OnPlaybackStateChanged;
         }
     }
 }

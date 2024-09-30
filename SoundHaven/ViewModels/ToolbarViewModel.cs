@@ -173,6 +173,7 @@ namespace SoundHaven.ViewModels
         private void DeselectCurrentPlaylist()
         {
             ToolbarSelectedPlaylist = null;
+            _searchViewModel.SelectedSong = null;
         }
         
         private void SwitchToViewModel(ViewModelBase viewModel)

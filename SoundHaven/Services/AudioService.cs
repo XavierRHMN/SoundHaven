@@ -49,6 +49,7 @@ namespace SoundHaven.Services
         }
 
         public event EventHandler TrackEnded;
+        public event EventHandler PlaybackStateChanged;
 
         public TimeSpan CurrentPosition => _currentPosition;
 
@@ -144,6 +145,7 @@ namespace SoundHaven.Services
                 if (_waveOutDevice != null && (_audioFileReader != null || _bufferedWaveProvider != null))
                 {
                     _waveOutDevice.Play();
+                    PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
                     if (isYouTubeVideo)
                     {
                         StartBufferStatusTimer();
@@ -157,7 +159,6 @@ namespace SoundHaven.Services
                 throw;
             }
         }
-
 
         public void Seek(TimeSpan position)
         {
@@ -183,14 +184,14 @@ namespace SoundHaven.Services
             }
         }
 
-
         public void Pause()
         {
             if (_waveOutDevice?.PlaybackState == PlaybackState.Playing)
             {
                 _waveOutDevice.Pause();
                 _pauseStartTime = DateTime.Now;
-                IsPaused = true; // Notify that playback is paused
+                IsPaused = true;
+                PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -200,7 +201,8 @@ namespace SoundHaven.Services
             {
                 _waveOutDevice.Play();
                 _accumulatedPauseDuration += DateTime.Now - _pauseStartTime;
-                IsPaused = false; // Notify that playback has resumed
+                IsPaused = false;
+                PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
             }
         }
         
@@ -228,6 +230,8 @@ namespace SoundHaven.Services
                 _totalDuration = TimeSpan.Zero;
                 OnPropertyChanged(nameof(CurrentPosition));
             }
+
+            PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public void Dispose()
@@ -248,6 +252,7 @@ namespace SoundHaven.Services
             {
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
+            PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private async Task StartYouTubeStreamAsync(string videoId, TimeSpan startingPosition)
@@ -278,7 +283,6 @@ namespace SoundHaven.Services
 
             _ = Task.Run(() => BufferYouTubeStreamAsync(streamUrl, startingPosition, _bufferingCancellationTokenSource.Token));
         }
-
 
         private async Task BufferYouTubeStreamAsync(string streamUrl, TimeSpan startingPosition, CancellationToken cancellationToken)
         {
@@ -414,7 +418,6 @@ namespace SoundHaven.Services
                 }
             }
         }
-
 
         private void StartPositionLogging()
         {

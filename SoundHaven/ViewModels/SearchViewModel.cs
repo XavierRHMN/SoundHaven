@@ -143,7 +143,9 @@ namespace SoundHaven.ViewModels
 
                 await _audioService.StartAsync(source, isYouTubeVideo);
                 _playbackViewModel.CurrentSong = song;
-                OnPropertyChanged(nameof(_playbackViewModel.CurrentSong));
+                _playbackViewModel.CurrentPlaylist = new Playlist();
+                _playbackViewModel.CurrentPlaylist.Name = "Streaming from YouTube";
+                _playbackViewModel.AddToUpNext(song);  // Add this line
             }
             catch (Exception ex)
             {
