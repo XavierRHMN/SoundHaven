@@ -376,22 +376,34 @@ namespace SoundHaven.Services
                     // Pause playback
                     _waveOutDevice.Pause();
 
-                    // Adjust current position back by 0.5 seconds
-                    TimeSpan newPosition = _currentPosition - TimeSpan.FromSeconds(0.5);
-                    if (newPosition < TimeSpan.Zero)
+                    // Check if we're near the end of the track
+                    TimeSpan remainingTime = _totalDuration - _currentPosition;
+                    if (remainingTime <= TimeSpan.FromSeconds(2))
                     {
-                        newPosition = TimeSpan.Zero;
+                        // We're near the end, so don't seek back
+                        Console.WriteLine("Near end of track. Not seeking back.");
+                        _waveOutDevice.Play();
+                        _isBuffering = false;
                     }
+                    else
+                    {
+                        // Adjust current position back by 0.5 seconds
+                        TimeSpan newPosition = _currentPosition - TimeSpan.FromSeconds(0.5);
+                        if (newPosition < TimeSpan.Zero)
+                        {
+                            newPosition = TimeSpan.Zero;
+                        }
 
-                    // Stop current playback and buffering without resetting position
-                    Stop(resetPosition: false);
+                        // Stop current playback and buffering without resetting position
+                        Stop(resetPosition: false);
 
-                    // Update start position and current position
-                    _startPosition = newPosition;
-                    _currentPosition = newPosition;
+                        // Update start position and current position
+                        _startPosition = newPosition;
+                        _currentPosition = newPosition;
 
-                    // Start playback from the new position
-                    _ = StartAsync(_currentSource, true, newPosition);
+                        // Start playback from the new position
+                        _ = StartAsync(_currentSource, true, newPosition);
+                    }
                 }
                 else if (_bufferedWaveProvider.BufferedBytes > _bufferedWaveProvider.BufferLength * 0.5 && _isBuffering)
                 {
