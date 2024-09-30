@@ -20,6 +20,7 @@ namespace SoundHaven.Services
         Task<Song> DownloadAudioAsync(string videoId, IProgress<double> progress);
     }
 
+
     public class YouTubeDownloadService : IYouTubeDownloadService
     {
         private readonly YoutubeClient _youtubeClient;
@@ -99,7 +100,7 @@ namespace SoundHaven.Services
                 // Set album to channel name
                 tagFile.Tag.Album = video.Author.ChannelTitle;
                 tagFile.Tag.Year = (uint)video.UploadDate.Year;
-                
+
                 // Download and set thumbnail
                 var thumbnailUrl = video.Thumbnails.OrderByDescending(t => t.Resolution.Area).FirstOrDefault()?.Url;
                 if (!string.IsNullOrEmpty(thumbnailUrl))

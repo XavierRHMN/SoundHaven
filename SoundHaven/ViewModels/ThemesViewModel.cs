@@ -61,7 +61,7 @@ namespace SoundHaven.ViewModels
             Color.Parse("#6D4C41"), // Brown (600)
             Color.Parse("#757575"), // Grey (600)
             Color.Parse("#546E7A"), // Blue Grey (600)
-            
+
             Color.Parse("#FFFFFF"), // White
         };
 

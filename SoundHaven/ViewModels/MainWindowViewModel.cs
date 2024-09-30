@@ -80,7 +80,7 @@ namespace SoundHaven.ViewModels
             AudioService = new AudioService();
             YouTubeDownloadService = new YouTubeDownloadService();
             YoutubeSearchService = new YoutubeSearchService(youtubeLoggerFactory, memoryCache);
-            
+
             // Stores
             PlaylistStore = new PlaylistStore();
             SongStore = new SongStore();

@@ -56,7 +56,7 @@
                          Watermark="Search for songs...">
                     <TextBox.KeyBindings>
                         <KeyBinding Gesture="Enter"
-                                    Command="{Binding SearchCommand}"/>
+                                    Command="{Binding SearchCommand}" />
                     </TextBox.KeyBindings>
                 </TextBox>
                 <Button Grid.Column="1" Content="Search" Command="{Binding SearchCommand}"
@@ -71,17 +71,18 @@
 
             <Grid Grid.Row="1">
                 <!-- New ProgressBar for loading indication -->
-                <ProgressBar Classes="circular" 
+                <ProgressBar Classes="circular"
                              IsVisible="{Binding IsLoading}"
                              IsIndeterminate="True"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"
-                             Width="80" 
+                             Width="80"
                              Height="80"
-                             Foreground="{StaticResource PrimaryColor}"/>
+                             Foreground="{StaticResource PrimaryColor}" />
 
 
-                <ScrollViewer IsVisible="{Binding !IsLoading}" Margin="10" Theme="{StaticResource MaterialModernScrollViewer}">
+                <ScrollViewer IsVisible="{Binding !IsLoading}" Margin="10"
+                              Theme="{StaticResource MaterialModernScrollViewer}">
                     <ListBox ItemsSource="{Binding SearchResults}"
                              SelectedItem="{Binding SelectedSong}"
                              Background="Transparent">
@@ -105,29 +106,31 @@
                                         </StackPanel>
                                     </Grid>
                                     <Grid Grid.Column="2" Width="40" Height="40" Margin="0 0 20 0">
-                                        <Button Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
-                                                CommandParameter="{Binding}"
-                                                IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.NotDownloaded}}"
-                                                Background="Transparent"
-                                                Width="40" Height="40"
-                                                Padding="5"
-                                                CornerRadius="20">
-                                            <Svg Path="avares://SoundHaven/Assets/Icons/download.svg" 
-                                                 Stretch="Uniform"/>
+                                        <Button
+                                            Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
+                                            CommandParameter="{Binding}"
+                                            IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.NotDownloaded}}"
+                                            Background="Transparent"
+                                            Width="40" Height="40"
+                                            Padding="5"
+                                            CornerRadius="20">
+                                            <Svg Path="avares://SoundHaven/Assets/Icons/download.svg"
+                                                 Stretch="Uniform" />
                                         </Button>
-                                        <ProgressBar Classes="circular" 
+                                        <ProgressBar Classes="circular"
                                                      IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloading}}"
-                                                     Value="{Binding DownloadProgress}" 
+                                                     Value="{Binding DownloadProgress}"
                                                      ShowProgressText="True"
                                                      Foreground="White"
                                                      Width="30" Height="30" />
-                                        <Button IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
-                                                Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).OpenFolderCommand}"
-                                                CommandParameter="{Binding}"
-                                                Background="Transparent"
-                                                Width="40" Height="40"
-                                                Padding="5"
-                                                CornerRadius="20">
+                                        <Button
+                                            IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
+                                            Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).OpenFolderCommand}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            Width="40" Height="40"
+                                            Padding="5"
+                                            CornerRadius="20">
                                             <Svg Path="avares://SoundHaven/Assets/Icons/folder.svg" Stretch="Uniform" />
                                         </Button>
                                     </Grid>

@@ -16,6 +16,7 @@ namespace SoundHaven.Services
         Task<IEnumerable<YouTubeVideoInfo>> SearchVideos(string query);
     }
 
+
     public class YoutubeSearchService : IYoutubeSearchService
     {
         private readonly ILogger<YoutubeSearchService> _logger;
@@ -112,8 +113,7 @@ namespace SoundHaven.Services
             var channel = videoRenderer?["ownerText"]?["runs"]?[0]?["text"]?.ToString();
             var thumbnailUrl = videoRenderer?["thumbnail"]?["thumbnails"]?[0]?["url"]?.ToString();
 
-            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(url) || string.IsNullOrEmpty(length) || 
-                string.IsNullOrEmpty(channel) || string.IsNullOrEmpty(views))
+            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(url) || string.IsNullOrEmpty(length) || string.IsNullOrEmpty(channel) || string.IsNullOrEmpty(views))
             {
                 return null;
             }
@@ -129,11 +129,12 @@ namespace SoundHaven.Services
             };
         }
 
-            private string GetSafeFileName(string fileName)
-            {
-                return string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
-            }
+        private string GetSafeFileName(string fileName)
+        {
+            return string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
         }
+    }
+
 
     public class YouTubeVideoInfo
     {

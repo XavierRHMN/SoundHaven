@@ -55,8 +55,7 @@ namespace SoundHaven.Services
 
         private void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
-            if ((_audioFileReader != null && _audioFileReader.Position >= _audioFileReader.Length) ||
-                (_bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering))
+            if ((_audioFileReader != null && _audioFileReader.Position >= _audioFileReader.Length) || (_bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering))
             {
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
@@ -107,7 +106,7 @@ namespace SoundHaven.Services
                 throw;
             }
         }
-        
+
         private void StartBufferStatusTimer()
         {
             _bufferStatusTimer?.Dispose();
@@ -218,7 +217,7 @@ namespace SoundHaven.Services
                 }
             }
         }
-        
+
         private void StartPositionLogging()
         {
             _positionLogTimer?.Dispose();
@@ -243,7 +242,7 @@ namespace SoundHaven.Services
             }
             Console.WriteLine($"Current position: {_currentPosition}");
         }
-        
+
         private void StartLocalFile(string filePath)
         {
             _audioFileReader = new AudioFileReader(filePath);
@@ -301,7 +300,7 @@ namespace SoundHaven.Services
         {
             return _totalDuration.TotalSeconds;
         }
-        
+
         public void SetVolume(float volume)
         {
             _audioVolume = volume;

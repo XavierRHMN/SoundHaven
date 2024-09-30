@@ -13,7 +13,7 @@ namespace SoundHaven.Stores
             get => _playlists;
             set => _playlists = value;
         }
-        
+
         public PlaylistStore()
         {
             Playlists = new ObservableCollection<Playlist>();

@@ -15,7 +15,7 @@ namespace SoundHaven.ViewModels
         private DispatcherTimer _debounceTimer;
         private double _seekPosition;
         private bool _isUpdatingFromTimer;
-        public double MaximumSeekValue => _audioService.GetTotalSeconds();
+        public double MaximumSeekValue => _audioService.TotalDuration.TotalSeconds;
 
         public SeekSliderViewModel(AudioService audioService, PlaybackViewModel playbackViewModel)
         {
@@ -60,7 +60,7 @@ namespace SoundHaven.ViewModels
 
         private void UpdateSeekPosition(object sender, EventArgs e)
         {
-            if (_playbackViewModel.CurrentSong != null  && _playbackViewModel.CurrentSong.VideoId != null && !_debounceTimer.IsEnabled && !_playbackViewModel.IsTransitioningTracks)
+            if (_playbackViewModel.CurrentSong != null && _playbackViewModel.CurrentSong.VideoId != null && !_debounceTimer.IsEnabled && !_playbackViewModel.IsTransitioningTracks)
             {
                 Console.WriteLine(_playbackViewModel.CurrentSong.VideoId);
                 _isUpdatingFromTimer = true;
@@ -68,7 +68,7 @@ namespace SoundHaven.ViewModels
                 SeekPosition = currentTime.TotalSeconds;
                 Console.WriteLine(SeekPosition);
                 _isUpdatingFromTimer = false;
-            } 
+            }
             else if (_playbackViewModel.CurrentSong != null && !_debounceTimer.IsEnabled && !_playbackViewModel.IsTransitioningTracks)
             {
                 _isUpdatingFromTimer = true;

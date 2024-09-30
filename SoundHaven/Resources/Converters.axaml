@@ -9,5 +9,5 @@
     <converters:ImageConverter x:Key="ImageConverter" />
     <converters:RepeatModeToOpacityConverter x:Key="RepeatModeToOpacityConverter" />
     <converters:RepeatModeToVisibilityConverter x:Key="RepeatModeToVisibilityConverter" />
-    <converters:EnumEqualityConverter x:Key="EnumEqualityConverter"/>
+    <converters:EnumEqualityConverter x:Key="EnumEqualityConverter" />
 </ResourceDictionary>
