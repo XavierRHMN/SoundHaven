@@ -82,8 +82,6 @@ namespace SoundHaven.Services
         }
 
         public bool IsStopped() => _waveOutDevice?.PlaybackState == PlaybackState.Stopped;
-
-        public float GetCurrentVolume() => _audioVolume;
         
         public async Task StartAsync(string source, bool isYouTubeVideo = false)
         {
@@ -157,15 +155,6 @@ namespace SoundHaven.Services
             _currentPosition = TimeSpan.Zero;
             _totalDuration = TimeSpan.Zero;
             _isYouTubeStream = false;
-        }
-
-        public void SetVolume(float volume)
-        {
-            _audioVolume = volume;
-            if (_volumeProvider != null)
-            {
-                _volumeProvider.Volume = _audioVolume;
-            }
         }
 
         public void Dispose()
@@ -277,8 +266,14 @@ namespace SoundHaven.Services
         private void StartLocalFile(string filePath)
         {
             _audioFileReader = new AudioFileReader(filePath);
-            InitializeAudio(_audioFileReader);
-            TotalDuration = _audioFileReader.TotalTime;
+            var silenceProvider = new SilenceProvider(_audioFileReader.WaveFormat).ToSampleProvider();
+            var silenceDuration = TimeSpan.FromSeconds(0.5);
+
+            var silence = new OffsetSampleProvider(silenceProvider) { Take = silenceDuration };
+
+            var composite = new ConcatenatingSampleProvider(new[] { silence, _audioFileReader.ToSampleProvider() });
+            InitializeAudio(composite.ToWaveProvider());
+            TotalDuration = _audioFileReader.TotalTime + silenceDuration;
         }
 
         private void InitializeAudio(IWaveProvider waveProvider)
