@@ -97,7 +97,7 @@ namespace SoundHaven.ViewModels
             ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
-            SongInfoViewModel = new SongInfoViewModel(PlaybackViewModel);
+            SongInfoViewModel = new SongInfoViewModel(PlaybackViewModel, AudioService);
 
             CurrentViewModel = HomeViewModel;
 

@@ -1,6 +1,7 @@
 ﻿using Avalonia.Media;
 using Avalonia.Threading;
 using SoundHaven.Models;
+using SoundHaven.Services;
 using System;
 using System.ComponentModel;
 using System.Globalization;
@@ -16,6 +17,7 @@ namespace SoundHaven.ViewModels
         private double _titleScrollPosition2;
         private double _textWidth;
         private DispatcherTimer _scrollTimer;
+        private AudioService _audioService;
 
         public Song CurrentSong
         {
@@ -37,6 +39,20 @@ namespace SoundHaven.ViewModels
         }
 
         public bool CurrentSongExists => CurrentSong != null;
+
+        private bool _isSeekBuffering;
+        public bool IsSeekBuffering
+        {
+            get => _isSeekBuffering;
+            set
+            {
+                if (_isSeekBuffering != value)
+                {
+                    _isSeekBuffering = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public double TitleScrollPosition1
         {
@@ -70,14 +86,14 @@ namespace SoundHaven.ViewModels
 
         public double ControlWidth { get; set; } = 200 * 2; // Width of the Song Info Control
 
-        public SongInfoViewModel(PlaybackViewModel playbackViewModel)
+        public SongInfoViewModel(PlaybackViewModel playbackViewModel, AudioService audioService)
         {
             _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
+            _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
             _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
-
-            // Initialize with the current song from PlaybackViewModel
+            _audioService.PropertyChanged += AudioService_PropertyChanged;
+            
             CurrentSong = _playbackViewModel.CurrentSong;
-
             InitializeScrollTimer();
         }
 
@@ -86,6 +102,14 @@ namespace SoundHaven.ViewModels
             if (e.PropertyName == nameof(PlaybackViewModel.CurrentSong))
             {
                 CurrentSong = _playbackViewModel.CurrentSong;
+            }
+        }
+
+        private void AudioService_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AudioService.IsSeekBuffering))
+            {
+                IsSeekBuffering = _audioService.IsSeekBuffering;
             }
         }
 

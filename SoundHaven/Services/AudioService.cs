@@ -67,6 +67,20 @@ namespace SoundHaven.Services
                 }
             }
         }
+        
+        private bool _isSeekBuffering;
+        public bool IsSeekBuffering
+        {
+            get => _isSeekBuffering;
+            private set
+            {
+                if (_isSeekBuffering != value)
+                {
+                    _isSeekBuffering = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public AudioService()
         {
@@ -258,6 +272,8 @@ namespace SoundHaven.Services
                 };
 
                 ffmpegProcess.Start();
+                
+                IsSeekBuffering = false;
 
                 byte[] buffer = new byte[BufferSize];
                 int bytesRead;
@@ -284,6 +300,7 @@ namespace SoundHaven.Services
             }
             finally
             {
+                IsSeekBuffering = true;
                 _isBuffering = false;
             }
         }
@@ -321,7 +338,7 @@ namespace SoundHaven.Services
         {
             if (_bufferedWaveProvider != null)
             {
-                // Console.WriteLine($"Buffer status: {_bufferedWaveProvider.BufferedBytes} / {_bufferedWaveProvider.BufferLength} bytes");
+                Console.WriteLine($"Buffer status: {_bufferedWaveProvider.BufferedBytes} / {_bufferedWaveProvider.BufferLength} bytes");
 
                 var bufferThreshold = _bufferedWaveProvider.WaveFormat.AverageBytesPerSecond * 2; // 2 seconds of audio
                 if (_bufferedWaveProvider.BufferedBytes < bufferThreshold && !_isBuffering)

@@ -5,14 +5,23 @@
              x:DataType="viewModels:SongInfoViewModel">
 
     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-        <!-- Album Cover Image -->
+        <!-- Album Cover Image or Buffering Indicator -->
         <Border CornerRadius="5"
                 ClipToBounds="True"
-                Margin="0,0,20,0">
-            <Image Width="50"
-                   Height="50"
-                   Source="{Binding CurrentSong.Artwork}"
-                   Stretch="UniformToFill" />
+                Margin="0,0,20,0"
+                Width="50"
+                Height="50">
+            <Panel>
+                <Image Source="{Binding CurrentSong.Artwork}"
+                       Stretch="UniformToFill"
+                       IsVisible="{Binding !IsSeekBuffering, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                <!-- Progress Bar: Visible when buffering -->
+                <ProgressBar Classes="circular"
+                             IsIndeterminate="True"
+                             IsVisible="{Binding IsSeekBuffering, Converter={StaticResource BooleanToVisibilityConverter}}"
+                             Width="30"
+                             Height="30" />
+            </Panel>
         </Border>
 
         <!-- Song Information -->
