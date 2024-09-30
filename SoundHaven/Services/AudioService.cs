@@ -22,6 +22,14 @@ namespace SoundHaven.Services
         private const int BufferSize = 4 * 1024 * 1024; // 4MB buffer
         private bool _isBuffering = false;
         private bool _isDisposed = false;
+        private Timer _positionLogTimer;
+        private DateTime _streamStartTime;
+        private TimeSpan _currentPosition;
+        private TimeSpan _totalDuration;
+        public TimeSpan TotalDuration => _totalDuration;
+        private bool _isYouTubeStream;
+
+        public TimeSpan CurrentPosition => _currentPosition;
 
         public event EventHandler TrackEnded;
 
@@ -68,13 +76,19 @@ namespace SoundHaven.Services
 
             try
             {
+                _isYouTubeStream = isYouTubeVideo;
                 if (isYouTubeVideo)
                 {
                     await StartYouTubeStreamAsync(source);
+                    _streamStartTime = DateTime.Now;
+                    _currentPosition = TimeSpan.Zero;
+                    var videoDetails = await _youtubeClient.Videos.GetAsync(source);
+                    _totalDuration = videoDetails.Duration ?? TimeSpan.Zero;
                 }
                 else
                 {
                     StartLocalFile(source);
+                    _totalDuration = _audioFileReader.TotalTime;
                 }
 
                 if (_waveOutDevice != null && (_audioFileReader != null || _bufferedWaveProvider != null))
@@ -83,6 +97,7 @@ namespace SoundHaven.Services
                     if (isYouTubeVideo)
                     {
                         StartBufferStatusTimer();
+                        StartPositionLogging();
                     }
                 }
             }
@@ -92,7 +107,7 @@ namespace SoundHaven.Services
                 throw;
             }
         }
-
+        
         private void StartBufferStatusTimer()
         {
             _bufferStatusTimer?.Dispose();
@@ -199,14 +214,41 @@ namespace SoundHaven.Services
                     Console.WriteLine("Buffer refilled. Resuming playback.");
                     _waveOutDevice.Play();
                     _isBuffering = false;
+                    StartPositionLogging(); // Start logging when buffer is refilled
                 }
             }
         }
+        
+        private void StartPositionLogging()
+        {
+            _positionLogTimer?.Dispose();
+            _streamStartTime = DateTime.Now;
+            _currentPosition = TimeSpan.Zero;
+            _positionLogTimer = new Timer(_ => UpdateCurrentPosition(), null, 0, 100); // Update every 100ms
+        }
 
+        private void UpdateCurrentPosition()
+        {
+            if (_isYouTubeStream)
+            {
+                _currentPosition = DateTime.Now - _streamStartTime;
+                if (_currentPosition > _totalDuration)
+                {
+                    _currentPosition = _totalDuration;
+                }
+            }
+            else
+            {
+                _currentPosition = _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
+            }
+            Console.WriteLine($"Current position: {_currentPosition}");
+        }
+        
         private void StartLocalFile(string filePath)
         {
             _audioFileReader = new AudioFileReader(filePath);
             InitializeAudio(_audioFileReader);
+            _totalDuration = _audioFileReader.TotalTime;
         }
 
         private void InitializeAudio(IWaveProvider waveProvider)
@@ -239,6 +281,7 @@ namespace SoundHaven.Services
         {
             _isBuffering = false;
             _bufferStatusTimer?.Dispose();
+            _positionLogTimer?.Dispose();
             _bufferingCancellationTokenSource?.Cancel();
 
             _waveOutDevice?.Stop();
@@ -246,10 +289,19 @@ namespace SoundHaven.Services
             _audioFileReader = null;
             _bufferedWaveProvider = null;
             _volumeProvider = null;
+            _currentPosition = TimeSpan.Zero;
+            _totalDuration = TimeSpan.Zero;
+            _isYouTubeStream = false;
         }
+
 
         public float GetCurrentVolume() => _audioVolume;
 
+        public double GetTotalSeconds()
+        {
+            return _totalDuration.TotalSeconds;
+        }
+        
         public void SetVolume(float volume)
         {
             _audioVolume = volume;
@@ -268,6 +320,7 @@ namespace SoundHaven.Services
             _waveOutDevice?.Dispose();
             _bufferingCancellationTokenSource?.Dispose();
             _bufferStatusTimer?.Dispose();
+            _positionLogTimer?.Dispose();
         }
     }
 }

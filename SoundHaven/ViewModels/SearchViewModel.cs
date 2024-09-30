@@ -113,8 +113,6 @@
                     IsLoading = false;
                 }
             }
-            public event EventHandler SeekPositionReset;
-
             private async void ExecutePlaySong(Song song)
             {
                 if (song == null || (string.IsNullOrEmpty(song.VideoId) && string.IsNullOrEmpty(song.FilePath)))
