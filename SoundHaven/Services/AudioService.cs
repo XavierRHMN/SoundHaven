@@ -2,12 +2,11 @@
 using NAudio.Wave.SampleProviders;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
-using NAudio.MediaFoundation;
 using System.Diagnostics;
-using System.IO.Pipes;
 
 namespace SoundHaven.Services
 {
@@ -19,11 +18,14 @@ namespace SoundHaven.Services
         private VolumeSampleProvider _volumeProvider;
         private float _audioVolume = 0.1f;
         private readonly YoutubeClient _youtubeClient;
-        private Task _bufferingTask;
-        private const int BUFFER_SIZE = 4 * 1024 * 1024 * 100; // 4MB buffer
+        private CancellationTokenSource _bufferingCancellationTokenSource;
+        private const int BufferSize = 4 * 1024 * 1024; // 4MB buffer
         private bool _isBuffering = false;
         private bool _isDisposed = false;
+
         public event EventHandler TrackEnded;
+
+        private Timer _bufferStatusTimer;
 
         public AudioService()
         {
@@ -34,14 +36,14 @@ namespace SoundHaven.Services
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
 
-        public bool IsPlaying() 
+        public bool IsPlaying()
         {
             var isPlaying = _waveOutDevice?.PlaybackState == PlaybackState.Playing;
             Console.WriteLine($"IsPlaying called, result: {isPlaying}");
             return isPlaying;
         }
 
-        public bool IsStopped() => _waveOutDevice.PlaybackState == PlaybackState.Stopped;
+        public bool IsStopped() => _waveOutDevice?.PlaybackState == PlaybackState.Stopped;
 
         private void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
@@ -60,7 +62,7 @@ namespace SoundHaven.Services
             }
         }
 
-        public async Task Start(string source, bool isYouTubeVideo = false)
+        public async Task StartAsync(string source, bool isYouTubeVideo = false)
         {
             Stop();
 
@@ -68,7 +70,7 @@ namespace SoundHaven.Services
             {
                 if (isYouTubeVideo)
                 {
-                    await StartYouTubeStream(source);
+                    await StartYouTubeStreamAsync(source);
                 }
                 else
                 {
@@ -78,25 +80,26 @@ namespace SoundHaven.Services
                 if (_waveOutDevice != null && (_audioFileReader != null || _bufferedWaveProvider != null))
                 {
                     _waveOutDevice.Play();
-                    StartBufferStatusTimer();
+                    if (isYouTubeVideo)
+                    {
+                        StartBufferStatusTimer();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in AudioService.Start: {ex.Message}");
+                Console.WriteLine($"Error in AudioService.StartAsync: {ex.Message}");
                 throw;
             }
         }
 
-        private System.Threading.Timer _bufferStatusTimer;
-
         private void StartBufferStatusTimer()
         {
             _bufferStatusTimer?.Dispose();
-            _bufferStatusTimer = new System.Threading.Timer(_ => CheckBufferStatus(), null, 0, 500);
+            _bufferStatusTimer = new Timer(_ => CheckBufferStatus(), null, 0, 500);
         }
 
-        private async Task StartYouTubeStream(string videoId)
+        private async Task StartYouTubeStreamAsync(string videoId)
         {
             var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(videoId);
             var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
@@ -108,22 +111,25 @@ namespace SoundHaven.Services
 
             var stream = await _youtubeClient.Videos.Streams.GetAsync(streamInfo);
 
-            // Adjust wave format according to the stream's actual format
             var waveFormat = new WaveFormat(44100, 16, 2);
-            _bufferedWaveProvider = new BufferedWaveProvider(waveFormat);
-            _bufferedWaveProvider.BufferLength = 8 * 1024 * 1024; // 8MB buffer
+            _bufferedWaveProvider = new BufferedWaveProvider(waveFormat)
+            {
+                BufferLength = 8 * 1024 * 1024 // 8MB buffer
+            };
 
             InitializeAudio(_bufferedWaveProvider);
 
             _isBuffering = true;
-            _bufferingTask = Task.Run(() => BufferYouTubeStream(stream));
+            _bufferingCancellationTokenSource = new CancellationTokenSource();
+
+            _ = Task.Run(() => BufferYouTubeStreamAsync(stream, _bufferingCancellationTokenSource.Token));
         }
 
-        private async Task BufferYouTubeStream(Stream inputStream)
+        private async Task BufferYouTubeStreamAsync(Stream inputStream, CancellationToken cancellationToken)
         {
             try
             {
-                var ffmpeg = new Process
+                using var ffmpegProcess = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
@@ -136,50 +142,59 @@ namespace SoundHaven.Services
                     }
                 };
 
-                ffmpeg.Start();
+                ffmpegProcess.Start();
 
                 // Copy input stream to FFmpeg's standard input
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
-                    await inputStream.CopyToAsync(ffmpeg.StandardInput.BaseStream);
-                    ffmpeg.StandardInput.Close();
-                });
+                    await inputStream.CopyToAsync(ffmpegProcess.StandardInput.BaseStream, BufferSize, cancellationToken);
+                    ffmpegProcess.StandardInput.Close();
+                }, cancellationToken);
 
-                byte[] buffer = new byte[BUFFER_SIZE];
+                byte[] buffer = new byte[BufferSize];
                 int bytesRead;
-                while ((bytesRead = await ffmpeg.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length)) > 0 && !_isDisposed)
+
+                while ((bytesRead = await ffmpegProcess.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
                 {
                     _bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
 
                     // Throttle if buffer is too full
-                    while (_bufferedWaveProvider.BufferedBytes > _bufferedWaveProvider.BufferLength * 0.8 && !_isDisposed)
+                    while (_bufferedWaveProvider.BufferedBytes > _bufferedWaveProvider.BufferLength * 0.8)
                     {
-                        await Task.Delay(50);
+                        await Task.Delay(50, cancellationToken);
                     }
                 }
 
-                ffmpeg.WaitForExit();
+                ffmpegProcess.WaitForExit();
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Buffering operation was canceled.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in BufferYouTubeStream: {ex.Message}");
+                Console.WriteLine($"Error in BufferYouTubeStreamAsync: {ex.Message}");
+            }
+            finally
+            {
+                _isBuffering = false;
             }
         }
-        
-        
 
         private void CheckBufferStatus()
         {
             if (_bufferedWaveProvider != null)
             {
                 Console.WriteLine($"Buffer status: {_bufferedWaveProvider.BufferedBytes} / {_bufferedWaveProvider.BufferLength} bytes");
-                if (_bufferedWaveProvider.BufferedBytes < 0 && !_isBuffering)
+
+                var bufferThreshold = _bufferedWaveProvider.WaveFormat.AverageBytesPerSecond * 2; // 2 seconds of audio
+                if (_bufferedWaveProvider.BufferedBytes < bufferThreshold && !_isBuffering)
                 {
                     Console.WriteLine("Buffer underrun detected. Pausing playback.");
                     _waveOutDevice.Pause();
                     _isBuffering = true;
                 }
-                else if (_bufferedWaveProvider.BufferedBytes > _bufferedWaveProvider.BufferLength * 0.8 && _isBuffering)
+                else if (_bufferedWaveProvider.BufferedBytes > _bufferedWaveProvider.BufferLength * 0.5 && _isBuffering)
                 {
                     Console.WriteLine("Buffer refilled. Resuming playback.");
                     _waveOutDevice.Play();
@@ -187,7 +202,7 @@ namespace SoundHaven.Services
                 }
             }
         }
-        
+
         private void StartLocalFile(string filePath)
         {
             _audioFileReader = new AudioFileReader(filePath);
@@ -196,21 +211,17 @@ namespace SoundHaven.Services
 
         private void InitializeAudio(IWaveProvider waveProvider)
         {
-            _volumeProvider = new VolumeSampleProvider(waveProvider.ToSampleProvider());
-            _volumeProvider.Volume = _audioVolume;
-
-            if (_waveOutDevice != null)
+            _volumeProvider = new VolumeSampleProvider(waveProvider.ToSampleProvider())
             {
-                _waveOutDevice.Stop();
-                _waveOutDevice.Dispose();
-            }
-            _waveOutDevice = new WaveOutEvent();
+                Volume = _audioVolume
+            };
+
             _waveOutDevice.Init(_volumeProvider);
         }
 
         public void Pause()
         {
-            if (_waveOutDevice.PlaybackState == PlaybackState.Playing)
+            if (_waveOutDevice?.PlaybackState == PlaybackState.Playing)
             {
                 _waveOutDevice.Pause();
             }
@@ -218,7 +229,7 @@ namespace SoundHaven.Services
 
         public void Resume()
         {
-            if (_waveOutDevice.PlaybackState == PlaybackState.Paused)
+            if (_waveOutDevice?.PlaybackState == PlaybackState.Paused)
             {
                 _waveOutDevice.Play();
             }
@@ -228,6 +239,8 @@ namespace SoundHaven.Services
         {
             _isBuffering = false;
             _bufferStatusTimer?.Dispose();
+            _bufferingCancellationTokenSource?.Cancel();
+
             _waveOutDevice?.Stop();
             _audioFileReader?.Dispose();
             _audioFileReader = null;
@@ -235,10 +248,7 @@ namespace SoundHaven.Services
             _volumeProvider = null;
         }
 
-        public float GetCurrentVolume()
-        {
-            return _audioVolume;
-        }
+        public float GetCurrentVolume() => _audioVolume;
 
         public void SetVolume(float volume)
         {
@@ -251,10 +261,12 @@ namespace SoundHaven.Services
 
         public void Dispose()
         {
+            if (_isDisposed) return;
+
             _isDisposed = true;
             Stop();
             _waveOutDevice?.Dispose();
-            _bufferingTask?.Dispose();
+            _bufferingCancellationTokenSource?.Dispose();
             _bufferStatusTimer?.Dispose();
         }
     }

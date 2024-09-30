@@ -79,6 +79,7 @@ namespace SoundHaven.ViewModels
                     {
                         PlayFromBeginning(value);
                     }
+                    IsPlaying = true;
                 }
             }
         }
@@ -241,11 +242,17 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        private void PlayFromBeginning(Song song)
+        // In PlaybackViewModel.cs
+        public async Task PlayFromBeginning(Song song)
         {
-            _audioService.Start(song.FilePath);
-            IsPlaying = true;
+            if (song == null || string.IsNullOrEmpty(song.FilePath))
+            {
+                throw new ArgumentException("Invalid song or file path.");
+            }
+
+            await _audioService.StartAsync(song.FilePath);
         }
+
 
         private void OnTrackEndedRobust(object sender, EventArgs e)
         {

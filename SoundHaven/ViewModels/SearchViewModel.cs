@@ -140,7 +140,7 @@
                         return;
                     }
 
-                    await _audioService.Start(source, isYouTubeVideo);
+                    await _audioService.StartAsync(source, isYouTubeVideo);
                     _playbackViewModel.CurrentSong = song;
                     OnPropertyChanged(nameof(_playbackViewModel.CurrentSong));
                 }
