@@ -49,7 +49,7 @@ namespace SoundHaven.ViewModels
                 if (_selectedSong != value)
                 {
                     _selectedSong = value;
-                    OnPropertyChanged(nameof(SelectedSong));
+                    OnPropertyChanged();
                     PlaySongCommand.Execute(value);
                 }
             }
