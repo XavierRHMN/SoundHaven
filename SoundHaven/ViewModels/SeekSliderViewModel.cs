@@ -73,20 +73,16 @@ namespace SoundHaven.ViewModels
 
         private void UpdateSeekPosition(object sender, EventArgs e)
         {
-            if (_playbackViewModel.CurrentSong != null && _playbackViewModel.CurrentSong.VideoId != null && !_debounceTimer.IsEnabled && !_playbackViewModel.IsTransitioningTracks)
+            if (_audioService.IsPaused || _debounceTimer.IsEnabled || _playbackViewModel.IsTransitioningTracks || _playbackViewModel.CurrentSong == null)
             {
-                _isUpdatingFromTimer = true;
-                var currentTime = _audioService.CurrentPosition;
-                SeekPosition = currentTime.TotalSeconds;
-                _isUpdatingFromTimer = false;
+                return;
             }
-            else if (_playbackViewModel.CurrentSong != null && !_debounceTimer.IsEnabled && !_playbackViewModel.IsTransitioningTracks)
-            {
-                _isUpdatingFromTimer = true;
-                var currentTime = _audioService.GetCurrentTime();
-                SeekPosition = currentTime.TotalSeconds;
-                _isUpdatingFromTimer = false;
-            }
+
+            _isUpdatingFromTimer = true;
+            SeekPosition = (_playbackViewModel.CurrentSong.VideoId != null 
+                ? _audioService.CurrentPosition // Get YouTube video position
+                : _audioService.GetCurrentTime()).TotalSeconds; // Get local file's time
+            _isUpdatingFromTimer = false;
         }
 
         private void OnSeekPositionChanged(double newPosition)
@@ -121,7 +117,18 @@ namespace SoundHaven.ViewModels
 
         private void AudioService_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(AudioService.TotalDuration))
+            if (e.PropertyName == nameof(AudioService.IsPaused))
+            {
+                if (_audioService.IsPaused)
+                {
+                    _seekTimer.Stop(); // Stop updating seek position when paused
+                }
+                else
+                {
+                    _seekTimer.Start(); // Resume updating when playback resumes
+                }
+            }
+            else if (e.PropertyName == nameof(AudioService.TotalDuration))
             {
                 OnPropertyChanged(nameof(MaximumSeekValue));
             }
