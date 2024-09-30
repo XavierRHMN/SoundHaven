@@ -109,7 +109,7 @@ namespace SoundHaven.ViewModels
         {
             if (e.PropertyName == nameof(AudioService.IsSeekBuffering))
             {
-                IsSeekBuffering = _audioService.IsSeekBuffering;
+                IsSeekBuffering = !_audioService.IsPlaying() && _audioService.IsSeekBuffering && _currentSong.VideoId != null;
             }
         }
 

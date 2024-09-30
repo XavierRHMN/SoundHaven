@@ -293,10 +293,12 @@ namespace SoundHaven.Services
             catch (OperationCanceledException)
             {
                 Console.WriteLine("Buffering operation was canceled.");
+                IsSeekBuffering = true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in BufferYouTubeStreamAsync: {ex.Message}");
+                IsSeekBuffering = true;
             }
             finally
             {
