@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace SoundHaven.ViewModels
 {
-    public class VolumeViewModel : INotifyPropertyChanged
+    public class VolumeViewModel : ViewModelBase
     {
         private readonly AudioService _audioService;
         private float _volume;
@@ -21,7 +21,7 @@ namespace SoundHaven.ViewModels
                 {
                     _volume = value;
                     OnPropertyChanged();
-                    _audioService.SetVolume(_volume);
+                    _audioService.AudioVolume = _volume;
                 }
             }
         }
@@ -64,19 +64,12 @@ namespace SoundHaven.ViewModels
         public VolumeViewModel(AudioService audioService)
         {
             _audioService = audioService;
-            Volume = _audioService.GetCurrentVolume();
+            Volume = _audioService.AudioVolume;
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
         }
 
         private void ToggleMute() => IsMuted = !IsMuted;
 
         private bool CanToggleMute() => true;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
     }
 }
