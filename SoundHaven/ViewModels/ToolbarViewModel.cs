@@ -155,24 +155,29 @@ namespace SoundHaven.ViewModels
         {
             Console.WriteLine("Switching to HomeView");
             DeselectCurrentPlaylist();
-            _mainWindowViewModel.CurrentViewModel = _homeViewModel;
+            SwitchToViewModel(_homeViewModel);
         }
 
         private void ShowSearchView()
         {
-            _mainWindowViewModel.CurrentViewModel = _searchViewModel;
             DeselectCurrentPlaylist();
+            SwitchToViewModel(_searchViewModel);
         }
 
         private void ShowPlaylistView()
         {
             Console.WriteLine("Switching to PlaylistView");
-            _mainWindowViewModel.CurrentViewModel = _playlistViewModel;
+            SwitchToViewModel(_playlistViewModel);
         }
 
         private void DeselectCurrentPlaylist()
         {
             ToolbarSelectedPlaylist = null;
+        }
+        
+        private void SwitchToViewModel(ViewModelBase viewModel)
+        {
+            _mainWindowViewModel.CurrentViewModel = viewModel;
         }
     }
 }

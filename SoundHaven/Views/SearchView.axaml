@@ -5,6 +5,7 @@
              xmlns:vm="using:SoundHaven.ViewModels"
              xmlns:material="using:Material.Styles"
              xmlns:models="clr-namespace:SoundHaven.Models"
+             xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="SoundHaven.Views.SearchView"
              x:DataType="vm:SearchViewModel"
@@ -35,6 +36,23 @@
                     Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             <Setter Property="Foreground" Value="Gray" />
             <Setter Property="FontSize" Value="14" />
+        </Style>
+        
+        <!-- Override Selected Item Foreground and Background -->
+        <Style Selector="ListBoxItem:selected TextBlock.TrackTitle">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
+            <Setter Property="Opacity" Value="1.0" /> <!-- Optional: Adjust if needed -->
+        </Style>
+
+        <!-- Override the Opacity of PART_HoverEffect to Remove Grayish Tint -->
+        <Style Selector="ListBoxItem:selected /template/ Border#PART_HoverEffect">
+            <Setter Property="Opacity" Value="0" /> <!-- Remove hover effect opacity -->
+        </Style>
+
+        <!-- **New Style to Remove Ripple Effect** -->
+        <Style Selector="ListBoxItem:pressed /template/ ripple|RippleEffect#PART_Ripple">
+            <Setter Property="RippleFill" Value="Transparent" />
+            <Setter Property="Opacity" Value="1.0" />
         </Style>
     </UserControl.Styles>
 

@@ -86,9 +86,9 @@
         <!-- Content Grid -->
         <Grid Grid.Row="1" MinWidth="900">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" MinWidth="800" />
+                <ColumnDefinition Width="*" MinWidth="800" MaxWidth="1000" /> <!-- Resizable with initial max width -->
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" MinWidth="40" />
+                <ColumnDefinition Width="*" MinWidth="40" />
             </Grid.ColumnDefinitions>
 
             <!-- Left Column: Album Cover and Song Info -->

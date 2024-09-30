@@ -60,7 +60,8 @@ namespace SoundHaven.ViewModels
         public RelayCommand<Song> DownloadSongCommand { get; }
         public RelayCommand<Song> OpenFolderCommand { get; }
 
-        public SearchViewModel(IYoutubeSearchService youtubeSearchService, IYouTubeDownloadService youTubeDownloadService, IOpenFileDialogService openFileDialogService, AudioService audioService, PlaybackViewModel playbackViewModel)
+        public SearchViewModel(IYoutubeSearchService youtubeSearchService, IYouTubeDownloadService youTubeDownloadService,
+                               IOpenFileDialogService openFileDialogService, AudioService audioService, PlaybackViewModel playbackViewModel)
         {
             _youtubeSearchService = youtubeSearchService;
             _youTubeDownloadService = youTubeDownloadService;

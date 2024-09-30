@@ -346,8 +346,27 @@ namespace SoundHaven.Services
                 if (_bufferedWaveProvider.BufferedBytes < bufferThreshold && !_isBuffering)
                 {
                     Console.WriteLine("Buffer underrun detected. Pausing playback.");
-                    _waveOutDevice.Pause();
                     _isBuffering = true;
+
+                    // Pause playback
+                    _waveOutDevice.Pause();
+
+                    // Adjust current position back by 0.5 seconds
+                    TimeSpan newPosition = _currentPosition - TimeSpan.FromSeconds(0.5);
+                    if (newPosition < TimeSpan.Zero)
+                    {
+                        newPosition = TimeSpan.Zero;
+                    }
+
+                    // Stop current playback and buffering without resetting position
+                    Stop(resetPosition: false);
+
+                    // Update start position and current position
+                    _startPosition = newPosition;
+                    _currentPosition = newPosition;
+
+                    // Start playback from the new position
+                    _ = StartAsync(_currentSource, true, newPosition);
                 }
                 else if (_bufferedWaveProvider.BufferedBytes > _bufferedWaveProvider.BufferLength * 0.5 && _isBuffering)
                 {
@@ -358,6 +377,7 @@ namespace SoundHaven.Services
                 }
             }
         }
+
 
         private void StartPositionLogging()
         {
