@@ -171,7 +171,7 @@ namespace SoundHaven.Services
 
         private void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
-            if ((_audioFileReader != null && _audioFileReader.Position >= _audioFileReader.Length) || 
+            if ((_audioFileReader != null && _audioFileReader.Position + 1 >= _audioFileReader.Length ) || 
                 (_bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering))
             {
                 TrackEnded?.Invoke(this, EventArgs.Empty);
