@@ -79,7 +79,7 @@ namespace SoundHaven.ViewModels
 
         private void UpdateSeekPosition(object sender, EventArgs e)
         {
-            if (_audioService.IsPaused || _debounceTimer.IsEnabled || _playbackViewModel.IsTransitioningTracks || _playbackViewModel.CurrentSong == null)
+            if (_audioService.IsPaused || _debounceTimer.IsEnabled || _playbackViewModel.CurrentSong == null)
             {
                 return;
             }
