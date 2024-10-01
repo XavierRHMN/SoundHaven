@@ -215,7 +215,7 @@ namespace SoundHaven.ViewModels
                 Console.WriteLine("No current song to restart or go back from.");
                 return;
             }
-
+        
             if (CurrentSong.IsYouTubeVideo || _audioService.GetCurrentTime().TotalSeconds <= 3)
             {
                 // For YouTube videos or if we're within the first 3 seconds of any song, always restart
@@ -225,15 +225,15 @@ namespace SoundHaven.ViewModels
             {
                 // For local files, if we're past 3 seconds, try to go to the previous song
                 var previousSong = CurrentPlaylist?.GetPreviousNextSong(CurrentSong, Direction.Previous);
-
+        
                 if (previousSong != null)
                 {
-                    await PlayFromBeginning(previousSong);
+                    PlayFromBeginning(previousSong);
                 }
                 else
                 {
                     // If there's no previous song, restart the current one
-                    await PlayFromBeginning(CurrentSong);
+                    PlayFromBeginning(CurrentSong);
                 }
             }
         }
