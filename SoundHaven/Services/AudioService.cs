@@ -381,6 +381,7 @@ namespace SoundHaven.Services
             finally
             {
                 _isBuffering = false;
+                IsSeekBuffering = true;
             }
         }
 
