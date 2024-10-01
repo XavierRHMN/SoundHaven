@@ -83,7 +83,7 @@ namespace SoundHaven.ViewModels
             {
                 return;
             }
-
+            
             _isUpdatingFromTimer = true;
             SeekPosition = (_playbackViewModel.CurrentSong.VideoId != null
                 ? _audioService.CurrentPosition // Get YouTube video position

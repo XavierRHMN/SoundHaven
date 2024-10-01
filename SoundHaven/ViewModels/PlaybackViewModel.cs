@@ -216,9 +216,9 @@ namespace SoundHaven.ViewModels
                 return;
             }
         
-            if (CurrentSong.IsYouTubeVideo || _audioService.GetCurrentTime().TotalSeconds <= 3)
+            if (CurrentSong.IsYouTubeVideo || _audioService.GetCurrentTime().TotalSeconds > 5)
             {
-                // For YouTube videos or if we're within the first 3 seconds of any song, always restart
+                // For YouTube videos or if we're outside the first 3 seconds of any song, always restart
                 await PlayFromBeginning(CurrentSong);
             }
             else
@@ -228,12 +228,12 @@ namespace SoundHaven.ViewModels
         
                 if (previousSong != null)
                 {
-                    PlayFromBeginning(previousSong);
+                    await PlayFromBeginning(previousSong);
                 }
                 else
                 {
                     // If there's no previous song, restart the current one
-                    PlayFromBeginning(CurrentSong);
+                    await PlayFromBeginning(CurrentSong);
                 }
             }
         }
@@ -298,7 +298,6 @@ namespace SoundHaven.ViewModels
                     break;
                 case RepeatMode.All:
                     PreviousTrack();
-                    _audioService.Resume();
                     break;
                 case RepeatMode.Off:
                     NextTrack();

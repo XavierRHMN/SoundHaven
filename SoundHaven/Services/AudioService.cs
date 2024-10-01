@@ -74,6 +74,7 @@ namespace SoundHaven.Services
                 return _currentPosition;
             }
         }
+        
         public float AudioVolume
         {
             get
@@ -87,6 +88,7 @@ namespace SoundHaven.Services
                     _audioVolume = value;
                     if (_volumeProvider != null)
                     {
+                        // Map the 0-75 range to 0-75 range for NAudio
                         _volumeProvider.Volume = _audioVolume;
                     }
                     OnPropertyChanged();
