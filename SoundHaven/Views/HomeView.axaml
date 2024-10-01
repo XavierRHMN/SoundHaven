@@ -40,7 +40,6 @@
         <Style Selector="Border.CardBorder">
             <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
             <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Padding" Value="16" />
             <Setter Property="Margin" Value="0,0,16,16" />
         </Style>
         
@@ -58,7 +57,7 @@
     </UserControl.Styles>
 
     <Grid Background="{StaticResource BackgroundBrush}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ScrollViewer VerticalScrollBarVisibility="Hidden">
             <StackPanel>
                 <!-- Welcome Banner -->
                 <Border Background="{StaticResource PlayerColorBrush}"
@@ -107,7 +106,7 @@
                         <ItemsControl ItemsSource="{Binding RecentlyPlayedTracks}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:Song">
-                                    <Border Classes="CardBorder" Margin="0,0,16,8">
+                                    <Border Classes="CardBorder" Margin="0,0,0,8">
                                         <Grid ColumnDefinitions="Auto,*">
                                             <Border Grid.Column="0" CornerRadius="4" ClipToBounds="True" Margin="0,0,16,0">
                                                 <controls:AsyncImageControl Width="64" Height="64"
