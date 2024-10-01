@@ -10,8 +10,14 @@ namespace SoundHaven.Stores
         private ObservableCollection<Playlist>? _playlists;
         public ObservableCollection<Playlist> Playlists
         {
-            get => _playlists;
-            set => _playlists = value;
+            get
+            {
+                return _playlists;
+            }
+            set
+            {
+                _playlists = value;
+            }
         }
 
         public PlaylistStore()

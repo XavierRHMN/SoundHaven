@@ -22,7 +22,10 @@ namespace SoundHaven.ViewModels
         private bool _isShuffleEnabled;
         public bool IsShuffleEnabled
         {
-            get => _isShuffleEnabled;
+            get
+            {
+                return _isShuffleEnabled;
+            }
             set
             {
                 if (_isUpdating) return; // Prevent recursive calls

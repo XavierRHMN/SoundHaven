@@ -14,12 +14,12 @@ namespace SoundHaven
 
         private void MinimizeButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            this.WindowState = WindowState.Minimized;
+            WindowState = WindowState.Minimized;
         }
 
         private void MaximizeRestoreButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            this.WindowState = this.WindowState == WindowState.Normal ? WindowState.Maximized : WindowState.Normal;
+            WindowState = WindowState == WindowState.Normal ? WindowState.Maximized : WindowState.Normal;
         }
 
         private void OnPointerPressedTitleBar(object sender, PointerPressedEventArgs e)
@@ -29,7 +29,7 @@ namespace SoundHaven
 
         private void CloseButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            this.Close();
+            Close();
         }
     }
 }

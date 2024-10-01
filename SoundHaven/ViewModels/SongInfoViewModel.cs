@@ -21,7 +21,10 @@ namespace SoundHaven.ViewModels
 
         public Song CurrentSong
         {
-            get => _currentSong;
+            get
+            {
+                return _currentSong;
+            }
             private set
             {
                 if (_currentSong != value)
@@ -38,12 +41,21 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        public bool CurrentSongExists => CurrentSong != null;
+        public bool CurrentSongExists
+        {
+            get
+            {
+                return CurrentSong != null;
+            }
+        }
 
         private bool _isSeekBuffering;
         public bool IsSeekBuffering
         {
-            get => _isSeekBuffering;
+            get
+            {
+                return _isSeekBuffering;
+            }
             set
             {
                 if (_isSeekBuffering != value)
@@ -56,7 +68,10 @@ namespace SoundHaven.ViewModels
 
         public double TitleScrollPosition1
         {
-            get => _titleScrollPosition1;
+            get
+            {
+                return _titleScrollPosition1;
+            }
             set
             {
                 _titleScrollPosition1 = value;
@@ -66,7 +81,10 @@ namespace SoundHaven.ViewModels
 
         public double TitleScrollPosition2
         {
-            get => _titleScrollPosition2;
+            get
+            {
+                return _titleScrollPosition2;
+            }
             set
             {
                 _titleScrollPosition2 = value;
@@ -76,7 +94,10 @@ namespace SoundHaven.ViewModels
 
         public double TextWidth
         {
-            get => _textWidth;
+            get
+            {
+                return _textWidth;
+            }
             set
             {
                 _textWidth = value;
@@ -92,7 +113,7 @@ namespace SoundHaven.ViewModels
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
             _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
             _audioService.PropertyChanged += AudioService_PropertyChanged;
-            
+
             CurrentSong = _playbackViewModel.CurrentSong;
             InitializeScrollTimer();
         }

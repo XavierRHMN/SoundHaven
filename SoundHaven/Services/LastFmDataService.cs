@@ -50,13 +50,13 @@ namespace SoundHaven.Services
                 return cachedTopTracks;
             }
 
-            var limit = 20; // Limit to 20 top tracks
-            var url = $"?method=chart.gettoptracks&api_key={_apiKey}&format=json&limit={limit}";
+            int limit = 20; // Limit to 20 top tracks
+            string? url = $"?method=chart.gettoptracks&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                string? content = await response.Content.ReadAsStringAsync();
                 var topTracksResponse = JsonConvert.DeserializeObject<TopTracksResponse>(content);
 
                 var songs = new List<Song>();
@@ -67,7 +67,7 @@ namespace SoundHaven.Services
                     {
                         Title = track.Name,
                         Artist = track.Artist.Name,
-                        Length = int.TryParse(track.Duration, out var duration) ? duration : 0
+                        Length = int.TryParse(track.Duration, out int duration) ? duration : 0
                     };
 
                     // Fetch the album image, or artist image if album image is not available
@@ -87,7 +87,7 @@ namespace SoundHaven.Services
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string? errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error fetching top tracks: {response.StatusCode}, Content: {errorContent}");
                 return Enumerable.Empty<Song>();
             }
@@ -115,12 +115,12 @@ namespace SoundHaven.Services
                 return cachedTopArtists;
             }
 
-            var url = $"?method=user.gettopartists&user={Uri.EscapeDataString(username)}&api_key={_apiKey}&format=json&limit={limit}";
+            string? url = $"?method=user.gettopartists&user={Uri.EscapeDataString(username)}&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                string? content = await response.Content.ReadAsStringAsync();
                 var userTopArtistsResponse = JsonConvert.DeserializeObject<UserTopArtistsResponse>(content);
 
                 var topArtists = userTopArtistsResponse?.TopArtists?.ArtistList
@@ -141,7 +141,7 @@ namespace SoundHaven.Services
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string? errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error fetching top artists for user {username}: {response.StatusCode}, Content: {errorContent}");
             }
 
@@ -171,12 +171,12 @@ namespace SoundHaven.Services
                 return cachedTopTracks;
             }
 
-            var url = $"?method=artist.gettoptracks&artist={Uri.EscapeDataString(artistName)}&api_key={_apiKey}&format=json&limit={limit}";
+            string? url = $"?method=artist.gettoptracks&artist={Uri.EscapeDataString(artistName)}&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                string? content = await response.Content.ReadAsStringAsync();
                 var topTracksResponse = JsonConvert.DeserializeObject<ArtistTopTracksResponse>(content);
 
                 var songs = topTracksResponse?.TopTracks?.TrackList
@@ -184,7 +184,7 @@ namespace SoundHaven.Services
                     {
                         Title = track.Name,
                         Artist = artistName,
-                        Length = int.TryParse(track.Duration, out var duration) ? duration : 0,
+                        Length = int.TryParse(track.Duration, out int duration) ? duration : 0,
                         ArtworkUrl = null // Optionally fetch artwork here or use existing methods
                     })
                     .Where(song => song != null)
@@ -203,7 +203,7 @@ namespace SoundHaven.Services
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string? errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error fetching top tracks for {artistName}: {response.StatusCode}, Content: {errorContent}");
             }
 
@@ -220,14 +220,14 @@ namespace SoundHaven.Services
         public async Task<IEnumerable<Song>> GetRecommendedTracksAsync(string username)
         {
             var recommendedTracks = new List<Song>();
-            var maxRecommended = 20;
-            var topArtistsLimit = 5; // Number of top artists to fetch
-            var topTracksPerArtist = 4; // Number of top tracks to fetch per artist
+            int maxRecommended = 20;
+            int topArtistsLimit = 5; // Number of top artists to fetch
+            int topTracksPerArtist = 4; // Number of top tracks to fetch per artist
 
             // Step 1: Fetch user's top artists
             var topArtists = await GetUserTopArtistsAsync(username, topArtistsLimit);
 
-            foreach (var artist in topArtists)
+            foreach (string? artist in topArtists)
             {
                 // Step 2: Fetch top tracks for each top artist
                 var artistTopTracks = await GetTopTracksByArtistAsync(artist, topTracksPerArtist);
@@ -279,13 +279,13 @@ namespace SoundHaven.Services
                 return cachedRecentlyPlayed;
             }
 
-            var limit = 20; // Limit to 20 recent tracks
-            var url = $"?method=user.getrecenttracks&user={Uri.EscapeDataString(username)}&api_key={_apiKey}&format=json&limit={limit}";
+            int limit = 20; // Limit to 20 recent tracks
+            string? url = $"?method=user.getrecenttracks&user={Uri.EscapeDataString(username)}&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                string? content = await response.Content.ReadAsStringAsync();
                 var recentTracksResponse = JsonConvert.DeserializeObject<RecentTracksResponse>(content);
 
                 var songs = new List<Song>();
@@ -313,7 +313,7 @@ namespace SoundHaven.Services
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string? errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error fetching recent tracks for user {username}: {response.StatusCode}, Content: {errorContent}");
                 return Enumerable.Empty<Song>();
             }
@@ -342,12 +342,12 @@ namespace SoundHaven.Services
                 return cachedSimilarArtists;
             }
 
-            var url = $"?method=artist.getsimilar&artist={Uri.EscapeDataString(artistName)}&api_key={_apiKey}&format=json&limit={limit}";
+            string? url = $"?method=artist.getsimilar&artist={Uri.EscapeDataString(artistName)}&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                string? content = await response.Content.ReadAsStringAsync();
                 var similarArtistsResponse = JsonConvert.DeserializeObject<SimilarArtistsResponse>(content);
 
                 var similarArtists = similarArtistsResponse?.SimilarArtists?.ArtistList
@@ -368,7 +368,7 @@ namespace SoundHaven.Services
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string? errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error fetching similar artists for {artistName}: {response.StatusCode}, Content: {errorContent}");
             }
 
@@ -398,18 +398,18 @@ namespace SoundHaven.Services
                 return cachedImageUrl;
             }
 
-            var url = $"?method=track.getInfo&api_key={_apiKey}&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&format=json";
+            string? url = $"?method=track.getInfo&api_key={_apiKey}&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&format=json";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                string? content = await response.Content.ReadAsStringAsync();
 
                 var trackInfoResponse = JsonConvert.DeserializeObject<TrackInfoResponse>(content);
 
                 var album = trackInfoResponse?.Track?.Album;
 
-                var imageUrl = album?.Images?.FirstOrDefault(img => img.Size == "large")?.Url
+                string? imageUrl = album?.Images?.FirstOrDefault(img => img.Size == "large")?.Url
                     ?? album?.Images?.FirstOrDefault(img => img.Size == "medium")?.Url;
 
                 if (string.IsNullOrEmpty(imageUrl) || IsPlaceholderImage(imageUrl))
@@ -431,7 +431,7 @@ namespace SoundHaven.Services
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string? errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error fetching album info for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
                 return "https://example.com/default-artwork.png"; // Replace with your default image URL
             }
@@ -462,14 +462,14 @@ namespace SoundHaven.Services
                 artistName.Replace(",", ""), // Remove commas
                 artistName.Replace(",", "").Replace("'", ""), // Remove commas and apostrophes
                 artistName.ToLower(), // Lowercase
-                artistName.ToUpper(), // Uppercase
+                artistName.ToUpper() // Uppercase
                 // Add more variants if necessary
             };
 
-            foreach (var nameVariant in artistNameVariants)
+            foreach (string? nameVariant in artistNameVariants)
             {
-                var encodedArtistName = Uri.EscapeDataString(nameVariant);
-                var url = $"?method=artist.getinfo&artist={encodedArtistName}&api_key={_apiKey}&format=json";
+                string? encodedArtistName = Uri.EscapeDataString(nameVariant);
+                string? url = $"?method=artist.getinfo&artist={encodedArtistName}&api_key={_apiKey}&format=json";
 
                 Console.WriteLine($"Requesting artist info from URL: {_httpClient.BaseAddress}{url}");
 
@@ -477,7 +477,7 @@ namespace SoundHaven.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var content = await response.Content.ReadAsStringAsync();
+                    string? content = await response.Content.ReadAsStringAsync();
 
                     var artistInfoResponse = JsonConvert.DeserializeObject<ArtistInfoResponse>(content);
 
@@ -487,7 +487,7 @@ namespace SoundHaven.Services
                         continue;
                     }
 
-                    var imageUrl = artistInfoResponse.Artist.Images?
+                    string? imageUrl = artistInfoResponse.Artist.Images?
                             .FirstOrDefault(img => img.Size == "extralarge")?.Url
                         ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "large")?.Url
                         ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "medium")?.Url
@@ -508,7 +508,7 @@ namespace SoundHaven.Services
                 }
                 else
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
+                    string? errorContent = await response.Content.ReadAsStringAsync();
                     Console.WriteLine($"Error fetching artist info for '{nameVariant}': {response.StatusCode}, Content: {errorContent}");
                 }
             }
@@ -528,7 +528,7 @@ namespace SoundHaven.Services
             {
                 "https://lastfm.freetls.fastly.net/i/u/300x300/2a96cbd8b46e442fc41c2b86b821562f.png",
                 "https://lastfm.freetls.fastly.net/i/u/174s/empty-star.png",
-                "https://lastfm.freetls.fastly.net/i/u/300x300/empty-star.png",
+                "https://lastfm.freetls.fastly.net/i/u/300x300/empty-star.png"
                 // Add other known placeholder URLs
             };
 
@@ -565,12 +565,12 @@ namespace SoundHaven.Services
                 return cachedSimilarTracks;
             }
 
-            var url = $"?method=track.getsimilar&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&api_key={_apiKey}&format=json&limit={limit}";
+            string? url = $"?method=track.getsimilar&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&api_key={_apiKey}&format=json&limit={limit}";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                string? content = await response.Content.ReadAsStringAsync();
                 var similarTracksResponse = JsonConvert.DeserializeObject<SimilarTracksResponse>(content);
 
                 var songs = new List<Song>();
@@ -598,7 +598,7 @@ namespace SoundHaven.Services
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string? errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error fetching similar tracks for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
                 return Enumerable.Empty<Song>();
             }
@@ -613,21 +613,21 @@ namespace SoundHaven.Services
         /// </summary>
         private async Task<string> GetAlbumImageUrlByTrackSearchAsync(string trackName)
         {
-            var searchLimit = 5; // Limit the number of tracks to check
-            var url = $"?method=track.search&track={Uri.EscapeDataString(trackName)}&api_key={_apiKey}&format=json&limit={searchLimit}";
+            int searchLimit = 5; // Limit the number of tracks to check
+            string? url = $"?method=track.search&track={Uri.EscapeDataString(trackName)}&api_key={_apiKey}&format=json&limit={searchLimit}";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                string? content = await response.Content.ReadAsStringAsync();
                 var trackSearchResponse = JsonConvert.DeserializeObject<TrackSearchResponse>(content);
 
                 foreach (var track in trackSearchResponse?.Results?.TrackMatches?.TrackList ?? Enumerable.Empty<TrackSearchResult>())
                 {
-                    var artistName = track.Artist;
-                    var trackTitle = track.Name;
+                    string? artistName = track.Artist;
+                    string? trackTitle = track.Name;
 
-                    var imageUrl = await GetAlbumImageFromTrackAsync(artistName, trackTitle);
+                    string? imageUrl = await GetAlbumImageFromTrackAsync(artistName, trackTitle);
 
                     if (!string.IsNullOrEmpty(imageUrl) && !IsPlaceholderImage(imageUrl))
                     {
@@ -637,7 +637,7 @@ namespace SoundHaven.Services
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string? errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error searching for tracks with name {trackName}: {response.StatusCode}, Content: {errorContent}");
             }
 
@@ -649,16 +649,16 @@ namespace SoundHaven.Services
         /// </summary>
         private async Task<string> GetAlbumImageFromTrackAsync(string artistName, string trackName)
         {
-            var url = $"?method=track.getInfo&api_key={_apiKey}&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&format=json";
+            string? url = $"?method=track.getInfo&api_key={_apiKey}&artist={Uri.EscapeDataString(artistName)}&track={Uri.EscapeDataString(trackName)}&format=json";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
+                string? content = await response.Content.ReadAsStringAsync();
                 var trackInfoResponse = JsonConvert.DeserializeObject<TrackInfoResponse>(content);
 
                 var album = trackInfoResponse?.Track?.Album;
-                var imageUrl = album?.Images?.FirstOrDefault(img => img.Size == "large")?.Url
+                string? imageUrl = album?.Images?.FirstOrDefault(img => img.Size == "large")?.Url
                     ?? album?.Images?.FirstOrDefault(img => img.Size == "medium")?.Url;
 
                 if (!string.IsNullOrEmpty(imageUrl) && !IsPlaceholderImage(imageUrl))
@@ -668,7 +668,7 @@ namespace SoundHaven.Services
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string? errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error fetching track info for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
             }
 
@@ -696,9 +696,9 @@ namespace SoundHaven.Services
             else
             {
                 // Download the image
-                using (HttpClient client = new HttpClient())
+                using (var client = new HttpClient())
                 {
-                    var imageBytes = await client.GetByteArrayAsync(imageUrl);
+                    byte[]? imageBytes = await client.GetByteArrayAsync(imageUrl);
                     await File.WriteAllBytesAsync(filePath, imageBytes);
                     return filePath;
                 }

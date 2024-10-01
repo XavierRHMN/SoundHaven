@@ -24,7 +24,10 @@ namespace SoundHaven.ViewModels
         private Playlist? _toolbarSelectedPlaylist;
         public Playlist? ToolbarSelectedPlaylist
         {
-            get => _toolbarSelectedPlaylist;
+            get
+            {
+                return _toolbarSelectedPlaylist;
+            }
             set
             {
                 if (_toolbarSelectedPlaylist != value)
@@ -41,7 +44,13 @@ namespace SoundHaven.ViewModels
         }
 
         // Playlists collection
-        public ObservableCollection<Playlist> PlaylistCollection => _mainWindowViewModel.PlaylistCollection;
+        public ObservableCollection<Playlist> PlaylistCollection
+        {
+            get
+            {
+                return _mainWindowViewModel.PlaylistCollection;
+            }
+        }
 
         // Commands
         public RelayCommand ShowHomeViewCommand { get; set; }
@@ -175,7 +184,7 @@ namespace SoundHaven.ViewModels
             ToolbarSelectedPlaylist = null;
             _searchViewModel.SelectedSong = null;
         }
-        
+
         private void SwitchToViewModel(ViewModelBase viewModel)
         {
             _mainWindowViewModel.CurrentViewModel = viewModel;

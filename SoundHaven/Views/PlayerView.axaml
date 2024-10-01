@@ -121,9 +121,9 @@
                     <ControlTemplate>
                         <Grid Background="{TemplateBinding Background}">
                             <Rectangle x:Name="SplitterLine"
-                                       Width="1" 
-                                       Fill="White" 
-                                       Opacity="0" 
+                                       Width="1"
+                                       Fill="White"
+                                       Opacity="0"
                                        VerticalAlignment="Stretch"
                                        HorizontalAlignment="Center" />
                             <Svg x:Name="SplitterIcon"

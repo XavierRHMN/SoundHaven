@@ -27,7 +27,13 @@ namespace SoundHaven.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        public ObservableCollection<Playlist> PlaylistCollection => PlaylistStore.Playlists;
+        public ObservableCollection<Playlist> PlaylistCollection
+        {
+            get
+            {
+                return PlaylistStore.Playlists;
+            }
+        }
 
         public AudioService AudioService { get; set; }
         public PlaylistStore PlaylistStore { get; set; }
@@ -38,7 +44,10 @@ namespace SoundHaven.ViewModels
         private ViewModelBase _currentViewModel;
         public ViewModelBase CurrentViewModel
         {
-            get => _currentViewModel;
+            get
+            {
+                return _currentViewModel;
+            }
             set
             {
                 if (_currentViewModel != value)

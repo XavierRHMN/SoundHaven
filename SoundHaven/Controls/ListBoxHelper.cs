@@ -15,9 +15,6 @@ namespace SoundHaven.Controls
             element.SetValue(DeleteCommandProperty, value);
         }
 
-        public static ICommand GetDeleteCommand(ListBox element)
-        {
-            return element.GetValue(DeleteCommandProperty);
-        }
+        public static ICommand GetDeleteCommand(ListBox element) => element.GetValue(DeleteCommandProperty);
     }
 }

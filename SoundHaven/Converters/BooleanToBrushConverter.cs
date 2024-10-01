@@ -12,15 +12,12 @@ namespace SoundHaven.Converters
         {
             if (value is bool isChecked && parameter is string colors)
             {
-                var colorArray = colors.Split(',');
+                string[]? colorArray = colors.Split(',');
                 return new SolidColorBrush(Color.Parse(isChecked ? colorArray[0] : colorArray[1]));
             }
             return new SolidColorBrush(Colors.White);
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
     }
 }

@@ -17,29 +17,45 @@ namespace SoundHaven.Services
         private const int BufferSize = 4 * 1024 * 1024; // 4MB buffer
 
         private readonly YoutubeClient _youtubeClient;
-        private IYouTubeDownloadService _youTubeDownloadService;
-        private IWavePlayer _waveOutDevice;
+        private TimeSpan _accumulatedPauseDuration = TimeSpan.Zero;
         private AudioFileReader _audioFileReader;
+
+        private float _audioVolume = 0.1f;
         private BufferedWaveProvider _bufferedWaveProvider;
-        private VolumeSampleProvider _volumeProvider;
         private CancellationTokenSource _bufferingCancellationTokenSource;
-        private Timer _positionLogTimer;
         private Timer _bufferStatusTimer;
-        private DateTime _streamStartTime;
         private TimeSpan _currentPosition;
-        private TimeSpan _totalDuration;
-        private TimeSpan _startPosition;
+        private string _currentSource;
         private bool _isBuffering;
         private bool _isDisposed;
-        private bool _isYouTubeStream;
-        private string _currentSource;
-        private bool _isSeeking = false;
-        private TimeSpan _accumulatedPauseDuration = TimeSpan.Zero;
-        private DateTime _pauseStartTime;
         private bool _isPaused = false;
+
+        private bool _isSeekBuffering;
+        private bool _isSeeking = false;
+        private bool _isYouTubeStream;
+        private DateTime _pauseStartTime;
+        private Timer _positionLogTimer;
+        private TimeSpan _startPosition;
+        private DateTime _streamStartTime;
+        private TimeSpan _totalDuration;
+        private VolumeSampleProvider _volumeProvider;
+        private IWavePlayer _waveOutDevice;
+        private IYouTubeDownloadService _youTubeDownloadService;
+
+        public AudioService()
+        {
+            _waveOutDevice = new WaveOutEvent();
+            _waveOutDevice.PlaybackStopped += OnPlaybackStopped;
+            _youtubeClient = new YoutubeClient();
+            _youTubeDownloadService = new YouTubeDownloadService();
+        }
+
         public bool IsPaused
         {
-            get => _isPaused;
+            get
+            {
+                return _isPaused;
+            }
             private set
             {
                 if (_isPaused != value)
@@ -50,15 +66,19 @@ namespace SoundHaven.Services
             }
         }
 
-        public event EventHandler TrackEnded;
-        public event EventHandler PlaybackStateChanged;
-
-        public TimeSpan CurrentPosition => _currentPosition;
-
-        private float _audioVolume = 0.1f;
+        public TimeSpan CurrentPosition
+        {
+            get
+            {
+                return _currentPosition;
+            }
+        }
         public float AudioVolume
         {
-            get => _audioVolume;
+            get
+            {
+                return _audioVolume;
+            }
             set
             {
                 if (_audioVolume != value)
@@ -75,7 +95,10 @@ namespace SoundHaven.Services
 
         public TimeSpan TotalDuration
         {
-            get => _totalDuration;
+            get
+            {
+                return _totalDuration;
+            }
             private set
             {
                 if (_totalDuration != value)
@@ -85,11 +108,12 @@ namespace SoundHaven.Services
                 }
             }
         }
-        
-        private bool _isSeekBuffering;
         public bool IsSeekBuffering
         {
-            get => _isSeekBuffering;
+            get
+            {
+                return _isSeekBuffering;
+            }
             private set
             {
                 if (_isSeekBuffering != value)
@@ -100,19 +124,26 @@ namespace SoundHaven.Services
             }
         }
 
-        public AudioService()
+        public void Dispose()
         {
-            _waveOutDevice = new WaveOutEvent();
-            _waveOutDevice.PlaybackStopped += OnPlaybackStopped;
-            _youtubeClient = new YoutubeClient();
-            _youTubeDownloadService = new YouTubeDownloadService();
+            if (_isDisposed) return;
+
+            _isDisposed = true;
+            Stop();
+            _waveOutDevice?.Dispose();
+            _bufferingCancellationTokenSource?.Dispose();
+            _bufferStatusTimer?.Dispose();
+            _positionLogTimer?.Dispose();
         }
+
+        public event EventHandler TrackEnded;
+        public event EventHandler PlaybackStateChanged;
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
 
         public bool IsPlaying()
         {
-            var isPlaying = _waveOutDevice?.PlaybackState == PlaybackState.Playing;
+            bool isPlaying = _waveOutDevice?.PlaybackState == PlaybackState.Playing;
             Console.WriteLine($"IsPlaying called, result: {isPlaying}");
             return isPlaying;
         }
@@ -122,7 +153,7 @@ namespace SoundHaven.Services
         public async Task StartAsync(string source, bool isYouTubeVideo = false, TimeSpan startingPosition = default)
         {
             // Do not reset position variables
-            Stop(resetPosition: false);
+            Stop(false);
 
             _currentSource = source;
             _isYouTubeStream = isYouTubeVideo;
@@ -163,12 +194,12 @@ namespace SoundHaven.Services
                 throw;
             }
         }
-        
+
         public void Seek(TimeSpan position)
         {
             _accumulatedPauseDuration = TimeSpan.Zero;
             _isPaused = false;
-            
+
             if (_audioFileReader != null)
             {
                 _audioFileReader.CurrentTime = position;
@@ -177,7 +208,7 @@ namespace SoundHaven.Services
             else if (_isYouTubeStream)
             {
                 // Stop current playback and buffering without resetting position
-                Stop(resetPosition: false);
+                Stop(false);
 
                 // Update start position and current position
                 _startPosition = position;
@@ -209,7 +240,7 @@ namespace SoundHaven.Services
                 PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
             }
         }
-        
+
         public void Stop(bool resetPosition = true)
         {
             _isBuffering = false;
@@ -219,7 +250,7 @@ namespace SoundHaven.Services
 
             _accumulatedPauseDuration = TimeSpan.Zero;
             _isPaused = false;
-            
+
             _waveOutDevice?.Stop();
             _audioFileReader?.Dispose();
             _audioFileReader = null;
@@ -238,21 +269,9 @@ namespace SoundHaven.Services
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public void Dispose()
-        {
-            if (_isDisposed) return;
-
-            _isDisposed = true;
-            Stop();
-            _waveOutDevice?.Dispose();
-            _bufferingCancellationTokenSource?.Dispose();
-            _bufferStatusTimer?.Dispose();
-            _positionLogTimer?.Dispose();
-        }
-
         private void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
-            if ((_audioFileReader != null && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds) || (_bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering))
+            if (_audioFileReader != null && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds || _bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering)
             {
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
@@ -271,7 +290,7 @@ namespace SoundHaven.Services
                     throw new InvalidOperationException("No audio stream found for this video.");
                 }
 
-                var streamUrl = streamInfo.Url;
+                string streamUrl = streamInfo.Url;
 
                 var waveFormat = new WaveFormat(44100, 16, 2);
                 _bufferedWaveProvider = new BufferedWaveProvider(waveFormat)
@@ -313,7 +332,7 @@ namespace SoundHaven.Services
                 };
 
                 ffmpegProcess.Start();
-                
+
                 IsSeekBuffering = false;
 
                 byte[] buffer = new byte[BufferSize];
@@ -383,7 +402,7 @@ namespace SoundHaven.Services
             {
                 Console.WriteLine($"Buffer status: {_bufferedWaveProvider.BufferedBytes} / {_bufferedWaveProvider.BufferLength} bytes");
 
-                var bufferThreshold = _bufferedWaveProvider.WaveFormat.AverageBytesPerSecond * 2; // 2 seconds of audio
+                int bufferThreshold = _bufferedWaveProvider.WaveFormat.AverageBytesPerSecond * 2; // 2 seconds of audio
                 if (_bufferedWaveProvider.BufferedBytes < bufferThreshold && !_isBuffering)
                 {
                     Console.WriteLine("Buffer underrun detected. Pausing playback.");
@@ -393,7 +412,7 @@ namespace SoundHaven.Services
                     _waveOutDevice.Pause();
 
                     // Check if we're near the end of the track
-                    TimeSpan remainingTime = _totalDuration - _currentPosition;
+                    var remainingTime = _totalDuration - _currentPosition;
                     if (remainingTime <= TimeSpan.FromSeconds(2))
                     {
                         // We're near the end, so don't seek back
@@ -404,14 +423,14 @@ namespace SoundHaven.Services
                     else
                     {
                         // Adjust current position back by 0.5 seconds
-                        TimeSpan newPosition = _currentPosition - TimeSpan.FromSeconds(0.5);
+                        var newPosition = _currentPosition - TimeSpan.FromSeconds(0.5);
                         if (newPosition < TimeSpan.Zero)
                         {
                             newPosition = TimeSpan.Zero;
                         }
 
                         // Stop current playback and buffering without resetting position
-                        Stop(resetPosition: false);
+                        Stop(false);
 
                         // Update start position and current position
                         _startPosition = newPosition;

@@ -22,7 +22,10 @@ namespace SoundHaven.ViewModels
         private Playlist _displayedPlaylist;
         public Playlist DisplayedPlaylist
         {
-            get => _displayedPlaylist;
+            get
+            {
+                return _displayedPlaylist;
+            }
             set
             {
                 if (_displayedPlaylist != value)
@@ -34,12 +37,21 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        public ObservableCollection<Song> Songs => DisplayedPlaylist?.Songs ?? new ObservableCollection<Song>();
+        public ObservableCollection<Song> Songs
+        {
+            get
+            {
+                return DisplayedPlaylist?.Songs ?? new ObservableCollection<Song>();
+            }
+        }
 
         private bool _isEditMode;
         public bool IsEditMode
         {
-            get => _isEditMode;
+            get
+            {
+                return _isEditMode;
+            }
             set
             {
                 if (_isEditMode != value)
@@ -51,12 +63,21 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        public string EditButtonContent => IsEditMode ? "Done" : "Edit";
+        public string EditButtonContent
+        {
+            get
+            {
+                return IsEditMode ? "Done" : "Edit";
+            }
+        }
 
         private ObservableCollection<object> _selectedItems;
         public ObservableCollection<object> SelectedItems
         {
-            get => _selectedItems;
+            get
+            {
+                return _selectedItems;
+            }
             set
             {
                 _selectedItems = value;
@@ -68,7 +89,10 @@ namespace SoundHaven.ViewModels
         private Song _selectedSong;
         public Song SelectedSong
         {
-            get => _selectedSong;
+            get
+            {
+                return _selectedSong;
+            }
             set
             {
                 if (_selectedSong != value)

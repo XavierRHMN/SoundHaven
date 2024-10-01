@@ -1,7 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SoundHaven.App"
-             xmlns:local="using:SoundHaven"
              xmlns:themes="clr-namespace:Material.Styles.Themes;assembly=Material.Styles"
              xmlns:views="clr-namespace:SoundHaven.Views"
              xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"

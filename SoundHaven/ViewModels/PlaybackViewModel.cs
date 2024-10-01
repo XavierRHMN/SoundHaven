@@ -17,11 +17,13 @@ namespace SoundHaven.ViewModels
         public AsyncRelayCommand PreviousCommand { get; }
     }
 
+
     public class PlaybackViewModel : ViewModelBase, IPlaybackControlViewModel
     {
         private RepeatViewModel _repeatViewModel;
         private readonly IYouTubeDownloadService _youTubeDownloadService;
         public event EventHandler SeekPositionReset;
+
 
         public enum Direction
         {
@@ -29,12 +31,16 @@ namespace SoundHaven.ViewModels
             Next = 1
         }
 
+
         private AudioService _audioService;
 
         private bool _isShuffleEnabled;
         public bool IsShuffleEnabled
         {
-            get => _isShuffleEnabled;
+            get
+            {
+                return _isShuffleEnabled;
+            }
             set
             {
                 if (_isShuffleEnabled != value)
@@ -45,12 +51,21 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        public bool IsPlaying => _audioService.IsPlaying();
+        public bool IsPlaying
+        {
+            get
+            {
+                return _audioService.IsPlaying();
+            }
+        }
 
         private Song _currentSong;
         public Song CurrentSong
         {
-            get => _currentSong;
+            get
+            {
+                return _currentSong;
+            }
             set
             {
                 if (_currentSong != value)
@@ -68,12 +83,21 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        public bool CurrentSongExists => CurrentSong != null;
+        public bool CurrentSongExists
+        {
+            get
+            {
+                return CurrentSong != null;
+            }
+        }
 
         private Playlist _currentPlaylist;
         public Playlist CurrentPlaylist
         {
-            get => _currentPlaylist;
+            get
+            {
+                return _currentPlaylist;
+            }
             set
             {
                 if (_currentPlaylist != value)
@@ -108,15 +132,9 @@ namespace SoundHaven.ViewModels
             PreviousCommand = new AsyncRelayCommand(PreviousTrack);
         }
 
-        private bool CanPlay()
-        {
-            return CurrentSong != null && !IsPlaying;
-        }
+        private bool CanPlay() => CurrentSong != null && !IsPlaying;
 
-        private bool CanPause()
-        {
-            return CurrentSong != null && IsPlaying;
-        }
+        private bool CanPause() => CurrentSong != null && IsPlaying;
 
         public void Play()
         {
@@ -206,7 +224,7 @@ namespace SoundHaven.ViewModels
             else
             {
                 // For local files, if we're past 3 seconds, try to go to the previous song
-                Song? previousSong = CurrentPlaylist?.GetPreviousNextSong(CurrentSong, Direction.Previous);
+                var previousSong = CurrentPlaylist?.GetPreviousNextSong(CurrentSong, Direction.Previous);
 
                 if (previousSong != null)
                 {
@@ -243,7 +261,7 @@ namespace SoundHaven.ViewModels
             await _audioService.StartAsync(source, isYouTubeVideo);
             CurrentSong = song;
         }
-        
+
         public async Task AddToUpNext(Song song)
         {
             if (CurrentPlaylist == null)

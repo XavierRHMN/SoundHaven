@@ -16,10 +16,7 @@ namespace SoundHaven.Helpers
             element.SetValue(SelectedItemsProperty, value);
         }
 
-        public static IList GetSelectedItems(DataGrid element)
-        {
-            return element.GetValue(SelectedItemsProperty);
-        }
+        public static IList GetSelectedItems(DataGrid element) => element.GetValue(SelectedItemsProperty);
 
         static DataGridHelper()
         {
@@ -54,11 +51,11 @@ namespace SoundHaven.Helpers
                 var selectedItems = GetSelectedItems(dataGrid);
                 if (selectedItems != null)
                 {
-                    foreach (var item in e.RemovedItems)
+                    foreach (object? item in e.RemovedItems)
                     {
                         selectedItems.Remove(item);
                     }
-                    foreach (var item in e.AddedItems)
+                    foreach (object? item in e.AddedItems)
                     {
                         selectedItems.Add(item);
                     }

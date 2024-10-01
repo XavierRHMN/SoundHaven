@@ -27,7 +27,7 @@ namespace SoundHaven.Converters
         {
             try
             {
-                var bytes = await _httpClient.GetByteArrayAsync(url);
+                byte[]? bytes = await _httpClient.GetByteArrayAsync(url);
                 using (var stream = new System.IO.MemoryStream(bytes))
                 {
                     return await Task.Run(() => Bitmap.DecodeToWidth(stream, 50)); // Adjust as needed
@@ -40,10 +40,7 @@ namespace SoundHaven.Converters
             }
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
     }
 
 
@@ -75,7 +72,13 @@ namespace SoundHaven.Converters
             OnPropertyChanged(nameof(Result));
         }
 
-        public T Result => Task.Status == TaskStatus.RanToCompletion ? Task.Result : default;
+        public T Result
+        {
+            get
+            {
+                return Task.Status == TaskStatus.RanToCompletion ? Task.Result : default;
+            }
+        }
 
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));

@@ -62,7 +62,7 @@ namespace SoundHaven.ViewModels
             Color.Parse("#757575"), // Grey (600)
             Color.Parse("#546E7A"), // Blue Grey (600)
 
-            Color.Parse("#FFFFFF"), // White
+            Color.Parse("#FFFFFF") // White
         };
 
         public ThemesViewModel(MainWindowViewModel mainWindowViewModel)

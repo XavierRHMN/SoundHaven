@@ -17,7 +17,10 @@ namespace SoundHaven.Models
         private string _name;
         public string Name
         {
-            get => _name;
+            get
+            {
+                return _name;
+            }
             set
             {
                 if (_name != value)
@@ -29,7 +32,10 @@ namespace SoundHaven.Models
             }
         }
 
-        public Playlist() => Songs = new ObservableCollection<Song>();
+        public Playlist()
+        {
+            Songs = new ObservableCollection<Song>();
+        }
 
         public Song? GetPreviousNextSong(Song? currentSong, PlaybackViewModel.Direction direction)
         {

@@ -10,7 +10,10 @@ namespace SoundHaven.ViewModels
 
         public RepeatMode RepeatMode
         {
-            get => _repeatMode;
+            get
+            {
+                return _repeatMode;
+            }
             set
             {
                 if (_repeatMode != value)

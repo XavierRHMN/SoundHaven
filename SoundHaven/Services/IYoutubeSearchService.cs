@@ -57,7 +57,7 @@ namespace SoundHaven.Services
         {
             try
             {
-                var response = await FetchYouTubeSearchResults(query);
+                string? response = await FetchYouTubeSearchResults(query);
                 var initialData = ExtractInitialData(response);
                 return ParseSearchResults(initialData);
             }
@@ -71,7 +71,7 @@ namespace SoundHaven.Services
         private async Task<string> FetchYouTubeSearchResults(string query)
         {
             using var client = new HttpClient();
-            var encodedQuery = query.Contains("//:") ? query : HttpUtility.UrlEncode(query);
+            string? encodedQuery = query.Contains("//:") ? query : HttpUtility.UrlEncode(query);
             return await client.GetStringAsync(YouTubeSearchUrl + encodedQuery);
         }
 
@@ -79,9 +79,9 @@ namespace SoundHaven.Services
         {
             const string start = "var ytInitialData = ";
             const string end = "};";
-            var startIndex = response.IndexOf(start) + start.Length;
-            var endIndex = response.IndexOf(end, startIndex);
-            var jsonData = response.Substring(startIndex, endIndex + 1 - startIndex);
+            int startIndex = response.IndexOf(start) + start.Length;
+            int endIndex = response.IndexOf(end, startIndex);
+            string? jsonData = response.Substring(startIndex, endIndex + 1 - startIndex);
             return JObject.Parse(jsonData);
         }
 
@@ -106,14 +106,14 @@ namespace SoundHaven.Services
 
         private YouTubeVideoInfo ParseVideoInfo(JToken videoRenderer)
         {
-            var title = videoRenderer?["title"]?["runs"]?[0]?["text"]?.ToString();
-            var url = videoRenderer?["navigationEndpoint"]?["commandMetadata"]?["webCommandMetadata"]?["url"]?.ToString();
-            var length = videoRenderer?["lengthText"]?["simpleText"]?.ToString();
-            var views = videoRenderer?["shortViewCountText"]?["simpleText"]?.ToString();
-            var channel = videoRenderer?["ownerText"]?["runs"]?[0]?["text"]?.ToString();
-            var thumbnailUrl = videoRenderer?["thumbnail"]?["thumbnails"]?[0]?["url"]?.ToString();
-            var publishedTimeText = videoRenderer?["publishedTimeText"]?["simpleText"]?.ToString();
-            var year = ExtractYear(publishedTimeText);
+            string? title = videoRenderer?["title"]?["runs"]?[0]?["text"]?.ToString();
+            string? url = videoRenderer?["navigationEndpoint"]?["commandMetadata"]?["webCommandMetadata"]?["url"]?.ToString();
+            string? length = videoRenderer?["lengthText"]?["simpleText"]?.ToString();
+            string? views = videoRenderer?["shortViewCountText"]?["simpleText"]?.ToString();
+            string? channel = videoRenderer?["ownerText"]?["runs"]?[0]?["text"]?.ToString();
+            string? thumbnailUrl = videoRenderer?["thumbnail"]?["thumbnails"]?[0]?["url"]?.ToString();
+            string? publishedTimeText = videoRenderer?["publishedTimeText"]?["simpleText"]?.ToString();
+            int? year = ExtractYear(publishedTimeText);
 
             if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(url) || string.IsNullOrEmpty(length) || string.IsNullOrEmpty(channel) || string.IsNullOrEmpty(views) || year == null)
             {
@@ -138,12 +138,12 @@ namespace SoundHaven.Services
             if (!string.IsNullOrEmpty(publishedTimeText))
             {
                 // Parse the publishedTimeText to estimate the year
-                var timeParts = publishedTimeText.Split(' ');
+                string[]? timeParts = publishedTimeText.Split(' ');
                 if (timeParts.Length >= 2)
                 {
                     if (int.TryParse(timeParts[0], out int number))
                     {
-                        var unit = timeParts[1].ToLower();
+                        string? unit = timeParts[1].ToLower();
                         var currentDate = DateTime.Now;
 
                         if (unit.StartsWith("year"))
@@ -156,10 +156,7 @@ namespace SoundHaven.Services
             return year;
         }
 
-        private string GetSafeFileName(string fileName)
-        {
-            return string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
-        }
+        private string GetSafeFileName(string fileName) => string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
     }
 
 

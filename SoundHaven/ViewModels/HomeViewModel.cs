@@ -20,13 +20,28 @@ namespace SoundHaven.ViewModels
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
         public ObservableCollection<Song> RecommendedTracks { get; }
 
-        public Playlist? CurrentPlaylist => _playbackViewModel.CurrentPlaylist;
-        public ObservableCollection<Song>? Songs => CurrentPlaylist?.Songs;
+        public Playlist? CurrentPlaylist
+        {
+            get
+            {
+                return _playbackViewModel.CurrentPlaylist;
+            }
+        }
+        public ObservableCollection<Song>? Songs
+        {
+            get
+            {
+                return CurrentPlaylist?.Songs;
+            }
+        }
 
         private Song? _selectedSong;
         public Song? SelectedSong
         {
-            get => _selectedSong;
+            get
+            {
+                return _selectedSong;
+            }
             set
             {
                 if (_selectedSong != value)
@@ -56,7 +71,7 @@ namespace SoundHaven.ViewModels
 
         private async void LoadDataAsync()
         {
-            var username = "NavFan";
+            string? username = "NavFan";
             // TODO do something with this
             // var topTracks = await _dataService.GetTopTracksAsync();
             var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync(username);

@@ -10,15 +10,12 @@ namespace SoundHaven.Converters
         {
             if (value is bool isChecked && parameter is string opacities)
             {
-                var opacityArray = opacities.Split(',');
+                string[]? opacityArray = opacities.Split(',');
                 return double.Parse(isChecked ? opacityArray[0] : opacityArray[1]);
             }
             return 1.0;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
     }
 }

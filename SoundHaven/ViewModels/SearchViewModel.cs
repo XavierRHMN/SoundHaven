@@ -24,26 +24,47 @@ namespace SoundHaven.ViewModels
 
         public string SearchQuery
         {
-            get => _searchQuery;
-            set => SetProperty(ref _searchQuery, value);
+            get
+            {
+                return _searchQuery;
+            }
+            set
+            {
+                SetProperty(ref _searchQuery, value);
+            }
         }
 
         public ObservableCollection<Song> SearchResults
         {
-            get => _searchResults;
-            set => SetProperty(ref _searchResults, value);
+            get
+            {
+                return _searchResults;
+            }
+            set
+            {
+                SetProperty(ref _searchResults, value);
+            }
         }
 
         public bool IsLoading
         {
-            get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
+            get
+            {
+                return _isLoading;
+            }
+            set
+            {
+                SetProperty(ref _isLoading, value);
+            }
         }
 
         private Song _selectedSong;
         public Song SelectedSong
         {
-            get => _selectedSong;
+            get
+            {
+                return _selectedSong;
+            }
             set
             {
                 if (_selectedSong != value)
@@ -118,7 +139,7 @@ namespace SoundHaven.ViewModels
 
         private async void ExecutePlaySong(Song song)
         {
-            if (song == null || (string.IsNullOrEmpty(song.VideoId) && string.IsNullOrEmpty(song.FilePath)))
+            if (song == null || string.IsNullOrEmpty(song.VideoId) && string.IsNullOrEmpty(song.FilePath))
             {
                 Console.WriteLine("ExecutePlaySong: Invalid song data");
                 return;
@@ -145,7 +166,7 @@ namespace SoundHaven.ViewModels
                 _playbackViewModel.CurrentSong = song;
                 _playbackViewModel.CurrentPlaylist = new Playlist();
                 _playbackViewModel.CurrentPlaylist.Name = "Streaming from YouTube";
-                _playbackViewModel.AddToUpNext(song);  // Add this line
+                _playbackViewModel.AddToUpNext(song); // Add this line
             }
             catch (Exception ex)
             {
@@ -176,7 +197,7 @@ namespace SoundHaven.ViewModels
                     song.DownloadProgress = p * 100; // Convert to percentage
                 });
 
-                Song downloadedSong = await _youTubeDownloadService.DownloadAudioAsync(song.VideoId, progress);
+                var downloadedSong = await _youTubeDownloadService.DownloadAudioAsync(song.VideoId, progress);
                 Console.WriteLine($"Song downloaded: {downloadedSong.Title} by {downloadedSong.Artist}");
                 Console.WriteLine($"File path: {downloadedSong.FilePath}");
 

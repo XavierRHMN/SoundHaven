@@ -17,8 +17,14 @@ namespace SoundHaven.Controls
 
         public string SourceUrl
         {
-            get => GetValue(SourceUrlProperty);
-            set => SetValue(SourceUrlProperty, value);
+            get
+            {
+                return GetValue(SourceUrlProperty);
+            }
+            set
+            {
+                SetValue(SourceUrlProperty, value);
+            }
         }
 
         static AsyncImageControl()
@@ -30,7 +36,7 @@ namespace SoundHaven.Controls
         {
             await Dispatcher.UIThread.InvokeAsync(() => Source = new Bitmap(@"C:\Users\mdsha\RiderProjects\SoundHaven\SoundHaven\Assets\Covers\MissingAlbum.png"));
 
-            var url = e.NewValue as string;
+            string? url = e.NewValue as string;
             if (!string.IsNullOrEmpty(url))
             {
                 try

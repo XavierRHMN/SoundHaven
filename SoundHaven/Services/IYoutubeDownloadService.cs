@@ -47,8 +47,8 @@ namespace SoundHaven.Services
                 throw new Exception("No suitable audio stream found.");
             }
 
-            var tempFileName = SanitizeFileName($"{video.Title}.{streamInfo.Container}");
-            var tempFilePath = Path.Combine(Path.GetTempPath(), tempFileName);
+            string tempFileName = SanitizeFileName($"{video.Title}.{streamInfo.Container}");
+            string tempFilePath = Path.Combine(Path.GetTempPath(), tempFileName);
 
             // Download the audio file
             await _youtubeClient.Videos.Streams.DownloadAsync(streamInfo, tempFilePath, progress);
@@ -56,8 +56,8 @@ namespace SoundHaven.Services
             Console.WriteLine($"Downloaded audio file: {tempFilePath}");
 
             // Convert to MP3
-            var outputFileName = SanitizeFileName($"{video.Title}.mp3");
-            var outputFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), outputFileName);
+            string outputFileName = SanitizeFileName($"{video.Title}.mp3");
+            string outputFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), outputFileName);
 
             await FFMpegArguments
                 .FromFileInput(tempFilePath)
@@ -92,7 +92,7 @@ namespace SoundHaven.Services
             using (var tagFile = TagLib.File.Create(filePath))
             {
                 // Clean the title using Mp3ToSongHelper
-                var cleanTitle = Mp3ToSongHelper.CleanSongTitle(video.Title, video.Author.ChannelTitle);
+                string cleanTitle = Mp3ToSongHelper.CleanSongTitle(video.Title, video.Author.ChannelTitle);
 
                 // Set title and artist
                 tagFile.Tag.Title = cleanTitle;
@@ -103,10 +103,10 @@ namespace SoundHaven.Services
                 tagFile.Tag.Year = (uint)video.UploadDate.Year;
 
                 // Download and set thumbnail
-                var thumbnailUrl = video.Thumbnails.OrderByDescending(t => t.Resolution.Area).FirstOrDefault()?.Url;
+                string? thumbnailUrl = video.Thumbnails.OrderByDescending(t => t.Resolution.Area).FirstOrDefault()?.Url;
                 if (!string.IsNullOrEmpty(thumbnailUrl))
                 {
-                    var imageBytes = await _httpClient.GetByteArrayAsync(thumbnailUrl);
+                    byte[] imageBytes = await _httpClient.GetByteArrayAsync(thumbnailUrl);
                     var picture = new Picture(new ByteVector(imageBytes))
                     {
                         Type = PictureType.FrontCover,
@@ -124,7 +124,7 @@ namespace SoundHaven.Services
 
         private string SanitizeFileName(string fileName)
         {
-            var invalidChars = Path.GetInvalidFileNameChars();
+            char[] invalidChars = Path.GetInvalidFileNameChars();
             return new string(fileName.Where(ch => !invalidChars.Contains(ch)).ToArray());
         }
 
@@ -140,7 +140,7 @@ namespace SoundHaven.Services
             // If the ID is a full URL, extract just the ID
             if (videoId.Contains("youtube.com") || videoId.Contains("youtu.be"))
             {
-                Uri uri = new Uri(videoId);
+                var uri = new Uri(videoId);
                 if (uri.Host == "youtu.be")
                 {
                     videoId = uri.AbsolutePath.Trim('/');

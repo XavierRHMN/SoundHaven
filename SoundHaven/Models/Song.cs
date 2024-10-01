@@ -25,12 +25,24 @@ namespace SoundHaven.Models
         private double _length;
         public double Length
         {
-            get => Duration.TotalSeconds;
-            set => _length = value;
+            get
+            {
+                return Duration.TotalSeconds;
+            }
+            set
+            {
+                _length = value;
+            }
         }
 
         // New YouTube-specific properties
-        public bool IsYouTubeVideo => !string.IsNullOrEmpty(VideoId);
+        public bool IsYouTubeVideo
+        {
+            get
+            {
+                return !string.IsNullOrEmpty(VideoId);
+            }
+        }
         public string? VideoId { get; set; }
         public string? ThumbnailUrl { get; set; }
         public string? ChannelTitle { get; set; }
@@ -40,20 +52,35 @@ namespace SoundHaven.Models
         private DownloadState _downloadState = DownloadState.NotDownloaded;
         public DownloadState CurrentDownloadState
         {
-            get => _downloadState;
-            set => SetProperty(ref _downloadState, value);
+            get
+            {
+                return _downloadState;
+            }
+            set
+            {
+                SetProperty(ref _downloadState, value);
+            }
         }
 
         private double _downloadProgress;
         public double DownloadProgress
         {
-            get => _downloadProgress;
-            set => SetProperty(ref _downloadProgress, value);
+            get
+            {
+                return _downloadProgress;
+            }
+            set
+            {
+                SetProperty(ref _downloadProgress, value);
+            }
         }
         private bool _isSelected;
         public bool IsSelected
         {
-            get => _isSelected;
+            get
+            {
+                return _isSelected;
+            }
             set
             {
                 if (_isSelected != value)
@@ -67,7 +94,10 @@ namespace SoundHaven.Models
         private Bitmap? _artwork;
         public Bitmap? Artwork
         {
-            get => _artwork;
+            get
+            {
+                return _artwork;
+            }
             set
             {
                 if (SetProperty(ref _artwork, value))
@@ -80,7 +110,10 @@ namespace SoundHaven.Models
         private string? _artworkUrl;
         public string? ArtworkUrl
         {
-            get => _artworkUrl;
+            get
+            {
+                return _artworkUrl;
+            }
             set
             {
                 if (SetProperty(ref _artworkUrl, value))
@@ -93,8 +126,14 @@ namespace SoundHaven.Models
         private double _aspectRatio;
         public double AspectRatio
         {
-            get => _aspectRatio;
-            private set => SetProperty(ref _aspectRatio, value);
+            get
+            {
+                return _aspectRatio;
+            }
+            private set
+            {
+                SetProperty(ref _aspectRatio, value);
+            }
         }
 
         // Existing methods
@@ -141,7 +180,7 @@ namespace SoundHaven.Models
                 {
                     using (var httpClient = new HttpClient())
                     {
-                        var imageBytes = await httpClient.GetByteArrayAsync(ThumbnailUrl);
+                        byte[] imageBytes = await httpClient.GetByteArrayAsync(ThumbnailUrl);
                         using (var memoryStream = new MemoryStream(imageBytes))
                         {
                             Artwork = new Bitmap(memoryStream);
