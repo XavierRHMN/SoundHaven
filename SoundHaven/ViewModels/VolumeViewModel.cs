@@ -1,7 +1,6 @@
 ﻿using SoundHaven.Commands;
 using SoundHaven.Services;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System;
 
 namespace SoundHaven.ViewModels
 {
@@ -14,15 +13,13 @@ namespace SoundHaven.ViewModels
 
         public float Volume
         {
-            get
-            {
-                return _volume;
-            }
+            get => _volume;
             set
             {
-                if (_volume != value)
+                float newVolume = Math.Clamp(value, 0f, 1f);
+                if (Math.Abs(_volume - newVolume) > float.Epsilon)
                 {
-                    _volume = value;
+                    _volume = newVolume;
                     OnPropertyChanged();
                     _audioService.AudioVolume = _volume;
                 }
@@ -31,10 +28,7 @@ namespace SoundHaven.ViewModels
 
         public bool IsMuted
         {
-            get
-            {
-                return _isMuted;
-            }
+            get => _isMuted;
             set
             {
                 if (_isMuted != value)
@@ -46,9 +40,11 @@ namespace SoundHaven.ViewModels
                     {
                         PreviousVolume = Volume;
                         Volume = 0;
+                        _audioService.AudioVolume = 0f;
                     }
                     else
                     {
+                        _audioService.AudioVolume = PreviousVolume;
                         Volume = PreviousVolume;
                     }
                 }
@@ -57,10 +53,7 @@ namespace SoundHaven.ViewModels
 
         public float PreviousVolume
         {
-            get
-            {
-                return _previousVolume;
-            }
+            get => _previousVolume;
             set
             {
                 _previousVolume = value;
@@ -73,7 +66,7 @@ namespace SoundHaven.ViewModels
         public VolumeViewModel(AudioService audioService)
         {
             _audioService = audioService;
-            Volume = _audioService.AudioVolume;
+            _volume = _audioService.AudioVolume; // This should now be 0.5 (50%)
             MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
         }
 

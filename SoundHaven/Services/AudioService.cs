@@ -20,7 +20,8 @@ namespace SoundHaven.Services
         private TimeSpan _accumulatedPauseDuration = TimeSpan.Zero;
         private AudioFileReader _audioFileReader;
 
-        private float _audioVolume = 0.1f;
+        private float _audioVolume = 0.8f;
+        private const float MaxVolumeMultiplier = 3.0f; // Maximum volume will be 200% of normal
         private BufferedWaveProvider _bufferedWaveProvider;
         private CancellationTokenSource _bufferingCancellationTokenSource;
         private Timer _bufferStatusTimer;
@@ -45,6 +46,7 @@ namespace SoundHaven.Services
 
         public AudioService()
         {
+            AudioVolume = 0.5f; // 50% volume
             _waveOutDevice = new WaveOutEvent();
             _waveOutDevice.PlaybackStopped += OnPlaybackStopped;
             _youtubeClient = new YoutubeClient();
@@ -77,24 +79,21 @@ namespace SoundHaven.Services
         
         public float AudioVolume
         {
-            get
-            {
-                return _audioVolume;
-            }
+            get => _audioVolume;
             set
             {
                 if (_audioVolume != value)
                 {
-                    _audioVolume = value;
+                    _audioVolume = Math.Clamp(value, 0f, 1f);
                     if (_volumeProvider != null)
                     {
-                        // Map the 0-75 range to 0-75 range for NAudio
-                        _volumeProvider.Volume = _audioVolume;
+                        _volumeProvider.Volume = _audioVolume * MaxVolumeMultiplier;
                     }
                     OnPropertyChanged();
                 }
             }
         }
+
 
         public TimeSpan TotalDuration
         {
@@ -404,7 +403,7 @@ namespace SoundHaven.Services
         {
             _volumeProvider = new VolumeSampleProvider(waveProvider.ToSampleProvider())
             {
-                Volume = _audioVolume
+                Volume = _audioVolume * MaxVolumeMultiplier
             };
 
             _waveOutDevice.Init(_volumeProvider);
