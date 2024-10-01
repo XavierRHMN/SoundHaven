@@ -13,13 +13,14 @@ namespace SoundHaven.ViewModels
     {
         public RelayCommand PlayCommand { get; }
         public RelayCommand PauseCommand { get; }
-        public RelayCommand NextCommand { get; }
-        public RelayCommand PreviousCommand { get; }
+        public AsyncRelayCommand NextCommand { get; }
+        public AsyncRelayCommand PreviousCommand { get; }
     }
 
     public class PlaybackViewModel : ViewModelBase, IPlaybackControlViewModel
     {
         private RepeatViewModel _repeatViewModel;
+        private readonly IYouTubeDownloadService _youTubeDownloadService;
         public event EventHandler SeekPositionReset;
 
         public enum Direction
@@ -85,12 +86,13 @@ namespace SoundHaven.ViewModels
 
         public RelayCommand PlayCommand { get; set; }
         public RelayCommand PauseCommand { get; set; }
-        public RelayCommand NextCommand { get; set; }
-        public RelayCommand PreviousCommand { get; set; }
+        public AsyncRelayCommand NextCommand { get; set; }
+        public AsyncRelayCommand PreviousCommand { get; set; }
 
-        public PlaybackViewModel(AudioService audioService, RepeatViewModel repeatViewModel)
+        public PlaybackViewModel(AudioService audioService, IYouTubeDownloadService youTubeDownloadService, RepeatViewModel repeatViewModel)
         {
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
+            _youTubeDownloadService = youTubeDownloadService ?? throw new ArgumentNullException(nameof(youTubeDownloadService));
             _audioService.PlaybackStateChanged += OnPlaybackStateChanged;
             _audioService.TrackEnded += OnTrackEndedRobust;
             _repeatViewModel = repeatViewModel;
@@ -102,8 +104,8 @@ namespace SoundHaven.ViewModels
         {
             PlayCommand = new RelayCommand(Play, CanPlay);
             PauseCommand = new RelayCommand(Pause, CanPause);
-            NextCommand = new RelayCommand(NextTrack);
-            PreviousCommand = new RelayCommand(PreviousTrack);
+            NextCommand = new AsyncRelayCommand(NextTrack);
+            PreviousCommand = new AsyncRelayCommand(PreviousTrack);
         }
 
         private bool CanPlay()
@@ -150,7 +152,7 @@ namespace SoundHaven.ViewModels
 
         public bool IsTransitioningTracks { get; set; }
 
-        public void NextTrack()
+        public async Task NextTrack()
         {
             if (CurrentPlaylist == null || CurrentPlaylist.Songs.Count is 0 or 1)
             {
@@ -180,8 +182,7 @@ namespace SoundHaven.ViewModels
 
             if (nextSong != null)
             {
-                CurrentSong = nextSong;
-                PlayFromBeginning(nextSong);
+                await PlayFromBeginning(nextSong);
             }
             else
             {
@@ -189,55 +190,83 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        private void PreviousTrack()
+        public async Task PreviousTrack()
         {
-            if (CurrentPlaylist == null || CurrentPlaylist.Songs.Count == 0)
+            if (CurrentSong == null)
             {
-                Console.WriteLine("The playlist is empty.");
+                Console.WriteLine("No current song to restart or go back from.");
                 return;
             }
 
-            Song? previousSong = CurrentPlaylist.GetPreviousNextSong(CurrentSong, Direction.Previous);
-
-            if (previousSong != null)
+            if (CurrentSong.IsYouTubeVideo || _audioService.GetCurrentTime().TotalSeconds <= 3)
             {
-                if (_audioService.GetCurrentTime().TotalSeconds > 3)
-                {
-                    PlayFromBeginning(CurrentSong);
-                }
-                else if (CurrentPlaylist.Songs.Count > 1)
-                {
-                    CurrentSong = previousSong;
-                    PlayFromBeginning(previousSong);
-                }
+                // For YouTube videos or if we're within the first 3 seconds of any song, always restart
+                await PlayFromBeginning(CurrentSong);
             }
             else
             {
-                Console.WriteLine("No previous song available.");
+                // For local files, if we're past 3 seconds, try to go to the previous song
+                Song? previousSong = CurrentPlaylist?.GetPreviousNextSong(CurrentSong, Direction.Previous);
+
+                if (previousSong != null)
+                {
+                    await PlayFromBeginning(previousSong);
+                }
+                else
+                {
+                    // If there's no previous song, restart the current one
+                    await PlayFromBeginning(CurrentSong);
+                }
             }
         }
 
         public async Task PlayFromBeginning(Song song)
         {
-            if (song == null || string.IsNullOrEmpty(song.FilePath))
+            if (song == null)
             {
-                throw new ArgumentException("Invalid song or file path.");
+                throw new ArgumentException("Invalid song.");
             }
 
-            await _audioService.StartAsync(song.FilePath);
+            bool isYouTubeVideo = !string.IsNullOrEmpty(song.VideoId);
+            string source = isYouTubeVideo ? song.VideoId : song.FilePath;
+
+            if (string.IsNullOrEmpty(source))
+            {
+                throw new ArgumentException("Missing file path/YouTube ID.");
+            }
+
+            if (isYouTubeVideo)
+            {
+                source = _youTubeDownloadService.CleanVideoId(source);
+            }
+
+            await _audioService.StartAsync(source, isYouTubeVideo);
+            CurrentSong = song;
         }
         
-        public void AddToUpNext(Song song)
+        public async Task AddToUpNext(Song song)
         {
             if (CurrentPlaylist == null)
             {
                 CurrentPlaylist = new Playlist { Name = "Streaming from YouTube", Songs = new ObservableCollection<Song>() };
             }
-    
+
+            if (!string.IsNullOrEmpty(song.VideoId))
+            {
+                // Clean the video ID
+                song.VideoId = _youTubeDownloadService.CleanVideoId(song.VideoId);
+            }
+
             if (!CurrentPlaylist.Songs.Contains(song))
             {
                 CurrentPlaylist.Songs.Add(song);
                 OnPropertyChanged(nameof(CurrentPlaylist));
+
+                // If this is the first song added and no song is currently playing, start playing it
+                if (CurrentPlaylist.Songs.Count == 1 && CurrentSong == null)
+                {
+                    await PlayFromBeginning(song);
+                }
             }
         }
 

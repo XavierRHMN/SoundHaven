@@ -30,6 +30,7 @@ namespace SoundHaven.Models
         }
 
         // New YouTube-specific properties
+        public bool IsYouTubeVideo => !string.IsNullOrEmpty(VideoId);
         public string? VideoId { get; set; }
         public string? ThumbnailUrl { get; set; }
         public string? ChannelTitle { get; set; }

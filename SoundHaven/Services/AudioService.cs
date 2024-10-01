@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace SoundHaven.Services
 {
@@ -16,6 +17,7 @@ namespace SoundHaven.Services
         private const int BufferSize = 4 * 1024 * 1024; // 4MB buffer
 
         private readonly YoutubeClient _youtubeClient;
+        private IYouTubeDownloadService _youTubeDownloadService;
         private IWavePlayer _waveOutDevice;
         private AudioFileReader _audioFileReader;
         private BufferedWaveProvider _bufferedWaveProvider;
@@ -103,6 +105,7 @@ namespace SoundHaven.Services
             _waveOutDevice = new WaveOutEvent();
             _waveOutDevice.PlaybackStopped += OnPlaybackStopped;
             _youtubeClient = new YoutubeClient();
+            _youTubeDownloadService = new YouTubeDownloadService();
         }
 
         public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
@@ -131,7 +134,8 @@ namespace SoundHaven.Services
             {
                 if (isYouTubeVideo)
                 {
-                    await StartYouTubeStreamAsync(source, startingPosition);
+                    string cleanVideoId = _youTubeDownloadService.CleanVideoId(source);
+                    await StartYouTubeStreamAsync(cleanVideoId, startingPosition);
                 }
                 else
                 {
@@ -159,7 +163,7 @@ namespace SoundHaven.Services
                 throw;
             }
         }
-
+        
         public void Seek(TimeSpan position)
         {
             _accumulatedPauseDuration = TimeSpan.Zero;
@@ -257,31 +261,39 @@ namespace SoundHaven.Services
 
         private async Task StartYouTubeStreamAsync(string videoId, TimeSpan startingPosition)
         {
-            var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(videoId);
-            var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-
-            if (streamInfo == null)
+            try
             {
-                throw new InvalidOperationException("No audio stream found for this video.");
+                var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(videoId);
+                var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
+
+                if (streamInfo == null)
+                {
+                    throw new InvalidOperationException("No audio stream found for this video.");
+                }
+
+                var streamUrl = streamInfo.Url;
+
+                var waveFormat = new WaveFormat(44100, 16, 2);
+                _bufferedWaveProvider = new BufferedWaveProvider(waveFormat)
+                {
+                    BufferLength = 8 * 1024 * 1024 // 8MB buffer
+                };
+
+                InitializeAudio(_bufferedWaveProvider);
+
+                _isBuffering = true;
+                _bufferingCancellationTokenSource = new CancellationTokenSource();
+
+                var videoDetails = await _youtubeClient.Videos.GetAsync(videoId);
+                TotalDuration = videoDetails.Duration ?? TimeSpan.Zero;
+
+                _ = Task.Run(() => BufferYouTubeStreamAsync(streamUrl, startingPosition, _bufferingCancellationTokenSource.Token));
             }
-
-            var streamUrl = streamInfo.Url;
-
-            var waveFormat = new WaveFormat(44100, 16, 2);
-            _bufferedWaveProvider = new BufferedWaveProvider(waveFormat)
+            catch (Exception ex)
             {
-                BufferLength = 8 * 1024 * 1024 // 8MB buffer
-            };
-
-            InitializeAudio(_bufferedWaveProvider);
-
-            _isBuffering = true;
-            _bufferingCancellationTokenSource = new CancellationTokenSource();
-
-            var videoDetails = await _youtubeClient.Videos.GetAsync(videoId);
-            TotalDuration = videoDetails.Duration ?? TimeSpan.Zero;
-
-            _ = Task.Run(() => BufferYouTubeStreamAsync(streamUrl, startingPosition, _bufferingCancellationTokenSource.Token));
+                Console.WriteLine($"Error in StartYouTubeStreamAsync: {ex.Message}");
+                throw;
+            }
         }
 
         private async Task BufferYouTubeStreamAsync(string streamUrl, TimeSpan startingPosition, CancellationToken cancellationToken)

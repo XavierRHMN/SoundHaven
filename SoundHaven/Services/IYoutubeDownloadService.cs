@@ -18,6 +18,7 @@ namespace SoundHaven.Services
     public interface IYouTubeDownloadService
     {
         Task<Song> DownloadAudioAsync(string videoId, IProgress<double> progress);
+        string CleanVideoId(string videoId);
     }
 
 
@@ -127,7 +128,7 @@ namespace SoundHaven.Services
             return new string(fileName.Where(ch => !invalidChars.Contains(ch)).ToArray());
         }
 
-        private string CleanVideoId(string videoId)
+        public string CleanVideoId(string videoId)
         {
             // Remove any parameters after '&'
             int ampersandIndex = videoId.IndexOf('&');
