@@ -100,10 +100,7 @@ namespace SoundHaven.Models
             }
             set
             {
-                if (SetProperty(ref _artwork, value))
-                {
-                    UpdateAspectRatio();
-                }
+                SetProperty(ref _artwork, value);
             }
         }
 
@@ -122,20 +119,7 @@ namespace SoundHaven.Models
                 }
             }
         }
-
-        private double _aspectRatio;
-        public double AspectRatio
-        {
-            get
-            {
-                return _aspectRatio;
-            }
-            private set
-            {
-                SetProperty(ref _aspectRatio, value);
-            }
-        }
-
+        
         // Existing methods
         private void LoadArtwork()
         {
@@ -156,18 +140,6 @@ namespace SoundHaven.Models
             else
             {
                 Artwork = null;
-            }
-        }
-
-        private void UpdateAspectRatio()
-        {
-            if (Artwork != null && Artwork.PixelSize.Height != 0)
-            {
-                AspectRatio = Artwork.PixelSize.Width / (double)Artwork.PixelSize.Height;
-            }
-            else
-            {
-                AspectRatio = 1.0; // Default AspectRatio
             }
         }
 
