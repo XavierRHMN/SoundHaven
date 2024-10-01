@@ -14,7 +14,7 @@ namespace SoundHaven.Services
 {
     public class AudioService : ViewModelBase, IDisposable
     {
-        private const int BufferSize = 8 * 1024 * 1024; // 8MB buffer
+        private const int BufferSize = 80 * 1024 * 1024; // 80MB buffer
 
         private readonly YoutubeClient _youtubeClient;
         private TimeSpan _accumulatedPauseDuration = TimeSpan.Zero;
@@ -306,9 +306,10 @@ namespace SoundHaven.Services
                 string streamUrl = streamInfo.Url;
 
                 var waveFormat = new WaveFormat(44100, 16, 2);
+                // Change this line in your StartYouTubeStreamAsync method
                 _bufferedWaveProvider = new BufferedWaveProvider(waveFormat)
                 {
-                    BufferLength = 8 * 1024 * 1024 // 8MB buffer
+                    BufferLength = 80 * 1024 * 1024 // 80MB buffer
                 };
 
                 InitializeAudio(_bufferedWaveProvider);
@@ -443,7 +444,7 @@ namespace SoundHaven.Services
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "ffmpeg",
-                        Arguments = $"-ss {_currentPosition.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 -t 5 pipe:1",
+                        Arguments = $"-ss {_currentPosition.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 pipe:1",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         CreateNoWindow = true
