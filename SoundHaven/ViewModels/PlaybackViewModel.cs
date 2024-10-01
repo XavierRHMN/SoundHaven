@@ -307,9 +307,12 @@ namespace SoundHaven.ViewModels
 
         private void OnPlaybackStateChanged(object sender, EventArgs e)
         {
-            OnPropertyChanged(nameof(IsPlaying));
-            PlayCommand.RaiseCanExecuteChanged();
-            PauseCommand.RaiseCanExecuteChanged();
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                OnPropertyChanged(nameof(IsPlaying));
+                PlayCommand.RaiseCanExecuteChanged();
+                PauseCommand.RaiseCanExecuteChanged();
+            });
         }
 
         public override void Dispose()

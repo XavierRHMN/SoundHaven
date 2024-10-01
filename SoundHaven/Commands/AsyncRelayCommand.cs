@@ -23,6 +23,12 @@ namespace SoundHaven.Commands
             await _execute();
         }
 
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        public void RaiseCanExecuteChanged()
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            });
+        }
     }
 }

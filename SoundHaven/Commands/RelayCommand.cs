@@ -19,7 +19,10 @@ namespace SoundHaven.Commands
 
         public void RaiseCanExecuteChanged()
         {
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            });
         }
 
         public bool CanExecute(object parameter) => _canExecute == null || _canExecute();
