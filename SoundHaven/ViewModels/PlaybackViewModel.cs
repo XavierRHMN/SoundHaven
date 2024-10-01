@@ -298,6 +298,7 @@ namespace SoundHaven.ViewModels
                     break;
                 case RepeatMode.All:
                     PreviousTrack();
+                    _audioService.Resume();
                     break;
                 case RepeatMode.Off:
                     NextTrack();

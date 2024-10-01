@@ -29,6 +29,7 @@ namespace SoundHaven.Services
         private bool _isBuffering;
         private bool _isDisposed;
         private bool _isPaused = false;
+        private bool _isTrackEnded = false;
 
         private bool _isSeekBuffering;
         private bool _isSeeking = false;
@@ -165,7 +166,9 @@ namespace SoundHaven.Services
         {
             // Do not reset position variables
             Stop(false);
-
+            
+            _isTrackEnded = false; // Reset the flag
+            
             _currentSource = source;
             _isYouTubeStream = isYouTubeVideo;
             _startPosition = startingPosition;
@@ -270,6 +273,8 @@ namespace SoundHaven.Services
             _volumeProvider = null;
             _isYouTubeStream = false;
 
+            _isTrackEnded = true; // Set the flag
+
             if (resetPosition)
             {
                 _currentPosition = TimeSpan.Zero;
@@ -285,6 +290,7 @@ namespace SoundHaven.Services
         {
             if (_audioFileReader != null && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds || _bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering)
             {
+                _isTrackEnded = true; // Set the flag
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
             OnPlaybackStateChanged();
@@ -409,6 +415,12 @@ namespace SoundHaven.Services
 
         private void CheckBufferStatus()
         {
+            if (_isTrackEnded)
+            {
+                // Song has ended, do not attempt to refill
+                return;
+            }
+            
             if (_bufferedWaveProvider != null)
             {
                 Console.WriteLine($"Buffer status: {_bufferedWaveProvider.BufferedBytes} / {_bufferedWaveProvider.BufferLength} bytes");
@@ -427,6 +439,12 @@ namespace SoundHaven.Services
         
         private async Task RefillBufferAsync()
         {
+            if (_isTrackEnded)
+            {
+                // Song has ended, do not attempt to refill
+                return;
+            }
+            
             try
             {
                 var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(_currentSource);
@@ -492,15 +510,37 @@ namespace SoundHaven.Services
             {
                 var elapsed = DateTime.Now - _streamStartTime - _accumulatedPauseDuration;
                 _currentPosition = _startPosition + elapsed;
-                if (_currentPosition > _totalDuration)
+                if (_currentPosition >= _totalDuration)
                 {
                     _currentPosition = _totalDuration;
+
+                    if (!_isTrackEnded)
+                    {
+                        _isTrackEnded = true;
+
+                        // Stop playback and raise the TrackEnded event
+                        Stop();
+                        TrackEnded?.Invoke(this, EventArgs.Empty);
+                    }
                 }
                 OnPropertyChanged(nameof(CurrentPosition));
             }
             else
             {
                 _currentPosition = _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
+                if (_currentPosition >= _totalDuration)
+                {
+                    _currentPosition = _totalDuration;
+
+                    if (!_isTrackEnded)
+                    {
+                        _isTrackEnded = true;
+
+                        // Stop playback and raise the TrackEnded event
+                        Stop();
+                        TrackEnded?.Invoke(this, EventArgs.Empty);
+                    }
+                }
                 OnPropertyChanged(nameof(CurrentPosition));
             }
         }
