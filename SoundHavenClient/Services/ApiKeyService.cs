@@ -3,13 +3,7 @@ using System.IO;
 
 namespace SoundHaven.Services
 {
-    public interface IApiKeyProvider
-    {
-        string GetApiKey(string fileName);
-    }
-
-
-    public class ApiKeyService : IApiKeyProvider
+    public class ApiKeyService
     {
         public string GetApiKey(string fileName)
         {

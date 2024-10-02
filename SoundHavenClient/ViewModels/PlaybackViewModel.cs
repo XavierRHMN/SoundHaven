@@ -9,16 +9,7 @@ using System.Threading.Tasks;
 
 namespace SoundHaven.ViewModels
 {
-    public interface IPlaybackControlViewModel
-    {
-        public RelayCommand PlayCommand { get; }
-        public RelayCommand PauseCommand { get; }
-        public AsyncRelayCommand NextCommand { get; }
-        public AsyncRelayCommand PreviousCommand { get; }
-    }
-
-
-    public class PlaybackViewModel : ViewModelBase, IPlaybackControlViewModel
+    public class PlaybackViewModel : ViewModelBase
     {
         private RepeatViewModel _repeatViewModel;
         private readonly IYouTubeDownloadService _youTubeDownloadService;

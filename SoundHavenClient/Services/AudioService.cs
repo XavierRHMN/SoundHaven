@@ -126,18 +126,6 @@ namespace SoundHaven.Services
             }
         }
 
-        public void Dispose()
-        {
-            if (_isDisposed) return;
-
-            _isDisposed = true;
-            Stop();
-            _waveOutDevice?.Dispose();
-            _bufferingCancellationTokenSource?.Dispose();
-            _bufferStatusTimer?.Dispose();
-            _positionLogTimer?.Dispose();
-        }
-
         public event EventHandler TrackEnded;
         public event EventHandler PlaybackStateChanged;
         
@@ -545,6 +533,18 @@ namespace SoundHaven.Services
                 }
                 OnPropertyChanged(nameof(CurrentPosition));
             }
+        }
+        
+        public void Dispose()
+        {
+            if (_isDisposed) return;
+
+            _isDisposed = true;
+            Stop();
+            _waveOutDevice?.Dispose();
+            _bufferingCancellationTokenSource?.Dispose();
+            _bufferStatusTimer?.Dispose();
+            _positionLogTimer?.Dispose();
         }
     }
 }
