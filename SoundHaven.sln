@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoundHaven", "SoundHaven\SoundHaven.csproj", "{C1762480-92C6-48B2-A5DA-F66783DA14ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoundHavenClient", "SoundHavenClient\SoundHavenClient.csproj", "{C1762480-92C6-48B2-A5DA-F66783DA14ED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
