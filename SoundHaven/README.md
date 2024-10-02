@@ -2,8 +2,8 @@
 
 ![SoundHaven Logo](Screenshots/Home.png)
 
-SoundHaven is a powerful and elegant C# music player application built 
-with Avalonia and the MVVM design pattern. It seamlessly integrates 
+SoundHaven is a powerful and elegant C# music player application built
+with Avalonia and the MVVM design pattern. It seamlessly integrates
 various music sources and provides a rich, customizable listening experience.
 
 ## ✨ Features
@@ -33,8 +33,7 @@ SoundHaven leverages a powerful stack of technologies:
 ### Prerequisites
 
 - .NET 6.0 SDK or later
-- Visual Studio 2022, JetBrains Rider, or Visual Studio Code
-- Last.fm API key 
+- Last.fm API key
 
 ### Installation
 
@@ -54,7 +53,13 @@ SoundHaven leverages a powerful stack of technologies:
    ```
    dotnet build
    ```
-5. Run the application:
+5. Set up your Last.fm API key:
+   ```
+   mkdir -p ApiKeys
+   echo "YOUR_LASTFM_API_KEY" > ApiKeys/LASTFM_API_KEY.txt
+   ```
+   Replace `YOUR_LASTFM_API_KEY` with your actual Last.fm API key.
+6. Run the application:
    ```
    dotnet run
    ```
