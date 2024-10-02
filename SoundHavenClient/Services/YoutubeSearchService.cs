@@ -16,7 +16,6 @@ namespace SoundHaven.Services
         Task<IEnumerable<YouTubeVideoInfo>> SearchVideos(string query);
     }
 
-
     public class YoutubeSearchService : IYoutubeSearchService
     {
         private readonly ILogger<YoutubeSearchService> _logger;

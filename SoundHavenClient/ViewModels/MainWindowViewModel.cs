@@ -71,13 +71,13 @@ namespace SoundHaven.ViewModels
         public ThemesViewModel ThemesViewModel { get; set; }
         public RepeatViewModel RepeatViewModel { get; set; }
         public SearchViewModel SearchViewModel { get; set; }
-        public YouTubeDownloadService YouTubeDownloadService { get; set; }
-        public YoutubeSearchService YoutubeSearchService { get; set; }
+        public IYouTubeDownloadService YouTubeDownloadService { get; set; }
+        public IYoutubeSearchService YoutubeSearchService { get; set; }
 
         public MainWindowViewModel()
         {
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            IApiKeyProvider apiKeyProvider = new ApiKeyService();
+            ApiKeyService apiKeyProvider = new ApiKeyService();
 
             string lastFmApiKey = apiKeyProvider.GetApiKey("LASTFM_API_KEY.txt");
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
