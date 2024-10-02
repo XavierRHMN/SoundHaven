@@ -56,6 +56,20 @@ namespace SoundHaven.ViewModels
                 }
             }
         }
+        
+        private bool _isLoading = true;
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set
+            {
+                if (_isLoading != value)
+                {
+                    _isLoading = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public HomeViewModel(PlaybackViewModel playbackViewModel, IDataService dataService)
         {
@@ -71,6 +85,7 @@ namespace SoundHaven.ViewModels
 
         private async void LoadDataAsync()
         {
+            IsLoading = true;
             string? username = "NavFan";
             // TODO do something with this
             // var topTracks = await _dataService.GetTopTracksAsync();
@@ -94,6 +109,8 @@ namespace SoundHaven.ViewModels
             {
                 RecentlyPlayedTracks.Add(song);
             }
+            
+            IsLoading = false;
 
             // foreach (var song in topTracks)
             // {
