@@ -2,7 +2,9 @@
 
 ![SoundHaven Logo](Screenshots/Home.png)
 
-SoundHaven is a powerful and elegant music player application built with C# and the MVVM architecture. It seamlessly integrates various music sources and provides a rich, customizable listening experience.
+SoundHaven is a powerful and elegant C# music player application built 
+with Avalonia and the MVVM design pattern. It seamlessly integrates 
+various music sources and provides a rich, customizable listening experience.
 
 ## ✨ Features
 
@@ -13,7 +15,7 @@ SoundHaven is a powerful and elegant music player application built with C# and 
 - 🏷️ Advanced audio file tagging and management with TagLibSharp
 - 🔊 High-quality audio playback with NAudio
 - 📥 Download YouTube videos and extract audio with YoutubeExplode
-- 🌈 User-customizable UI layouts and color schemes
+- 🌈 User-customizable color schemes
 
 ## 🛠️ Technologies
 
@@ -32,12 +34,13 @@ SoundHaven leverages a powerful stack of technologies:
 
 - .NET 6.0 SDK or later
 - Visual Studio 2022, JetBrains Rider, or Visual Studio Code
+- Last.fm API key 
 
 ### Installation
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/SoundHaven.git
+   git clone https://github.com/XavierRHMN/SoundHaven.git
    ```
 2. Navigate to the project directory:
    ```
@@ -82,4 +85,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Made with ❤️ by [Your Name]
+Made with ❤️

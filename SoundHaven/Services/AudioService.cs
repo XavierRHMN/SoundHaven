@@ -21,7 +21,7 @@ namespace SoundHaven.Services
         private AudioFileReader _audioFileReader;
 
         private float _audioVolume = 0.8f;
-        private const float MaxVolumeMultiplier = 3.0f; // Maximum volume will be 200% of normal
+        private const float MaxVolumeMultiplier = 5.0f; // Maximum volume will be 500% of normal
         private BufferedWaveProvider _bufferedWaveProvider;
         private CancellationTokenSource _bufferingCancellationTokenSource;
         private Timer _bufferStatusTimer;
