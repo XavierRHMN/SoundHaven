@@ -34,7 +34,7 @@ namespace SoundHaven.Controls
 
         private async void OnSourceUrlChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            await Dispatcher.UIThread.InvokeAsync(() => Source = new Bitmap(@"C:\Users\mdsha\RiderProjects\SoundHaven\SoundHaven\Assets\Covers\MissingAlbum.png"));
+            await Dispatcher.UIThread.InvokeAsync(() => Source = new Bitmap(@"C:\Users\mdsha\RiderProjects\SoundHaven\SoundHavenClient\Assets\Covers\MissingAlbum.png"));
 
             string? url = e.NewValue as string;
             if (!string.IsNullOrEmpty(url))

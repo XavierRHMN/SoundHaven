@@ -679,7 +679,7 @@ namespace SoundHaven.Services
         {
             // Create a unique filename based on the URL
             string fileName = Path.GetFileName(imageUrl);
-            string cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SoundHaven", "ImageCache");
+            string cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SoundHavenClient", "ImageCache");
 
             if (!Directory.Exists(cacheDirectory))
             {

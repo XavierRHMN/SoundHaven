@@ -11,7 +11,7 @@
             CornerRadius="30">
 
         <Panel>
-            <Svg Path="avares://SoundHaven/Assets/Icons/repeat.svg"
+            <Svg Path="avares://SoundHavenClient/Assets/Icons/repeat.svg"
                  IsVisible="{Binding RepeatMode, Converter={StaticResource RepeatModeToVisibilityConverter}, ConverterParameter=General}"
                  Opacity="{Binding RepeatMode, Converter={StaticResource RepeatModeToOpacityConverter}}">
                 <Svg.Transitions>
@@ -20,7 +20,7 @@
                     </Transitions>
                 </Svg.Transitions>
             </Svg>
-            <Svg Path="avares://SoundHaven/Assets/Icons/repeat_one.svg"
+            <Svg Path="avares://SoundHavenClient/Assets/Icons/repeat_one.svg"
                  IsVisible="{Binding RepeatMode, Converter={StaticResource RepeatModeToVisibilityConverter}, ConverterParameter=One}">
                 <Svg.Transitions>
                     <Transitions>

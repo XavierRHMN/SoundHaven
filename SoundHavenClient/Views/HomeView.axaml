@@ -16,7 +16,7 @@
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Headers">
-            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+            <Setter Property="FontFamily" Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="28" />
@@ -24,14 +24,14 @@
         </Style>
 
         <Style Selector="TextBlock.TrackTitle">
-            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="FontFamily" Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="16" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
 
         <Style Selector="TextBlock.ArtistName">
-            <Setter Property="FontFamily" Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+            <Setter Property="FontFamily" Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
             <Setter Property="Foreground" Value="#B3B3B3" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
