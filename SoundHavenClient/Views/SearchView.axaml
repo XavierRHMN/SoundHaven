@@ -17,7 +17,7 @@
     <UserControl.Styles>
         <Style Selector="TextBlock.Headers">
             <Setter Property="FontFamily"
-                    Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="Black" />
             <Setter Property="FontSize" Value="28" />
@@ -25,14 +25,14 @@
 
         <Style Selector="TextBlock.TrackTitle">
             <Setter Property="FontFamily"
-                    Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="16" />
         </Style>
 
         <Style Selector="TextBlock.ExtraInfo">
             <Setter Property="FontFamily"
-                    Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             <Setter Property="Foreground" Value="Gray" />
             <Setter Property="FontSize" Value="14" />
         </Style>
@@ -131,7 +131,7 @@
                                             Width="40" Height="40"
                                             Padding="5"
                                             CornerRadius="20">
-                                            <Svg Path="avares://SoundHaven/Assets/Icons/download.svg"
+                                            <Svg Path="avares://SoundHavenClient/Assets/Icons/download.svg"
                                                  Stretch="Uniform" />
                                         </Button>
                                         <ProgressBar Classes="circular"
@@ -148,7 +148,7 @@
                                             Width="40" Height="40"
                                             Padding="5"
                                             CornerRadius="20">
-                                            <Svg Path="avares://SoundHaven/Assets/Icons/folder.svg" Stretch="Uniform" />
+                                            <Svg Path="avares://SoundHavenClient/Assets/Icons/folder.svg" Stretch="Uniform" />
                                         </Button>
                                     </Grid>
                                 </Grid>

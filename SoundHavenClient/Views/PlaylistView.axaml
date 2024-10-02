@@ -15,7 +15,7 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontWeight" Value="ExtraLight" />
             <Setter Property="FontFamily"
-                    Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
         </Style>
 
         <Style Selector="CheckBox">

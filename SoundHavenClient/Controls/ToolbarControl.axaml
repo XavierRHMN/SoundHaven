@@ -18,7 +18,7 @@
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="Light" />
                 <Setter Property="FontFamily"
-                        Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                        Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             </Style>
 
             <Style Selector="TextBlock.Playlists">
@@ -26,7 +26,7 @@
                 <Setter Property="Foreground" Value="White" />
                 <Setter Property="Opacity" Value="0.8" />
                 <Setter Property="FontFamily"
-                        Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                        Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
                 <Setter Property="TextAlignment" Value="Center" />
             </Style>
 
@@ -35,7 +35,7 @@
                 <Setter Property="Foreground" Value="White" />
                 <Setter Property="FontWeight" Value="Light" />
                 <Setter Property="FontFamily"
-                        Value="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                        Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             </Style>
 
             <!-- Override Selected Item Foreground and Background -->
@@ -61,7 +61,7 @@
         <Button Background="Transparent" Foreground="White" Command="{Binding ShowHomeViewCommand}" Width="200"
                 HorizontalContentAlignment="Left">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHaven/Assets/Icons/home.svg" Width="16" Height="16"
+                <Svg Path="avares://SoundHavenClient/Assets/Icons/home.svg" Width="16" Height="16"
                      HorizontalAlignment="Left" />
                 <TextBlock Classes="ToolbarText" Text="Home" VerticalAlignment="Center" Margin="10,5,0,0" />
             </StackPanel>
@@ -70,7 +70,7 @@
         <Button Background="Transparent" Foreground="White" Command="{Binding ShowSearchViewCommand}" Width="200"
                 HorizontalContentAlignment="Left">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHaven/Assets/Icons/search.svg" Width="16" Height="16"
+                <Svg Path="avares://SoundHavenClient/Assets/Icons/search.svg" Width="16" Height="16"
                      HorizontalAlignment="Left" />
                 <TextBlock Classes="ToolbarText" Text="Search" VerticalAlignment="Center" Margin="10,5,0,0" />
             </StackPanel>
@@ -79,7 +79,7 @@
         <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlayerViewCommand}" Width="200"
                 HorizontalContentAlignment="Left">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHaven/Assets/Icons/player.svg" Width="16" Height="16"
+                <Svg Path="avares://SoundHavenClient/Assets/Icons/player.svg" Width="16" Height="16"
                      HorizontalAlignment="Left" />
                 <TextBlock Classes="ToolbarText" Text="Player" VerticalAlignment="Center" Margin="10,5,0,0" />
             </StackPanel>
@@ -88,7 +88,7 @@
         <Button Background="Transparent" Foreground="White" Command="{Binding ShowThemesViewCommand}" Width="200"
                 HorizontalContentAlignment="Left">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHaven/Assets/Icons/palette.svg" Width="16" Height="16"
+                <Svg Path="avares://SoundHavenClient/Assets/Icons/palette.svg" Width="16" Height="16"
                      HorizontalAlignment="Left" />
                 <TextBlock Classes="ToolbarText" Text="Themes" VerticalAlignment="Center" Margin="10,5,0,0" />
             </StackPanel>
@@ -101,7 +101,7 @@
                                  IsExtended="True"
                                  Command="{Binding CreatePlaylistCommand}"
                                  Content="Create Playlist"
-                                 FontFamily="avares://SoundHaven/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+                                 FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
 
         <Separator Background="White" Opacity="0.1" />
 
