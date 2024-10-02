@@ -16,7 +16,8 @@
 
     <UserControl.Styles>
         <Style Selector="TextBlock.Headers">
-            <Setter Property="FontFamily" Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="28" />
@@ -24,14 +25,16 @@
         </Style>
 
         <Style Selector="TextBlock.TrackTitle">
-            <Setter Property="FontFamily" Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="16" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
 
         <Style Selector="TextBlock.ArtistName">
-            <Setter Property="FontFamily" Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
             <Setter Property="Foreground" Value="#B3B3B3" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
@@ -42,7 +45,7 @@
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="Margin" Value="0,0,16,16" />
         </Style>
-        
+
         <Style Selector="ScrollViewer.HiddenScrollbar /template/ ScrollBar">
             <Setter Property="Opacity" Value="0" />
             <Setter Property="Transitions">
@@ -54,15 +57,15 @@
         <Style Selector="ScrollViewer.HiddenScrollbar:pointerover /template/ ScrollBar">
             <Setter Property="Opacity" Value="1" />
         </Style>
-        
+
         <Style Selector="ScrollBar /template/ Rectangle#PART_Track">
-            <Setter Property="Fill" Value="Transparent"/>
+            <Setter Property="Fill" Value="Transparent" />
         </Style>
     </UserControl.Styles>
 
     <ScrollViewer VerticalScrollBarVisibility="Hidden"
                   HorizontalScrollBarVisibility="Disabled"
-                  Background="Transparent" >
+                  Background="Transparent">
         <Grid Background="{StaticResource BackgroundBrush}">
             <StackPanel>
                 <!-- Welcome Banner (Always visible) -->
@@ -80,10 +83,11 @@
                                 HorizontalAlignment="Center"
                                 Spacing="20"
                                 Margin=" 0 200 0 0">
-                        <ProgressBar Classes="circular" IsIndeterminate="True"  Height="100" Width="100" Foreground="{StaticResource PrimaryColor}"/>
+                        <ProgressBar Classes="circular" IsIndeterminate="True" Height="100" Width="100"
+                                     Foreground="{StaticResource PrimaryColor}" />
                         <TextBlock Text="Loading songs..."
                                    Classes="Headers"
-                                   HorizontalAlignment="Center"/>
+                                   HorizontalAlignment="Center" />
                     </StackPanel>
 
                     <!-- Main Content -->
@@ -93,9 +97,9 @@
                         <StackPanel Spacing="32">
                             <!-- Recommended for You Section -->
                             <StackPanel>
-                                <TextBlock Text="Recommended for You" Classes="Headers" HorizontalAlignment="Center"/>
-                                <ScrollViewer Classes="HiddenScrollbar" 
-                                              HorizontalScrollBarVisibility="Auto" 
+                                <TextBlock Text="Recommended for You" Classes="Headers" HorizontalAlignment="Center" />
+                                <ScrollViewer Classes="HiddenScrollbar"
+                                              HorizontalScrollBarVisibility="Auto"
                                               VerticalScrollBarVisibility="Disabled"
                                               Theme="{StaticResource MaterialModernScrollViewer}">
                                     <ItemsControl ItemsSource="{Binding RecommendedTracks}">
@@ -106,16 +110,18 @@
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="models:Song">
-                                                <Border CornerRadius="8" 
-                                                        Padding="16" 
+                                                <Border CornerRadius="8"
+                                                        Padding="16"
                                                         Width="200">
                                                     <StackPanel Spacing="4">
-                                                        <Border CornerRadius="8" ClipToBounds="True" Width="168" Height="168" Margin="0 0 0 5">
+                                                        <Border CornerRadius="8" ClipToBounds="True" Width="168"
+                                                                Height="168" Margin="0 0 0 5">
                                                             <controls:AsyncImageControl Stretch="UniformToFill"
-                                                                                        SourceUrl="{Binding ArtworkUrl}" />
+                                                                SourceUrl="{Binding ArtworkUrl}" />
                                                         </Border>
-                                                        <TextBlock Text="{Binding Title}" Classes="TrackTitle"/>
-                                                        <TextBlock Text="{Binding Artist}" Classes="ArtistName" Margin="0 -5 0 0"/>
+                                                        <TextBlock Text="{Binding Title}" Classes="TrackTitle" />
+                                                        <TextBlock Text="{Binding Artist}" Classes="ArtistName"
+                                                                   Margin="0 -5 0 0" />
                                                     </StackPanel>
                                                 </Border>
                                             </DataTemplate>
@@ -123,7 +129,7 @@
                                     </ItemsControl>
                                 </ScrollViewer>
                             </StackPanel>
-                            
+
                             <!-- Recently Played Tracks Section -->
                             <StackPanel>
                                 <TextBlock Text="Recently Played" Classes="Headers" HorizontalAlignment="Center" />
@@ -132,10 +138,11 @@
                                         <DataTemplate x:DataType="models:Song">
                                             <Border Classes="CardBorder" Margin="0,0,0,8">
                                                 <Grid ColumnDefinitions="Auto,*">
-                                                    <Border Grid.Column="0" CornerRadius="4" ClipToBounds="True" Margin="0,0,16,0">
+                                                    <Border Grid.Column="0" CornerRadius="4" ClipToBounds="True"
+                                                            Margin="0,0,16,0">
                                                         <controls:AsyncImageControl Width="64" Height="64"
-                                                                                    SourceUrl="{Binding ArtworkUrl}"
-                                                                                    Stretch="UniformToFill" />
+                                                            SourceUrl="{Binding ArtworkUrl}"
+                                                            Stretch="UniformToFill" />
                                                     </Border>
                                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
                                                         <TextBlock Text="{Binding Title}" Classes="TrackTitle" />

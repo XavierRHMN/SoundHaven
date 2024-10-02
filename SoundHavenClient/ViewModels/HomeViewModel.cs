@@ -56,11 +56,14 @@ namespace SoundHaven.ViewModels
                 }
             }
         }
-        
+
         private bool _isLoading = true;
         public bool IsLoading
         {
-            get => _isLoading;
+            get
+            {
+                return _isLoading;
+            }
             set
             {
                 if (_isLoading != value)
@@ -109,7 +112,7 @@ namespace SoundHaven.ViewModels
             {
                 RecentlyPlayedTracks.Add(song);
             }
-            
+
             IsLoading = false;
 
             // foreach (var song in topTracks)

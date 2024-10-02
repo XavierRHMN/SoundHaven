@@ -148,7 +148,8 @@
                                             Width="40" Height="40"
                                             Padding="5"
                                             CornerRadius="20">
-                                            <Svg Path="avares://SoundHavenClient/Assets/Icons/folder.svg" Stretch="Uniform" />
+                                            <Svg Path="avares://SoundHavenClient/Assets/Icons/folder.svg"
+                                                 Stretch="Uniform" />
                                         </Button>
                                     </Grid>
                                 </Grid>

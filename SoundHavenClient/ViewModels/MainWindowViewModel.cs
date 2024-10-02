@@ -77,7 +77,7 @@ namespace SoundHaven.ViewModels
         public MainWindowViewModel()
         {
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            ApiKeyService apiKeyProvider = new ApiKeyService();
+            var apiKeyProvider = new ApiKeyService();
 
             string lastFmApiKey = apiKeyProvider.GetApiKey("LASTFM_API_KEY.txt");
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
