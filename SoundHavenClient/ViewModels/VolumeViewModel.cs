@@ -13,7 +13,10 @@ namespace SoundHaven.ViewModels
 
         public float Volume
         {
-            get => _volume;
+            get
+            {
+                return _volume;
+            }
             set
             {
                 float newVolume = Math.Clamp(value, 0f, 1f);
@@ -28,7 +31,10 @@ namespace SoundHaven.ViewModels
 
         public bool IsMuted
         {
-            get => _isMuted;
+            get
+            {
+                return _isMuted;
+            }
             set
             {
                 if (_isMuted != value)
@@ -53,7 +59,10 @@ namespace SoundHaven.ViewModels
 
         public float PreviousVolume
         {
-            get => _previousVolume;
+            get
+            {
+                return _previousVolume;
+            }
             set
             {
                 _previousVolume = value;

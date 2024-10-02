@@ -119,7 +119,7 @@ namespace SoundHaven.Models
                 }
             }
         }
-        
+
         // Existing methods
         private void LoadArtwork()
         {

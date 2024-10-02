@@ -18,7 +18,8 @@ namespace SoundHaven.Services
         public Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(string username);
         Task<IEnumerable<Song>> GetRecommendedTracksAsync(string username);
     }
-    
+
+
     public class LastFmDataService : IDataService
     {
         private readonly HttpClient _httpClient;

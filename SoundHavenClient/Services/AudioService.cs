@@ -76,10 +76,13 @@ namespace SoundHaven.Services
                 return _currentPosition;
             }
         }
-        
+
         public float AudioVolume
         {
-            get => _audioVolume;
+            get
+            {
+                return _audioVolume;
+            }
             set
             {
                 if (_audioVolume != value)
@@ -128,7 +131,7 @@ namespace SoundHaven.Services
 
         public event EventHandler TrackEnded;
         public event EventHandler PlaybackStateChanged;
-        
+
         protected virtual void OnPlaybackStateChanged()
         {
             if (PlaybackStateChanged != null)
@@ -155,9 +158,9 @@ namespace SoundHaven.Services
         {
             // Do not reset position variables
             Stop(false);
-            
+
             _isTrackEnded = false; // Reset the flag
-            
+
             _currentSource = source;
             _isYouTubeStream = isYouTubeVideo;
             _startPosition = startingPosition;
@@ -410,7 +413,7 @@ namespace SoundHaven.Services
                 // Song has ended, do not attempt to refill
                 return;
             }
-            
+
             if (_bufferedWaveProvider != null)
             {
                 Console.WriteLine($"Buffer status: {_bufferedWaveProvider.BufferedBytes} / {_bufferedWaveProvider.BufferLength} bytes");
@@ -426,7 +429,7 @@ namespace SoundHaven.Services
                 }
             }
         }
-        
+
         private async Task RefillBufferAsync()
         {
             if (_isTrackEnded)
@@ -434,7 +437,7 @@ namespace SoundHaven.Services
                 // Song has ended, do not attempt to refill
                 return;
             }
-            
+
             try
             {
                 var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(_currentSource);
@@ -534,7 +537,7 @@ namespace SoundHaven.Services
                 OnPropertyChanged(nameof(CurrentPosition));
             }
         }
-        
+
         public void Dispose()
         {
             if (_isDisposed) return;
