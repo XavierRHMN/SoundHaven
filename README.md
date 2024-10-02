@@ -1,6 +1,6 @@
 # 🎵 SoundHaven
 
-![SoundHaven Logo](SoundHaven/Screenshots/Home.png)
+![Home](https://github.com/user-attachments/assets/a3951ccb-7e93-4b7f-b2da-3056df2ad623)
 
 SoundHaven is a powerful and elegant C# music player application built
 with Avalonia and the MVVM design pattern. It seamlessly integrates
@@ -41,25 +41,32 @@ SoundHaven leverages a powerful stack of technologies:
    ```
    git clone https://github.com/XavierRHMN/SoundHaven.git
    ```
-2. Navigate to the project directory:
+2. Navigate to the cloned repository directory:
    ```
    cd SoundHaven
    ```
-3. Restore the NuGet packages:
+3. Navigate to the project directory:
+   ```
+   cd SoundHavenClient
+   ```
+4. Restore the NuGet packages:
    ```
    dotnet restore
    ```
-4. Build the project:
+5. Build the project:
    ```
    dotnet build
    ```
-5. Set up your Last.fm API key:
+6. Create the ApiKeys directory:
    ```
    mkdir -p ApiKeys
+   ```
+7. Set up your Last.fm API key:
+   ```
    echo "YOUR_LASTFM_API_KEY" > ApiKeys/LASTFM_API_KEY.txt
    ```
    Replace `YOUR_LASTFM_API_KEY` with your actual Last.fm API key.
-6. Run the application:
+8. Run the application:
    ```
    dotnet run
    ```
@@ -68,11 +75,11 @@ SoundHaven leverages a powerful stack of technologies:
 
 Here are some screenshots of SoundHaven in action:
 
-![SoundHaven First](SoundHaven/Screenshots/soundhaven_1.png)
-![SoundHaven Second](SoundHaven/Screenshots/soundhaven_2.png)
-![SoundHaven Third](SoundHaven/Screenshots/soundhaven_3.png)
-![SoundHaven Search](SoundHaven/Screenshots/Search.png)
-![SoundHaven Themes](SoundHaven/Screenshots/Themes.png)
+![SoundHaven First](SoundHavenClient/Screenshots/soundhaven_1.png)
+![SoundHaven Second](SoundHavenClient/Screenshots/soundhaven_2.png)
+![SoundHaven Third](SoundHavenClient/Screenshots/soundhaven_3.png)
+![SoundHaven Search](SoundHavenClient/Screenshots/Search.png)
+![SoundHaven Themes](SoundHavenClient/Screenshots/Themes.png)
 
 
 ## 🤝 Contributing
