@@ -15,7 +15,6 @@ namespace SoundHaven.ViewModels
 {
     public class PlaylistViewModel : ViewModelBase
     {
-        private readonly MainWindowViewModel _mainWindowViewModel;
         private readonly PlaybackViewModel _playbackViewModel;
         private readonly IOpenFileDialogService _openFileDialogService;
 
@@ -111,9 +110,8 @@ namespace SoundHaven.ViewModels
         public RelayCommand ToggleEditModeCommand { get; }
         public RelayCommand DeleteSelectedSongsCommand { get; }
 
-        public PlaylistViewModel(MainWindowViewModel mainWindowViewModel, PlaybackViewModel playbackViewModel, IOpenFileDialogService openFileDialogService)
+        public PlaylistViewModel(PlaybackViewModel playbackViewModel, IOpenFileDialogService openFileDialogService)
         {
-            _mainWindowViewModel = mainWindowViewModel;
             _playbackViewModel = playbackViewModel;
             _openFileDialogService = openFileDialogService;
 
