@@ -7,12 +7,12 @@ namespace SoundHaven.ViewModels
 {
     public class ShuffleViewModel : ViewModelBase
     {
-        private readonly MainWindowViewModel _mainWindowViewModel;
-        private bool _isUpdating = false;
+        private readonly PlaybackViewModel _playbackViewModel;
+        private bool _isUpdating;
 
-        public ShuffleViewModel(MainWindowViewModel mainWindowViewModel)
+        public ShuffleViewModel(PlaybackViewModel playbackViewModel)
         {
-            _mainWindowViewModel = mainWindowViewModel;
+            _playbackViewModel = playbackViewModel;
             ToggleShuffleCommand = new RelayCommand(ToggleShuffle);
 
             // Ensure the initial state is set correctly
@@ -39,7 +39,7 @@ namespace SoundHaven.ViewModels
                     Console.WriteLine($"Shuffle is now {(_isShuffleEnabled ? "enabled" : "disabled")}");
 
                     // Update the PlaybackViewModel
-                    _mainWindowViewModel.PlaybackViewModel.IsShuffleEnabled = _isShuffleEnabled;
+                    _playbackViewModel.IsShuffleEnabled = _isShuffleEnabled;
 
                     // Ensure UI update on the UI thread
                     Dispatcher.UIThread.Post(() => OnPropertyChanged(nameof(IsShuffleEnabled)));
