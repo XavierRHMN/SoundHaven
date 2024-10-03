@@ -66,8 +66,11 @@ namespace SoundHaven.ViewModels
                     OnPropertyChanged(nameof(CurrentSongExists));
                     PlayCommand.RaiseCanExecuteChanged();
                     PauseCommand.RaiseCanExecuteChanged();
+
                     if (value != null)
-                    {
+                    {   
+                        Pause();
+                        Play();
                         PlayFromBeginning(value);
                     }
                 }
@@ -151,7 +154,7 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        private void Pause()
+        public void Pause()
         {
             if (_audioService.IsPlaying())
             {
@@ -235,7 +238,7 @@ namespace SoundHaven.ViewModels
             {
                 throw new ArgumentException("Invalid song.");
             }
-
+            
             bool isYouTubeVideo = !string.IsNullOrEmpty(song.VideoId);
             string source = isYouTubeVideo ? song.VideoId : song.FilePath;
 

@@ -79,11 +79,11 @@ namespace SoundHaven.ViewModels
 
         private void UpdateSeekPosition(object sender, EventArgs e)
         {
-            if (_audioService.IsPaused || _debounceTimer.IsEnabled || _playbackViewModel.CurrentSong == null || _playbackViewModel.IsTransitioningTracks)
+            if (_playbackViewModel.CurrentSong == null || _audioService.IsPaused || _debounceTimer.IsEnabled || _playbackViewModel.IsTransitioningTracks)
             {
                 return;
             }
-
+            
             _isUpdatingFromTimer = true;
             SeekPosition = (_playbackViewModel.CurrentSong.VideoId != null
                 ? _audioService.CurrentYoutubePosition // Get YouTube video position
@@ -94,6 +94,7 @@ namespace SoundHaven.ViewModels
         private void OnSeekPositionChanged(double newPosition)
         {
             // Console.WriteLine($"OnSeekPositionChanged: {newPosition}");
+            _playbackViewModel.Play();
             _audioService.Seek(TimeSpan.FromSeconds(newPosition));
         }
 
