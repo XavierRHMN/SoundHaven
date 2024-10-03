@@ -86,8 +86,8 @@ namespace SoundHaven.ViewModels
 
             _isUpdatingFromTimer = true;
             SeekPosition = (_playbackViewModel.CurrentSong.VideoId != null
-                ? _audioService.CurrentPosition // Get YouTube video position
-                : _audioService.GetCurrentTime()).TotalSeconds; // Get local file's time
+                ? _audioService.CurrentYoutubePosition // Get YouTube video position
+                : _audioService.CurrentLocalPosition).TotalSeconds; // Get local file's time
             _isUpdatingFromTimer = false;
         }
 
