@@ -207,7 +207,7 @@ namespace SoundHaven.ViewModels
                 return;
             }
 
-            if (CurrentSong.IsYouTubeVideo || _audioService.GetCurrentTime().TotalSeconds > 5)
+            if (CurrentSong.IsYouTubeVideo || _audioService.CurrentLocalPosition.TotalSeconds > 5)
             {
                 // For YouTube videos or if we're outside the first 3 seconds of any song, always restart
                 await PlayFromBeginning(CurrentSong);
