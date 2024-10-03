@@ -25,6 +25,7 @@ namespace SoundHaven.Services
         private BufferedWaveProvider _bufferedWaveProvider;
         private CancellationTokenSource _bufferingCancellationTokenSource;
         private Timer _bufferStatusTimer;
+        private TimeSpan _currentPosition;
         private string _currentSource;
         private bool _isBuffering;
         private bool _isDisposed;
@@ -52,14 +53,6 @@ namespace SoundHaven.Services
             _youTubeDownloadService = new YouTubeDownloadService();
         }
 
-        public TimeSpan CurrentLocalPosition
-        {
-            get
-            {
-                return _audioFileReader.CurrentTime;
-            }
-        }
-
         public bool IsPaused
         {
             get
@@ -76,12 +69,11 @@ namespace SoundHaven.Services
             }
         }
 
-        private TimeSpan _currentYoutubePosition;
-        public TimeSpan CurrentYoutubePosition
+        public TimeSpan CurrentPosition
         {
             get
             {
-                return _currentYoutubePosition;
+                return _currentPosition;
             }
         }
 
@@ -150,7 +142,9 @@ namespace SoundHaven.Services
                 });
             }
         }
-        
+
+        public TimeSpan GetCurrentTime() => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
+
         public bool IsPlaying()
         {
             bool isPlaying = _waveOutDevice?.PlaybackState == PlaybackState.Playing;
@@ -170,7 +164,7 @@ namespace SoundHaven.Services
             _currentSource = source;
             _isYouTubeStream = isYouTubeVideo;
             _startPosition = startingPosition;
-            _currentYoutubePosition = startingPosition;
+            _currentPosition = startingPosition;
             _streamStartTime = DateTime.Now;
 
             try
@@ -216,7 +210,7 @@ namespace SoundHaven.Services
             if (_audioFileReader != null)
             {
                 _audioFileReader.CurrentTime = position;
-                OnPropertyChanged(nameof(CurrentYoutubePosition));
+                OnPropertyChanged(nameof(CurrentPosition));
             }
             else if (_isYouTubeStream)
             {
@@ -225,7 +219,7 @@ namespace SoundHaven.Services
 
                 // Update start position and current position
                 _startPosition = position;
-                _currentYoutubePosition = position;
+                _currentPosition = position;
 
                 // Start playback from the new position
                 _ = StartAsync(_currentSource, true, position);
@@ -275,10 +269,10 @@ namespace SoundHaven.Services
 
             if (resetPosition)
             {
-                _currentYoutubePosition = TimeSpan.Zero;
+                _currentPosition = TimeSpan.Zero;
                 _startPosition = TimeSpan.Zero;
                 _totalDuration = TimeSpan.Zero;
-                OnPropertyChanged(nameof(CurrentYoutubePosition));
+                OnPropertyChanged(nameof(CurrentPosition));
             }
 
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
@@ -461,7 +455,7 @@ namespace SoundHaven.Services
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "ffmpeg",
-                        Arguments = $"-ss {_currentYoutubePosition.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 pipe:1",
+                        Arguments = $"-ss {_currentPosition.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 pipe:1",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         CreateNoWindow = true
@@ -508,10 +502,10 @@ namespace SoundHaven.Services
             if (_isYouTubeStream)
             {
                 var elapsed = DateTime.Now - _streamStartTime - _accumulatedPauseDuration;
-                _currentYoutubePosition = _startPosition + elapsed;
-                if (_currentYoutubePosition >= _totalDuration)
+                _currentPosition = _startPosition + elapsed;
+                if (_currentPosition >= _totalDuration)
                 {
-                    _currentYoutubePosition = _totalDuration;
+                    _currentPosition = _totalDuration;
 
                     if (!_isTrackEnded)
                     {
@@ -522,14 +516,14 @@ namespace SoundHaven.Services
                         TrackEnded?.Invoke(this, EventArgs.Empty);
                     }
                 }
-                OnPropertyChanged(nameof(CurrentYoutubePosition));
+                OnPropertyChanged(nameof(CurrentPosition));
             }
             else
             {
-                _currentYoutubePosition = _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
-                if (_currentYoutubePosition >= _totalDuration)
+                _currentPosition = _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
+                if (_currentPosition >= _totalDuration)
                 {
-                    _currentYoutubePosition = _totalDuration;
+                    _currentPosition = _totalDuration;
 
                     if (!_isTrackEnded)
                     {
@@ -540,7 +534,7 @@ namespace SoundHaven.Services
                         TrackEnded?.Invoke(this, EventArgs.Empty);
                     }
                 }
-                OnPropertyChanged(nameof(CurrentYoutubePosition));
+                OnPropertyChanged(nameof(CurrentPosition));
             }
         }
 
