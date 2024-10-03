@@ -85,9 +85,14 @@ namespace SoundHaven.ViewModels
             }
 
             _isUpdatingFromTimer = true;
-            SeekPosition = (_playbackViewModel.CurrentSong.VideoId != null
-                ? _audioService.CurrentPosition // Get YouTube video position
-                : _audioService.GetCurrentTime()).TotalSeconds; // Get local file's time
+            if (_playbackViewModel.CurrentSong.VideoId != null) // checks if yt video
+            {
+                SeekPosition = _audioService.CurrentYoutubePosition.TotalSeconds;
+            }
+            else
+            {
+                SeekPosition = _audioService.CurrentLocalPosition.TotalSeconds;
+            }
             _isUpdatingFromTimer = false;
         }
 
