@@ -49,24 +49,20 @@ SoundHaven leverages a powerful stack of technologies:
    ```
    cd SoundHavenClient
    ```
-4. Restore the NuGet packages:
-   ```
-   dotnet restore
-   ```
-5. Build the project:
+4. Build the project:
    ```
    dotnet build
    ```
-6. Create the ApiKeys directory:
+5. Create the ApiKeys directory:
    ```
    mkdir -p ApiKeys
    ```
-7. Set up your Last.fm API key:
+6. Set up your Last.fm API key:
    ```
    echo "YOUR_LASTFM_API_KEY" > ApiKeys/LASTFM_API_KEY.txt
    ```
    Replace `YOUR_LASTFM_API_KEY` with your actual Last.fm API key.
-8. Run the application:
+7. Run the application:
    ```
    dotnet run
    ```
