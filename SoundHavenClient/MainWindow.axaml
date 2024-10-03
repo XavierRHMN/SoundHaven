@@ -9,7 +9,7 @@
         x:Class="SoundHaven.MainWindow"
         x:DataType="viewModels:MainWindowViewModel"
         Icon="/Assets/Icons/SoundHavenClient.ico"
-        Title="SoundHavenClient"
+        Title="SoundHaven"
         Width="1500" Height="800"
         MinWidth="1200" MinHeight="600"
         ExtendClientAreaToDecorationsHint="True"
