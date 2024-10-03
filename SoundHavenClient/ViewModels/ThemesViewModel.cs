@@ -8,8 +8,6 @@ namespace SoundHaven.ViewModels
 {
     public class ThemesViewModel : ViewModelBase
     {
-        private readonly MainWindowViewModel _mainWindowViewModel;
-
         public ICommand ChangeThemeCommand { get; }
 
         public List<Color> ThemeColors { get; } = new List<Color>
@@ -65,9 +63,8 @@ namespace SoundHaven.ViewModels
             Color.Parse("#FFFFFF") // White
         };
 
-        public ThemesViewModel(MainWindowViewModel mainWindowViewModel)
+        public ThemesViewModel()
         {
-            _mainWindowViewModel = mainWindowViewModel;
             ChangeThemeCommand = new RelayCommand<Color>(ChangeTheme);
         }
 
