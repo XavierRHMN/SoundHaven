@@ -6,7 +6,6 @@ using System.Diagnostics;
 
 namespace SoundHaven.ViewModels
 {
-
     public class SeekSliderViewModel : ViewModelBase, IDisposable
     {
         private readonly AudioService _audioService;
@@ -16,12 +15,11 @@ namespace SoundHaven.ViewModels
         private double _seekPosition;
         private bool _isUpdatingFromTimer;
         private double _maximumSeekValue;
+        private bool _isUserSeeking;
+
         public double MaximumSeekValue
         {
-            get
-            {
-                return _audioService.TotalDuration.TotalSeconds;
-            }
+            get => _audioService.TotalDuration.TotalSeconds;
             set
             {
                 if (_maximumSeekValue != value)
@@ -46,14 +44,12 @@ namespace SoundHaven.ViewModels
 
         public double SeekPosition
         {
-            get
-            {
-                return _seekPosition;
-            }
+            get => _seekPosition;
             set
             {
                 if (SetProperty(ref _seekPosition, value) && !_isUpdatingFromTimer)
                 {
+                    _isUserSeeking = true;
                     _debounceTimer.Stop();
                     _debounceTimer.Start();
                 }
@@ -74,26 +70,26 @@ namespace SoundHaven.ViewModels
             {
                 _debounceTimer.Stop();
                 OnSeekPositionChanged(SeekPosition);
+                _isUserSeeking = false;
             };
         }
 
         private void UpdateSeekPosition(object sender, EventArgs e)
         {
-            if (_playbackViewModel.CurrentSong == null || _audioService.IsPaused || _debounceTimer.IsEnabled || _playbackViewModel.IsTransitioningTracks)
+            if (_playbackViewModel.CurrentSong == null || _isUserSeeking || _playbackViewModel.IsTransitioningTracks)
             {
                 return;
             }
             
             _isUpdatingFromTimer = true;
             SeekPosition = (_playbackViewModel.CurrentSong.VideoId != null
-                ? _audioService.CurrentYoutubePosition // Get YouTube video position
-                : _audioService.CurrentLocalPosition).TotalSeconds; // Get local file's time
+                ? _audioService.CurrentYoutubePosition
+                : _audioService.CurrentLocalPosition).TotalSeconds;
             _isUpdatingFromTimer = false;
         }
 
         private void OnSeekPositionChanged(double newPosition)
         {
-            // Console.WriteLine($"OnSeekPositionChanged: {newPosition}");
             _audioService.Seek(TimeSpan.FromSeconds(newPosition));
             if (!_audioService.IsPaused)
             {
@@ -131,11 +127,11 @@ namespace SoundHaven.ViewModels
             {
                 if (_audioService.IsPaused)
                 {
-                    _seekTimer.Stop(); // Stop updating seek position when paused
+                    _seekTimer.Stop();
                 }
                 else
                 {
-                    _seekTimer.Start(); // Resume updating when playback resumes
+                    _seekTimer.Start();
                 }
             }
             else if (e.PropertyName == nameof(AudioService.TotalDuration))
