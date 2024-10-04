@@ -34,6 +34,7 @@ namespace SoundHaven.ViewModels
                     _currentSong = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(CurrentSongExists));
+                    _hasPausedThisCycle = false;
 
                     // Update text width based on the new song title
                     TextWidth = ExtractTextWidth(CurrentSong?.Title, "Circular", 16);
