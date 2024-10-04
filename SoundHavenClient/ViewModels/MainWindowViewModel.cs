@@ -14,12 +14,14 @@ using SoundHaven.Services;
 using SoundHaven.Stores;
 using SoundHaven.Commands;
 using SoundHaven.Converters;
+using SoundHaven.Data;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using SoundHaven.Views;
 using System;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows.Input;
 
@@ -27,13 +29,7 @@ namespace SoundHaven.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        public ObservableCollection<Playlist> PlaylistCollection
-        {
-            get
-            {
-                return PlaylistStore.Playlists;
-            }
-        }
+        private readonly MusicDatabase MusicDatabase;
 
         public AudioService AudioService { get; set; }
         public PlaylistStore PlaylistStore { get; set; }
@@ -76,6 +72,9 @@ namespace SoundHaven.ViewModels
 
         public MainWindowViewModel()
         {
+            string dbPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "MusicDatabase.db");
+            MusicDatabase = new MusicDatabase(dbPath);
+            
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var apiKeyProvider = new ApiKeyService();
 
@@ -91,7 +90,7 @@ namespace SoundHaven.ViewModels
             YoutubeSearchService = new YoutubeSearchService(youtubeLoggerFactory, memoryCache);
 
             // Stores
-            PlaylistStore = new PlaylistStore();
+            PlaylistStore = new PlaylistStore(MusicDatabase);
             SongStore = new SongStore();
 
             // ViewModels
@@ -103,13 +102,13 @@ namespace SoundHaven.ViewModels
             HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
             SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel);
             ThemesViewModel = new ThemesViewModel();
-            ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
+            ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel, MusicDatabase);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
             SongInfoViewModel = new SongInfoViewModel(PlaybackViewModel, AudioService);
 
             CurrentViewModel = HomeViewModel;
-
+            
             // InitializeExamplePlaylist();
         }
 
