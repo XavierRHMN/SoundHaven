@@ -8,12 +8,10 @@ namespace SoundHaven.Models
 {
     public class Playlist : ViewModelBase
     {
-        public string Description { get; set; }
+        public int Id { get; set; }
+        
         public ObservableCollection<Song> Songs { get; set; }
-
-        private int _currentIndex = 0;
-        public int CurrentIndex { get; private set; } = 0;
-
+        
         private string _name;
         public string Name
         {
@@ -36,7 +34,7 @@ namespace SoundHaven.Models
         {
             Songs = new ObservableCollection<Song>();
         }
-
+        
         public Song? GetPreviousNextSong(Song? currentSong, PlaybackViewModel.Direction direction)
         {
             // Check for nulls and ensure the Songs list is not empty
@@ -62,6 +60,4 @@ namespace SoundHaven.Models
         }
 
     }
-
-
 }

@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Threading;
 using SoundHaven.Commands;
+using SoundHaven.Data;
 using SoundHaven.Models;
 using SoundHaven.Stores;
 using System.Collections.ObjectModel;
@@ -19,6 +20,7 @@ namespace SoundHaven.ViewModels
         private PlaylistStore _playlistStore;
         private SearchViewModel _searchViewModel;
         private ThemesViewModel _themesViewModel;
+        private MusicDatabase _musicDatabase;
 
         // Current Playlist binding for ToolbarControl.axaml
         private Playlist? _toolbarSelectedPlaylist;
@@ -48,7 +50,7 @@ namespace SoundHaven.ViewModels
         {
             get
             {
-                return _mainWindowViewModel.PlaylistCollection;
+                return _playlistStore.Playlists;
             }
         }
 
@@ -63,7 +65,8 @@ namespace SoundHaven.ViewModels
 
         // Constructor
         public ToolbarViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
-                                HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore, SearchViewModel searchViewModel, ThemesViewModel themesViewModel)
+                                HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore, 
+                                SearchViewModel searchViewModel, ThemesViewModel themesViewModel, MusicDatabase musicDatabase)
         {
             _mainWindowViewModel = mainWindowViewModel;
             _playlistViewModel = playlistViewModel;
@@ -72,6 +75,7 @@ namespace SoundHaven.ViewModels
             _playlistStore = playlistStore;
             _themesViewModel = themesViewModel;
             _searchViewModel = searchViewModel;
+            _musicDatabase = musicDatabase;
 
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowSearchViewCommand = new RelayCommand(ShowSearchView);
@@ -100,10 +104,9 @@ namespace SoundHaven.ViewModels
                 var newPlaylist = new Playlist
                 {
                     Name = $"Playlist #{PlaylistCollection.Count + 1}",
-                    Description = "A new playlist",
                     Songs = new ObservableCollection<Song>()
                 };
-
+                
                 _playlistStore.AddPlaylist(newPlaylist);
             }
             catch (Exception ex)
@@ -121,7 +124,7 @@ namespace SoundHaven.ViewModels
             if (playlist != null)
             {
                 _playlistStore.RemovePlaylist(playlist);
-
+                
                 // If the deleted playlist was the currently selected one, deselect it
                 if (ToolbarSelectedPlaylist == playlist)
                 {
@@ -133,6 +136,7 @@ namespace SoundHaven.ViewModels
                 {
                     ShowHomeView();
                 }
+                
             }
         }
 
