@@ -92,10 +92,13 @@ namespace SoundHaven.ViewModels
         }
 
         private void OnSeekPositionChanged(double newPosition)
-        {
+        {            
             // Console.WriteLine($"OnSeekPositionChanged: {newPosition}");
-            _playbackViewModel.Play();
             _audioService.Seek(TimeSpan.FromSeconds(newPosition));
+            if (!_audioService.IsPaused)
+            {
+                _seekTimer.Start();
+            }
         }
 
         private void OnSeekPositionReset(object sender, EventArgs e)
