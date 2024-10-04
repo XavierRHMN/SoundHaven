@@ -141,7 +141,6 @@ namespace SoundHaven.Services
         public bool IsPlaying()
         {
             bool isPlaying = _waveOutDevice?.PlaybackState == PlaybackState.Playing;
-            Console.WriteLine($"IsPlaying called, result: {isPlaying}");
             return isPlaying;
         }
 
