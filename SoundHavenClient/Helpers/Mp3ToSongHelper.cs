@@ -3,6 +3,9 @@ using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using Avalonia.Media;
+using Avalonia;
 using SoundHaven.Models;
 using System.Text.RegularExpressions;
 using TagLib;
@@ -22,16 +25,15 @@ namespace SoundHaven.Helpers
 
             using (var file = TagLib.File.Create(song.FilePath))
             {
+                Bitmap bitmap = null;
+
                 if (file.Tag.Pictures.Length > 0)
                 {
                     var picture = file.Tag.Pictures[0];
                     using (var stream = new MemoryStream(picture.Data.Data))
                     {
                         // Create a Bitmap from the stream
-                        var bitmap = new Bitmap(stream);
-
-                        // Set the Artwork property of the Song object
-                        song.Artwork = bitmap;
+                        bitmap = new Bitmap(stream);
                     }
                 }
                 else
@@ -52,10 +54,14 @@ namespace SoundHaven.Helpers
                             // Use the first image found
                             var imageFilePath = imageFiles[0];
 
-                            // Read the image file into a byte array
-                            var imageData = System.IO.File.ReadAllBytes(imageFilePath);
+                            // Read the image file into a bitmap
+                            using (var stream = new FileStream(imageFilePath, FileMode.Open, FileAccess.Read))
+                            {
+                                bitmap = new Bitmap(stream);
+                            }
 
-                            // Convert the byte array to ByteVector
+                            // Embed the image into the MP3 file
+                            var imageData = System.IO.File.ReadAllBytes(imageFilePath);
                             var byteVector = new TagLib.ByteVector(imageData);
 
                             // Create a Picture object
@@ -72,27 +78,62 @@ namespace SoundHaven.Helpers
 
                             // Save the changes to the file
                             file.Save();
-
-                            // Set song.Artwork to the bitmap
-                            using (var stream = new MemoryStream(imageData))
-                            {
-                                var bitmap = new Bitmap(stream);
-                                song.Artwork = bitmap;
-                            }
                         }
-                        else
-                        {
-                            // Set song.Artwork to null or default image
-                            song.Artwork = null;
-                        }
-                    }
-                    else
-                    {
-                        // Set song.Artwork to null or default image
-                        song.Artwork = null;
                     }
                 }
+
+                if (bitmap != null)
+                {
+                    // Process the bitmap to add black bars and make it 16:9
+                    var processedBitmap = AddBlackBarsToMake16by9(bitmap);
+
+                    // Set the Artwork property of the Song object
+                    song.Artwork = processedBitmap;
+                }
+                else
+                {
+                    // Set song.Artwork to null or default image
+                    song.Artwork = null;
+                }
             }
+        }
+
+        private static Bitmap AddBlackBarsToMake16by9(Bitmap originalBitmap)
+        {
+            // Get original dimensions
+            int originalWidth = originalBitmap.PixelSize.Width;
+            int originalHeight = originalBitmap.PixelSize.Height;
+
+            // Calculate the new width to make the aspect ratio 16:9
+            int newWidth = (int)Math.Round((originalHeight * 16.0) / 9.0);
+
+            // If the new width is less than the original width, adjust the height instead
+            if (newWidth < originalWidth)
+            {
+                newWidth = originalWidth;
+                // Adjust height to match 16:9
+                originalHeight = (int)Math.Round((newWidth * 9.0) / 16.0);
+            }
+
+            // Create a new RenderTargetBitmap with the new dimensions
+            var targetBitmap = new RenderTargetBitmap(new PixelSize(newWidth, originalHeight), new Vector(96, 96));
+
+            using (var ctx = targetBitmap.CreateDrawingContext(false))
+            {
+                // Fill the background with black
+                ctx.FillRectangle(Brushes.Black, new Rect(0, 0, newWidth, originalHeight));
+
+                // Calculate the position to center the original image
+                double x = (newWidth - originalBitmap.PixelSize.Width) / 2.0;
+                double y = (originalHeight - originalBitmap.PixelSize.Height) / 2.0;
+
+                // Draw the original image onto the new image
+                ctx.DrawImage(originalBitmap,
+                    new Rect(0, 0, originalBitmap.PixelSize.Width, originalBitmap.PixelSize.Height),
+                    new Rect(x, y, originalBitmap.PixelSize.Width, originalBitmap.PixelSize.Height));
+            }
+
+            return targetBitmap;
         }
 
         private static string GetMimeType(string fileName)
