@@ -1,20 +1,17 @@
 ﻿using System;
-using System.IO; // For regular file system operations
+using System.IO;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using SoundHaven.Models;
-using SoundHaven.Services;
 using System.Text.RegularExpressions;
-using TagLib; // For TagLib operations
+using TagLib;
 
 namespace SoundHaven.Helpers
 {
     public static class Mp3ToSongHelper
     {
-        // Define the path where album covers will be saved
-        private static readonly string CoversPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Assets", "Covers");
-
-        // Extracts the album cover and saves it to the Assets/Covers directory
+        // Extracts the album cover and saves it to the Song object
         public static void SaveAlbumCover(Song song)
         {
             if (song == null || string.IsNullOrWhiteSpace(song.FilePath))
@@ -39,9 +36,77 @@ namespace SoundHaven.Helpers
                 }
                 else
                 {
-                    // Set a default image or null if no artwork is available
-                    song.Artwork = null;
+                    // No embedded artwork, search for image files in the song's directory
+                    var songDirectory = Path.GetDirectoryName(song.FilePath);
+                    if (Directory.Exists(songDirectory))
+                    {
+                        // Search for image files with .jpg, .jpeg, or .png extensions
+                        var imageFiles = Directory.GetFiles(songDirectory, "*.*")
+                            .Where(filePath => filePath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                                            || filePath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
+                                            || filePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                            .ToArray();
+
+                        if (imageFiles.Length > 0)
+                        {
+                            // Use the first image found
+                            var imageFilePath = imageFiles[0];
+
+                            // Read the image file into a byte array
+                            var imageData = System.IO.File.ReadAllBytes(imageFilePath);
+
+                            // Convert the byte array to ByteVector
+                            var byteVector = new TagLib.ByteVector(imageData);
+
+                            // Create a Picture object
+                            TagLib.Picture picture = new TagLib.Picture
+                            {
+                                Type = TagLib.PictureType.FrontCover,
+                                Description = "Cover",
+                                MimeType = GetMimeType(imageFilePath),
+                                Data = byteVector
+                            };
+
+                            // Assign the picture to the file's tag
+                            file.Tag.Pictures = new TagLib.IPicture[] { picture };
+
+                            // Save the changes to the file
+                            file.Save();
+
+                            // Set song.Artwork to the bitmap
+                            using (var stream = new MemoryStream(imageData))
+                            {
+                                var bitmap = new Bitmap(stream);
+                                song.Artwork = bitmap;
+                            }
+                        }
+                        else
+                        {
+                            // Set song.Artwork to null or default image
+                            song.Artwork = null;
+                        }
+                    }
+                    else
+                    {
+                        // Set song.Artwork to null or default image
+                        song.Artwork = null;
+                    }
                 }
+            }
+        }
+
+        private static string GetMimeType(string fileName)
+        {
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            switch (extension)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    return "image/jpeg";
+                case ".png":
+                    return "image/png";
+                default:
+                    return "application/octet-stream";
             }
         }
 
