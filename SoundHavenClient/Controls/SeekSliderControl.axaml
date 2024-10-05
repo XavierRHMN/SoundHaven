@@ -3,12 +3,40 @@
              x:Class="SoundHaven.Controls.SeekSliderControl"
              xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
              x:DataType="viewModels:SeekSliderViewModel">
+    
+    <UserControl.Styles>
+        <Style Selector="TextBlock.DurationDisplay">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+    </UserControl.Styles>
 
+    
+    <Grid ColumnDefinitions="40, *, 40" Margin="20,0,20,0">
+        <!-- Current Position Display -->
+        <TextBlock Grid.Column="0"
+                   Text="{Binding SeekPosition, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}"
+                   Foreground="Gray"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Left"
+                   Classes="DurationDisplay"/>
 
-    <!-- Your Slider Control -->
-    <Slider Height="75"
-            Minimum="0"
-            Maximum="{Binding MaximumSeekValue}"
-            Margin="30,0"
-            Value="{Binding SeekPosition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <!-- Seek Slider -->
+        <Slider Grid.Column="1"
+                Height="75"
+                Minimum="0"
+                Maximum="{Binding MaximumSeekValue}"
+                Value="{Binding SeekPosition, Mode=TwoWay}" 
+                Margin="10,0"/>
+
+        <!-- Maximum Duration Display -->
+        <TextBlock Grid.Column="2"
+                   Text="{Binding MaximumSeekValue, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}"
+                   Foreground="Gray"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Right"
+                   Classes="DurationDisplay"/>
+    </Grid>
 </UserControl>

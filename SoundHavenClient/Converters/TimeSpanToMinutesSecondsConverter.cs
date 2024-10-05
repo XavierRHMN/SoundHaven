@@ -8,6 +8,12 @@ namespace SoundHaven.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            if (value is double seconds)
+            {
+                TimeSpan time = TimeSpan.FromSeconds(seconds);
+                return time.ToString(@"mm\:ss");
+            }
+            
             if (value is TimeSpan timeSpan)
             {
                 return $"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
