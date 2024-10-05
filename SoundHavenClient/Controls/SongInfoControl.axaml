@@ -4,6 +4,24 @@
              x:Class="SoundHaven.Controls.SongInfoControl"
              x:DataType="viewModels:SongInfoViewModel">
 
+    <UserControl.Styles>
+        <Style Selector="TextBlock.Title">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Margin" Value="0 5 0 0" />
+        </Style>
+        
+        <Style Selector="TextBlock.ArtistAndYear">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="0 5 0 0" />
+        </Style>
+    </UserControl.Styles>
+    
     <Grid>
         <!-- Actual Song Info -->
         <StackPanel Orientation="Horizontal" 
@@ -36,24 +54,19 @@
                     <Canvas Width="{Binding ControlWidth}" Height="25">
                         <!-- First TextBlock -->
                         <TextBlock Text="{Binding CurrentSong.Title}"
-                                   FontSize="14"
-                                   FontWeight="Bold"
-                                   Foreground="White"
+                                   Classes="Title"
                                    Canvas.Left="{Binding TitleScrollPosition1}" />
 
                         <!-- Second TextBlock, positioned to the right of the first -->
                         <TextBlock Text="{Binding CurrentSong.Title}"
-                                   FontSize="14"
-                                   FontWeight="Bold"
-                                   Foreground="White"
+                                   Classes="Title"
                                    Canvas.Left="{Binding TitleScrollPosition2}" />
                     </Canvas>
                 </Border>
 
                 <!-- Artist and Year combined -->
-                <TextBlock FontSize="14"
-                           Foreground="Gray"
-                           HorizontalAlignment="Left">
+                <TextBlock HorizontalAlignment="Left"
+                           Classes="ArtistAndYear">
                     <TextBlock.Text>
                         <MultiBinding StringFormat="{}{0} - {1}">
                             <Binding Path="CurrentSong.Artist" />
@@ -82,15 +95,11 @@
             <StackPanel Orientation="Vertical">
                 <!-- Placeholder Title -->
                 <TextBlock Text="Play a song!"
-                           FontSize="14"
-                           FontWeight="Bold"
-                           Foreground="White" />
+                           Classes="Title"/>
 
                 <!-- Placeholder Artist and Year -->
                 <TextBlock Text="Artist - 20XX"
-                           FontSize="14"
-                           Foreground="Gray"
-                           HorizontalAlignment="Left" Margin = "0 10 0 0" />
+                           Classes="ArtistAndYear"/>
             </StackPanel>
         </StackPanel>
     </Grid>
