@@ -10,7 +10,8 @@
                 ClipToBounds="True"
                 Margin="0,0,20,0"
                 Width="50"
-                Height="50">
+                Height="50"
+                IsVisible="{Binding CurrentSongExists}">
             <Panel>
                 <Image Source="{Binding CurrentSong.Artwork}"
                        Stretch="UniformToFill"
@@ -27,9 +28,13 @@
 
         <!-- Song Information -->
         <StackPanel Orientation="Vertical">
-            <!-- Title with continuous scrolling effect -->
+            <!-- Title with continuous scrolling effect or "Play a song!" message -->
             <Border ClipToBounds="True" Width="{Binding ControlWidth}" Height="25" Background="Transparent">
                 <Canvas Width="{Binding ControlWidth}" Height="25">
+                    <!-- Show scrolling title when CurrentSongExists is true -->
+                    <Canvas.IsVisible>
+                        <Binding Path="CurrentSongExists" />
+                    </Canvas.IsVisible>
                     <!-- First TextBlock -->
                     <TextBlock Text="{Binding CurrentSong.Title}"
                                FontSize="14"
@@ -45,12 +50,21 @@
                                Canvas.Left="{Binding TitleScrollPosition2}" />
                 </Canvas>
             </Border>
+            
+            <!-- "Play a song!" message when CurrentSongExists is false -->
+            <TextBlock Text="Play some Music!"
+                       FontSize="24"
+                       FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular"
+                       Foreground="White"
+                       IsVisible="{Binding !CurrentSongExists}"
+
+                       Margin="25 0 0 25" />
 
             <!-- Artist and Year combined -->
             <TextBlock FontSize="14"
                        Foreground="Gray"
                        HorizontalAlignment="Left"
-                       IsVisible="{Binding CurrentSongExists, Converter={StaticResource BooleanToVisibilityConverter}}">
+                       IsVisible="{Binding CurrentSongExists}">
                 <TextBlock.Text>
                     <MultiBinding StringFormat="{}{0} - {1}">
                         <Binding Path="CurrentSong.Artist" />
