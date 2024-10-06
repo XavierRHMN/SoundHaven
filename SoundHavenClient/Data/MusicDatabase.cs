@@ -34,7 +34,7 @@ namespace SoundHaven.Data
                 Year INTEGER,
                 PlayCount INTEGER DEFAULT 0,
                 VideoId TEXT,
-                ArtworkUrl TEXT,
+                ArtworkData BLOB,
                 ChannelTitle TEXT,
                 Views TEXT,
                 VideoDuration TEXT
@@ -55,7 +55,6 @@ namespace SoundHaven.Data
                 command.ExecuteNonQuery();
             }
         }
-
 
         public void SavePlaylist(Playlist playlist)
         {
@@ -94,7 +93,7 @@ namespace SoundHaven.Data
             }
         }
 
-        public ObservableCollection<Playlist> GetAllPlaylists()
+     public ObservableCollection<Playlist> GetAllPlaylists()
         {
             var playlists = new ObservableCollection<Playlist>();
             using (var connection = new SqliteConnection(connectionString))
@@ -118,7 +117,8 @@ namespace SoundHaven.Data
                 foreach (var playlist in playlists)
                 {
                     command.CommandText = @"
-                SELECT s.Id, s.Title, s.Artist, s.Album, s.Duration, s.FilePath, s.Genre, s.Year, s.ArtworkUrl
+                SELECT s.Id, s.Title, s.Artist, s.Album, s.Duration, s.FilePath, s.Genre, s.Year, s.ArtworkData,
+                       s.VideoId, s.ChannelTitle, s.Views, s.VideoDuration
                 FROM Songs s
                 JOIN PlaylistSongs ps ON s.Id = ps.SongId
                 WHERE ps.PlaylistId = @playlistId";
@@ -138,7 +138,11 @@ namespace SoundHaven.Data
                                 FilePath = reader.GetString(5),
                                 Genre = reader.IsDBNull(6) ? null : reader.GetString(6),
                                 Year = reader.IsDBNull(7) ? null : (int?)reader.GetInt32(7),
-                                ArtworkUrl = reader.IsDBNull(8) ? null : reader.GetString(8)
+                                ArtworkData = reader.IsDBNull(8) ? null : (byte[])reader.GetValue(8),
+                                VideoId = reader.IsDBNull(9) ? null : reader.GetString(9),
+                                ChannelTitle = reader.IsDBNull(10) ? null : reader.GetString(10),
+                                Views = reader.IsDBNull(11) ? null : reader.GetString(11),
+                                VideoDuration = reader.IsDBNull(12) ? null : reader.GetString(12)
                             };
 
                             playlist.Songs.Add(song);
@@ -149,7 +153,7 @@ namespace SoundHaven.Data
             return playlists;
         }
         
-        public void AddSongToPlaylist(long playlistId, Song song)
+      public void AddSongToPlaylist(long playlistId, Song song)
         {
             using (var connection = new SqliteConnection(connectionString))
             {
@@ -158,8 +162,8 @@ namespace SoundHaven.Data
 
                 // First, ensure the song exists in the Songs table
                 command.CommandText = @"
-        INSERT OR IGNORE INTO Songs (Title, Artist, Album, Duration, FilePath, Genre, Year, ArtworkUrl)
-        VALUES (@title, @artist, @album, @duration, @filePath, @genre, @year, @artworkUrl);
+        INSERT OR IGNORE INTO Songs (Title, Artist, Album, Duration, FilePath, Genre, Year, ArtworkData, VideoId, ChannelTitle, Views, VideoDuration)
+        VALUES (@title, @artist, @album, @duration, @filePath, @genre, @year, @artworkData, @videoId, @channelTitle, @views, @videoDuration);
         SELECT Id FROM Songs WHERE Title = @title AND FilePath = @filePath;";
                 command.Parameters.AddWithValue("@title", song.Title);
                 command.Parameters.AddWithValue("@artist", song.Artist ?? (object)DBNull.Value);
@@ -168,7 +172,11 @@ namespace SoundHaven.Data
                 command.Parameters.AddWithValue("@filePath", song.FilePath);
                 command.Parameters.AddWithValue("@genre", song.Genre ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@year", song.Year ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@artworkUrl", song.ArtworkUrl ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@artworkData", song.ArtworkData ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@videoId", song.VideoId ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@channelTitle", song.ChannelTitle ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@views", song.Views ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@videoDuration", song.VideoDuration ?? (object)DBNull.Value);
                 long songId = (long)command.ExecuteScalar();
 
                 // Now, add the song to the playlist
@@ -179,7 +187,6 @@ namespace SoundHaven.Data
                 command.ExecuteNonQuery();
             }
         }
-
         
         public void RemoveSongFromPlaylist(long playlistId, long songId)
         {

@@ -92,12 +92,36 @@ namespace SoundHaven.Models
                 }
             }
         }
+        
+        private byte[] _artworkData;
+        public byte[] ArtworkData
+        {
+            get => _artworkData;
+            set
+            {
+                if (SetProperty(ref _artworkData, value))
+                {
+                    // Clear the bitmap when the data changes
+                    
+                    _artwork = null;
+                    OnPropertyChanged(nameof(Artwork));
+                }
+            }
+        }
 
         private Bitmap? _artwork;
         public Bitmap? Artwork
         {
             get
             {
+                if (_artwork == null && _artworkData != null && _artworkData.Length > 0)
+                {
+                    // Lazy load the bitmap
+                    using (var memoryStream = new MemoryStream(_artworkData))
+                    {
+                        _artwork = new Bitmap(memoryStream);
+                    }
+                }
                 return _artwork;
             }
             set
@@ -116,6 +140,15 @@ namespace SoundHaven.Models
             set
             {
                 SetProperty(ref _artworkUrl, value);
+            }
+        }
+        
+        public void SetArtwork(Bitmap bitmap)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                bitmap.Save(memoryStream);
+                ArtworkData = memoryStream.ToArray();
             }
         }
 
