@@ -33,7 +33,6 @@ namespace SoundHaven.ViewModels
 
         public AudioService AudioService { get; set; }
         public PlaylistStore PlaylistStore { get; set; }
-        public SongStore SongStore { get; set; }
         private DispatcherTimer _seekTimer;
         private DispatcherTimer _scrollTimer;
 
@@ -91,7 +90,6 @@ namespace SoundHaven.ViewModels
 
             // Stores
             PlaylistStore = new PlaylistStore(MusicDatabase);
-            SongStore = new SongStore();
 
             // ViewModels
             RepeatViewModel = new RepeatViewModel();
@@ -108,22 +106,6 @@ namespace SoundHaven.ViewModels
             SongInfoViewModel = new SongInfoViewModel(PlaybackViewModel, AudioService);
 
             CurrentViewModel = HomeViewModel;
-            
-            // InitializeExamplePlaylist();
-        }
-
-        private void InitializeExamplePlaylist()
-        {
-            SongStore.LoadSongs();
-
-            var example = new Playlist()
-            {
-                Name = "Playlist #1",
-                Songs = SongStore.Songs
-            };
-            Console.WriteLine(SongStore.Songs);
-            PlaylistStore.AddPlaylist(example);
-            PlaybackViewModel.CurrentPlaylist = example;
         }
     }
 }
