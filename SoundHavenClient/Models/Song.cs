@@ -123,7 +123,7 @@ namespace SoundHaven.Models
         }
 
         // Existing methods
-        private void LoadArtwork()
+        public void LoadArtwork()
         {
             if (!string.IsNullOrEmpty(ArtworkUrl) && File.Exists(ArtworkUrl))
             {

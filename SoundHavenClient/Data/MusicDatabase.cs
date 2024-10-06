@@ -23,38 +23,39 @@ namespace SoundHaven.Data
                 connection.Open();
                 var command = connection.CreateCommand();
                 command.CommandText = @"
-                    CREATE TABLE IF NOT EXISTS Songs (
-                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        Title TEXT NOT NULL,
-                        Artist TEXT,
-                        Album TEXT,
-                        Duration INTEGER,
-                        FilePath TEXT,
-                        Genre TEXT,
-                        Year INTEGER,
-                        PlayCount INTEGER DEFAULT 0,
-                        VideoId TEXT,
-                        ThumbnailUrl TEXT,
-                        ChannelTitle TEXT,
-                        Views TEXT,
-                        VideoDuration TEXT
-                    );
+            CREATE TABLE IF NOT EXISTS Songs (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Title TEXT NOT NULL,
+                Artist TEXT,
+                Album TEXT,
+                Duration INTEGER,
+                FilePath TEXT,
+                Genre TEXT,
+                Year INTEGER,
+                PlayCount INTEGER DEFAULT 0,
+                VideoId TEXT,
+                ArtworkUrl TEXT,
+                ChannelTitle TEXT,
+                Views TEXT,
+                VideoDuration TEXT
+            );
 
-                    CREATE TABLE IF NOT EXISTS Playlists (
-                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        Name TEXT NOT NULL
-                    );
+            CREATE TABLE IF NOT EXISTS Playlists (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name TEXT NOT NULL
+            );
 
-                    CREATE TABLE IF NOT EXISTS PlaylistSongs (
-                        PlaylistId INTEGER,
-                        SongId INTEGER,
-                        FOREIGN KEY(PlaylistId) REFERENCES Playlists(Id),
-                        FOREIGN KEY(SongId) REFERENCES Songs(Id),
-                        PRIMARY KEY(PlaylistId, SongId)
-                    );";
+            CREATE TABLE IF NOT EXISTS PlaylistSongs (
+                PlaylistId INTEGER,
+                SongId INTEGER,
+                FOREIGN KEY(PlaylistId) REFERENCES Playlists(Id),
+                FOREIGN KEY(SongId) REFERENCES Songs(Id),
+                PRIMARY KEY(PlaylistId, SongId)
+            );";
                 command.ExecuteNonQuery();
             }
         }
+
 
         public void SavePlaylist(Playlist playlist)
         {
@@ -117,10 +118,10 @@ namespace SoundHaven.Data
                 foreach (var playlist in playlists)
                 {
                     command.CommandText = @"
-                        SELECT s.Id, s.Title, s.Artist, s.Album, s.Duration, s.FilePath, s.Genre, s.Year, s.ThumbnailUrl
-                        FROM Songs s
-                        JOIN PlaylistSongs ps ON s.Id = ps.SongId
-                        WHERE ps.PlaylistId = @playlistId";
+                SELECT s.Id, s.Title, s.Artist, s.Album, s.Duration, s.FilePath, s.Genre, s.Year, s.ArtworkUrl
+                FROM Songs s
+                JOIN PlaylistSongs ps ON s.Id = ps.SongId
+                WHERE ps.PlaylistId = @playlistId";
                     command.Parameters.Clear();
                     command.Parameters.AddWithValue("@playlistId", playlist.Id);
                     using (var reader = command.ExecuteReader())
@@ -137,8 +138,12 @@ namespace SoundHaven.Data
                                 FilePath = reader.GetString(5),
                                 Genre = reader.IsDBNull(6) ? null : reader.GetString(6),
                                 Year = reader.IsDBNull(7) ? null : (int?)reader.GetInt32(7),
-                                ThumbnailUrl = reader.IsDBNull(8) ? null : reader.GetString(8)
+                                ArtworkUrl = reader.IsDBNull(8) ? null : reader.GetString(8)
                             };
+
+                            // Load the artwork
+                            song.LoadArtwork();
+
                             playlist.Songs.Add(song);
                         }
                     }
@@ -156,14 +161,17 @@ namespace SoundHaven.Data
 
                 // First, ensure the song exists in the Songs table
                 command.CommandText = @"
-                INSERT OR IGNORE INTO Songs (Title, Artist, Album, Duration, FilePath)
-                VALUES (@title, @artist, @album, @duration, @filePath);
-                SELECT last_insert_rowid();";
+        INSERT OR IGNORE INTO Songs (Title, Artist, Album, Duration, FilePath, Genre, Year, ArtworkUrl)
+        VALUES (@title, @artist, @album, @duration, @filePath, @genre, @year, @artworkUrl);
+        SELECT Id FROM Songs WHERE Title = @title AND FilePath = @filePath;";
                 command.Parameters.AddWithValue("@title", song.Title);
-                command.Parameters.AddWithValue("@artist", song.Artist);
-                command.Parameters.AddWithValue("@album", song.Album);
+                command.Parameters.AddWithValue("@artist", song.Artist ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@album", song.Album ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@duration", song.Duration.TotalSeconds);
                 command.Parameters.AddWithValue("@filePath", song.FilePath);
+                command.Parameters.AddWithValue("@genre", song.Genre ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@year", song.Year ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@artworkUrl", song.ArtworkUrl ?? (object)DBNull.Value);
                 long songId = (long)command.ExecuteScalar();
 
                 // Now, add the song to the playlist
@@ -174,6 +182,7 @@ namespace SoundHaven.Data
                 command.ExecuteNonQuery();
             }
         }
+
         
         public void RemoveSongFromPlaylist(long playlistId, long songId)
         {
