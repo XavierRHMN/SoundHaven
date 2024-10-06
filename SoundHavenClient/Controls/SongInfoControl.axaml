@@ -4,60 +4,103 @@
              x:Class="SoundHaven.Controls.SongInfoControl"
              x:DataType="viewModels:SongInfoViewModel">
 
-    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-        <!-- Album Cover Image or Buffering Indicator -->
-        <Border CornerRadius="5"
-                ClipToBounds="True"
-                Margin="0,0,20,0"
-                Width="50"
-                Height="50">
-            <Panel>
-                <Image Source="{Binding CurrentSong.Artwork}"
-                       Stretch="UniformToFill"
-                       IsVisible="{Binding !IsSeekBuffering, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                <!-- Progress Bar: Visible when buffering -->
-                <ProgressBar Classes="circular"
-                             IsIndeterminate="True"
-                             IsVisible="{Binding IsSeekBuffering, Converter={StaticResource BooleanToVisibilityConverter}}"
-                             Width="30"
-                             Height="30"
-                             Foreground="{DynamicResource PrimaryColor}" />
-            </Panel>
-        </Border>
-
-        <!-- Song Information -->
-        <StackPanel Orientation="Vertical">
-            <!-- Title with continuous scrolling effect -->
-            <Border ClipToBounds="True" Width="{Binding ControlWidth}" Height="25" Background="Transparent">
-                <Canvas Width="{Binding ControlWidth}" Height="25">
-                    <!-- First TextBlock -->
-                    <TextBlock Text="{Binding CurrentSong.Title}"
-                               FontSize="14"
-                               FontWeight="Bold"
-                               Foreground="White"
-                               Canvas.Left="{Binding TitleScrollPosition1}" />
-
-                    <!-- Second TextBlock, positioned to the right of the first -->
-                    <TextBlock Text="{Binding CurrentSong.Title}"
-                               FontSize="14"
-                               FontWeight="Bold"
-                               Foreground="White"
-                               Canvas.Left="{Binding TitleScrollPosition2}" />
-                </Canvas>
+    <UserControl.Styles>
+        <Style Selector="TextBlock.Title">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Margin" Value="0 5 0 0" />
+        </Style>
+        
+        <Style Selector="TextBlock.ArtistAndYear">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="0 5 0 0" />
+        </Style>
+    </UserControl.Styles>
+    
+    <Grid>
+        <!-- Actual Song Info -->
+        <StackPanel Orientation="Horizontal" 
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding CurrentSongExists}">
+            <!-- Album Cover Image or Buffering Indicator -->
+            <Border CornerRadius="5"
+                    ClipToBounds="True"
+                    Margin="0,0,20,0"
+                    Width="50"
+                    Height="50">
+                <Panel>
+                    <Image Source="{Binding CurrentSong.Artwork}"
+                           Stretch="UniformToFill"
+                           IsVisible="{Binding !IsSeekBuffering, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <!-- Progress Bar: Visible when buffering -->
+                    <ProgressBar Classes="circular"
+                                 IsIndeterminate="True"
+                                 IsVisible="{Binding IsSeekBuffering, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                 Width="30"
+                                 Height="30"
+                                 Foreground="{DynamicResource PrimaryColor}" />
+                </Panel>
             </Border>
 
-            <!-- Artist and Year combined -->
-            <TextBlock FontSize="14"
-                       Foreground="Gray"
-                       HorizontalAlignment="Left"
-                       IsVisible="{Binding CurrentSongExists, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <TextBlock.Text>
-                    <MultiBinding StringFormat="{}{0} - {1}">
-                        <Binding Path="CurrentSong.Artist" />
-                        <Binding Path="CurrentSong.Year" />
-                    </MultiBinding>
-                </TextBlock.Text>
-            </TextBlock>
+            <!-- Song Information -->
+            <StackPanel Orientation="Vertical">
+                <!-- Title with continuous scrolling effect -->
+                <Border ClipToBounds="True" Width="{Binding ControlWidth}" Height="25" Background="Transparent">
+                    <Canvas Width="{Binding ControlWidth}" Height="25">
+                        <!-- First TextBlock -->
+                        <TextBlock Text="{Binding CurrentSong.Title}"
+                                   Classes="Title"
+                                   Canvas.Left="{Binding TitleScrollPosition1}" />
+
+                        <!-- Second TextBlock, positioned to the right of the first -->
+                        <TextBlock Text="{Binding CurrentSong.Title}"
+                                   Classes="Title"
+                                   Canvas.Left="{Binding TitleScrollPosition2}" />
+                    </Canvas>
+                </Border>
+
+                <!-- Artist and Year combined -->
+                <TextBlock HorizontalAlignment="Left"
+                           Classes="ArtistAndYear">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0} - {1}">
+                            <Binding Path="CurrentSong.Artist" />
+                            <Binding Path="CurrentSong.Year" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+            </StackPanel>
         </StackPanel>
-    </StackPanel>
+
+        <!-- Placeholder Song Info (when no current song exists) -->
+        <StackPanel Orientation="Horizontal" 
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding !CurrentSongExists}">
+            <!-- Placeholder Album Cover -->
+            <Border CornerRadius="5"
+                    ClipToBounds="True"
+                    Margin="0,0,20,0"
+                    Width="50"
+                    Height="50">
+                <Image Source="/Assets/Covers/MissingAlbum.png"
+                       Stretch="UniformToFill" />
+            </Border>
+
+            <!-- Placeholder Song Information -->
+            <StackPanel Orientation="Vertical">
+                <!-- Placeholder Title -->
+                <TextBlock Text="Play a song!"
+                           Classes="Title"/>
+
+                <!-- Placeholder Artist and Year -->
+                <TextBlock Text="Artist - 20XX"
+                           Classes="ArtistAndYear"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
 </UserControl>
