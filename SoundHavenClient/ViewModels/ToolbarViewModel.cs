@@ -106,7 +106,6 @@ namespace SoundHaven.ViewModels
                     Name = $"Playlist #{PlaylistCollection.Count + 1}",
                     Songs = new ObservableCollection<Song>()
                 };
-                
                 _playlistStore.AddPlaylist(newPlaylist);
             }
             catch (Exception ex)

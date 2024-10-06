@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using SoundHaven.Commands;
+using SoundHaven.Data;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.Services;
@@ -17,6 +18,7 @@ namespace SoundHaven.ViewModels
     {
         private readonly PlaybackViewModel _playbackViewModel;
         private readonly IOpenFileDialogService _openFileDialogService;
+        private MusicDatabase _musicDatabase;
 
         private Playlist _displayedPlaylist;
         public Playlist DisplayedPlaylist
@@ -110,11 +112,12 @@ namespace SoundHaven.ViewModels
         public RelayCommand ToggleEditModeCommand { get; }
         public RelayCommand DeleteSelectedSongsCommand { get; }
 
-        public PlaylistViewModel(PlaybackViewModel playbackViewModel, IOpenFileDialogService openFileDialogService)
+        public PlaylistViewModel(PlaybackViewModel playbackViewModel, IOpenFileDialogService openFileDialogService, MusicDatabase musicDatabase)
         {
             _playbackViewModel = playbackViewModel;
             _openFileDialogService = openFileDialogService;
-
+            _musicDatabase = musicDatabase;
+                
             AddSongCommand = new AsyncRelayCommand(AddSongAsync);
             ToggleEditModeCommand = new RelayCommand(ToggleEditMode);
             DeleteSelectedSongsCommand = new RelayCommand(DeleteSelectedSongs);
@@ -144,6 +147,9 @@ namespace SoundHaven.ViewModels
                 {
                     var newSong = Mp3ToSongHelper.GetSongFromMp3(filePath);
                     DisplayedPlaylist.Songs.Add(newSong);
+                    Console.WriteLine(DisplayedPlaylist.Id);
+                    Console.WriteLine(newSong.Id);
+                    _musicDatabase.AddSongToPlaylist(DisplayedPlaylist.Id, newSong);
                     Console.WriteLine($"Added song: {newSong.Title} to playlist: {DisplayedPlaylist.Name}");
                 }
             }
@@ -175,6 +181,7 @@ namespace SoundHaven.ViewModels
                 foreach (var song in songsToRemove)
                 {
                     DisplayedPlaylist.Songs.Remove(song);
+                    _musicDatabase.RemoveSongFromPlaylist(DisplayedPlaylist.Id, song.Id);
                     Console.WriteLine($"Deleted song: {song.Title} from playlist: {DisplayedPlaylist.Name}");
                 }
                 SelectedItems.Clear();
