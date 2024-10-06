@@ -141,9 +141,6 @@ namespace SoundHaven.Data
                                 ArtworkUrl = reader.IsDBNull(8) ? null : reader.GetString(8)
                             };
 
-                            // Load the artwork
-                            song.LoadArtwork();
-
                             playlist.Songs.Add(song);
                         }
                     }
