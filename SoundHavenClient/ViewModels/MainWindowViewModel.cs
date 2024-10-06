@@ -97,7 +97,7 @@ namespace SoundHaven.ViewModels
             RepeatViewModel = new RepeatViewModel();
             PlaybackViewModel = new PlaybackViewModel(AudioService, YouTubeDownloadService, RepeatViewModel);
             ShuffleViewModel = new ShuffleViewModel(PlaybackViewModel);
-            PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService());
+            PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService(), MusicDatabase);
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
             HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
             SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel);
