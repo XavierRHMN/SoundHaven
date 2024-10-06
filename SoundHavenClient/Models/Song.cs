@@ -115,33 +115,7 @@ namespace SoundHaven.Models
             }
             set
             {
-                if (SetProperty(ref _artworkUrl, value))
-                {
-                    LoadArtwork();
-                }
-            }
-        }
-
-        // Existing methods
-        public void LoadArtwork()
-        {
-            if (!string.IsNullOrEmpty(ArtworkUrl) && File.Exists(ArtworkUrl))
-            {
-                try
-                {
-                    using (var stream = File.OpenRead(ArtworkUrl))
-                    {
-                        Artwork = new Bitmap(stream);
-                    }
-                }
-                catch
-                {
-                    Artwork = null;
-                }
-            }
-            else
-            {
-                Artwork = null;
+                SetProperty(ref _artworkUrl, value);
             }
         }
 
