@@ -54,6 +54,14 @@
                 <Setter Property="RippleFill" Value="Transparent" />
                 <Setter Property="Opacity" Value="1.0" />
             </Style>
+            
+            <Style Selector="TextBlock.CreatePlaylist">
+                <Setter Property="FontFamily"
+                        Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Margin" Value="0 5 0 0" />
+            </Style>
         </StackPanel.Styles>
 
 
@@ -99,9 +107,11 @@
         <controls:FloatingButton VerticalAlignment="Center"
                                  Theme="{StaticResource MaterialFlatButton}"
                                  IsExtended="True"
-                                 Command="{Binding CreatePlaylistCommand}"
-                                 Content="Create Playlist"
-                                 FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+                                 Command="{Binding CreatePlaylistCommand}">
+            <controls:FloatingButton.Content>
+                <TextBlock Text="Create Playlist" Classes="CreatePlaylist"/>
+            </controls:FloatingButton.Content>
+        </controls:FloatingButton>
 
         <Separator Background="White" Opacity="0.1" />
 
