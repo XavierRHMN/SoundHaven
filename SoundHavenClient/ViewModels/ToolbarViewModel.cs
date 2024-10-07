@@ -68,16 +68,9 @@ namespace SoundHaven.ViewModels
             CreatePlaylistCommand = new AsyncRelayCommand(CreatePlaylistAsync);
             DeletePlaylistCommand = new RelayCommand<Playlist>(DeletePlaylist);
         }
-
-        private bool _isCreatingPlaylist;
-
-        public async Task CreatePlaylistAsync()
+        
+        private async Task CreatePlaylistAsync()
         {
-            if (_isCreatingPlaylist)
-                return;
-
-            _isCreatingPlaylist = true;
-
             try
             {
                 Console.WriteLine("Creating new playlist");
@@ -94,10 +87,6 @@ namespace SoundHaven.ViewModels
             catch (Exception ex)
             {
                 Console.WriteLine($"Error creating playlist: {ex.Message}");
-            }
-            finally
-            {
-                _isCreatingPlaylist = false;
             }
         }
 
