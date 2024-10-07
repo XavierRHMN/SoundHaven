@@ -112,7 +112,7 @@
                     <ColumnDefinition Width="*" MinWidth="150" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="250" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <controls:SongInfoControl Grid.Column="0" DataContext="{Binding SongInfoViewModel}"
