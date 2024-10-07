@@ -91,6 +91,19 @@ namespace SoundHaven.Data
                 return result?.ToString();
             }
         }
+        
+        public void UpdatePlaylistName(int playlistId, string newName)
+        {
+            using (var connection = new SqliteConnection(connectionString))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = "UPDATE Playlists SET Name = @name WHERE Id = @id";
+                command.Parameters.AddWithValue("@name", newName);
+                command.Parameters.AddWithValue("@id", playlistId);
+                command.ExecuteNonQuery();
+            }
+        }
 
         public void SavePlaylist(Playlist playlist)
         {

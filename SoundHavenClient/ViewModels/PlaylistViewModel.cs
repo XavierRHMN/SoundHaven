@@ -11,6 +11,7 @@ using SoundHaven.Data;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.Services;
+using System.ComponentModel;
 
 namespace SoundHaven.ViewModels
 {
@@ -23,15 +24,23 @@ namespace SoundHaven.ViewModels
         private Playlist _displayedPlaylist;
         public Playlist DisplayedPlaylist
         {
-            get
-            {
-                return _displayedPlaylist;
-            }
+            get => _displayedPlaylist;
             set
             {
                 if (_displayedPlaylist != value)
                 {
+                    if (_displayedPlaylist != null)
+                    {
+                        _displayedPlaylist.PropertyChanged -= OnPlaylistPropertyChanged;
+                    }
+
                     _displayedPlaylist = value;
+
+                    if (_displayedPlaylist != null)
+                    {
+                        _displayedPlaylist.PropertyChanged += OnPlaylistPropertyChanged;
+                    }
+
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(Songs));
                 }
@@ -205,6 +214,14 @@ namespace SoundHaven.ViewModels
             {
                 _playbackViewModel.CurrentPlaylist = DisplayedPlaylist;
                 _playbackViewModel.CurrentSong = song;
+            }
+        }
+        
+        private void OnPlaylistPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Playlist.Name))
+            {
+                _musicDatabase.UpdatePlaylistName(DisplayedPlaylist.Id, DisplayedPlaylist.Name);
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using SoundHaven.ViewModels;
+﻿using SoundHaven.Data;
+using SoundHaven.ViewModels;
 using SoundHaven.Services;
 using System;
 using System.Collections.ObjectModel;
@@ -15,16 +16,12 @@ namespace SoundHaven.Models
         private string _name;
         public string Name
         {
-            get
-            {
-                return _name;
-            }
+            get => _name;
             set
             {
                 if (_name != value)
                 {
                     _name = value;
-                    // Raise the PropertyChanged event
                     OnPropertyChanged();
                 }
             }
@@ -58,6 +55,5 @@ namespace SoundHaven.Models
             // Return the song at the new index
             return Songs[newIndex];
         }
-
     }
 }
