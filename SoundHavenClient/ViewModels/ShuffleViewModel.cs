@@ -29,7 +29,7 @@ namespace SoundHaven.ViewModels
                     _playbackViewModel.IsShuffleEnabled = _isShuffleEnabled;
 
                     // Ensure UI update on the UI thread
-                    Dispatcher.UIThread.Post(() => OnPropertyChanged(nameof(IsShuffleEnabled)));
+                    Dispatcher.UIThread.Post(() => OnPropertyChanged());
                 }
 
                 _isUpdating = false;

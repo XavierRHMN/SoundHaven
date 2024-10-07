@@ -19,8 +19,7 @@ namespace SoundHaven.ViewModels
                 float newVolume = Math.Clamp(value, 0f, 1f);
                 if (Math.Abs(_volume - newVolume) > float.Epsilon)
                 {
-                    _volume = newVolume;
-                    OnPropertyChanged();
+                    SetProperty(ref _volume, newVolume);
                     _audioService.AudioVolume = _volume;
                 }
             }
