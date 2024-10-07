@@ -14,14 +14,12 @@ namespace SoundHaven.ViewModels
         private RepeatViewModel _repeatViewModel;
         private readonly IYouTubeDownloadService _youTubeDownloadService;
         public event EventHandler SeekPositionReset;
-
-
+        
         public enum Direction
         {
             Previous = -1,
             Next = 1
         }
-
 
         private AudioService _audioService;
 
@@ -34,7 +32,7 @@ namespace SoundHaven.ViewModels
 
         public bool IsPlaying
         {
-            get => _audioService.IsPlaying();
+            get => _audioService.IsPlaying;
         }
 
         private Song _currentSong;
@@ -102,7 +100,7 @@ namespace SoundHaven.ViewModels
         {
             if (CurrentSong != null)
             {
-                if (_audioService.IsStopped() && CurrentSong.VideoId == null)
+                if (_audioService.IsStopped && CurrentSong.VideoId == null)
                 {
                     PlayFromBeginning(CurrentSong);
                 }
@@ -124,7 +122,7 @@ namespace SoundHaven.ViewModels
 
         public void Pause()
         {
-            if (_audioService.IsPlaying())
+            if (_audioService.IsPlaying)
             {
                 _audioService.Pause();
             }
