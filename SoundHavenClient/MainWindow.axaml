@@ -122,7 +122,7 @@
                 <controls:ShuffleControl Grid.Column="3" DataContext="{Binding ShuffleViewModel}" />
                 <controls:VolumeControl Grid.Column="4" DataContext="{Binding VolumeViewModel}"
                                         VerticalAlignment="Center" 
-                                        Margin="-10 0 0 0"/>
+                                        Margin="-5 0 0 0"/>
             </Grid>
         </Grid>
     </Grid>
