@@ -12,7 +12,7 @@
             <Setter Property="FontSize" Value="16" />
             <Setter Property="Margin" Value="0 5 0 0" />
         </Style>
-        
+
         <Style Selector="TextBlock.ArtistAndYear">
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
@@ -21,10 +21,10 @@
             <Setter Property="Margin" Value="0 5 0 0" />
         </Style>
     </UserControl.Styles>
-    
+
     <Grid>
         <!-- Actual Song Info -->
-        <StackPanel Orientation="Horizontal" 
+        <StackPanel Orientation="Horizontal"
                     VerticalAlignment="Center"
                     IsVisible="{Binding CurrentSongExists}">
             <!-- Album Cover Image or Buffering Indicator -->
@@ -78,7 +78,7 @@
         </StackPanel>
 
         <!-- Placeholder Song Info (when no current song exists) -->
-        <StackPanel Orientation="Horizontal" 
+        <StackPanel Orientation="Horizontal"
                     VerticalAlignment="Center"
                     IsVisible="{Binding !CurrentSongExists}">
             <!-- Placeholder Album Cover -->
@@ -95,11 +95,11 @@
             <StackPanel Orientation="Vertical">
                 <!-- Placeholder Title -->
                 <TextBlock Text="Play a song!"
-                           Classes="Title"/>
+                           Classes="Title" />
 
                 <!-- Placeholder Artist and Year -->
                 <TextBlock Text="Artist - 20XX"
-                           Classes="ArtistAndYear"/>
+                           Classes="ArtistAndYear" />
             </StackPanel>
         </StackPanel>
     </Grid>

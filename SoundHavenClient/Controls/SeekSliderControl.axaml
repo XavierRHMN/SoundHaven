@@ -3,7 +3,7 @@
              x:Class="SoundHaven.Controls.SeekSliderControl"
              xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
              x:DataType="viewModels:SeekSliderViewModel">
-    
+
     <UserControl.Styles>
         <Style Selector="TextBlock.DurationDisplay">
             <Setter Property="FontFamily"
@@ -13,7 +13,7 @@
         </Style>
     </UserControl.Styles>
 
-    
+
     <Grid ColumnDefinitions="40, *, 40" Margin="20,0,20,0">
         <!-- Current Position Display -->
         <TextBlock Grid.Column="0"
@@ -21,15 +21,15 @@
                    Foreground="Gray"
                    VerticalAlignment="Center"
                    HorizontalAlignment="Left"
-                   Classes="DurationDisplay"/>
+                   Classes="DurationDisplay" />
 
         <!-- Seek Slider -->
         <Slider Grid.Column="1"
                 Height="75"
                 Minimum="0"
                 Maximum="{Binding MaximumSeekValue}"
-                Value="{Binding SeekPosition, Mode=TwoWay}" 
-                Margin="10,0"/>
+                Value="{Binding SeekPosition, Mode=TwoWay}"
+                Margin="10,0" />
 
         <!-- Maximum Duration Display -->
         <TextBlock Grid.Column="2"
@@ -37,6 +37,6 @@
                    Foreground="Gray"
                    VerticalAlignment="Center"
                    HorizontalAlignment="Right"
-                   Classes="DurationDisplay"/>
+                   Classes="DurationDisplay" />
     </Grid>
 </UserControl>

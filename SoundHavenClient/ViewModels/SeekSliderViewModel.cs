@@ -19,7 +19,10 @@ namespace SoundHaven.ViewModels
 
         public double MaximumSeekValue
         {
-            get => _audioService.TotalDuration.TotalSeconds;
+            get
+            {
+                return _audioService.TotalDuration.TotalSeconds;
+            }
             set
             {
                 if (_maximumSeekValue != value)
@@ -44,7 +47,10 @@ namespace SoundHaven.ViewModels
 
         public double SeekPosition
         {
-            get => _seekPosition;
+            get
+            {
+                return _seekPosition;
+            }
             set
             {
                 if (SetProperty(ref _seekPosition, value) && !_isUpdatingFromTimer)
@@ -80,7 +86,7 @@ namespace SoundHaven.ViewModels
             {
                 return;
             }
-            
+
             _isUpdatingFromTimer = true;
             SeekPosition = (_playbackViewModel.CurrentSong.VideoId != null
                 ? _audioService.CurrentYoutubePosition

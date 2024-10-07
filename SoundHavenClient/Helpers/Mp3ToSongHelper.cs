@@ -39,20 +39,20 @@ namespace SoundHaven.Helpers
                 else
                 {
                     // No embedded artwork, search for image files in the song's directory
-                    var songDirectory = Path.GetDirectoryName(song.FilePath);
+                    string? songDirectory = Path.GetDirectoryName(song.FilePath);
                     if (Directory.Exists(songDirectory))
                     {
                         // Search for image files with .jpg, .jpeg, or .png extensions
-                        var imageFiles = Directory.GetFiles(songDirectory, "*.*")
+                        string[]? imageFiles = Directory.GetFiles(songDirectory, "*.*")
                             .Where(filePath => filePath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
-                                            || filePath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
-                                            || filePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                                || filePath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
+                                || filePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
                             .ToArray();
 
                         if (imageFiles.Length > 0)
                         {
                             // Use the first image found
-                            var imageFilePath = imageFiles[0];
+                            string? imageFilePath = imageFiles[0];
 
                             // Read the image file into a bitmap
                             using (var stream = new FileStream(imageFilePath, FileMode.Open, FileAccess.Read))
@@ -61,20 +61,20 @@ namespace SoundHaven.Helpers
                             }
 
                             // Embed the image into the MP3 file
-                            var imageData = System.IO.File.ReadAllBytes(imageFilePath);
-                            var byteVector = new TagLib.ByteVector(imageData);
+                            byte[]? imageData = System.IO.File.ReadAllBytes(imageFilePath);
+                            var byteVector = new ByteVector(imageData);
 
                             // Create a Picture object
-                            TagLib.Picture picture = new TagLib.Picture
+                            var picture = new Picture
                             {
-                                Type = TagLib.PictureType.FrontCover,
+                                Type = PictureType.FrontCover,
                                 Description = "Cover",
                                 MimeType = GetMimeType(imageFilePath),
                                 Data = byteVector
                             };
 
                             // Assign the picture to the file's tag
-                            file.Tag.Pictures = new TagLib.IPicture[] { picture };
+                            file.Tag.Pictures = new IPicture[] { picture };
 
                             // Save the changes to the file
                             file.Save();
@@ -105,14 +105,14 @@ namespace SoundHaven.Helpers
             int originalHeight = originalBitmap.PixelSize.Height;
 
             // Calculate the new width to make the aspect ratio 16:9
-            int newWidth = (int)Math.Round((originalHeight * 16.0) / 9.0);
+            int newWidth = (int)Math.Round(originalHeight * 16.0 / 9.0);
 
             // If the new width is less than the original width, adjust the height instead
             if (newWidth < originalWidth)
             {
                 newWidth = originalWidth;
                 // Adjust height to match 16:9
-                originalHeight = (int)Math.Round((newWidth * 9.0) / 16.0);
+                originalHeight = (int)Math.Round(newWidth * 9.0 / 16.0);
             }
 
             // Create a new RenderTargetBitmap with the new dimensions
@@ -138,7 +138,7 @@ namespace SoundHaven.Helpers
 
         private static string GetMimeType(string fileName)
         {
-            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            string? extension = Path.GetExtension(fileName).ToLowerInvariant();
             switch (extension)
             {
                 case ".jpg":

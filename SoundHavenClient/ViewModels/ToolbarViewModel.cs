@@ -65,7 +65,7 @@ namespace SoundHaven.ViewModels
 
         // Constructor
         public ToolbarViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
-                                HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore, 
+                                HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore,
                                 SearchViewModel searchViewModel, ThemesViewModel themesViewModel, MusicDatabase musicDatabase)
         {
             _mainWindowViewModel = mainWindowViewModel;
@@ -123,7 +123,7 @@ namespace SoundHaven.ViewModels
             if (playlist != null)
             {
                 _playlistStore.RemovePlaylist(playlist);
-                
+
                 // If the deleted playlist was the currently selected one, deselect it
                 if (ToolbarSelectedPlaylist == playlist)
                 {
@@ -135,7 +135,7 @@ namespace SoundHaven.ViewModels
                 {
                     ShowHomeView();
                 }
-                
+
             }
         }
 

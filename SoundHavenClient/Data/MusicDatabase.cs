@@ -65,7 +65,7 @@ namespace SoundHaven.Data
                 command.ExecuteNonQuery();
             }
         }
-        
+
         public void SaveThemeColor(string colorHex)
         {
             using (var connection = new SqliteConnection(connectionString))
@@ -87,11 +87,11 @@ namespace SoundHaven.Data
                 connection.Open();
                 var command = connection.CreateCommand();
                 command.CommandText = "SELECT ColorHex FROM ThemeSettings WHERE Id = 1";
-                var result = command.ExecuteScalar();
+                object? result = command.ExecuteScalar();
                 return result?.ToString();
             }
         }
-        
+
         public void UpdatePlaylistName(int playlistId, string newName)
         {
             using (var connection = new SqliteConnection(connectionString))
@@ -142,7 +142,7 @@ namespace SoundHaven.Data
             }
         }
 
-     public ObservableCollection<Playlist> GetAllPlaylists()
+        public ObservableCollection<Playlist> GetAllPlaylists()
         {
             var playlists = new ObservableCollection<Playlist>();
             using (var connection = new SqliteConnection(connectionString))
@@ -201,8 +201,8 @@ namespace SoundHaven.Data
             }
             return playlists;
         }
-        
-      public void AddSongToPlaylist(long playlistId, Song song)
+
+        public void AddSongToPlaylist(long playlistId, Song song)
         {
             using (var connection = new SqliteConnection(connectionString))
             {
@@ -236,7 +236,7 @@ namespace SoundHaven.Data
                 command.ExecuteNonQuery();
             }
         }
-        
+
         public void RemoveSongFromPlaylist(long playlistId, long songId)
         {
             using (var connection = new SqliteConnection(connectionString))
@@ -252,7 +252,7 @@ namespace SoundHaven.Data
                 command.ExecuteNonQuery();
             }
         }
-        
+
         public long GetPlaylistId(string playlistName)
         {
             using (var connection = new SqliteConnection(connectionString))
@@ -262,13 +262,13 @@ namespace SoundHaven.Data
                 command.CommandText = "SELECT Id FROM Playlists WHERE Name = @name";
                 command.Parameters.AddWithValue("@name", playlistName);
 
-                var result = command.ExecuteScalar();
-        
+                object? result = command.ExecuteScalar();
+
                 if (result != null && result != DBNull.Value)
                 {
                     return Convert.ToInt64(result);
                 }
-        
+
                 return -1;
             }
         }

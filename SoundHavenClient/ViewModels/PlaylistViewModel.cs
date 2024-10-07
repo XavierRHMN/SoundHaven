@@ -24,7 +24,10 @@ namespace SoundHaven.ViewModels
         private Playlist _displayedPlaylist;
         public Playlist DisplayedPlaylist
         {
-            get => _displayedPlaylist;
+            get
+            {
+                return _displayedPlaylist;
+            }
             set
             {
                 if (_displayedPlaylist != value)
@@ -126,7 +129,7 @@ namespace SoundHaven.ViewModels
             _playbackViewModel = playbackViewModel;
             _openFileDialogService = openFileDialogService;
             _musicDatabase = musicDatabase;
-                
+
             AddSongCommand = new AsyncRelayCommand(AddSongAsync);
             ToggleEditModeCommand = new RelayCommand(ToggleEditMode);
             DeleteSelectedSongsCommand = new RelayCommand(DeleteSelectedSongs);
@@ -216,7 +219,7 @@ namespace SoundHaven.ViewModels
                 _playbackViewModel.CurrentSong = song;
             }
         }
-        
+
         private void OnPlaylistPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(Playlist.Name))

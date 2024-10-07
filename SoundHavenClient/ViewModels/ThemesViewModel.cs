@@ -93,7 +93,7 @@ namespace SoundHaven.ViewModels
             string savedColorHex = _musicDatabase.GetThemeColor();
             if (!string.IsNullOrEmpty(savedColorHex))
             {
-                Color savedColor = Color.Parse(savedColorHex);
+                var savedColor = Color.Parse(savedColorHex);
                 ChangeTheme(savedColor);
             }
         }

@@ -29,11 +29,10 @@ namespace SoundHaven.Services
         private string _currentSource;
         private bool _isBuffering;
         private bool _isDisposed;
-        private bool _isPaused = false;
-        private bool _isTrackEnded = false;
+        private bool _isPaused;
+        private bool _isTrackEnded;
 
         private bool _isSeekBuffering;
-        private bool _isSeeking = false;
         private bool _isYouTubeStream;
         private DateTime _pauseStartTime;
         private Timer _positionLogTimer;
@@ -68,10 +67,22 @@ namespace SoundHaven.Services
                 }
             }
         }
-        
-        public TimeSpan CurrentLocalPosition => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
-        public TimeSpan CurrentYoutubePosition => _currentYoutubePosition;
-        
+
+        public TimeSpan CurrentLocalPosition
+        {
+            get
+            {
+                return _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
+            }
+        }
+        public TimeSpan CurrentYoutubePosition
+        {
+            get
+            {
+                return _currentYoutubePosition;
+            }
+        }
+
         public float AudioVolume
         {
             get
@@ -137,7 +148,7 @@ namespace SoundHaven.Services
                 });
             }
         }
-        
+
         public bool IsPlaying()
         {
             bool isPlaying = _waveOutDevice?.PlaybackState == PlaybackState.Playing;

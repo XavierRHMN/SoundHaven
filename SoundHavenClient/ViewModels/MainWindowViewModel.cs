@@ -73,7 +73,7 @@ namespace SoundHaven.ViewModels
         {
             string dbPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "MusicDatabase.db");
             MusicDatabase = new MusicDatabase(dbPath);
-            
+
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var apiKeyProvider = new ApiKeyService();
 
