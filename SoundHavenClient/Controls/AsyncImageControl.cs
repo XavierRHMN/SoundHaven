@@ -17,14 +17,8 @@ namespace SoundHaven.Controls
 
         public string SourceUrl
         {
-            get
-            {
-                return GetValue(SourceUrlProperty);
-            }
-            set
-            {
-                SetValue(SourceUrlProperty, value);
-            }
+            get => GetValue(SourceUrlProperty);
+            set => SetValue(SourceUrlProperty, value);
         }
 
         static AsyncImageControl()
