@@ -10,18 +10,8 @@ namespace SoundHaven.ViewModels
 
         public RepeatMode RepeatMode
         {
-            get
-            {
-                return _repeatMode;
-            }
-            set
-            {
-                if (_repeatMode != value)
-                {
-                    _repeatMode = value;
-                    OnPropertyChanged(nameof(RepeatMode));
-                }
-            }
+            get => _repeatMode;
+            set => SetProperty(ref _repeatMode, value);
         }
 
         public RelayCommand ToggleRepeatCommand { get; }

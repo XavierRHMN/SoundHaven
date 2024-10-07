@@ -20,8 +20,7 @@ namespace SoundHaven.Services
         Task<Song> DownloadAudioAsync(string videoId, IProgress<double> progress);
         string CleanVideoId(string videoId);
     }
-
-
+    
     public class YouTubeDownloadService : IYouTubeDownloadService
     {
         private readonly YoutubeClient _youtubeClient;

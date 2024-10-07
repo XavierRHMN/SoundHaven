@@ -12,24 +12,12 @@ namespace SoundHaven.Stores
         private ObservableCollection<Playlist> _playlists;
         public ObservableCollection<Playlist> Playlists
         {
-            get
-            {
-                if (_playlists == null)
-                {
-                    LoadPlaylists();
-                }
-                return _playlists;
-            }
+            get => _playlists;
         }
 
         public PlaylistStore(MusicDatabase musicDatabase)
         {
             _musicDatabase = musicDatabase;
-            LoadPlaylists();
-        }
-
-        private void LoadPlaylists()
-        {
             _playlists = new ObservableCollection<Playlist>(_musicDatabase.GetAllPlaylists());
         }
 
