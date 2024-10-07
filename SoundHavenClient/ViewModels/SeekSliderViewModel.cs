@@ -19,16 +19,20 @@ namespace SoundHaven.ViewModels
 
         public double MaximumSeekValue
         {
-            get
-            {
-                return _audioService.TotalDuration.TotalSeconds;
-            }
+            get => _audioService.TotalDuration.TotalSeconds;
+            set => SetProperty(ref _maximumSeekValue, value);
+        }
+        
+        public double SeekPosition
+        {
+            get => _seekPosition;
             set
             {
-                if (_maximumSeekValue != value)
+                if (SetProperty(ref _seekPosition, value) && !_isUpdatingFromTimer)
                 {
-                    _maximumSeekValue = value;
-                    OnPropertyChanged();
+                    _isUserSeeking = true;
+                    _debounceTimer.Stop();
+                    _debounceTimer.Start();
                 }
             }
         }
@@ -43,23 +47,6 @@ namespace SoundHaven.ViewModels
             _playbackViewModel.SeekPositionReset += OnSeekPositionReset;
             InitializeSeekTimer();
             InitializeDebounceTimer();
-        }
-
-        public double SeekPosition
-        {
-            get
-            {
-                return _seekPosition;
-            }
-            set
-            {
-                if (SetProperty(ref _seekPosition, value) && !_isUpdatingFromTimer)
-                {
-                    _isUserSeeking = true;
-                    _debounceTimer.Stop();
-                    _debounceTimer.Start();
-                }
-            }
         }
 
         private void InitializeSeekTimer()

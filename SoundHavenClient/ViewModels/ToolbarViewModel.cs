@@ -20,23 +20,17 @@ namespace SoundHaven.ViewModels
         private PlaylistStore _playlistStore;
         private SearchViewModel _searchViewModel;
         private ThemesViewModel _themesViewModel;
-        private MusicDatabase _musicDatabase;
 
         // Current Playlist binding for ToolbarControl.axaml
         private Playlist? _toolbarSelectedPlaylist;
         public Playlist? ToolbarSelectedPlaylist
         {
-            get
-            {
-                return _toolbarSelectedPlaylist;
-            }
+            get => _toolbarSelectedPlaylist;
             set
             {
-                if (_toolbarSelectedPlaylist != value)
+                // TODO do we need value != null? 
+                if (SetProperty(ref _toolbarSelectedPlaylist, value))
                 {
-                    _toolbarSelectedPlaylist = value;
-                    OnPropertyChanged();
-
                     if (value != null)
                     {
                         UpdatePlaylistViewAndSwitch(value);
@@ -48,10 +42,7 @@ namespace SoundHaven.ViewModels
         // Playlists collection
         public ObservableCollection<Playlist> PlaylistCollection
         {
-            get
-            {
-                return _playlistStore.Playlists;
-            }
+            get => _playlistStore.Playlists;
         }
 
         // Commands
@@ -66,7 +57,7 @@ namespace SoundHaven.ViewModels
         // Constructor
         public ToolbarViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
                                 HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore,
-                                SearchViewModel searchViewModel, ThemesViewModel themesViewModel, MusicDatabase musicDatabase)
+                                SearchViewModel searchViewModel, ThemesViewModel themesViewModel)
         {
             _mainWindowViewModel = mainWindowViewModel;
             _playlistViewModel = playlistViewModel;
@@ -75,7 +66,6 @@ namespace SoundHaven.ViewModels
             _playlistStore = playlistStore;
             _themesViewModel = themesViewModel;
             _searchViewModel = searchViewModel;
-            _musicDatabase = musicDatabase;
 
             ShowHomeViewCommand = new RelayCommand(ShowHomeView);
             ShowSearchViewCommand = new RelayCommand(ShowSearchView);

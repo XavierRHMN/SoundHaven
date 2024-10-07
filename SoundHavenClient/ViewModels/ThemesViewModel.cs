@@ -10,7 +10,7 @@ namespace SoundHaven.ViewModels
     public class ThemesViewModel : ViewModelBase
     {
         private readonly MusicDatabase _musicDatabase;
-        public ICommand ChangeThemeCommand { get; }
+        public RelayCommand<Color> ChangeThemeCommand { get; }
 
         public List<Color> ThemeColors { get; } = new List<Color>
         {

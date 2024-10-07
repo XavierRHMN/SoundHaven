@@ -13,29 +13,21 @@ namespace SoundHaven.ViewModels
     public class SongInfoViewModel : ViewModelBase, IDisposable
     {
         private readonly PlaybackViewModel _playbackViewModel;
-        private Song _currentSong;
-        private double _titleScrollPosition1;
-        private double _titleScrollPosition2;
-        private double _textWidth;
+        private readonly AudioService _audioService;
         private DispatcherTimer _scrollTimer;
-        private AudioService _audioService;
         private bool _isScrollingNeeded;
         private DispatcherTimer _pauseTimer;
         private bool _isPaused;
         private bool _hasPausedThisCycle;
 
+        private Song _currentSong;
         public Song CurrentSong
         {
-            get
-            {
-                return _currentSong;
-            }
+            get => _currentSong;
             private set
             {
-                if (_currentSong != value)
+                if (SetProperty(ref _currentSong, value))
                 {
-                    _currentSong = value;
-                    OnPropertyChanged();
                     OnPropertyChanged(nameof(CurrentSongExists));
                     _hasPausedThisCycle = false;
 
@@ -49,65 +41,37 @@ namespace SoundHaven.ViewModels
 
         public bool CurrentSongExists
         {
-            get
-            {
-                return CurrentSong != null;
-            }
+            get => CurrentSong != null;
         }
 
         private bool _isSeekBuffering;
         public bool IsSeekBuffering
         {
-            get
-            {
-                return _isSeekBuffering;
-            }
-            set
-            {
-                if (_isSeekBuffering != value)
-                {
-                    _isSeekBuffering = value;
-                    OnPropertyChanged();
-                }
-            }
+            get => _isSeekBuffering;
+            set => SetProperty(ref _isSeekBuffering, value);
         }
 
+        private double _titleScrollPosition1;
         public double TitleScrollPosition1
         {
-            get
-            {
-                return _titleScrollPosition1;
-            }
-            set
-            {
-                _titleScrollPosition1 = value;
-                OnPropertyChanged();
-            }
+            get => _titleScrollPosition1;
+            set => SetProperty(ref _titleScrollPosition1, value);
         }
 
+        private double _titleScrollPosition2;
         public double TitleScrollPosition2
         {
-            get
-            {
-                return _titleScrollPosition2;
-            }
-            set
-            {
-                _titleScrollPosition2 = value;
-                OnPropertyChanged();
-            }
+            get => _titleScrollPosition2;
+            set => SetProperty(ref _titleScrollPosition2, value);
         }
 
+        private double _textWidth;
         public double TextWidth
         {
-            get
-            {
-                return _textWidth;
-            }
+            get => _textWidth;
             set
             {
-                _textWidth = value;
-                OnPropertyChanged();
+                SetProperty(ref _textWidth, value);
                 UpdateScrollingState();
             }
         }

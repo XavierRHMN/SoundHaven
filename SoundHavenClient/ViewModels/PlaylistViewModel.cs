@@ -19,18 +19,15 @@ namespace SoundHaven.ViewModels
     {
         private readonly PlaybackViewModel _playbackViewModel;
         private readonly IOpenFileDialogService _openFileDialogService;
-        private MusicDatabase _musicDatabase;
+        private readonly MusicDatabase _musicDatabase;
 
         private Playlist _displayedPlaylist;
         public Playlist DisplayedPlaylist
         {
-            get
-            {
-                return _displayedPlaylist;
-            }
+            get => _displayedPlaylist;
             set
             {
-                if (_displayedPlaylist != value)
+                if (SetProperty(ref _displayedPlaylist, value))
                 {
                     if (_displayedPlaylist != null)
                     {
@@ -44,7 +41,6 @@ namespace SoundHaven.ViewModels
                         _displayedPlaylist.PropertyChanged += OnPlaylistPropertyChanged;
                     }
 
-                    OnPropertyChanged();
                     OnPropertyChanged(nameof(Songs));
                 }
             }
@@ -52,25 +48,17 @@ namespace SoundHaven.ViewModels
 
         public ObservableCollection<Song> Songs
         {
-            get
-            {
-                return DisplayedPlaylist?.Songs ?? new ObservableCollection<Song>();
-            }
+            get => DisplayedPlaylist?.Songs ?? new ObservableCollection<Song>();
         }
 
         private bool _isEditMode;
         public bool IsEditMode
         {
-            get
-            {
-                return _isEditMode;
-            }
+            get => _isEditMode;
             set
             {
-                if (_isEditMode != value)
+                if (SetProperty(ref _isEditMode, value))
                 {
-                    _isEditMode = value;
-                    OnPropertyChanged();
                     OnPropertyChanged(nameof(EditButtonContent));
                 }
             }
@@ -78,23 +66,16 @@ namespace SoundHaven.ViewModels
 
         public string EditButtonContent
         {
-            get
-            {
-                return IsEditMode ? "Done" : "Edit";
-            }
+            get => IsEditMode ? "Done" : "Edit";
         }
 
         private ObservableCollection<object> _selectedItems;
         public ObservableCollection<object> SelectedItems
         {
-            get
-            {
-                return _selectedItems;
-            }
+            get => _selectedItems;
             set
             {
-                _selectedItems = value;
-                OnPropertyChanged();
+                SetProperty(ref _selectedItems, value);
                 UpdateSelectedSongs();
             }
         }
@@ -108,10 +89,8 @@ namespace SoundHaven.ViewModels
             }
             set
             {
-                if (_selectedSong != value)
+                if (SetProperty(ref _selectedSong, value))
                 {
-                    _selectedSong = value;
-                    OnPropertyChanged();
                     if (_selectedSong != null && !IsEditMode)
                     {
                         SetCurrentSong(_selectedSong);

@@ -8,35 +8,24 @@ namespace SoundHaven.ViewModels
     public class PlayerViewModel : ViewModelBase
     {
         private readonly PlaybackViewModel _playbackViewModel;
-        public ObservableCollection<Song> UpNextSongs
+        public ObservableCollection<Song>? UpNextSongs
         {
-            get
-            {
-                return _playbackViewModel.CurrentPlaylist?.Songs;
-            }
+            get => _playbackViewModel.CurrentPlaylist?.Songs;
         }
+        
         public string ActivePlaylistName
         {
-            get
-            {
-                return _playbackViewModel.CurrentPlaylist?.Name ?? "No Active Playlist";
-            }
+            get => _playbackViewModel.CurrentPlaylist?.Name ?? "No Active Playlist";
         }
 
         private Song _playerViewSong;
         public Song PlayerViewSong
         {
-            get
-            {
-                return _playerViewSong;
-            }
+            get => _playerViewSong;
             set
             {
-                if (_playerViewSong != value)
+                if (SetProperty(ref _playerViewSong, value))
                 {
-                    _playerViewSong = value;
-                    OnPropertyChanged();
-
                     // Update the PlaybackViewModel's CurrentSong
                     _playbackViewModel.CurrentSong = value;
                 }
@@ -68,7 +57,8 @@ namespace SoundHaven.ViewModels
             PlayerViewSong = _playbackViewModel.CurrentSong;
         }
 
-        public void Dispose()
+        // TODO figure this out
+        public new void Dispose()
         {
             _playbackViewModel.PropertyChanged -= PlaybackViewModel_PropertyChanged;
         }

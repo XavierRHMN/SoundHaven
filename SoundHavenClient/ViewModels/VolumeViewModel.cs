@@ -13,10 +13,7 @@ namespace SoundHaven.ViewModels
 
         public float Volume
         {
-            get
-            {
-                return _volume;
-            }
+            get => _volume;
             set
             {
                 float newVolume = Math.Clamp(value, 0f, 1f);
@@ -31,17 +28,11 @@ namespace SoundHaven.ViewModels
 
         public bool IsMuted
         {
-            get
-            {
-                return _isMuted;
-            }
+            get => _isMuted;
             set
             {
-                if (_isMuted != value)
+                if (SetProperty(ref _isMuted, value))
                 {
-                    _isMuted = value;
-                    OnPropertyChanged();
-
                     if (_isMuted)
                     {
                         PreviousVolume = Volume;
@@ -59,15 +50,8 @@ namespace SoundHaven.ViewModels
 
         public float PreviousVolume
         {
-            get
-            {
-                return _previousVolume;
-            }
-            set
-            {
-                _previousVolume = value;
-                OnPropertyChanged();
-            }
+            get => _previousVolume;
+            set => SetProperty(ref _previousVolume, value);
         }
 
         public RelayCommand MuteCommand { get; }
@@ -76,11 +60,9 @@ namespace SoundHaven.ViewModels
         {
             _audioService = audioService;
             _volume = _audioService.AudioVolume; // This should now be 0.5 (50%)
-            MuteCommand = new RelayCommand(ToggleMute, CanToggleMute);
+            MuteCommand = new RelayCommand(ToggleMute);
         }
 
         private void ToggleMute() => IsMuted = !IsMuted;
-
-        private bool CanToggleMute() => true;
     }
 }

@@ -19,59 +19,12 @@ namespace SoundHaven.ViewModels
         public ObservableCollection<Song> TopTracks { get; }
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
         public ObservableCollection<Song> RecommendedTracks { get; }
-
-        public Playlist? CurrentPlaylist
-        {
-            get
-            {
-                return _playbackViewModel.CurrentPlaylist;
-            }
-        }
-        public ObservableCollection<Song>? Songs
-        {
-            get
-            {
-                return CurrentPlaylist?.Songs;
-            }
-        }
-
-        private Song? _selectedSong;
-        public Song? SelectedSong
-        {
-            get
-            {
-                return _selectedSong;
-            }
-            set
-            {
-                if (_selectedSong != value)
-                {
-                    _selectedSong = value;
-                    OnPropertyChanged();
-
-                    if (_selectedSong != null && _playbackViewModel.CurrentSong != _selectedSong)
-                    {
-                        _playbackViewModel.CurrentSong = _selectedSong;
-                    }
-                }
-            }
-        }
-
+        
         private bool _isLoading = true;
         public bool IsLoading
         {
-            get
-            {
-                return _isLoading;
-            }
-            set
-            {
-                if (_isLoading != value)
-                {
-                    _isLoading = value;
-                    OnPropertyChanged();
-                }
-            }
+            get => _isLoading;
+            set => SetProperty(ref _isLoading, value);
         }
 
         public HomeViewModel(PlaybackViewModel playbackViewModel, IDataService dataService)
