@@ -121,7 +121,8 @@
                 <controls:RepeatControl Grid.Column="2" DataContext="{Binding RepeatViewModel}" />
                 <controls:ShuffleControl Grid.Column="3" DataContext="{Binding ShuffleViewModel}" />
                 <controls:VolumeControl Grid.Column="4" DataContext="{Binding VolumeViewModel}"
-                                        VerticalAlignment="Center" />
+                                        VerticalAlignment="Center" 
+                                        Margin="-10 0 0 0"/>
             </Grid>
         </Grid>
     </Grid>
