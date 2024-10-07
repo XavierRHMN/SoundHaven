@@ -143,7 +143,7 @@ namespace SoundHaven.Models
             }
         }
         
-        public void SetArtwork(Bitmap bitmap)
+        public void SetArtworkData(Bitmap bitmap)
         {
             using (var memoryStream = new MemoryStream())
             {

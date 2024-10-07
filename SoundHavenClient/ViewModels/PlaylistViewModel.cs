@@ -147,7 +147,7 @@ namespace SoundHaven.ViewModels
                 {
                     var newSong = Mp3ToSongHelper.GetSongFromMp3(filePath);
                     DisplayedPlaylist.Songs.Add(newSong);
-                    newSong.SetArtwork(newSong.Artwork);
+                    newSong.SetArtworkData(newSong.Artwork);
                     _musicDatabase.AddSongToPlaylist(DisplayedPlaylist.Id, newSong);
                     Console.WriteLine($"Added song: {newSong.Title} to playlist: {DisplayedPlaylist.Name}");
                 }
