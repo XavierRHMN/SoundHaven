@@ -52,7 +52,7 @@ namespace SoundHaven.Services
             return videos ?? Enumerable.Empty<YouTubeVideoInfo>();
         }
 
-        public async Task<List<YouTubeVideoInfo>> SearchVideoByName(string query)
+        private async Task<List<YouTubeVideoInfo>> SearchVideoByName(string query)
         {
             try
             {
@@ -157,8 +157,7 @@ namespace SoundHaven.Services
 
         private string GetSafeFileName(string fileName) => string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
     }
-
-
+    
     public class YouTubeVideoInfo
     {
         public string Title { get; set; }
