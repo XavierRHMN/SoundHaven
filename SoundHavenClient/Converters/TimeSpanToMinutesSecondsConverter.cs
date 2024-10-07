@@ -10,7 +10,7 @@ namespace SoundHaven.Converters
         {
             if (value is double seconds)
             {
-                var time = TimeSpan.FromSeconds(seconds);
+                var time = TimeSpan.FromSeconds(Math.Floor(seconds));
                 return time.ToString(@"mm\:ss");
             }
 
