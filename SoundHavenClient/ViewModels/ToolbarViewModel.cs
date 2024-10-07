@@ -35,13 +35,11 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        // Playlists collection
         public ObservableCollection<Playlist> PlaylistCollection
         {
             get => _playlistStore.Playlists;
         }
 
-        // Commands
         public RelayCommand ShowHomeViewCommand { get; set; }
         public RelayCommand ShowSearchViewCommand { get; set; }
         public RelayCommand ShowPlaylistViewCommand { get; set; }
@@ -50,7 +48,6 @@ namespace SoundHaven.ViewModels
         public RelayCommand<Playlist> DeletePlaylistCommand { get; set; }
         public RelayCommand ShowThemesViewCommand { get; set; }
 
-        // Constructor
         public ToolbarViewModel(MainWindowViewModel mainWindowViewModel, PlaylistViewModel playlistViewModel,
                                 HomeViewModel homeViewModel, PlayerViewModel playerViewModel, PlaylistStore playlistStore,
                                 SearchViewModel searchViewModel, ThemesViewModel themesViewModel)
@@ -109,19 +106,6 @@ namespace SoundHaven.ViewModels
             if (playlist != null)
             {
                 _playlistStore.RemovePlaylist(playlist);
-
-                // If the deleted playlist was the currently selected one, deselect it
-                if (ToolbarSelectedPlaylist == playlist)
-                {
-                    ToolbarSelectedPlaylist = null;
-                }
-
-                // If we're currently viewing the deleted playlist, switch to home view
-                if (_mainWindowViewModel.CurrentViewModel == _playlistViewModel && _playlistViewModel.DisplayedPlaylist == playlist)
-                {
-                    ShowHomeView();
-                }
-
             }
         }
 
