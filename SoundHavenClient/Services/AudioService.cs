@@ -96,6 +96,16 @@ namespace SoundHaven.Services
             private set => SetProperty(ref _isSeekBuffering, value);
         }
 
+        public bool IsPlaying
+        {
+            get => _waveOutDevice?.PlaybackState == PlaybackState.Playing;
+        }
+        
+        public bool IsStopped
+        {
+            get => _waveOutDevice?.PlaybackState == PlaybackState.Stopped;
+        } 
+        
         public event EventHandler TrackEnded;
         public event EventHandler PlaybackStateChanged;
 
@@ -109,14 +119,6 @@ namespace SoundHaven.Services
                 });
             }
         }
-
-        public bool IsPlaying()
-        {
-            bool isPlaying = _waveOutDevice?.PlaybackState == PlaybackState.Playing;
-            return isPlaying;
-        }
-
-        public bool IsStopped() => _waveOutDevice?.PlaybackState == PlaybackState.Stopped;
 
         public async Task StartAsync(string source, bool isYouTubeVideo = false, TimeSpan startingPosition = default)
         {

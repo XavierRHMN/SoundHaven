@@ -30,7 +30,6 @@ namespace SoundHaven.ViewModels
     public class MainWindowViewModel : ViewModelBase
     {
         private readonly MusicDatabase MusicDatabase;
-
         private AudioService AudioService { get; set; }
         private PlaylistStore PlaylistStore { get; set; }
 
@@ -59,16 +58,17 @@ namespace SoundHaven.ViewModels
 
         public MainWindowViewModel()
         {
+            // SQLite Database
             string dbPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "MusicDatabase.db");
             MusicDatabase = new MusicDatabase(dbPath);
 
+            // LastFM Song Caching and LastFM Api Key provider
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var apiKeyProvider = new ApiKeyService();
 
             string lastFmApiKey = apiKeyProvider.GetApiKey("LASTFM_API_KEY.txt");
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             var lastFmDataService = new LastFmDataService(lastFmApiKey, memoryCache, loggerFactory);
-
             var youtubeLoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 
             // Services
