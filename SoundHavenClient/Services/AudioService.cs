@@ -20,8 +20,8 @@ namespace SoundHaven.Services
         private TimeSpan _accumulatedPauseDuration = TimeSpan.Zero;
         private AudioFileReader _audioFileReader;
 
-        private float _audioVolume = 0.8f;
-        private const float MaxVolumeMultiplier = 5.0f; // Maximum volume will be 500% of normal
+        private float _audioVolume = 0.5f;
+        private const float MaxVolumeMultiplier = 2.0f; // Maximum volume will be 200% of normal
         private BufferedWaveProvider _bufferedWaveProvider;
         private CancellationTokenSource _bufferingCancellationTokenSource;
         private Timer _bufferStatusTimer;
@@ -360,7 +360,7 @@ namespace SoundHaven.Services
         {
             _volumeProvider = new VolumeSampleProvider(waveProvider.ToSampleProvider())
             {
-                Volume = _audioVolume * MaxVolumeMultiplier
+                Volume = (float)Math.Pow(_audioVolume, 2) * MaxVolumeMultiplier
             };
 
             _waveOutDevice.Init(_volumeProvider);
