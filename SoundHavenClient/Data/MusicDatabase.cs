@@ -51,8 +51,44 @@ namespace SoundHaven.Data
                 FOREIGN KEY(PlaylistId) REFERENCES Playlists(Id),
                 FOREIGN KEY(SongId) REFERENCES Songs(Id),
                 PRIMARY KEY(PlaylistId, SongId)
+            );
+
+            CREATE TABLE IF NOT EXISTS AppSettings (
+                Key TEXT PRIMARY KEY,
+                Value TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS ThemeSettings (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ColorHex TEXT NOT NULL
             );";
                 command.ExecuteNonQuery();
+            }
+        }
+        
+        public void SaveThemeColor(string colorHex)
+        {
+            using (var connection = new SqliteConnection(connectionString))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = @"
+                INSERT OR REPLACE INTO ThemeSettings (Id, ColorHex) 
+                VALUES (1, @colorHex);";
+                command.Parameters.AddWithValue("@colorHex", colorHex);
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public string GetThemeColor()
+        {
+            using (var connection = new SqliteConnection(connectionString))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = "SELECT ColorHex FROM ThemeSettings WHERE Id = 1";
+                var result = command.ExecuteScalar();
+                return result?.ToString();
             }
         }
 
