@@ -49,6 +49,7 @@ namespace SoundHaven.ViewModels
                     PlayCommand.RaiseCanExecuteChanged();
                     PauseCommand.RaiseCanExecuteChanged();
 
+                    Console.WriteLine("Started playing: " + _currentSong.Title + " - " + _currentSong.Artist + " - " + _currentSong.Year);
 
                     Pause();
                     Play();

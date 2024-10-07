@@ -125,7 +125,6 @@ namespace SoundHaven.ViewModels
         private void UpdateScrollingState()
         {
             _isScrollingNeeded = TextWidth > ControlWidth / 2;
-            Console.WriteLine(TextWidth + "/" + ControlWidth / 2);
 
             if (_isScrollingNeeded)
             {
