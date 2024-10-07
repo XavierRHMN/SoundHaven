@@ -16,6 +16,7 @@ various music sources and provides a rich, customizable listening experience.
 - 🔊 High-quality audio playback with NAudio
 - 📥 Download YouTube videos and extract audio with YoutubeExplode
 - 🌈 User-customizable color schemes
+- 💾 Persistent data storage with SQLite
 
 ## 🛠️ Technologies
 
@@ -27,6 +28,7 @@ SoundHaven leverages a powerful stack of technologies:
 - **[FFmpeg](https://ffmpeg.org/)**: Complete, cross-platform solution for audio and video processing
 - **[NAudio](https://github.com/naudio/NAudio)**: .NET audio library for playback, recording, and audio file manipulation
 - **[YoutubeExplode](https://github.com/Tyrrrz/YoutubeExplode)**: Library for downloading YouTube videos and retrieving metadata
+- **[SQLite](https://www.sqlite.org/)**: Lightweight, file-based relational database for persistent data storage
 
 ## 🚀 Getting Started
 
