@@ -6,11 +6,11 @@ using SoundHaven.Models;
 
 namespace SoundHaven.Data
 {
-    public class MusicDatabase
+    public class AppDatabase
     {
         private string connectionString;
 
-        public MusicDatabase(string dbPath)
+        public AppDatabase(string dbPath)
         {
             connectionString = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
             InitializeDatabase();
