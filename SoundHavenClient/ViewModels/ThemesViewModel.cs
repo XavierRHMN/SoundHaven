@@ -3,11 +3,13 @@ using System.Windows.Input;
 using Avalonia;
 using Avalonia.Media;
 using SoundHaven.Commands;
+using SoundHaven.Data;
 
 namespace SoundHaven.ViewModels
 {
     public class ThemesViewModel : ViewModelBase
     {
+        private readonly MusicDatabase _musicDatabase;
         public ICommand ChangeThemeCommand { get; }
 
         public List<Color> ThemeColors { get; } = new List<Color>
@@ -63,10 +65,13 @@ namespace SoundHaven.ViewModels
             Color.Parse("#FFFFFF") // White
         };
 
-        public ThemesViewModel()
+        public ThemesViewModel(MusicDatabase musicDatabase)
         {
+            _musicDatabase = musicDatabase;
             ChangeThemeCommand = new RelayCommand<Color>(ChangeTheme);
+            LoadSavedTheme();
         }
+
 
         private void ChangeTheme(Color newColor)
         {
@@ -75,8 +80,21 @@ namespace SoundHaven.ViewModels
                 Application.Current.Resources["PrimaryColor"] = newColor;
                 Application.Current.Resources["PrimaryHueMidBrush"] = new SolidColorBrush(newColor);
 
+                // Save the new theme color to the database
+                _musicDatabase.SaveThemeColor(newColor.ToString());
+
                 // Optionally, you can log the change
                 System.Console.WriteLine($"Theme changed to: {newColor}");
+            }
+        }
+
+        private void LoadSavedTheme()
+        {
+            string savedColorHex = _musicDatabase.GetThemeColor();
+            if (!string.IsNullOrEmpty(savedColorHex))
+            {
+                Color savedColor = Color.Parse(savedColorHex);
+                ChangeTheme(savedColor);
             }
         }
     }
