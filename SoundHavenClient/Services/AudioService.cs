@@ -96,7 +96,7 @@ namespace SoundHaven.Services
                     _audioVolume = Math.Clamp(value, 0f, 1f);
                     if (_volumeProvider != null)
                     {
-                        _volumeProvider.Volume = _audioVolume * MaxVolumeMultiplier;
+                        _volumeProvider.Volume = (float)Math.Pow(_audioVolume, 2) * MaxVolumeMultiplier;
                     }
                     OnPropertyChanged();
                 }
