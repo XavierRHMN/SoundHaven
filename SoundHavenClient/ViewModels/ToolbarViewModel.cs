@@ -28,13 +28,9 @@ namespace SoundHaven.ViewModels
             get => _toolbarSelectedPlaylist;
             set
             {
-                // TODO do we need value != null? 
                 if (SetProperty(ref _toolbarSelectedPlaylist, value))
                 {
-                    if (value != null)
-                    {
-                        UpdatePlaylistViewAndSwitch(value);
-                    }
+                    UpdatePlaylistViewAndSwitch(value);
                 }
             }
         }

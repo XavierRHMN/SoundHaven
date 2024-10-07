@@ -56,11 +56,5 @@ namespace SoundHaven.ViewModels
         {
             PlayerViewSong = _playbackViewModel.CurrentSong;
         }
-
-        // TODO figure this out
-        public new void Dispose()
-        {
-            _playbackViewModel.PropertyChanged -= PlaybackViewModel_PropertyChanged;
-        }
     }
 }
