@@ -29,7 +29,7 @@ namespace SoundHaven.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private readonly MusicDatabase MusicDatabase;
+        private readonly AppDatabase _appDatabase;
         private AudioService AudioService { get; set; }
         private PlaylistStore PlaylistStore { get; set; }
 
@@ -59,8 +59,8 @@ namespace SoundHaven.ViewModels
         public MainWindowViewModel()
         {
             // SQLite Database
-            string dbPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "MusicDatabase.db");
-            MusicDatabase = new MusicDatabase(dbPath);
+            string dbPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "AppDatabase.db");
+            _appDatabase = new AppDatabase(dbPath);
 
             // LastFM Song Caching and LastFM Api Key provider
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
@@ -77,17 +77,17 @@ namespace SoundHaven.ViewModels
             YoutubeSearchService = new YoutubeSearchService(youtubeLoggerFactory, memoryCache);
 
             // Stores
-            PlaylistStore = new PlaylistStore(MusicDatabase);
+            PlaylistStore = new PlaylistStore(_appDatabase);
 
             // ViewModels
             RepeatViewModel = new RepeatViewModel();
             PlaybackViewModel = new PlaybackViewModel(AudioService, YouTubeDownloadService, RepeatViewModel);
             ShuffleViewModel = new ShuffleViewModel(PlaybackViewModel);
-            PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService(), MusicDatabase);
+            PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService(), _appDatabase);
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
             HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
             SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel);
-            ThemesViewModel = new ThemesViewModel(MusicDatabase);
+            ThemesViewModel = new ThemesViewModel(_appDatabase);
             ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);

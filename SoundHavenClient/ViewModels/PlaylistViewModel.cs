@@ -19,7 +19,7 @@ namespace SoundHaven.ViewModels
     {
         private readonly PlaybackViewModel _playbackViewModel;
         private readonly IOpenFileDialogService _openFileDialogService;
-        private readonly MusicDatabase _musicDatabase;
+        private readonly AppDatabase _appDatabase;
 
         private Playlist _displayedPlaylist;
         public Playlist DisplayedPlaylist
@@ -103,11 +103,11 @@ namespace SoundHaven.ViewModels
         public RelayCommand ToggleEditModeCommand { get; }
         public RelayCommand DeleteSelectedSongsCommand { get; }
 
-        public PlaylistViewModel(PlaybackViewModel playbackViewModel, IOpenFileDialogService openFileDialogService, MusicDatabase musicDatabase)
+        public PlaylistViewModel(PlaybackViewModel playbackViewModel, IOpenFileDialogService openFileDialogService, AppDatabase appDatabase)
         {
             _playbackViewModel = playbackViewModel;
             _openFileDialogService = openFileDialogService;
-            _musicDatabase = musicDatabase;
+            _appDatabase = appDatabase;
 
             AddSongCommand = new AsyncRelayCommand(AddSongAsync);
             ToggleEditModeCommand = new RelayCommand(ToggleEditMode);
@@ -139,7 +139,7 @@ namespace SoundHaven.ViewModels
                     var newSong = Mp3ToSongHelper.GetSongFromMp3(filePath);
                     DisplayedPlaylist.Songs.Add(newSong);
                     newSong.SetArtworkData(newSong.Artwork);
-                    _musicDatabase.AddSongToPlaylist(DisplayedPlaylist.Id, newSong);
+                    _appDatabase.AddSongToPlaylist(DisplayedPlaylist.Id, newSong);
                     Console.WriteLine($"Added song: {newSong.Title} to playlist: {DisplayedPlaylist.Name}");
                 }
             }
@@ -171,7 +171,7 @@ namespace SoundHaven.ViewModels
                 foreach (var song in songsToRemove)
                 {
                     DisplayedPlaylist.Songs.Remove(song);
-                    _musicDatabase.RemoveSongFromPlaylist(DisplayedPlaylist.Id, song.Id);
+                    _appDatabase.RemoveSongFromPlaylist(DisplayedPlaylist.Id, song.Id);
                     Console.WriteLine($"Deleted song: {song.Title} from playlist: {DisplayedPlaylist.Name}");
                 }
                 SelectedItems.Clear();
@@ -203,7 +203,7 @@ namespace SoundHaven.ViewModels
         {
             if (e.PropertyName == nameof(Playlist.Name))
             {
-                _musicDatabase.UpdatePlaylistName(DisplayedPlaylist.Id, DisplayedPlaylist.Name);
+                _appDatabase.UpdatePlaylistName(DisplayedPlaylist.Id, DisplayedPlaylist.Name);
             }
         }
     }

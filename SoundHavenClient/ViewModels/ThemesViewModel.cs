@@ -9,7 +9,7 @@ namespace SoundHaven.ViewModels
 {
     public class ThemesViewModel : ViewModelBase
     {
-        private readonly MusicDatabase _musicDatabase;
+        private readonly AppDatabase _appDatabase;
         public RelayCommand<Color> ChangeThemeCommand { get; }
 
         public List<Color> ThemeColors { get; } = new List<Color>
@@ -65,9 +65,9 @@ namespace SoundHaven.ViewModels
             Color.Parse("#FFFFFF") // White
         };
 
-        public ThemesViewModel(MusicDatabase musicDatabase)
+        public ThemesViewModel(AppDatabase appDatabase)
         {
-            _musicDatabase = musicDatabase;
+            _appDatabase = appDatabase;
             ChangeThemeCommand = new RelayCommand<Color>(ChangeTheme);
             LoadSavedTheme();
         }
@@ -81,7 +81,7 @@ namespace SoundHaven.ViewModels
                 Application.Current.Resources["PrimaryHueMidBrush"] = new SolidColorBrush(newColor);
 
                 // Save the new theme color to the database
-                _musicDatabase.SaveThemeColor(newColor.ToString());
+                _appDatabase.SaveThemeColor(newColor.ToString());
 
                 // Optionally, you can log the change
                 System.Console.WriteLine($"Theme changed to: {newColor}");
@@ -90,7 +90,7 @@ namespace SoundHaven.ViewModels
 
         private void LoadSavedTheme()
         {
-            string savedColorHex = _musicDatabase.GetThemeColor();
+            string savedColorHex = _appDatabase.GetThemeColor();
             if (!string.IsNullOrEmpty(savedColorHex))
             {
                 var savedColor = Color.Parse(savedColorHex);
