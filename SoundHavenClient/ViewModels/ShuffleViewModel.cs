@@ -9,33 +9,20 @@ namespace SoundHaven.ViewModels
     {
         private readonly PlaybackViewModel _playbackViewModel;
         private bool _isUpdating;
-
-        public ShuffleViewModel(PlaybackViewModel playbackViewModel)
-        {
-            _playbackViewModel = playbackViewModel;
-            ToggleShuffleCommand = new RelayCommand(ToggleShuffle);
-
-            // Ensure the initial state is set correctly
-            IsShuffleEnabled = false;
-        }
-
+        
+        
         private bool _isShuffleEnabled;
         public bool IsShuffleEnabled
         {
-            get
-            {
-                return _isShuffleEnabled;
-            }
+            get => _isShuffleEnabled;
             set
             {
                 if (_isUpdating) return; // Prevent recursive calls
 
                 _isUpdating = true;
 
-                if (_isShuffleEnabled != value)
+                if (SetProperty(ref _isShuffleEnabled, value))
                 {
-                    _isShuffleEnabled = value;
-                    OnPropertyChanged(nameof(IsShuffleEnabled));
                     Console.WriteLine($"Shuffle is now {(_isShuffleEnabled ? "enabled" : "disabled")}");
 
                     // Update the PlaybackViewModel
@@ -49,11 +36,17 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        public ICommand ToggleShuffleCommand { get; }
+        public RelayCommand ToggleShuffleCommand { get; }
 
+        public ShuffleViewModel(PlaybackViewModel playbackViewModel)
+        {
+            _playbackViewModel = playbackViewModel;
+            ToggleShuffleCommand = new RelayCommand(ToggleShuffle);
+            IsShuffleEnabled = false;
+        }
+        
         private void ToggleShuffle()
         {
-            Console.WriteLine("ToggleShuffle called");
             IsShuffleEnabled = !IsShuffleEnabled;
             Console.WriteLine($"IsShuffleEnabled is now {IsShuffleEnabled}");
         }

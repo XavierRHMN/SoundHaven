@@ -24,57 +24,35 @@ namespace SoundHaven.ViewModels
 
         public string SearchQuery
         {
-            get
-            {
-                return _searchQuery;
-            }
-            set
-            {
-                SetProperty(ref _searchQuery, value);
-            }
+            get => _searchQuery;
+            set => SetProperty(ref _searchQuery, value);
         }
 
         public ObservableCollection<Song> SearchResults
         {
-            get
-            {
-                return _searchResults;
-            }
-            set
-            {
-                SetProperty(ref _searchResults, value);
-            }
+            get => _searchResults;
+            set => SetProperty(ref _searchResults, value);
         }
 
         public bool IsLoading
         {
-            get
-            {
-                return _isLoading;
-            }
-            set
-            {
-                SetProperty(ref _isLoading, value);
-            }
+            get => _isLoading;
+            set => SetProperty(ref _isLoading, value);
         }
 
         private Song _selectedSong;
         public Song SelectedSong
         {
-            get
-            {
-                return _selectedSong;
-            }
+            get => _selectedSong;
             set
             {
-                if (_selectedSong != value)
+                if (SetProperty(ref _selectedSong, value))
                 {
-                    _selectedSong = value;
-                    OnPropertyChanged();
                     PlaySongCommand.Execute(value);
                 }
             }
         }
+
 
         public RelayCommand SearchCommand { get; }
         public RelayCommand<Song> PlaySongCommand { get; }

@@ -31,26 +31,14 @@ namespace SoundHaven.ViewModels
     {
         private readonly MusicDatabase MusicDatabase;
 
-        public AudioService AudioService { get; set; }
-        public PlaylistStore PlaylistStore { get; set; }
-        private DispatcherTimer _seekTimer;
-        private DispatcherTimer _scrollTimer;
+        private AudioService AudioService { get; set; }
+        private PlaylistStore PlaylistStore { get; set; }
 
         private ViewModelBase _currentViewModel;
         public ViewModelBase CurrentViewModel
         {
-            get
-            {
-                return _currentViewModel;
-            }
-            set
-            {
-                if (_currentViewModel != value)
-                {
-                    _currentViewModel = value;
-                    OnPropertyChanged(nameof(CurrentViewModel));
-                }
-            }
+            get => _currentViewModel;
+            set => SetProperty(ref _currentViewModel, value);
         }
 
         // ViewModels
@@ -100,7 +88,7 @@ namespace SoundHaven.ViewModels
             HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
             SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel);
             ThemesViewModel = new ThemesViewModel(MusicDatabase);
-            ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel, MusicDatabase);
+            ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
             SongInfoViewModel = new SongInfoViewModel(PlaybackViewModel, AudioService);

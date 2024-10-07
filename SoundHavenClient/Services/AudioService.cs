@@ -54,85 +54,46 @@ namespace SoundHaven.Services
 
         public bool IsPaused
         {
-            get
-            {
-                return _isPaused;
-            }
-            private set
-            {
-                if (_isPaused != value)
-                {
-                    _isPaused = value;
-                    OnPropertyChanged();
-                }
-            }
+            get => _isPaused;
+            private set => SetProperty(ref _isPaused, value);
         }
 
         public TimeSpan CurrentLocalPosition
         {
-            get
-            {
-                return _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
-            }
+            get => _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
         }
+        
         public TimeSpan CurrentYoutubePosition
         {
-            get
-            {
-                return _currentYoutubePosition;
-            }
+            get => _currentYoutubePosition;
         }
 
         public float AudioVolume
         {
-            get
-            {
-                return _audioVolume;
-            }
+            get => _audioVolume;
             set
             {
-                if (_audioVolume != value)
+                if (SetProperty(ref _audioVolume, value))
                 {
                     _audioVolume = Math.Clamp(value, 0f, 1f);
                     if (_volumeProvider != null)
                     {
                         _volumeProvider.Volume = (float)Math.Pow(_audioVolume, 2) * MaxVolumeMultiplier;
                     }
-                    OnPropertyChanged();
                 }
             }
         }
-
-
+        
         public TimeSpan TotalDuration
         {
-            get
-            {
-                return _totalDuration;
-            }
-            private set
-            {
-                if (_totalDuration != value)
-                {
-                    _totalDuration = value;
-                    OnPropertyChanged();
-                }
-            }
+            get => _totalDuration;
+            private set => SetProperty(ref _totalDuration, value);
         }
+        
         public bool IsSeekBuffering
         {
-            get
-            {
-                return _isSeekBuffering;
-            }
-            private set
-            {
-                if (_isSeekBuffering != value)
-                {
-                    _isSeekBuffering = value;
-                    OnPropertyChanged();
-                }
-            }
+            get => _isSeekBuffering;
+            private set => SetProperty(ref _isSeekBuffering, value);
         }
 
         public event EventHandler TrackEnded;

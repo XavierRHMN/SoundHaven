@@ -28,78 +28,45 @@ namespace SoundHaven.ViewModels
         private bool _isShuffleEnabled;
         public bool IsShuffleEnabled
         {
-            get
-            {
-                return _isShuffleEnabled;
-            }
-            set
-            {
-                if (_isShuffleEnabled != value)
-                {
-                    _isShuffleEnabled = value;
-                    OnPropertyChanged(nameof(IsShuffleEnabled));
-                }
-            }
+            get => _isShuffleEnabled;
+            set => SetProperty(ref _isShuffleEnabled, value);
         }
 
         public bool IsPlaying
         {
-            get
-            {
-                return _audioService.IsPlaying();
-            }
+            get => _audioService.IsPlaying();
         }
 
         private Song _currentSong;
         public Song CurrentSong
         {
-            get
-            {
-                return _currentSong;
-            }
+            get => _currentSong;
             set
             {
-                if (_currentSong != value)
+                if (SetProperty(ref _currentSong, value))
                 {
-                    _currentSong = value;
-                    OnPropertyChanged(nameof(CurrentSong));
                     OnPropertyChanged(nameof(CurrentSongExists));
                     PlayCommand.RaiseCanExecuteChanged();
                     PauseCommand.RaiseCanExecuteChanged();
 
-                    if (value != null)
-                    {
-                        Pause();
-                        Play();
-                        PlayFromBeginning(value);
-                    }
+
+                    Pause();
+                    Play();
+                    PlayFromBeginning(value);
                 }
             }
         }
 
         public bool CurrentSongExists
         {
-            get
-            {
-                return CurrentSong != null;
-            }
+            get => CurrentSong != null;
         }
 
         private Playlist _currentPlaylist;
         public Playlist CurrentPlaylist
         {
-            get
-            {
-                return _currentPlaylist;
-            }
-            set
-            {
-                if (_currentPlaylist != value)
-                {
-                    _currentPlaylist = value;
-                    OnPropertyChanged(nameof(CurrentPlaylist));
-                }
-            }
+            get => _currentPlaylist;
+            set => SetProperty(ref _currentPlaylist, value);
         }
 
         public RelayCommand PlayCommand { get; set; }

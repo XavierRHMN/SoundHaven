@@ -9,25 +9,16 @@ namespace SoundHaven.Models
 {
     public class Playlist : ViewModelBase
     {
-        public int Id { get; set; }
-
+        
         public ObservableCollection<Song> Songs { get; set; }
+
+        public int Id { get; set; }
 
         private string _name;
         public string Name
         {
-            get
-            {
-                return _name;
-            }
-            set
-            {
-                if (_name != value)
-                {
-                    _name = value;
-                    OnPropertyChanged();
-                }
-            }
+            get => _name;
+            set => SetProperty(ref _name, value);
         }
 
         public Playlist()
