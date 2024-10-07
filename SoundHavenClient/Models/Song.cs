@@ -12,7 +12,7 @@ namespace SoundHaven.Models
 {
     public class Song : ViewModelBase
     {
-        
+
         // Existing properties
         public int Id { get; set; }
         public string? Title { get; set; }
@@ -92,17 +92,20 @@ namespace SoundHaven.Models
                 }
             }
         }
-        
+
         private byte[] _artworkData;
         public byte[] ArtworkData
         {
-            get => _artworkData;
+            get
+            {
+                return _artworkData;
+            }
             set
             {
                 if (SetProperty(ref _artworkData, value))
                 {
                     // Clear the bitmap when the data changes
-                    
+
                     _artwork = null;
                     OnPropertyChanged(nameof(Artwork));
                 }
@@ -142,7 +145,7 @@ namespace SoundHaven.Models
                 SetProperty(ref _artworkUrl, value);
             }
         }
-        
+
         public void SetArtworkData(Bitmap bitmap)
         {
             using (var memoryStream = new MemoryStream())

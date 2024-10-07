@@ -26,7 +26,10 @@ namespace SoundHaven.ViewModels
 
         public Song CurrentSong
         {
-            get => _currentSong;
+            get
+            {
+                return _currentSong;
+            }
             private set
             {
                 if (_currentSong != value)
@@ -44,12 +47,21 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        public bool CurrentSongExists => CurrentSong != null;
+        public bool CurrentSongExists
+        {
+            get
+            {
+                return CurrentSong != null;
+            }
+        }
 
         private bool _isSeekBuffering;
         public bool IsSeekBuffering
         {
-            get => _isSeekBuffering;
+            get
+            {
+                return _isSeekBuffering;
+            }
             set
             {
                 if (_isSeekBuffering != value)
@@ -62,7 +74,10 @@ namespace SoundHaven.ViewModels
 
         public double TitleScrollPosition1
         {
-            get => _titleScrollPosition1;
+            get
+            {
+                return _titleScrollPosition1;
+            }
             set
             {
                 _titleScrollPosition1 = value;
@@ -72,7 +87,10 @@ namespace SoundHaven.ViewModels
 
         public double TitleScrollPosition2
         {
-            get => _titleScrollPosition2;
+            get
+            {
+                return _titleScrollPosition2;
+            }
             set
             {
                 _titleScrollPosition2 = value;
@@ -82,7 +100,10 @@ namespace SoundHaven.ViewModels
 
         public double TextWidth
         {
-            get => _textWidth;
+            get
+            {
+                return _textWidth;
+            }
             set
             {
                 _textWidth = value;
@@ -120,7 +141,7 @@ namespace SoundHaven.ViewModels
                 IsSeekBuffering = !_playbackViewModel.IsPlaying && _audioService.IsSeekBuffering && _currentSong?.VideoId != null;
             }
         }
-        
+
         private void InitializePauseTimer()
         {
             _pauseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
@@ -184,26 +205,25 @@ namespace SoundHaven.ViewModels
             TitleScrollPosition2 -= scrollSpeed;
 
             // Check if either position has reached 0 and we haven't paused in this cycle
-            if (!_hasPausedThisCycle && 
-                (Math.Abs(TitleScrollPosition1) < scrollSpeed || Math.Abs(TitleScrollPosition2) < scrollSpeed))
+            if (!_hasPausedThisCycle && (Math.Abs(TitleScrollPosition1) < scrollSpeed || Math.Abs(TitleScrollPosition2) < scrollSpeed))
             {
                 _isPaused = true;
                 _hasPausedThisCycle = true;
                 _pauseTimer.Start();
             }
-            
+
             // Reset the first TextBlock if it's completely out of view
             if (TitleScrollPosition1 <= -TextWidth)
             {
                 TitleScrollPosition1 = TitleScrollPosition2 + TextWidth + spacing;
-                _hasPausedThisCycle = false; 
+                _hasPausedThisCycle = false;
             }
 
             // Reset the second TextBlock if it's completely out of view
             if (TitleScrollPosition2 <= -TextWidth)
             {
                 TitleScrollPosition2 = TitleScrollPosition1 + TextWidth + spacing;
-                _hasPausedThisCycle = false; 
+                _hasPausedThisCycle = false;
             }
         }
 

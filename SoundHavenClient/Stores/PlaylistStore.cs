@@ -36,7 +36,7 @@ namespace SoundHaven.Stores
         public void AddPlaylist(Playlist playlist)
         {
             _musicDatabase.SavePlaylist(playlist);
-            playlist.Id = (int) _musicDatabase.GetPlaylistId(playlist.Name);
+            playlist.Id = (int)_musicDatabase.GetPlaylistId(playlist.Name);
             Playlists.Add(playlist);
         }
 
