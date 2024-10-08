@@ -160,12 +160,12 @@ namespace SoundHaven.Services
     
     public class YouTubeVideoInfo
     {
-        public string Title { get; set; }
-        public string ChannelTitle { get; set; }
-        public string ThumbnailUrl { get; set; }
-        public string VideoId { get; set; }
-        public string ViewCount { get; set; }
-        public string Duration { get; set; }
+        public string? Title { get; set; }
+        public string? ChannelTitle { get; set; }
+        public string? ThumbnailUrl { get; set; }
+        public string? VideoId { get; set; }
+        public string? ViewCount { get; set; }
+        public string? Duration { get; set; }
         public int? Year { get; set; }
     }
 }
