@@ -100,7 +100,7 @@ namespace SoundHaven.ViewModels
         {
             if (CurrentSong != null)
             {
-                if (_audioService.IsStopped && CurrentSong.VideoId == null)
+                if (_audioService.IsStopped)
                 {
                     PlayFromBeginning(CurrentSong);
                 }
