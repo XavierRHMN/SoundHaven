@@ -17,14 +17,14 @@ namespace SoundHaven.Services
         private const int BufferSize = 80 * 1024 * 1024; // 80MB buffer
 
         private readonly YoutubeClient _youtubeClient;
-        private TimeSpan _accumulatedPauseDuration = TimeSpan.Zero;
+        private TimeSpan _totalPauseTime = TimeSpan.Zero;
         private AudioFileReader _audioFileReader;
 
         private float _audioVolume = 1.0f;
         private BufferedWaveProvider _bufferedWaveProvider;
         private CancellationTokenSource _bufferingCancellationTokenSource;
         private Timer _bufferStatusTimer;
-        private TimeSpan _currentYoutubePosition;
+        private TimeSpan _currentYoutubeTime;
         private string _currentSource;
         private bool _isBuffering;
         private bool _isDisposed;
@@ -33,10 +33,10 @@ namespace SoundHaven.Services
 
         private bool _isSeekBuffering;
         private bool _isYouTubeStream;
-        private DateTime _pauseStartTime;
+        private DateTime _currentPauseStartTime;
         private Timer _positionLogTimer;
-        private TimeSpan _startPosition;
-        private DateTime _streamStartTime;
+        private TimeSpan _startTime;
+        private DateTime _playbackStartTime;
         private TimeSpan _totalDuration;
         private VolumeSampleProvider _volumeProvider;
         private IWavePlayer _waveOutDevice;
@@ -63,7 +63,7 @@ namespace SoundHaven.Services
         
         public TimeSpan CurrentYoutubePosition
         {
-            get => _currentYoutubePosition;
+            get => _currentYoutubeTime;
         }
 
         public float AudioVolume
@@ -127,9 +127,9 @@ namespace SoundHaven.Services
 
             _currentSource = source;
             _isYouTubeStream = isYouTubeVideo;
-            _startPosition = startingPosition;
-            _currentYoutubePosition = startingPosition;
-            _streamStartTime = DateTime.Now;
+            _startTime = startingPosition;
+            _currentYoutubeTime = startingPosition;
+            _playbackStartTime = DateTime.Now;
 
             try
             {
@@ -168,7 +168,7 @@ namespace SoundHaven.Services
 
         public void Seek(TimeSpan position)
         {
-            _accumulatedPauseDuration = TimeSpan.Zero;
+            _totalPauseTime = TimeSpan.Zero;
             _isPaused = false;
 
             if (_audioFileReader != null)
@@ -182,8 +182,8 @@ namespace SoundHaven.Services
                 Stop(false);
 
                 // Update start position and current position
-                _startPosition = position;
-                _currentYoutubePosition = position;
+                _startTime = position;
+                _currentYoutubeTime = position;
 
                 // Start playback from the new position
                 _ = StartAsync(_currentSource, true, position);
@@ -195,7 +195,7 @@ namespace SoundHaven.Services
             if (_waveOutDevice?.PlaybackState == PlaybackState.Playing)
             {
                 _waveOutDevice.Pause();
-                _pauseStartTime = DateTime.Now;
+                _currentPauseStartTime = DateTime.Now;
                 IsPaused = true;
                 PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -206,7 +206,7 @@ namespace SoundHaven.Services
             if (_waveOutDevice?.PlaybackState == PlaybackState.Paused)
             {
                 _waveOutDevice.Play();
-                _accumulatedPauseDuration += DateTime.Now - _pauseStartTime;
+                _totalPauseTime += DateTime.Now - _currentPauseStartTime;
                 IsPaused = false;
                 PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -219,7 +219,7 @@ namespace SoundHaven.Services
             _positionLogTimer?.Dispose();
             _bufferingCancellationTokenSource?.Cancel();
 
-            _accumulatedPauseDuration = TimeSpan.Zero;
+            _totalPauseTime = TimeSpan.Zero;
             _isPaused = false;
 
             _waveOutDevice?.Stop();
@@ -233,8 +233,8 @@ namespace SoundHaven.Services
 
             if (resetPosition)
             {
-                _currentYoutubePosition = TimeSpan.Zero;
-                _startPosition = TimeSpan.Zero;
+                _currentYoutubeTime = TimeSpan.Zero;
+                _startTime = TimeSpan.Zero;
                 _totalDuration = TimeSpan.Zero;
                 OnPropertyChanged(nameof(CurrentYoutubePosition));
             }
@@ -244,13 +244,21 @@ namespace SoundHaven.Services
 
         private void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
-            if (_audioFileReader != null && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds || _bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering)
+            if (IsPaused)
+            {
+                // If the player is paused, we don't need to handle this event
+                return;
+            }
+
+            if (_audioFileReader != null && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds ||
+                _bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering)
             {
                 _isTrackEnded = true; // Set the flag
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
             OnPlaybackStateChanged();
         }
+
 
 
         private async Task StartYouTubeStreamAsync(string videoId, TimeSpan startingPosition)
@@ -419,7 +427,7 @@ namespace SoundHaven.Services
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "ffmpeg",
-                        Arguments = $"-ss {_currentYoutubePosition.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 pipe:1",
+                        Arguments = $"-ss {_currentYoutubeTime.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 pipe:1",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         CreateNoWindow = true
@@ -456,8 +464,8 @@ namespace SoundHaven.Services
         private void StartPositionLogging()
         {
             _positionLogTimer?.Dispose();
-            _streamStartTime = DateTime.Now;
-            _accumulatedPauseDuration = TimeSpan.Zero; // Reset when starting position logging
+            _playbackStartTime = DateTime.Now;
+            _totalPauseTime = TimeSpan.Zero; // Reset when starting position logging
             _positionLogTimer = new Timer(_ => UpdateCurrentPosition(), null, 0, 100);
         }
 
@@ -465,11 +473,18 @@ namespace SoundHaven.Services
         {
             if (_isYouTubeStream)
             {
-                var elapsed = DateTime.Now - _streamStartTime - _accumulatedPauseDuration;
-                _currentYoutubePosition = _startPosition + elapsed;
-                if (_currentYoutubePosition >= _totalDuration)
+                var currentTotalPauseTime = _totalPauseTime;
+                if (IsPaused)
                 {
-                    _currentYoutubePosition = _totalDuration;
+                    currentTotalPauseTime += DateTime.Now - _currentPauseStartTime;
+                }
+                
+                var totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime - currentTotalPauseTime;
+                _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
+                
+                if (_currentYoutubeTime >= _totalDuration)
+                {
+                    _currentYoutubeTime = _totalDuration;
 
                     if (!_isTrackEnded)
                     {
@@ -484,10 +499,11 @@ namespace SoundHaven.Services
             }
             else
             {
-                _currentYoutubePosition = _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
-                if (_currentYoutubePosition >= _totalDuration)
+                _currentYoutubeTime = _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
+
+                if (_currentYoutubeTime >= _totalDuration)
                 {
-                    _currentYoutubePosition = _totalDuration;
+                    _currentYoutubeTime = _totalDuration;
 
                     if (!_isTrackEnded)
                     {
