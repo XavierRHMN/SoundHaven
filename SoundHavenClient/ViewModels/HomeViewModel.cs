@@ -42,7 +42,7 @@ namespace SoundHaven.ViewModels
         private async void LoadDataAsync()
         {
             IsLoading = true;
-            string? username = "NavFan";
+            string username = "NavFan";
             // TODO do something with this
             // var topTracks = await _dataService.GetTopTracksAsync();
             var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync(username);
