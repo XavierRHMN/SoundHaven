@@ -1,4 +1,4 @@
-# 🎵 SoundHaven
+# <img src="SoundHavenClient/Assets/Icons/SoundHavenClient.ico" alt="SoundHaven Icon" width="32" height="32"> SoundHaven
 
 ![Home](https://github.com/user-attachments/assets/a3951ccb-7e93-4b7f-b2da-3056df2ad623)
 
@@ -76,6 +76,7 @@ Here are some screenshots of SoundHaven in action:
 ![SoundHaven First](SoundHavenClient/Screenshots/soundhaven_1.png)
 ![SoundHaven Second](SoundHavenClient/Screenshots/soundhaven_2.png)
 ![SoundHaven Third](SoundHavenClient/Screenshots/soundhaven_3.png)
+![SoundHaven Fourth](SoundHavenClient/Screenshots/soundhaven_4.png)
 ![SoundHaven Search](SoundHavenClient/Screenshots/Search.png)
 ![SoundHaven Themes](SoundHavenClient/Screenshots/Themes.png)
 
