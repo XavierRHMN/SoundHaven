@@ -1,35 +1,17 @@
-﻿using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
-using Avalonia.Input;
-using Avalonia.Media;
-using Avalonia.Threading;
-using Material.Styles.Themes;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using SoundHaven.Helpers;
-using SoundHaven.Models;
 using SoundHaven.Services;
 using SoundHaven.Stores;
-using SoundHaven.Commands;
-using SoundHaven.Converters;
 using SoundHaven.Data;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using SoundHaven.Views;
 using System;
-using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Windows.Input;
 
 namespace SoundHaven.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        private readonly AppDatabase _appDatabase;
+        private readonly AppDatabase AppDatabase;
         private AudioService AudioService { get; set; }
         private PlaylistStore PlaylistStore { get; set; }
 
@@ -60,7 +42,7 @@ namespace SoundHaven.ViewModels
         {
             // SQLite Database
             string dbPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "AppDatabase.db");
-            _appDatabase = new AppDatabase(dbPath);
+            AppDatabase = new AppDatabase(dbPath);
 
             // LastFM Song Caching and LastFM Api Key provider
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
@@ -77,17 +59,17 @@ namespace SoundHaven.ViewModels
             YoutubeSearchService = new YoutubeSearchService(youtubeLoggerFactory, memoryCache);
 
             // Stores
-            PlaylistStore = new PlaylistStore(_appDatabase);
+            PlaylistStore = new PlaylistStore(AppDatabase);
 
             // ViewModels
             RepeatViewModel = new RepeatViewModel();
             PlaybackViewModel = new PlaybackViewModel(AudioService, YouTubeDownloadService, RepeatViewModel);
             ShuffleViewModel = new ShuffleViewModel(PlaybackViewModel);
-            PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService(), _appDatabase);
+            PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService(), AppDatabase);
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
             HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
             SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel);
-            ThemesViewModel = new ThemesViewModel(_appDatabase);
+            ThemesViewModel = new ThemesViewModel(AppDatabase);
             ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
