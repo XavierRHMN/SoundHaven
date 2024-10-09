@@ -50,6 +50,13 @@ namespace SoundHaven.ViewModels
                     Console.WriteLine("Started playing: " + _currentSong.Title + " - " + _currentSong.Artist + " - " + _currentSong.Year);
 
                     SeekPositionReset?.Invoke(this, EventArgs.Empty);
+
+                    if (_currentSong.IsYouTubeVideo)
+                    {
+                        Pause();
+                        Play();
+                    }
+                    
                     PlayFromBeginning(value);
                 }
             }
