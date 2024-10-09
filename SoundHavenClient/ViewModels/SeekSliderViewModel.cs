@@ -75,7 +75,7 @@ namespace SoundHaven.ViewModels
             }
 
             _isUpdatingFromTimer = true;
-            SeekPosition = (_playbackViewModel.CurrentSong.VideoId != null
+            SeekPosition = (_playbackViewModel.CurrentSong.IsYouTubeVideo
                 ? _audioService.CurrentYoutubePosition
                 : _audioService.CurrentLocalPosition).TotalSeconds;
             _isUpdatingFromTimer = false;
