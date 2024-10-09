@@ -1,6 +1,6 @@
 # <img src="SoundHavenClient/Assets/Icons/SoundHavenClient.ico" alt="SoundHaven Icon" width="32" height="32"> SoundHaven
 
-![Home](https://github.com/user-attachments/assets/a3951ccb-7e93-4b7f-b2da-3056df2ad623)
+![Home](https://github.com/user-attachments/assets/bb498758-6c75-48e8-a8f9-54848f36d2dc)
 
 SoundHaven is a powerful, customizable C# music player application built
 with Avalonia and the MVVM design pattern. It offers streaming YouTube audio directly from source, 
