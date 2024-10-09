@@ -1,7 +1,4 @@
-﻿using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
-using SoundHaven.ViewModels;
+﻿using Avalonia.Controls;
 
 namespace SoundHaven.Views
 {

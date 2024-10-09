@@ -96,17 +96,17 @@ namespace SoundHaven.ViewModels
 
         private bool CanPause() => CurrentSong != null && IsPlaying;
 
-        public void Play()
+        public async void Play()
         {
             if (CurrentSong != null)
             {
                 if (_audioService.IsStopped && !CurrentSong.IsYouTubeVideo)
                 {
-                    PlayFromBeginning(CurrentSong);
+                    await PlayFromBeginning(CurrentSong);
                 }
                 else if (_audioService.IsStopped && CurrentSong.IsYouTubeVideo && _audioService.CurrentYoutubePosition.TotalSeconds == 0)
                 {
-                    PlayFromBeginning(CurrentSong);
+                    await PlayFromBeginning(CurrentSong);
                 }
                 else
                 {
@@ -116,7 +116,7 @@ namespace SoundHaven.ViewModels
             else if (CurrentPlaylist?.Songs.Count > 0)
             {
                 CurrentSong = CurrentPlaylist.Songs[0];
-                PlayFromBeginning(CurrentSong);
+                await PlayFromBeginning(CurrentSong);
             }
             else
             {
@@ -210,7 +210,7 @@ namespace SoundHaven.ViewModels
             }
 
             bool isYouTubeVideo = !string.IsNullOrEmpty(song.VideoId);
-            string source = isYouTubeVideo ? song.VideoId : song.FilePath;
+            string? source = isYouTubeVideo ? song.VideoId : song.FilePath;
 
             if (string.IsNullOrEmpty(source))
             {
@@ -252,19 +252,19 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        private void OnTrackEndedRobust(object sender, EventArgs e)
+        private async void OnTrackEndedRobust(object sender, EventArgs e)
         {
             switch (_repeatViewModel.RepeatMode)
             {
                 case RepeatMode.One:
-                    PreviousTrack();
+                    await PreviousTrack();
                     _repeatViewModel.SetRepeatModeOff();
                     break;
                 case RepeatMode.All:
-                    PreviousTrack();
+                    await PreviousTrack();
                     break;
                 case RepeatMode.Off:
-                    NextTrack();
+                    await NextTrack();
                     break;
             }
         }

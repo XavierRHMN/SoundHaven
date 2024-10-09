@@ -1,12 +1,8 @@
-﻿using Avalonia.Controls;
-using Avalonia.Threading;
-using SoundHaven.Commands;
-using SoundHaven.Data;
+﻿using SoundHaven.Commands;
 using SoundHaven.Models;
 using SoundHaven.Stores;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using SoundHaven.Services;
 using System;
 
 namespace SoundHaven.ViewModels

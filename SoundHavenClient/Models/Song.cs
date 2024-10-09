@@ -1,9 +1,6 @@
-﻿using Avalonia.Controls;
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using SoundHaven.ViewModels;
-using SoundHaven.Services;
 using System;
-using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
 using System.Net.Http;

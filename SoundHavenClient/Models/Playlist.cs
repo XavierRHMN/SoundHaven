@@ -1,9 +1,5 @@
-﻿using SoundHaven.Data;
-using SoundHaven.ViewModels;
-using SoundHaven.Services;
-using System;
+﻿using SoundHaven.ViewModels;
 using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace SoundHaven.Models
 {

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using Avalonia.Controls;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 using Avalonia.Media;
 using Avalonia;
 using SoundHaven.Models;
