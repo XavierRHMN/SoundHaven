@@ -49,8 +49,7 @@ namespace SoundHaven.ViewModels
 
                     Console.WriteLine("Started playing: " + _currentSong.Title + " - " + _currentSong.Artist + " - " + _currentSong.Year);
 
-                    Pause();
-                    Play();
+                    SeekPositionReset?.Invoke(this, EventArgs.Empty);
                     PlayFromBeginning(value);
                 }
             }
