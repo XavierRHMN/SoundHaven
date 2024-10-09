@@ -2,23 +2,20 @@
 
 ![Home](https://github.com/user-attachments/assets/a3951ccb-7e93-4b7f-b2da-3056df2ad623)
 
-SoundHaven is a powerful and elegant C# music player application built
-with Avalonia and the MVVM design pattern. It seamlessly integrates
-various music sources and provides a rich, customizable listening experience.
+SoundHaven is a powerful, customizable C# music player application built
+with Avalonia and the MVVM design pattern. It offers streaming YouTube audio directly from source, 
+and downloading said audio in the highest quality for offline use, all in one place. 
 
-## ✨ Features
+##  Features
 
-- 🎨 Sleek and modern UI powered by Avalonia
-- 🌙 Material design-inspired, backed by Google's Material icon pack
-- 🎧 Last.fm integration for scrobbling and music recommendations
-- 🎥 YouTube streaming integration utilizing FFmpeg's audio processing
-- 🏷️ Advanced audio file tagging and management with TagLibSharp
-- 🔊 High-quality audio playback with NAudio
-- 📥 Download YouTube videos and extract audio with YoutubeExplode
-- 🌈 User-customizable color schemes
-- 💾 Persistent data storage with SQLite
+-  Material UI
+-  High-quality audio playback with viewable metadata
+-  Last.fm Scrobbling and music recommendation
+-  YouTube streaming integration
+-  Extract and download YouTube audio
+-  Persistent data storage
 
-## 🛠️ Technologies
+##  Technologies
 
 SoundHaven leverages a powerful stack of technologies:
 
@@ -30,7 +27,7 @@ SoundHaven leverages a powerful stack of technologies:
 - **[YoutubeExplode](https://github.com/Tyrrrz/YoutubeExplode)**: Library for downloading YouTube videos and retrieving metadata
 - **[SQLite](https://www.sqlite.org/)**: Lightweight, file-based relational database for persistent data storage
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -69,7 +66,7 @@ SoundHaven leverages a powerful stack of technologies:
    dotnet run
    ```
 
-## 📸 Screenshots
+##  Screenshots
 
 Here are some screenshots of SoundHaven in action:
 
@@ -81,19 +78,15 @@ Here are some screenshots of SoundHaven in action:
 ![SoundHaven Themes](SoundHavenClient/Screenshots/Themes.png)
 
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📄 License
+##  License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgements
-
-- [Last.fm API](https://www.last.fm/api) for music data and scrobbling capabilities
-- All the amazing open-source libraries that made this project possible
-
+- This project is licensed under the MIT License - see the [MIT License](LICENSE) file for details.
 ---
 
-Made with ❤️
+<p align="center">
+  Made with ❤️
+</p>
