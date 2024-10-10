@@ -1,4 +1,5 @@
-﻿using NAudio.Wave;
+﻿using ExCSS;
+using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using SoundHaven.ViewModels;
 using System;
@@ -134,6 +135,7 @@ namespace SoundHaven.Services
                 {
                     string cleanVideoId = _youTubeDownloadService.CleanVideoId(source);
                     await StartYouTubeStreamAsync(cleanVideoId, startingPosition);
+                    StartPositionLogging();
                 }
                 else
                 {
@@ -148,10 +150,6 @@ namespace SoundHaven.Services
                 {
                     _waveOutDevice.Play();
                     PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
-                    if (isYouTubeVideo)
-                    {
-                        StartPositionLogging();
-                    }
                 }
             }
             catch (Exception ex)
@@ -283,7 +281,7 @@ namespace SoundHaven.Services
                 TotalDuration = videoDetails.Duration ?? TimeSpan.Zero;
 
                 // Start the FFmpeg process once and keep it running
-                _ = Task.Run(() => ContinuousBufferYouTubeStreamAsync(videoId, startingPosition, _bufferingCancellationTokenSource.Token));
+                _ = Task.Run(() => ContinuousBufferYouTubeStreamAsync(streamUrl, startingPosition, _bufferingCancellationTokenSource.Token));
             }
             catch (Exception ex)
             {
@@ -292,17 +290,12 @@ namespace SoundHaven.Services
             }
         }
         
-        private async Task ContinuousBufferYouTubeStreamAsync(string videoId, TimeSpan startingPosition, CancellationToken cancellationToken)
+        private async Task ContinuousBufferYouTubeStreamAsync(string streamUrl, TimeSpan startingPosition, CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    // Get a fresh stream URL
-                    var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(videoId);
-                    var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-                    string streamUrl = streamInfo.Url;
-
                     using var ffmpegProcess = new Process
                     {
                         StartInfo = new ProcessStartInfo
@@ -330,12 +323,10 @@ namespace SoundHaven.Services
 
                     byte[] buffer = new byte[16384];
                     int bytesRead;
-                    DateTime lastDataReceived = DateTime.Now;
 
                     while ((bytesRead = await ffmpegProcess.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
                     {
                         _bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
-                        lastDataReceived = DateTime.Now;
                     }
 
                     // Check if FFmpeg exited unexpectedly
@@ -345,31 +336,12 @@ namespace SoundHaven.Services
 
                         // Adjust starting position for next FFmpeg instance
                         startingPosition = _currentYoutubeTime;
-                        if (startingPosition >= _totalDuration)
-                        {
-                            // We've reached the end of the stream
-                            break;
-                        }
-                        continue; // Restart the loop to create a new FFmpeg process
                     }
                 }
                 catch (OperationCanceledException)
                 {
                     Console.WriteLine("Buffering operation was canceled.");
                     break;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error in ContinuousBufferYouTubeStreamAsync: {ex.Message}");
-
-                    // Adjust starting position for next FFmpeg instance
-                    startingPosition = _currentYoutubeTime;
-                    if (startingPosition >= _totalDuration)
-                    {
-                        // We've reached the end of the stream
-                        break;
-                    }
-                    continue; // Restart the loop
                 }
             }
             _isBuffering = false;
@@ -434,27 +406,8 @@ namespace SoundHaven.Services
                         TrackEnded?.Invoke(this, EventArgs.Empty);
                     }
                 }
-                OnPropertyChanged(nameof(CurrentYoutubePosition));
             }
-            else
-            {
-                _currentYoutubeTime = _audioFileReader?.CurrentTime ?? TimeSpan.Zero;
-
-                if (_currentYoutubeTime >= _totalDuration)
-                {
-                    _currentYoutubeTime = _totalDuration;
-
-                    if (!_isTrackEnded)
-                    {
-                        _isTrackEnded = true;
-
-                        // Stop playback and raise the TrackEnded event
-                        Stop();
-                        TrackEnded?.Invoke(this, EventArgs.Empty);
-                    }
-                }
-                OnPropertyChanged(nameof(CurrentYoutubePosition));
-            }
+            OnPropertyChanged(nameof(CurrentYoutubePosition));
         }
 
         public void Dispose()
