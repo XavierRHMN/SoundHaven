@@ -283,7 +283,7 @@ namespace SoundHaven.Services
                 TotalDuration = videoDetails.Duration ?? TimeSpan.Zero;
 
                 // Start the FFmpeg process once and keep it running
-                _ = Task.Run(() => ContinuousBufferYouTubeStreamAsync(streamUrl, startingPosition, _bufferingCancellationTokenSource.Token));
+                _ = Task.Run(() => ContinuousBufferYouTubeStreamAsync(videoId, startingPosition, _bufferingCancellationTokenSource.Token));
             }
             catch (Exception ex)
             {
@@ -292,57 +292,87 @@ namespace SoundHaven.Services
             }
         }
         
-        private async Task ContinuousBufferYouTubeStreamAsync(string streamUrl, TimeSpan startingPosition, CancellationToken cancellationToken)
+        private async Task ContinuousBufferYouTubeStreamAsync(string videoId, TimeSpan startingPosition, CancellationToken cancellationToken)
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                using var ffmpegProcess = new Process
+                try
                 {
-                    StartInfo = new ProcessStartInfo
+                    // Get a fresh stream URL
+                    var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(videoId);
+                    var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
+                    string streamUrl = streamInfo.Url;
+
+                    using var ffmpegProcess = new Process
                     {
-                        FileName = "ffmpeg",
-                        Arguments = $"-re -ss {startingPosition.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 pipe:1",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true, // Capture error output for logging
-                        CreateNoWindow = true
-                    }
-                };
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "ffmpeg",
+                            Arguments = $"-re -ss {startingPosition.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 pipe:1",
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            CreateNoWindow = true
+                        }
+                    };
 
-                ffmpegProcess.Start();
+                    ffmpegProcess.Start();
 
-                // Optionally, read and log FFmpeg's standard error output
-                _ = Task.Run(() =>
-                {
-                    string line;
-                    while ((line = ffmpegProcess.StandardError.ReadLine()) != null)
+                    // Read and log FFmpeg's standard error output
+                    _ = Task.Run(() =>
                     {
-                        Console.WriteLine($"FFmpeg: {line}");
+                        string line;
+                        while ((line = ffmpegProcess.StandardError.ReadLine()) != null)
+                        {
+                            Console.WriteLine($"FFmpeg: {line}");
+                        }
+                    }, cancellationToken);
+
+                    byte[] buffer = new byte[16384];
+                    int bytesRead;
+                    DateTime lastDataReceived = DateTime.Now;
+
+                    while ((bytesRead = await ffmpegProcess.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
+                    {
+                        _bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
+                        lastDataReceived = DateTime.Now;
                     }
-                }, cancellationToken);
 
-                byte[] buffer = new byte[16384]; // Read smaller chunks
-                int bytesRead;
+                    // Check if FFmpeg exited unexpectedly
+                    if (!cancellationToken.IsCancellationRequested)
+                    {
+                        Console.WriteLine("FFmpeg process exited unexpectedly. Restarting FFmpeg.");
 
-                while ((bytesRead = await ffmpegProcess.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
-                {
-                    _bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
+                        // Adjust starting position for next FFmpeg instance
+                        startingPosition = _currentYoutubeTime;
+                        if (startingPosition >= _totalDuration)
+                        {
+                            // We've reached the end of the stream
+                            break;
+                        }
+                        continue; // Restart the loop to create a new FFmpeg process
+                    }
                 }
+                catch (OperationCanceledException)
+                {
+                    Console.WriteLine("Buffering operation was canceled.");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in ContinuousBufferYouTubeStreamAsync: {ex.Message}");
 
-                ffmpegProcess.WaitForExit();
+                    // Adjust starting position for next FFmpeg instance
+                    startingPosition = _currentYoutubeTime;
+                    if (startingPosition >= _totalDuration)
+                    {
+                        // We've reached the end of the stream
+                        break;
+                    }
+                    continue; // Restart the loop
+                }
             }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine("Buffering operation was canceled.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in ContinuousBufferYouTubeStreamAsync: {ex.Message}");
-            }
-            finally
-            {
-                _isBuffering = false;
-            }
+            _isBuffering = false;
         }
         
         private void StartLocalFile(string filePath)
@@ -388,6 +418,8 @@ namespace SoundHaven.Services
                 
                 var totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime - currentTotalPauseTime;
                 _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
+                Console.WriteLine(_currentYoutubeTime);
+
                 
                 if (_currentYoutubeTime >= _totalDuration)
                 {
