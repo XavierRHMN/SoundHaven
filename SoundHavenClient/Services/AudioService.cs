@@ -134,7 +134,7 @@ namespace SoundHaven.Services
                 if (isYouTubeVideo)
                 {
                     string cleanVideoId = _youTubeDownloadService.CleanVideoId(source);
-                    await StartYouTubeStreamAsync(cleanVideoId, startingPosition);
+                    await StartYouTubeStreamAsync(cleanVideoId);
                     StartPositionLogging();
                 }
                 else
@@ -239,7 +239,6 @@ namespace SoundHaven.Services
         {
             if (IsPaused)
             {
-                // If the player is paused, we don't need to handle this event
                 return;
             }
 
@@ -252,7 +251,7 @@ namespace SoundHaven.Services
             OnPlaybackStateChanged();
         }
         
-        private async Task StartYouTubeStreamAsync(string videoId, TimeSpan startingPosition)
+        private async Task StartYouTubeStreamAsync(string videoId)
         {
             try
             {
@@ -269,7 +268,7 @@ namespace SoundHaven.Services
                 var waveFormat = new WaveFormat(44100, 16, 2);
                 _bufferedWaveProvider = new BufferedWaveProvider(waveFormat)
                 {
-                    BufferLength = 80 * 1024 * 1024 // 80MB buffer
+                    BufferLength = 8 * 1024 * 1024 // 8MB buffer
                 };
 
                 InitializeAudio(_bufferedWaveProvider);
@@ -281,7 +280,7 @@ namespace SoundHaven.Services
                 TotalDuration = videoDetails.Duration ?? TimeSpan.Zero;
 
                 // Start the FFmpeg process once and keep it running
-                _ = Task.Run(() => ContinuousBufferYouTubeStreamAsync(streamUrl, startingPosition, _bufferingCancellationTokenSource.Token));
+                _ = Task.Run(() => ContinuousBufferYouTubeStreamAsync(streamUrl, _bufferingCancellationTokenSource.Token));
             }
             catch (Exception ex)
             {
@@ -290,7 +289,7 @@ namespace SoundHaven.Services
             }
         }
         
-        private async Task ContinuousBufferYouTubeStreamAsync(string streamUrl, TimeSpan startingPosition, CancellationToken cancellationToken)
+        private async Task ContinuousBufferYouTubeStreamAsync(string streamUrl, CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -301,7 +300,7 @@ namespace SoundHaven.Services
                         StartInfo = new ProcessStartInfo
                         {
                             FileName = "ffmpeg",
-                            Arguments = $"-re -ss {startingPosition.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 pipe:1",
+                            Arguments = $"-re -ss {_currentYoutubeTime.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 pipe:1",
                             UseShellExecute = false,
                             RedirectStandardOutput = true,
                             RedirectStandardError = true,
@@ -310,7 +309,7 @@ namespace SoundHaven.Services
                     };
 
                     ffmpegProcess.Start();
-
+                    
                     // Read and log FFmpeg's standard error output
                     _ = Task.Run(() =>
                     {
@@ -320,22 +319,13 @@ namespace SoundHaven.Services
                             Console.WriteLine($"FFmpeg: {line}");
                         }
                     }, cancellationToken);
-
+                    
                     byte[] buffer = new byte[16384];
                     int bytesRead;
 
                     while ((bytesRead = await ffmpegProcess.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
                     {
                         _bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
-                    }
-
-                    // Check if FFmpeg exited unexpectedly
-                    if (!cancellationToken.IsCancellationRequested)
-                    {
-                        Console.WriteLine("FFmpeg process exited unexpectedly. Restarting FFmpeg.");
-
-                        // Adjust starting position for next FFmpeg instance
-                        startingPosition = _currentYoutubeTime;
                     }
                 }
                 catch (OperationCanceledException)
@@ -391,7 +381,6 @@ namespace SoundHaven.Services
                 var totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime - currentTotalPauseTime;
                 _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
                 Console.WriteLine(_currentYoutubeTime);
-
                 
                 if (_currentYoutubeTime >= _totalDuration)
                 {
