@@ -196,26 +196,28 @@ namespace SoundHaven.Services
         public void Pause()
         {
             _waveOutDevice?.Pause();
+            IsPaused = true;
+            _currentPauseStartTime = DateTime.Now;
             
             if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
             {
                 SendMpvCommand("set_property", "pause", true);
             }
 
-            IsPaused = true;
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public void Resume()
         {
             _waveOutDevice.Play();
+            IsPaused = false;
+            _totalPauseTime += DateTime.Now - _currentPauseStartTime;
 
             if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
             {
                 SendMpvCommand("set_property", "pause", false);
             }
             
-            IsPaused = false;
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -433,33 +435,33 @@ namespace SoundHaven.Services
         {
             if (_isYouTubeStream)
             {
-                var currentTotalPauseTime = _totalPauseTime;
-                if (IsPaused)
+                TimeSpan currentTotalPauseTime = _totalPauseTime;
+                if (_isPaused)
                 {
                     currentTotalPauseTime += DateTime.Now - _currentPauseStartTime;
                 }
-                
-                var totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime - currentTotalPauseTime;
+            
+                TimeSpan totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime - currentTotalPauseTime;
                 _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
-                Console.WriteLine(_currentYoutubeTime);
-                
-                if (_currentYoutubeTime >= _totalDuration)
+
+                // Ensure _currentYoutubeTime doesn't exceed TotalDuration
+                if (_currentYoutubeTime > TotalDuration)
                 {
-                    _currentYoutubeTime = _totalDuration;
+                    _currentYoutubeTime = TotalDuration;
+                }
 
-                    if (!_isTrackEnded)
-                    {
-                        _isTrackEnded = true;
-
-                        // Stop playback and raise the TrackEnded event
-                        Stop();
-                        TrackEnded?.Invoke(this, EventArgs.Empty);
-                    }
+                Console.WriteLine($"Current YouTube Time: {_currentYoutubeTime}");
+            
+                if (_currentYoutubeTime >= TotalDuration && !_isTrackEnded)
+                {
+                    _isTrackEnded = true;
+                    Stop();
+                    TrackEnded?.Invoke(this, EventArgs.Empty);
                 }
             }
             OnPropertyChanged(nameof(CurrentYoutubePosition));
         }
-
+        
         public void Dispose()
         {
             if (_isDisposed) return;
