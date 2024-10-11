@@ -386,9 +386,7 @@ namespace SoundHaven.Services
                             },
                             EnableRaisingEvents = true
                         };
-
-                        _waveOutDevice.Play();
-
+                        
                         _mpvProcess.Exited += (sender, args) => _shouldRestart = true;
 
                         _mpvProcess.Start();
@@ -498,7 +496,6 @@ namespace SoundHaven.Services
             _waveOutDevice?.Dispose();
             _bufferingCancellationTokenSource?.Dispose();
             _positionLogTimer?.Dispose();
-            SendMpvCommand("stop");
             _mpvProcess?.Dispose();
         }
     }
