@@ -193,7 +193,7 @@ namespace SoundHaven.Services
         {
             if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
             {
-                SendMpvCommand("set_property", "pause", true);
+                // replace with logic
             }
             else if (_waveOutDevice?.PlaybackState == PlaybackState.Playing)
             {
@@ -208,7 +208,7 @@ namespace SoundHaven.Services
         {
             if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
             {
-                SendMpvCommand("set_property", "resume", false);
+                // replace with logic
             }
             else if (_waveOutDevice?.PlaybackState == PlaybackState.Paused)
             {
@@ -433,14 +433,8 @@ namespace SoundHaven.Services
         {
             if (_isYouTubeStream)
             {
-                // var currentTotalPauseTime = _totalPauseTime;
-                if (IsPaused)
-                {
-                    // currentTotalPauseTime += DateTime.Now - _currentPauseStartTime;
-                }
-                
-            var totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime;
-            _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
+                var totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime;
+                _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
                 Console.WriteLine(_currentYoutubeTime);
                 
                 if (_currentYoutubeTime >= _totalDuration)
