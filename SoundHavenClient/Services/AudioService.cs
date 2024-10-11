@@ -35,7 +35,7 @@ namespace SoundHaven.Services
 
         private bool _isSeekBuffering;
         private bool _isYouTubeStream;
-        private DateTime _currentPauseStartTime;
+        private DateTime? _currentPauseStartTime;
         private Timer _positionLogTimer;
         private TimeSpan _startTime;
         private DateTime _playbackStartTime;
@@ -172,6 +172,7 @@ namespace SoundHaven.Services
         {
             _totalPauseTime = TimeSpan.Zero;
             _isPaused = false;
+            _currentPauseStartTime = null; // Reset pause time on seek
 
             if (_audioFileReader != null)
             {
@@ -185,20 +186,20 @@ namespace SoundHaven.Services
 
                 // Send seek command to MPV
                 SendMpvCommand("set_property", "time-pos", position.TotalSeconds);
-                
+
                 // Reset playback timing
                 _playbackStartTime = DateTime.Now;
-                _currentPauseStartTime = DateTime.MinValue;
+                _currentPauseStartTime = null;
                 _totalPauseTime = TimeSpan.Zero;
             }
         }
-
+        
         public void Pause()
         {
             _waveOutDevice?.Pause();
             IsPaused = true;
             _currentPauseStartTime = DateTime.Now;
-            
+
             if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
             {
                 SendMpvCommand("set_property", "pause", true);
@@ -211,13 +212,18 @@ namespace SoundHaven.Services
         {
             _waveOutDevice.Play();
             IsPaused = false;
-            _totalPauseTime += DateTime.Now - _currentPauseStartTime;
+
+            if (_currentPauseStartTime.HasValue)
+            {
+                _totalPauseTime += DateTime.Now - _currentPauseStartTime.Value;
+                _currentPauseStartTime = null; // Reset after resuming
+            }
 
             if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
             {
                 SendMpvCommand("set_property", "pause", false);
             }
-            
+
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -436,11 +442,12 @@ namespace SoundHaven.Services
             if (_isYouTubeStream)
             {
                 TimeSpan currentTotalPauseTime = _totalPauseTime;
-                if (_isPaused)
+
+                if (_isPaused && _currentPauseStartTime.HasValue)
                 {
-                    currentTotalPauseTime += DateTime.Now - _currentPauseStartTime;
+                    currentTotalPauseTime += DateTime.Now - _currentPauseStartTime.Value;
                 }
-            
+
                 TimeSpan totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime - currentTotalPauseTime;
                 _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
 
@@ -451,7 +458,7 @@ namespace SoundHaven.Services
                 }
 
                 Console.WriteLine($"Current YouTube Time: {_currentYoutubeTime}");
-            
+
                 if (_currentYoutubeTime >= TotalDuration && !_isTrackEnded)
                 {
                     _isTrackEnded = true;
@@ -460,7 +467,7 @@ namespace SoundHaven.Services
                 }
             }
             OnPropertyChanged(nameof(CurrentYoutubePosition));
-        }
+        }       
         
         public void Dispose()
         {
@@ -471,7 +478,7 @@ namespace SoundHaven.Services
             _waveOutDevice?.Dispose();
             _bufferingCancellationTokenSource?.Dispose();
             _positionLogTimer?.Dispose();
-            _mpvProcess?.Kill();
+            _mpvProcess?.Kill(true);
             _mpvProcess?.Dispose();
         }
     }
