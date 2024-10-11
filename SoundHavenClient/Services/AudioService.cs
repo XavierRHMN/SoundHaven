@@ -219,9 +219,28 @@ namespace SoundHaven.Services
                 _currentPauseStartTime = null; // Reset after resuming
             }
 
-            if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
+            if (_isYouTubeStream)
             {
-                SendMpvCommand("set_property", "pause", false);
+                try
+                {
+                    if (_mpvProcess != null && !_mpvProcess.HasExited)
+                    {
+                        SendMpvCommand("set_property", "pause", false);
+                    }
+                    else
+                    {
+                        // The MPV process has exited, we need to restart it
+                        _shouldRestart = true;
+                        Task.Run(() => ContinuousBufferYouTubeStreamAsync(_currentSource, _bufferingCancellationTokenSource.Token));
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // The process has already exited, set flag to restart
+                    _shouldRestart = true;
+                    _mpvProcess = null;
+                    Task.Run(() => ContinuousBufferYouTubeStreamAsync(_currentSource, _bufferingCancellationTokenSource.Token));
+                }
             }
 
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
