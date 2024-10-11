@@ -80,6 +80,10 @@ namespace SoundHaven.Services
                     {
                         _volumeProvider.Volume = (float)Math.Pow(_audioVolume, 2);
                     }
+                    if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
+                    {
+                        SetMpvVolume(_audioVolume);
+                    }
                 }
             }
         }
@@ -230,15 +234,8 @@ namespace SoundHaven.Services
                         var commandObject = new { command = new object[] { commandName }.Concat(args).ToArray() };
                         string jsonCommand = Newtonsoft.Json.JsonConvert.SerializeObject(commandObject);
 
-                        // Log the command being sent
-                        Console.WriteLine($"Sending command to MPV: {jsonCommand}");
-
                         writer.WriteLine(jsonCommand);
                         writer.Flush();
-
-                        // Read and log the response from MPV
-                        string response = reader.ReadLine();
-                        Console.WriteLine($"Response from MPV: {response}");
                     }
                 }
             }
@@ -246,6 +243,14 @@ namespace SoundHaven.Services
             {
                 Console.WriteLine($"Error sending command to MPV: {ex.Message}");
             }
+        }
+        
+        private int SetMpvVolume(float volume)
+        {
+            // MPV volume range is 0-100, so we multiply our 0-1 range by 100
+            int mpvVolume = (int)(volume * 100);
+            SendMpvCommand("set_property", "volume", mpvVolume);
+            return mpvVolume;
         }
         
         public void Stop(bool resetPosition = true)
