@@ -227,7 +227,7 @@ namespace SoundHaven.Services
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        private void SendMpvCommand(string commandName, params object[] args)
+        public void SendMpvCommand(string commandName, params object[] args)
         {
             try
             {
@@ -469,7 +469,7 @@ namespace SoundHaven.Services
             OnPropertyChanged(nameof(CurrentYoutubePosition));
         }       
         
-        public void Dispose()
+        public override void Dispose()
         {
             if (_isDisposed) return;
 
@@ -478,7 +478,7 @@ namespace SoundHaven.Services
             _waveOutDevice?.Dispose();
             _bufferingCancellationTokenSource?.Dispose();
             _positionLogTimer?.Dispose();
-            _mpvProcess?.Kill(true);
+            SendMpvCommand("stop");
             _mpvProcess?.Dispose();
         }
     }
