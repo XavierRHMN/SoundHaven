@@ -203,7 +203,6 @@ namespace SoundHaven.Services
             }
 
             IsPaused = true;
-            _currentPauseStartTime = DateTime.Now; // Start tracking pause time
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -217,7 +216,6 @@ namespace SoundHaven.Services
             }
             
             IsPaused = false;
-            _totalPauseTime += DateTime.Now - _currentPauseStartTime; // Update total pause time
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
