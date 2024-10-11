@@ -9,12 +9,16 @@ using System.Threading.Tasks;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
 using System.Diagnostics;
+using System.IO.Pipes;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SoundHaven.Services
 {
     public class AudioService : ViewModelBase, IDisposable
     {
+        private Process _mpvProcess;
+        private bool _shouldRestart = false;
         private readonly YoutubeClient _youtubeClient;
         private TimeSpan _totalPauseTime = TimeSpan.Zero;
         private AudioFileReader _audioFileReader;
@@ -172,40 +176,80 @@ namespace SoundHaven.Services
             }
             else if (_isYouTubeStream)
             {
-                // Stop current playback and buffering without resetting position
-                Stop(false);
-
-                // Update start position and current position
                 _startTime = position;
                 _currentYoutubeTime = position;
 
-                // Start playback from the new position
-                _ = StartAsync(_currentSource, true, position);
+                // Send seek command to MPV
+                SendMpvCommand("set_property", "time-pos", position.TotalSeconds);
+                
+                // Reset playback timing
+                _playbackStartTime = DateTime.Now;
+                _currentPauseStartTime = DateTime.MinValue;
+                _totalPauseTime = TimeSpan.Zero;
             }
         }
 
         public void Pause()
         {
-            if (_waveOutDevice?.PlaybackState == PlaybackState.Playing)
+            if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
+            {
+                SendMpvCommand("set_property", "pause", true);
+            }
+            else if (_waveOutDevice?.PlaybackState == PlaybackState.Playing)
             {
                 _waveOutDevice.Pause();
-                _currentPauseStartTime = DateTime.Now;
-                IsPaused = true;
-                PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
             }
+            IsPaused = true;
+            _currentPauseStartTime = DateTime.Now; // Start tracking pause time
+            PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public void Resume()
         {
-            if (_waveOutDevice?.PlaybackState == PlaybackState.Paused)
+            if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
+            {
+                SendMpvCommand("set_property", "resume", false);
+            }
+            else if (_waveOutDevice?.PlaybackState == PlaybackState.Paused)
             {
                 _waveOutDevice.Play();
-                _totalPauseTime += DateTime.Now - _currentPauseStartTime;
-                IsPaused = false;
-                PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
             }
+            IsPaused = false;
+            _totalPauseTime += DateTime.Now - _currentPauseStartTime; // Update total pause time
+            PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        private void SendMpvCommand(string commandName, params object[] args)
+        {
+            try
+            {
+                using (var client = new NamedPipeClientStream(".", "mpvsocket", PipeDirection.InOut))
+                {
+                    client.Connect(1000); // Wait up to 1 second
+                    using (var writer = new StreamWriter(client))
+                    using (var reader = new StreamReader(client))
+                    {
+                        var commandObject = new { command = new object[] { commandName }.Concat(args).ToArray() };
+                        string jsonCommand = Newtonsoft.Json.JsonConvert.SerializeObject(commandObject);
+
+                        // Log the command being sent
+                        Console.WriteLine($"Sending command to MPV: {jsonCommand}");
+
+                        writer.WriteLine(jsonCommand);
+                        writer.Flush();
+
+                        // Read and log the response from MPV
+                        string response = reader.ReadLine();
+                        Console.WriteLine($"Response from MPV: {response}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending command to MPV: {ex.Message}");
+            }
+        }
+        
         public void Stop(bool resetPosition = true)
         {
             _isBuffering = false;
@@ -291,51 +335,68 @@ namespace SoundHaven.Services
         
         private async Task ContinuousBufferYouTubeStreamAsync(string streamUrl, CancellationToken cancellationToken)
         {
+            string mpvPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Libraries", "mpv.exe");
+
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    using var ffmpegProcess = new Process
+                    if (_mpvProcess == null || _mpvProcess.HasExited || _shouldRestart)
                     {
-                        StartInfo = new ProcessStartInfo
-                        {
-                            FileName = "ffmpeg",
-                            Arguments = $"-re -ss {_currentYoutubeTime.TotalSeconds} -i \"{streamUrl}\" -f s16le -ar 44100 -ac 2 pipe:1",
-                            UseShellExecute = false,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            CreateNoWindow = true
-                        }
-                    };
+                        _mpvProcess?.Kill();
+                        _mpvProcess?.Dispose();
 
-                    ffmpegProcess.Start();
-                    
-                    // Read and log FFmpeg's standard error output
-                    _ = Task.Run(() =>
-                    {
-                        string line;
-                        while ((line = ffmpegProcess.StandardError.ReadLine()) != null)
+                        _mpvProcess = new Process
                         {
-                            Console.WriteLine($"FFmpeg: {line}");
-                        }
-                    }, cancellationToken);
-                    
-                    byte[] buffer = new byte[16384];
-                    int bytesRead;
+                            StartInfo = new ProcessStartInfo
+                            {
+                                FileName = mpvPath,
+                                Arguments = $"--no-video --no-terminal --no-cache --demuxer-max-bytes=4M --demuxer-max-back-bytes=2M --start={_currentYoutubeTime.TotalSeconds} --input-ipc-server=mpvsocket \"{streamUrl}\"",
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true,
+                                CreateNoWindow = true
+                            },
+                            EnableRaisingEvents = true
+                        };
 
-                    while ((bytesRead = await ffmpegProcess.StandardOutput.BaseStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
-                    {
-                        _bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
+
+                        _mpvProcess.Exited += (sender, args) => _shouldRestart = true;
+
+                        _mpvProcess.Start();
+                        _shouldRestart = false;
+
+                        // Read and log MPV's standard error output
+                        _ = Task.Run(() =>
+                        {
+                            string line;
+                            while ((line = _mpvProcess.StandardError.ReadLine()) != null)
+                            {
+                                Console.WriteLine($"MPV: {line}");
+                            }
+                        }, cancellationToken);
                     }
+
+                    await Task.Delay(1000, cancellationToken); // Check process state every second
                 }
                 catch (OperationCanceledException)
                 {
                     Console.WriteLine("Buffering operation was canceled.");
                     break;
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in MPV streaming: {ex.Message}");
+                    _shouldRestart = true;
+                    await Task.Delay(1000, cancellationToken);
+                }
             }
+
+            _mpvProcess?.Kill();
+            _mpvProcess?.Dispose();
+            _mpvProcess = null;
             _isBuffering = false;
-        }
+        }        
         
         private void StartLocalFile(string filePath)
         {
@@ -372,14 +433,14 @@ namespace SoundHaven.Services
         {
             if (_isYouTubeStream)
             {
-                var currentTotalPauseTime = _totalPauseTime;
+                // var currentTotalPauseTime = _totalPauseTime;
                 if (IsPaused)
                 {
-                    currentTotalPauseTime += DateTime.Now - _currentPauseStartTime;
+                    // currentTotalPauseTime += DateTime.Now - _currentPauseStartTime;
                 }
                 
-                var totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime - currentTotalPauseTime;
-                _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
+            var totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime;
+            _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
                 Console.WriteLine(_currentYoutubeTime);
                 
                 if (_currentYoutubeTime >= _totalDuration)
@@ -408,6 +469,8 @@ namespace SoundHaven.Services
             _waveOutDevice?.Dispose();
             _bufferingCancellationTokenSource?.Dispose();
             _positionLogTimer?.Dispose();
+            _mpvProcess?.Kill();
+            _mpvProcess?.Dispose();
         }
     }
 }
