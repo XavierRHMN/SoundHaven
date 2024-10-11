@@ -362,7 +362,7 @@ namespace SoundHaven.Services
         
         private async Task ContinuousBufferYouTubeStreamAsync(string streamUrl, CancellationToken cancellationToken)
         {
-            string mpvPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Binaries", "mpv.exe");
+            string mpvPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Binaries", "mpv", "mpv.exe");
 
             while (!cancellationToken.IsCancellationRequested)
             {

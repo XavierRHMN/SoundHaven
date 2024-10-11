@@ -85,7 +85,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Binaries\" />
         <Folder Include="Tracks\"/>
     </ItemGroup>
 </Project>

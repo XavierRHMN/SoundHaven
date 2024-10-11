@@ -40,6 +40,10 @@ namespace SoundHaven.ViewModels
 
         public MainWindowViewModel()
         {
+
+            var downloader = new MpvDownloader();
+            downloader.DownloadAndUpdateMpvAsync();
+            
             // SQLite Database
             string dbPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "AppDatabase.db");
             AppDatabase = new AppDatabase(dbPath);
