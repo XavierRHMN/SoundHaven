@@ -387,6 +387,7 @@ namespace SoundHaven.Services
                             EnableRaisingEvents = true
                         };
 
+                        _waveOutDevice.Play();
 
                         _mpvProcess.Exited += (sender, args) => _shouldRestart = true;
 
