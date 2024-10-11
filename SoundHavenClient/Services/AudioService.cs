@@ -243,12 +243,11 @@ namespace SoundHaven.Services
             }
         }
         
-        private int SetMpvVolume(float volume)
+        private void SetMpvVolume(float volume)
         {
             // MPV volume range is 0-100, so we multiply our 0-1 range by 100
             int mpvVolume = (int)(volume * 100);
             SendMpvCommand("set_property", "volume", mpvVolume);
-            return mpvVolume;
         }
         
         public void Stop(bool resetPosition = true)
@@ -352,7 +351,7 @@ namespace SoundHaven.Services
                             StartInfo = new ProcessStartInfo
                             {
                                 FileName = mpvPath,
-                                Arguments = $"--no-video --no-terminal --no-cache --demuxer-max-bytes=4M --demuxer-max-back-bytes=2M --start={_currentYoutubeTime.TotalSeconds} --input-ipc-server=mpvsocket \"{streamUrl}\"",
+                                Arguments = $"--no-video --no-terminal --no-cache --demuxer-max-bytes=4M --demuxer-max-back-bytes=2M --start={_currentYoutubeTime.TotalSeconds} --volume={_audioVolume * 100}  --input-ipc-server=mpvsocket \"{streamUrl}\"",
                                 UseShellExecute = false,
                                 RedirectStandardOutput = true,
                                 RedirectStandardError = true,

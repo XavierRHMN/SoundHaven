@@ -58,6 +58,8 @@ namespace SoundHaven.ViewModels
         public VolumeViewModel(AudioService audioService)
         {
             _audioService = audioService;
+            _volume = 0.25f; // 2.5% volume
+            _audioService.AudioVolume = _volume; // Set the initial volume in AudioService
             MuteCommand = new RelayCommand(ToggleMute);
         }
 
