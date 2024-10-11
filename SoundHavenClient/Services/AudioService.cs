@@ -191,14 +191,13 @@ namespace SoundHaven.Services
 
         public void Pause()
         {
+            _waveOutDevice?.Pause();
+            
             if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
             {
-                // replace with logic
+                SendMpvCommand("set_property", "pause", true);
             }
-            else if (_waveOutDevice?.PlaybackState == PlaybackState.Playing)
-            {
-                _waveOutDevice.Pause();
-            }
+
             IsPaused = true;
             _currentPauseStartTime = DateTime.Now; // Start tracking pause time
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
@@ -206,14 +205,13 @@ namespace SoundHaven.Services
 
         public void Resume()
         {
+            _waveOutDevice.Play();
+
             if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
             {
-                // replace with logic
+                SendMpvCommand("set_property", "pause", false);
             }
-            else if (_waveOutDevice?.PlaybackState == PlaybackState.Paused)
-            {
-                _waveOutDevice.Play();
-            }
+            
             IsPaused = false;
             _totalPauseTime += DateTime.Now - _currentPauseStartTime; // Update total pause time
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
@@ -433,7 +431,13 @@ namespace SoundHaven.Services
         {
             if (_isYouTubeStream)
             {
-                var totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime;
+                var currentTotalPauseTime = _totalPauseTime;
+                if (IsPaused)
+                {
+                    currentTotalPauseTime += DateTime.Now - _currentPauseStartTime;
+                }
+                
+                var totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime - currentTotalPauseTime;
                 _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
                 Console.WriteLine(_currentYoutubeTime);
                 
