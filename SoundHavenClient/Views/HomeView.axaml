@@ -84,7 +84,7 @@
                                 Spacing="20"
                                 Margin=" 0 200 0 0">
                         <ProgressBar Classes="circular" IsIndeterminate="True" Height="100" Width="100"
-                                     Foreground="{StaticResource PrimaryColor}" />
+                                     Foreground="{StaticResource PrimaryColor}"/>
                         <TextBlock Text="Loading songs..."
                                    Classes="Headers"
                                    HorizontalAlignment="Center" />
