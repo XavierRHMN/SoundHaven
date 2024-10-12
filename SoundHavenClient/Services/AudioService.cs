@@ -283,8 +283,9 @@ namespace SoundHaven.Services
                 return;
             }
 
-            if (_audioFileReader != null && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds ||
-                _bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0)
+            if (_audioFileReader != null 
+                && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds 
+                || _bufferedWaveProvider != null)
             {
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
