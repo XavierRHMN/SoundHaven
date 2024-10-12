@@ -13,6 +13,7 @@ namespace SoundHaven.ViewModels
 {
     public class SearchViewModel : ViewModelBase
     {
+        private readonly MpvDownloader _mpvDownloader;
         private readonly IYoutubeSearchService _youtubeSearchService;
         private readonly IYouTubeDownloadService _youTubeDownloadService;
         private readonly IOpenFileDialogService _openFileDialogService;
@@ -39,6 +40,13 @@ namespace SoundHaven.ViewModels
             get => _isLoading;
             set => SetProperty(ref _isLoading, value);
         }
+        
+        private string _loadingMessage;
+        public string LoadingMessage
+        {
+            get => _loadingMessage;
+            set => SetProperty(ref _loadingMessage, value);
+        }
 
         private Song _selectedSong;
         public Song SelectedSong
@@ -60,14 +68,15 @@ namespace SoundHaven.ViewModels
         public RelayCommand<Song> OpenFolderCommand { get; }
 
         public SearchViewModel(IYoutubeSearchService youtubeSearchService, IYouTubeDownloadService youTubeDownloadService,
-                               IOpenFileDialogService openFileDialogService, AudioService audioService, PlaybackViewModel playbackViewModel)
+                               IOpenFileDialogService openFileDialogService, AudioService audioService, PlaybackViewModel playbackViewModel, MpvDownloader mpvDownloader)
         {
             _youtubeSearchService = youtubeSearchService;
             _youTubeDownloadService = youTubeDownloadService;
             _openFileDialogService = openFileDialogService;
             _audioService = audioService;
             _playbackViewModel = playbackViewModel;
-
+            _mpvDownloader = mpvDownloader;
+            
             SearchResults = new ObservableCollection<Song>();
 
             SearchCommand = new RelayCommand(ExecuteSearch);
@@ -85,6 +94,10 @@ namespace SoundHaven.ViewModels
 
             try
             {
+                LoadingMessage = "Downloading and Extracting MPV...";
+                await _mpvDownloader.DownloadAndUpdateMpvAsync();
+
+                LoadingMessage = "Loading songs...";
                 var results = await _youtubeSearchService.SearchVideos(SearchQuery);
                 foreach (var result in results)
                 {
@@ -112,6 +125,7 @@ namespace SoundHaven.ViewModels
             finally
             {
                 IsLoading = false;
+                LoadingMessage = string.Empty; // Clear the loading message
             }
         }
 

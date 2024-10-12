@@ -88,14 +88,23 @@
 
             <Grid Grid.Row="1">
                 <!-- New ProgressBar for loading indication -->
-                <ProgressBar Classes="circular"
-                             IsVisible="{Binding IsLoading}"
-                             IsIndeterminate="True"
-                             HorizontalAlignment="Center"
-                             VerticalAlignment="Center"
-                             Width="80"
-                             Height="80"
-                             Foreground="{StaticResource PrimaryColor}" />
+                <StackPanel IsVisible="{Binding IsLoading}"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center">
+                    <ProgressBar Classes="circular"
+                                 IsIndeterminate="True"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 Width="80"
+                                 Height="80"
+                                 Foreground="{StaticResource PrimaryColor}"
+                                 Margin = "0 0 0 20"/>
+                    <TextBlock Text="{Binding LoadingMessage}"
+                               Classes="Headers"
+                               HorizontalAlignment="Center"
+                               Foreground="White"
+                               FontSize="20"/>
+                </StackPanel>
 
 
                 <ScrollViewer IsVisible="{Binding !IsLoading}" Margin="10"

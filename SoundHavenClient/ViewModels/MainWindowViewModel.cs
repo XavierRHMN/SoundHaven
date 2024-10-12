@@ -40,10 +40,6 @@ namespace SoundHaven.ViewModels
 
         public MainWindowViewModel()
         {
-
-            var downloader = new MpvDownloader();
-            downloader.DownloadAndUpdateMpvAsync();
-            
             // SQLite Database
             string dbPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "AppDatabase.db");
             AppDatabase = new AppDatabase(dbPath);
@@ -72,7 +68,7 @@ namespace SoundHaven.ViewModels
             PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService(), AppDatabase);
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
             HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
-            SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel);
+            SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel, new MpvDownloader());
             ThemesViewModel = new ThemesViewModel(AppDatabase);
             ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
