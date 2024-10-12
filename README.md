@@ -22,7 +22,7 @@ SoundHaven leverages a powerful stack of technologies:
 - **[Avalonia UI](https://avaloniaui.net/)**: Cross-platform .NET framework for building beautiful, native apps
 - **[Material.Avalonia](https://github.com/AvaloniaCommunity/Material.Avalonia)**: Material Design-inspired theme for Avalonia
 - **[TagLibSharp](https://github.com/mono/taglib-sharp)**: .NET library for reading and writing audio metadata
-- **[MPV](https://mpv.io/)**: Complete, cross-platform solution for audio and video processing
+- **[MPV](https://mpv.io/)**: Complete, cross-platform solution for playing video and audio
 - **[NAudio](https://github.com/naudio/NAudio)**: .NET audio library for playback, recording, and audio file manipulation
 - **[YoutubeExplode](https://github.com/Tyrrrz/YoutubeExplode)**: Library for downloading YouTube videos and retrieving metadata
 - **[SQLite](https://www.sqlite.org/)**: Lightweight, file-based relational database for persistent data storage
