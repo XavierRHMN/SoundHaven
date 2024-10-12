@@ -95,7 +95,7 @@ namespace SoundHaven.ViewModels
             OpenFolderCommand = new RelayCommand<Song>(ExecuteOpenFolder);
         }
 
-        public async Task InitializeMpvAsync()
+        private async Task InitializeMpvAsync()
         {
             if (_isMpvInitialized) return;
 
@@ -109,14 +109,10 @@ namespace SoundHaven.ViewModels
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error initializing MPV: {ex.Message}");
-                // Handle the error appropriately, perhaps show a message to the user
+                Console.WriteLine($"Error initializing MPV: {ex.Message}");
             }
-            finally
-            {
-                IsMpvLoading = false;
-                LoadingMessage = string.Empty;
-            }
+            IsMpvLoading = false;
+            LoadingMessage = string.Empty;
         }
         
         private async void ExecuteSearch()
@@ -149,47 +145,24 @@ namespace SoundHaven.ViewModels
             }
             catch (Exception ex)
             {
-                // Handle any exceptions that occur during the search
-                Debug.WriteLine($"Error during search: {ex.Message}");
-                // You might want to show an error message to the user here
+                Console.WriteLine($"Error during search: {ex.Message}");
             }
-            finally
-            {
-                IsLoading = false;
-                LoadingMessage = string.Empty; // Clear the loading message
-            }
+            IsLoading = false;
+            LoadingMessage = string.Empty; 
         }
 
         private async void ExecutePlaySong(Song song)
         {
-            if (song == null || string.IsNullOrEmpty(song.VideoId) && string.IsNullOrEmpty(song.FilePath))
-            {
-                Console.WriteLine("ExecutePlaySong: Invalid song data");
-                return;
-            }
-
             try
             {
-                bool isYouTubeVideo = !string.IsNullOrEmpty(song.VideoId);
-                string source = isYouTubeVideo ? CleanVideoId(song.VideoId) : song.FilePath;
-
-                if (string.IsNullOrEmpty(source))
-                {
-                    Console.WriteLine("Error: Source is null or empty");
-                    return;
-                }
-
-                if (_audioService == null)
-                {
-                    Console.WriteLine("Error: AudioService is null");
-                    return;
-                }
-
+                bool isYouTubeVideo = song.IsYouTubeVideo;
+                string? source = isYouTubeVideo ? CleanVideoId(song.VideoId) : song.FilePath;
+                
                 await _audioService.StartAsync(source, isYouTubeVideo);
                 _playbackViewModel.CurrentSong = song;
                 _playbackViewModel.CurrentPlaylist = new Playlist();
                 _playbackViewModel.CurrentPlaylist.Name = "Streaming from YouTube";
-                _playbackViewModel.AddToUpNext(song); // Add this line
+                await _playbackViewModel.AddToUpNext(song); // Add this line
             }
             catch (Exception ex)
             {
@@ -244,8 +217,6 @@ namespace SoundHaven.ViewModels
 
         private void ExecuteOpenFolder(Song song)
         {
-            if (song == null || string.IsNullOrEmpty(song.FilePath)) return;
-
             try
             {
                 string folder = Path.GetDirectoryName(song.FilePath);
@@ -262,7 +233,6 @@ namespace SoundHaven.ViewModels
             catch (Exception ex)
             {
                 Console.WriteLine($"Error opening folder: {ex.Message}");
-                // You might want to show an error message to the user here
             }
         }
     }
