@@ -17,28 +17,39 @@ namespace SoundHaven.Services
 {
     public class AudioService : ViewModelBase, IDisposable
     {
+        // YouTube and Process-related
         private Process _mpvProcess;
         private readonly YoutubeClient _youtubeClient;
-        private TimeSpan _totalPauseTime = TimeSpan.Zero;
-        private AudioFileReader _audioFileReader;
+        private IYouTubeDownloadService _youTubeDownloadService;
+        private bool _isYouTubeStream;
 
-        private float _audioVolume = 1.0f;
+        // Audio playback and control
+        private IWavePlayer _waveOutDevice;
+        private AudioFileReader _audioFileReader;
         private BufferedWaveProvider _bufferedWaveProvider;
-        private CancellationTokenSource _bufferingCancellationTokenSource;
-        private TimeSpan _currentYoutubeTime;
+        private VolumeSampleProvider _volumeProvider;
+        private float _audioVolume = 1.0f;
+
+        // Playback state
         private bool _isPaused;
         private bool _isTrackEnded;
-
         private bool _isSeekBuffering;
-        private bool _isYouTubeStream;
+        private CancellationTokenSource _bufferingCancellationTokenSource;
+
+        // Time tracking
+        private TimeSpan _currentYoutubeTime;
+        private TimeSpan _totalPauseTime = TimeSpan.Zero;
         private DateTime? _currentPauseStartTime;
-        private Timer _positionLogTimer;
         private TimeSpan _startTime;
         private DateTime _playbackStartTime;
         private TimeSpan _totalDuration;
-        private VolumeSampleProvider _volumeProvider;
-        private IWavePlayer _waveOutDevice;
-        private IYouTubeDownloadService _youTubeDownloadService;
+        
+        // Events
+        public event EventHandler TrackEnded;
+        public event EventHandler PlaybackStateChanged;
+
+        // Timer
+        private Timer _positionLogTimer;
 
         public AudioService()
         {
@@ -106,9 +117,6 @@ namespace SoundHaven.Services
             get => _waveOutDevice?.PlaybackState == PlaybackState.Stopped;
         } 
         
-        public event EventHandler TrackEnded;
-        public event EventHandler PlaybackStateChanged;
-
         protected virtual void OnPlaybackStateChanged()
         {
             if (PlaybackStateChanged != null)
