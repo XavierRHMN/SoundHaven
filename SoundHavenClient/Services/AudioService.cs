@@ -31,7 +31,6 @@ namespace SoundHaven.Services
         private float _audioVolume = 1.0f;
 
         // Playback state
-        private bool _isTrackEnded;
         private bool _isSeekBuffering;
         private CancellationTokenSource _bufferingCancellationTokenSource;
 
@@ -130,9 +129,7 @@ namespace SoundHaven.Services
         {
             // Do not reset position variables
             Stop(false);
-
-            _isTrackEnded = false; // Reset the flag
-
+            
             _isYouTubeStream = isYouTubeVideo;
             _startTime = startingPosition;
             _currentYoutubeTime = startingPosition;
@@ -267,9 +264,7 @@ namespace SoundHaven.Services
             _bufferedWaveProvider = null;
             _volumeProvider = null;
             _isYouTubeStream = false;
-
-            _isTrackEnded = true; // Set the flag
-
+            
             if (resetPosition)
             {
                 _currentYoutubeTime = TimeSpan.Zero;
@@ -291,7 +286,6 @@ namespace SoundHaven.Services
             if (_audioFileReader != null && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds ||
                 _bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0)
             {
-                _isTrackEnded = true; // Set the flag
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
             OnPlaybackStateChanged();
@@ -434,9 +428,8 @@ namespace SoundHaven.Services
 
                 Console.WriteLine($"Current YouTube Time: {_currentYoutubeTime}");
 
-                if (_currentYoutubeTime >= TotalDuration && !_isTrackEnded)
+                if (_currentYoutubeTime >= TotalDuration)
                 {
-                    _isTrackEnded = true;
                     Stop();
                     TrackEnded?.Invoke(this, EventArgs.Empty);
                 }
