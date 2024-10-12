@@ -69,8 +69,14 @@ namespace SoundHaven.ViewModels
             get => _isMpvLoading;
             set => SetProperty(ref _isMpvLoading, value);
         }
-
-
+        
+        private bool _isScrollViewerHittestable = true;
+        public bool IsScrollViewerHittestable
+        {
+            get => _isScrollViewerHittestable;
+            set => SetProperty(ref _isScrollViewerHittestable, value);
+        }
+        
         public RelayCommand SearchCommand { get; }
         public RelayCommand<Song> PlaySongCommand { get; }
         public RelayCommand<Song> DownloadSongCommand { get; }
@@ -155,6 +161,7 @@ namespace SoundHaven.ViewModels
         {
             try
             {
+                IsScrollViewerHittestable = false;
                 bool isYouTubeVideo = song.IsYouTubeVideo;
                 string? source = isYouTubeVideo ? CleanVideoId(song.VideoId) : song.FilePath;
                 
@@ -163,11 +170,14 @@ namespace SoundHaven.ViewModels
                 _playbackViewModel.CurrentPlaylist = new Playlist();
                 _playbackViewModel.CurrentPlaylist.Name = "Streaming from YouTube";
                 await _playbackViewModel.AddToUpNext(song); // Add this line
+                await _playbackViewModel.PlayFromBeginning(song);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error playing song: {ex.Message}");
             }
+            
+            IsScrollViewerHittestable = true;
         }
 
         private string CleanVideoId(string videoId)

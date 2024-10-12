@@ -51,7 +51,7 @@ namespace SoundHaven.ViewModels
 
                     SeekPositionReset?.Invoke(this, EventArgs.Empty);
                     
-                    PlayFromBeginning(value);
+                    if (!_currentSong.IsYouTubeVideo) PlayFromBeginning(value);
                 }
             }
         }

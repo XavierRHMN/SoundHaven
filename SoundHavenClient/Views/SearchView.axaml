@@ -100,7 +100,8 @@
                 <!-- Search Results List -->
                 <ScrollViewer IsVisible="{Binding !IsLoading}" 
                               Margin="10"
-                              Theme="{StaticResource MaterialModernScrollViewer}">
+                              Theme="{StaticResource MaterialModernScrollViewer}"
+                              IsHitTestVisible="{Binding IsScrollViewerHittestable}">
                     <ListBox ItemsSource="{Binding SearchResults}"
                              SelectedItem="{Binding SelectedSong}"
                              Background="Transparent">
