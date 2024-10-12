@@ -31,7 +31,6 @@ namespace SoundHaven.Services
         private float _audioVolume = 1.0f;
 
         // Playback state
-        private bool _isPaused;
         private bool _isTrackEnded;
         private bool _isSeekBuffering;
         private CancellationTokenSource _bufferingCancellationTokenSource;
@@ -61,8 +60,7 @@ namespace SoundHaven.Services
 
         public bool IsPaused
         {
-            get => _isPaused;
-            private set => SetProperty(ref _isPaused, value);
+            get => _waveOutDevice?.PlaybackState == PlaybackState.Paused;
         }
 
         public TimeSpan CurrentLocalPosition
@@ -151,10 +149,7 @@ namespace SoundHaven.Services
                 else
                 {
                     StartLocalFile(source);
-                    if (startingPosition != default)
-                    {
-                        Seek(startingPosition);
-                    }
+                    Seek(startingPosition);
                 }
 
                 if (_waveOutDevice != null && (_audioFileReader != null || _bufferedWaveProvider != null))
@@ -174,7 +169,6 @@ namespace SoundHaven.Services
         public void Seek(TimeSpan position)
         {
             _totalPauseTime = TimeSpan.Zero;
-            _isPaused = false;
             _currentPauseStartTime = null; // Reset pause time on seek
 
             if (_audioFileReader != null)
@@ -200,7 +194,6 @@ namespace SoundHaven.Services
         public void Pause()
         {
             _waveOutDevice?.Pause();
-            IsPaused = true;
             _currentPauseStartTime = DateTime.Now;
 
             if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
@@ -214,7 +207,6 @@ namespace SoundHaven.Services
         public void Resume()
         {
             _waveOutDevice.Play();
-            IsPaused = false;
 
             if (_currentPauseStartTime.HasValue)
             {
@@ -268,7 +260,6 @@ namespace SoundHaven.Services
             _bufferingCancellationTokenSource?.Cancel();
 
             _totalPauseTime = TimeSpan.Zero;
-            _isPaused = false;
 
             _waveOutDevice?.Stop();
             _audioFileReader?.Dispose();
@@ -427,7 +418,7 @@ namespace SoundHaven.Services
             {
                 TimeSpan currentTotalPauseTime = _totalPauseTime;
 
-                if (_isPaused && _currentPauseStartTime.HasValue)
+                if (IsPaused && _currentPauseStartTime.HasValue)
                 {
                     currentTotalPauseTime += DateTime.Now - _currentPauseStartTime.Value;
                 }
