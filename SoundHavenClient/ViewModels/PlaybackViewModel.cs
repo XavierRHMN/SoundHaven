@@ -100,11 +100,7 @@ namespace SoundHaven.ViewModels
         {
             if (CurrentSong != null)
             {
-                if (_audioService.IsStopped && !CurrentSong.IsYouTubeVideo)
-                {
-                    await PlayFromBeginning(CurrentSong);
-                }
-                else if (_audioService.IsStopped && CurrentSong.IsYouTubeVideo && _audioService.CurrentYoutubePosition.TotalSeconds == 0)
+                if (_audioService.IsStopped)
                 {
                     await PlayFromBeginning(CurrentSong);
                 }
