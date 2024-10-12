@@ -5,15 +5,19 @@
              xmlns:vm="using:SoundHaven.ViewModels"
              xmlns:models="clr-namespace:SoundHaven.Models"
              xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" 
+             d:DesignWidth="800" 
+             d:DesignHeight="450"
              x:Class="SoundHaven.Views.SearchView"
              x:DataType="vm:SearchViewModel"
              Background="{StaticResource ToolbarColor}">
 
+    <!-- Resources -->
     <UserControl.Resources>
         <SolidColorBrush x:Key="PlayerColorBrush" Color="{StaticResource PrimaryColor}" />
     </UserControl.Resources>
 
+    <!-- Styles -->
     <UserControl.Styles>
         <Style Selector="TextBlock.Headers">
             <Setter Property="FontFamily"
@@ -55,6 +59,7 @@
         </Style>
     </UserControl.Styles>
 
+    <!-- Main Layout -->
     <Grid RowDefinitions="Auto,*">
         <!-- Search Banner -->
         <Border Grid.Row="0"
@@ -68,15 +73,19 @@
 
         <!-- Search Box and Results -->
         <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,0,0,0">
+            <!-- Search Box -->
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="10,0">
-                <TextBox Grid.Column="0" Text="{Binding SearchQuery, Mode=TwoWay}"
+                <TextBox Grid.Column="0" 
+                         Text="{Binding SearchQuery, Mode=TwoWay}"
                          Watermark="Search for songs...">
                     <TextBox.KeyBindings>
                         <KeyBinding Gesture="Enter"
                                     Command="{Binding SearchCommand}" />
                     </TextBox.KeyBindings>
                 </TextBox>
-                <Button Grid.Column="1" Content="Search" Command="{Binding SearchCommand}"
+                <Button Grid.Column="1" 
+                        Content="Search" 
+                        Command="{Binding SearchCommand}"
                         Margin="10,0,0,0"
                         Width="90"
                         Height="30"
@@ -86,28 +95,11 @@
                         BorderBrush="{StaticResource PrimaryColor}" />
             </Grid>
 
+            <!-- Search Results and Loading Overlays -->
             <Grid Grid.Row="1">
-                <!-- New ProgressBar for loading indication -->
-                <StackPanel IsVisible="{Binding IsLoading}"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Center">
-                    <ProgressBar Classes="circular"
-                                 IsIndeterminate="True"
-                                 HorizontalAlignment="Center"
-                                 VerticalAlignment="Center"
-                                 Width="80"
-                                 Height="80"
-                                 Foreground="{StaticResource PrimaryColor}"
-                                 Margin = "0 0 0 20"/>
-                    <TextBlock Text="{Binding LoadingMessage}"
-                               Classes="Headers"
-                               HorizontalAlignment="Center"
-                               Foreground="White"
-                               FontSize="20"/>
-                </StackPanel>
-
-
-                <ScrollViewer IsVisible="{Binding !IsLoading}" Margin="10"
+                <!-- Search Results List -->
+                <ScrollViewer IsVisible="{Binding !IsLoading}" 
+                              Margin="10"
                               Theme="{StaticResource MaterialModernScrollViewer}">
                     <ListBox ItemsSource="{Binding SearchResults}"
                              SelectedItem="{Binding SelectedSong}"
@@ -115,48 +107,67 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,3">
-                                    <Image Grid.Column="0" Source="{Binding Artwork}" Width="60" Height="60"
+                                    <!-- Artwork Image -->
+                                    <Image Grid.Column="0" 
+                                           Source="{Binding Artwork}" 
+                                           Width="60" 
+                                           Height="60"
                                            Margin="0,0,10,0" />
-                                    <Grid Grid.Column="1" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
-                                        <TextBlock Grid.Row="0" Text="{Binding Title}" Classes="TrackTitle" />
-                                        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="5">
+                                    
+                                    <!-- Song Details -->
+                                    <Grid Grid.Column="1" 
+                                          RowDefinitions="Auto,Auto" 
+                                          VerticalAlignment="Center">
+                                        <TextBlock Grid.Row="0" 
+                                                   Text="{Binding Title}" 
+                                                   Classes="TrackTitle" />
+                                        <StackPanel Grid.Row="1" 
+                                                    Orientation="Horizontal" 
+                                                    Spacing="5">
                                             <TextBlock Text="{Binding Artist}" Classes="ExtraInfo" />
                                             <TextBlock Text="•" Classes="ExtraInfo" />
-                                            <TextBlock
-                                                Text="{Binding Views}"
-                                                Classes="ExtraInfo" />
+                                            <TextBlock Text="{Binding Views}" Classes="ExtraInfo" />
                                             <TextBlock Text="•" Classes="ExtraInfo" />
-                                            <TextBlock
-                                                Text="{Binding VideoDuration}"
-                                                Classes="ExtraInfo" />
+                                            <TextBlock Text="{Binding VideoDuration}" Classes="ExtraInfo" />
                                         </StackPanel>
                                     </Grid>
-                                    <Grid Grid.Column="2" Width="40" Height="40" Margin="0 0 20 0">
-                                        <Button
-                                            Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
-                                            CommandParameter="{Binding}"
-                                            IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.NotDownloaded}}"
-                                            Background="Transparent"
-                                            Width="40" Height="40"
-                                            Padding="5"
-                                            CornerRadius="20">
+                                    
+                                    <!-- Action Buttons -->
+                                    <Grid Grid.Column="2" 
+                                          Width="40" 
+                                          Height="40" 
+                                          Margin="0 0 20 0">
+                                        <!-- Download Button -->
+                                        <Button Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).DownloadSongCommand}"
+                                                CommandParameter="{Binding}"
+                                                IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.NotDownloaded}}"
+                                                Background="Transparent"
+                                                Width="40" 
+                                                Height="40"
+                                                Padding="5"
+                                                CornerRadius="20">
                                             <Svg Path="avares://SoundHavenClient/Assets/Icons/download.svg"
                                                  Stretch="Uniform" />
                                         </Button>
+                                        
+                                        <!-- Download Progress -->
                                         <ProgressBar Classes="circular"
                                                      IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloading}}"
                                                      Value="{Binding DownloadProgress}"
                                                      ShowProgressText="True"
                                                      Foreground="White"
-                                                     Width="30" Height="30" />
-                                        <Button
-                                            IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
-                                            Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).OpenFolderCommand}"
-                                            CommandParameter="{Binding}"
-                                            Background="Transparent"
-                                            Width="40" Height="40"
-                                            Padding="5"
-                                            CornerRadius="20">
+                                                     Width="30" 
+                                                     Height="30" />
+                                        
+                                        <!-- Open Folder Button -->
+                                        <Button IsVisible="{Binding CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
+                                                Command="{Binding $parent[UserControl].((vm:SearchViewModel)DataContext).OpenFolderCommand}"
+                                                CommandParameter="{Binding}"
+                                                Background="Transparent"
+                                                Width="40" 
+                                                Height="40"
+                                                Padding="5"
+                                                CornerRadius="20">
                                             <Svg Path="avares://SoundHavenClient/Assets/Icons/folder.svg"
                                                  Stretch="Uniform" />
                                         </Button>
@@ -166,7 +177,47 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </ScrollViewer>
+
+                <!-- Song Loading Overlay (covers only the results area) -->
+                <Border IsVisible="{Binding IsLoading}"
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Stretch">
+                    <StackPanel VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Spacing="20">
+                        <ProgressBar Classes="circular" 
+                                     IsIndeterminate="True" 
+                                     Height="100" 
+                                     Width="100"
+                                     Foreground="{StaticResource PrimaryColor}" />
+                        <TextBlock Text="{Binding LoadingMessage}"
+                                   Classes="Headers"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
             </Grid>
         </Grid>
+
+        <!-- MPV Loading Overlay (covers the entire window) -->
+        <Border Grid.RowSpan="2"
+                IsVisible="{Binding IsMpvLoading}"
+                Background="#80000000"
+                VerticalAlignment="Stretch"
+                HorizontalAlignment="Stretch">
+            <StackPanel VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Spacing="20">
+                <ProgressBar Classes="circular" 
+                             IsIndeterminate="True" 
+                             Height="100" 
+                             Width="100"
+                             Foreground="{StaticResource PrimaryColor}" />
+                <TextBlock Text="{Binding LoadingMessage}"
+                           Classes="Headers"
+                           Foreground="White"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

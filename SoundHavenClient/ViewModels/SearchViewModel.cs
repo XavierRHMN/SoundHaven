@@ -22,7 +22,9 @@ namespace SoundHaven.ViewModels
         private bool _isLoading;
         private AudioService _audioService;
         private PlaybackViewModel _playbackViewModel;
+        private bool _isMpvInitialized;
 
+        
         public string SearchQuery
         {
             get => _searchQuery;
@@ -60,6 +62,13 @@ namespace SoundHaven.ViewModels
                 }
             }
         }
+        
+        private bool _isMpvLoading;
+        public bool IsMpvLoading
+        {
+            get => _isMpvLoading;
+            set => SetProperty(ref _isMpvLoading, value);
+        }
 
 
         public RelayCommand SearchCommand { get; }
@@ -79,12 +88,37 @@ namespace SoundHaven.ViewModels
             
             SearchResults = new ObservableCollection<Song>();
 
+            Task.Run(InitializeMpvAsync);
             SearchCommand = new RelayCommand(ExecuteSearch);
             PlaySongCommand = new RelayCommand<Song>(ExecutePlaySong);
             DownloadSongCommand = new RelayCommand<Song>(ExecuteDownloadSong);
             OpenFolderCommand = new RelayCommand<Song>(ExecuteOpenFolder);
         }
 
+        public async Task InitializeMpvAsync()
+        {
+            if (_isMpvInitialized) return;
+
+            IsMpvLoading = true;
+            LoadingMessage = "Initializing MPV...";
+
+            try
+            {
+                await _mpvDownloader.DownloadAndUpdateMpvAsync();
+                _isMpvInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error initializing MPV: {ex.Message}");
+                // Handle the error appropriately, perhaps show a message to the user
+            }
+            finally
+            {
+                IsMpvLoading = false;
+                LoadingMessage = string.Empty;
+            }
+        }
+        
         private async void ExecuteSearch()
         {
             if (string.IsNullOrWhiteSpace(SearchQuery)) return;
@@ -94,9 +128,6 @@ namespace SoundHaven.ViewModels
 
             try
             {
-                LoadingMessage = "Downloading and Extracting MPV...";
-                await _mpvDownloader.DownloadAndUpdateMpvAsync();
-
                 LoadingMessage = "Loading songs...";
                 var results = await _youtubeSearchService.SearchVideos(SearchQuery);
                 foreach (var result in results)
