@@ -128,7 +128,7 @@ namespace SoundHaven.Services
         public async Task StartAsync(string source, bool isYouTubeVideo = false, TimeSpan startingPosition = default)
         {
             // Do not reset position variables
-            Stop(false);
+            Stop();
             
             _isYouTubeStream = isYouTubeVideo;
             _startTime = startingPosition;
@@ -251,7 +251,7 @@ namespace SoundHaven.Services
             SendMpvCommand("set_property", "volume", mpvVolume);
         }
         
-        public void Stop(bool resetPosition = true)
+        public void Stop()
         {
             _positionLogTimer?.Dispose();
             _bufferingCancellationTokenSource?.Cancel();
@@ -264,25 +264,15 @@ namespace SoundHaven.Services
             _bufferedWaveProvider = null;
             _volumeProvider = null;
             _isYouTubeStream = false;
-            
-            if (resetPosition)
-            {
-                _currentYoutubeTime = TimeSpan.Zero;
-                _startTime = TimeSpan.Zero;
-                _totalDuration = TimeSpan.Zero;
-                OnPropertyChanged(nameof(CurrentYoutubePosition));
-            }
 
+            OnPropertyChanged(nameof(CurrentYoutubePosition));
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
-            if (IsPaused)
-            {
-                return;
-            }
-
+            if (IsPaused) return;
+            
             if (_audioFileReader != null 
                 && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds 
                 || _bufferedWaveProvider != null)
