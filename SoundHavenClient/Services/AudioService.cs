@@ -26,7 +26,6 @@ namespace SoundHaven.Services
         private BufferedWaveProvider _bufferedWaveProvider;
         private CancellationTokenSource _bufferingCancellationTokenSource;
         private TimeSpan _currentYoutubeTime;
-        private bool _isBuffering;
         private bool _isPaused;
         private bool _isTrackEnded;
 
@@ -257,7 +256,6 @@ namespace SoundHaven.Services
         
         public void Stop(bool resetPosition = true)
         {
-            _isBuffering = false;
             _positionLogTimer?.Dispose();
             _bufferingCancellationTokenSource?.Cancel();
 
@@ -292,7 +290,7 @@ namespace SoundHaven.Services
             }
 
             if (_audioFileReader != null && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds ||
-                _bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0 && !_isBuffering)
+                _bufferedWaveProvider != null && _bufferedWaveProvider.BufferedBytes == 0)
             {
                 _isTrackEnded = true; // Set the flag
                 TrackEnded?.Invoke(this, EventArgs.Empty);
@@ -322,7 +320,6 @@ namespace SoundHaven.Services
 
                 InitializeAudio(_bufferedWaveProvider);
 
-                _isBuffering = true;
                 _bufferingCancellationTokenSource = new CancellationTokenSource();
 
                 var videoDetails = await _youtubeClient.Videos.GetAsync(videoId);
