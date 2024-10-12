@@ -22,8 +22,6 @@ namespace SoundHaven.ViewModels
         private bool _isLoading;
         private AudioService _audioService;
         private PlaybackViewModel _playbackViewModel;
-        private bool _isMpvInitialized;
-
         
         public string SearchQuery
         {
@@ -103,15 +101,12 @@ namespace SoundHaven.ViewModels
 
         private async Task InitializeMpvAsync()
         {
-            if (_isMpvInitialized) return;
-
             IsMpvLoading = true;
             LoadingMessage = "Initializing MPV...";
 
             try
             {
                 await _mpvDownloader.DownloadAndUpdateMpvAsync();
-                _isMpvInitialized = true;
             }
             catch (Exception ex)
             {
