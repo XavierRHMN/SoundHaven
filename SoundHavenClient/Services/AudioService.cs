@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text.RegularExpressions;
+using TagLib.Matroska;
 
 namespace SoundHaven.Services
 {
@@ -178,12 +179,20 @@ namespace SoundHaven.Services
                 _startTime = position;
                 _currentYoutubeTime = position;
 
+                if (IsPaused)
+                {
+                    _currentPauseStartTime = DateTime.Now;
+                }
+                else
+                {
+                    _currentPauseStartTime = null;
+                }
+                
                 // Send seek command to MPV
                 SendMpvCommand("set_property", "time-pos", position.TotalSeconds);
 
                 // Reset playback timing
                 _playbackStartTime = DateTime.Now;
-                _currentPauseStartTime = null;
                 _totalPauseTime = TimeSpan.Zero;
             }
         }
@@ -275,7 +284,7 @@ namespace SoundHaven.Services
             
             if (_audioFileReader != null 
                 && _audioFileReader.CurrentTime.TotalSeconds + 5 >= _audioFileReader.TotalTime.TotalSeconds 
-                || _bufferedWaveProvider != null)
+                || _bufferedWaveProvider != null || _currentYoutubeTime >= TotalDuration)
             {
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
@@ -364,7 +373,6 @@ namespace SoundHaven.Services
                 }
             });
         }
-    
         
         private void StartLocalFile(string filePath)
         {
@@ -411,19 +419,9 @@ namespace SoundHaven.Services
                 TimeSpan totalElapsedPlaybackTime = DateTime.Now - _playbackStartTime - currentTotalPauseTime;
                 _currentYoutubeTime = _startTime + totalElapsedPlaybackTime;
 
-                // Ensure _currentYoutubeTime doesn't exceed TotalDuration
-                if (_currentYoutubeTime > TotalDuration)
-                {
-                    _currentYoutubeTime = TotalDuration;
-                }
+                if (_currentYoutubeTime > TotalDuration) Stop();
 
                 Console.WriteLine($"Current YouTube Time: {_currentYoutubeTime}");
-
-                if (_currentYoutubeTime >= TotalDuration)
-                {
-                    Stop();
-                    TrackEnded?.Invoke(this, EventArgs.Empty);
-                }
             }
             OnPropertyChanged(nameof(CurrentYoutubePosition));
         }       
