@@ -403,7 +403,7 @@ namespace SoundHaven.Services
                         }, cancellationToken);
                     }
 
-                    await Task.Delay(1000, cancellationToken); // Check process state every second
+                    await Task.Delay(100, cancellationToken); // Check process state every second
                 }
                 catch (OperationCanceledException)
                 {
