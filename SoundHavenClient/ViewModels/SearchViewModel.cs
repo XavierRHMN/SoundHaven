@@ -158,13 +158,12 @@ namespace SoundHaven.ViewModels
             {
                 IsScrollViewerHittestable = false;
                 bool isYouTubeVideo = song.IsYouTubeVideo;
-                string? source = isYouTubeVideo ? CleanVideoId(song.VideoId) : song.FilePath;
+                string? source = isYouTubeVideo ? song.VideoId : song.FilePath;
                 
-                await _audioService.StartAsync(source, isYouTubeVideo);
                 _playbackViewModel.CurrentSong = song;
                 _playbackViewModel.CurrentPlaylist = new Playlist();
                 _playbackViewModel.CurrentPlaylist.Name = "Streaming from YouTube";
-                await _playbackViewModel.AddToUpNext(song); // Add this line
+                await _playbackViewModel.AddToUpNext(song); 
                 await _playbackViewModel.PlayFromBeginning(song);
             }
             catch (Exception ex)
@@ -198,7 +197,8 @@ namespace SoundHaven.ViewModels
                     song.DownloadProgress = p * 100; // Convert to percentage
                 });
 
-                var downloadedSong = await _youTubeDownloadService.DownloadAudioAsync(song.VideoId, progress);
+                string cleanVideoId = _youTubeDownloadService.CleanVideoId(song.VideoId);
+                var downloadedSong = await _youTubeDownloadService.DownloadAudioAsync(cleanVideoId, progress);
                 Console.WriteLine($"Song downloaded: {downloadedSong.Title} by {downloadedSong.Artist}");
                 Console.WriteLine($"File path: {downloadedSong.FilePath}");
 
@@ -207,17 +207,13 @@ namespace SoundHaven.ViewModels
                 song.Title = downloadedSong.Title;
                 song.Artist = downloadedSong.Artist;
                 song.CurrentDownloadState = DownloadState.Downloaded;
-                // ... update other properties as needed
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error downloading song: {ex.Message}");
                 song.CurrentDownloadState = DownloadState.NotDownloaded;
             }
-            finally
-            {
-                song.DownloadProgress = 0;
-            }
+            song.DownloadProgress = 0;
         }
 
         private void ExecuteOpenFolder(Song song)

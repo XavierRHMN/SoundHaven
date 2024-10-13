@@ -200,26 +200,15 @@ namespace SoundHaven.ViewModels
 
         public async Task PlayFromBeginning(Song song)
         {
-            if (song == null)
-            {
-                throw new ArgumentException("Invalid song.");
-            }
-
-            bool isYouTubeVideo = !string.IsNullOrEmpty(song.VideoId);
+            if (song == null) throw new ArgumentException("Invalid song.");
+            
+            bool isYouTubeVideo = song.IsYouTubeVideo;
             string? source = isYouTubeVideo ? song.VideoId : song.FilePath;
 
-            if (string.IsNullOrEmpty(source))
-            {
-                throw new ArgumentException("Missing file path/YouTube ID.");
-            }
+            if (string.IsNullOrEmpty(source)) throw new ArgumentException("Missing file path/YouTube ID.");
 
-            if (isYouTubeVideo)
-            {
-                source = _youTubeDownloadService.CleanVideoId(source);
-            }
-
-            await _audioService.StartAsync(source, isYouTubeVideo);
             CurrentSong = song;
+            await _audioService.StartAsync(source, isYouTubeVideo);
         }
 
         public async Task AddToUpNext(Song song)
@@ -228,13 +217,7 @@ namespace SoundHaven.ViewModels
             {
                 CurrentPlaylist = new Playlist { Name = "Streaming from YouTube", Songs = new ObservableCollection<Song>() };
             }
-
-            if (!string.IsNullOrEmpty(song.VideoId))
-            {
-                // Clean the video ID
-                song.VideoId = _youTubeDownloadService.CleanVideoId(song.VideoId);
-            }
-
+            
             if (!CurrentPlaylist.Songs.Contains(song))
             {
                 CurrentPlaylist.Songs.Add(song);
