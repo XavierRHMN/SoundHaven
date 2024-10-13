@@ -236,7 +236,8 @@ namespace SoundHaven.Services
             {
                 using (var client = new NamedPipeClientStream(".", "mpvsocket", PipeDirection.InOut))
                 {
-                    client.Connect(1000); // Wait up to 1 second
+                    if (commandName != "pause") client.Connect(1000); 
+
                     using (var writer = new StreamWriter(client))
                     {
                         var commandObject = new { command = new object[] { commandName }.Concat(args).ToArray() };
