@@ -36,7 +36,7 @@ namespace SoundHaven.ViewModels
         public RepeatViewModel RepeatViewModel { get; set; }
         public SearchViewModel SearchViewModel { get; set; }
         public IYouTubeDownloadService YouTubeDownloadService { get; set; }
-        public IYoutubeSearchService YoutubeSearchService { get; set; }
+        public IYouTubeSearchService YoutubeSearchService { get; set; }
 
         public MainWindowViewModel()
         {
@@ -56,7 +56,7 @@ namespace SoundHaven.ViewModels
             // Services
             AudioService = new AudioService();
             YouTubeDownloadService = new YouTubeDownloadService();
-            YoutubeSearchService = new YoutubeSearchService(youtubeLoggerFactory, memoryCache);
+            YoutubeSearchService = new YouTubeSearchService();
 
             // Stores
             PlaylistStore = new PlaylistStore(AppDatabase);

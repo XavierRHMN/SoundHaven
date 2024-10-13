@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Avalonia.Threading;
+using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -8,13 +9,14 @@ using SoundHaven.Commands;
 using SoundHaven.Models;
 using SoundHaven.Services;
 using SoundHaven.Helpers;
+using YoutubeExplode.Videos;
 
 namespace SoundHaven.ViewModels
 {
     public class SearchViewModel : ViewModelBase
     {
         private readonly MpvDownloader _mpvDownloader;
-        private readonly IYoutubeSearchService _youtubeSearchService;
+        private readonly IYouTubeSearchService _youtubeSearchService;
         private readonly IYouTubeDownloadService _youTubeDownloadService;
         private readonly IOpenFileDialogService _openFileDialogService;
         private string _searchQuery;
@@ -80,7 +82,7 @@ namespace SoundHaven.ViewModels
         public RelayCommand<Song> DownloadSongCommand { get; }
         public RelayCommand<Song> OpenFolderCommand { get; }
 
-        public SearchViewModel(IYoutubeSearchService youtubeSearchService, IYouTubeDownloadService youTubeDownloadService,
+        public SearchViewModel(IYouTubeSearchService youtubeSearchService, IYouTubeDownloadService youTubeDownloadService,
                                IOpenFileDialogService openFileDialogService, AudioService audioService, PlaybackViewModel playbackViewModel, MpvDownloader mpvDownloader)
         {
             _youtubeSearchService = youtubeSearchService;
@@ -126,19 +128,18 @@ namespace SoundHaven.ViewModels
             try
             {
                 LoadingMessage = "Loading songs...";
-                var results = await _youtubeSearchService.SearchVideos(SearchQuery);
+                var results = await _youtubeSearchService.SearchVideosAsync(SearchQuery, 15);
                 foreach (var result in results)
                 {
                     var song = new Song
                     {
                         Title = result.Title,
-                        Artist = result.ChannelTitle,
+                        Artist = result.Author,
                         VideoId = result.VideoId,
                         ThumbnailUrl = result.ThumbnailUrl,
-                        ChannelTitle = result.ChannelTitle,
-                        Views = result.ViewCount,
-                        VideoDuration = result.Duration,
-                        Year = result.Year
+                        ChannelTitle = result.Author,
+                        VideoDuration = FormatDurationToMinutesSeconds(result.Duration),
+                        Views = FormatViewCount(result.ViewCount)
                     };
                     await song.LoadYouTubeThumbnail();
                     SearchResults.Add(song);
@@ -150,6 +151,31 @@ namespace SoundHaven.ViewModels
             }
             IsLoading = false;
             LoadingMessage = string.Empty; 
+        }
+        
+        private string FormatDurationToMinutesSeconds(TimeSpan? duration)
+        {
+            if (!duration.HasValue)
+                return "0:00";
+
+            int hours = duration.Value.Hours;
+            int minutes = duration.Value.Minutes;
+            int seconds = duration.Value.Seconds;
+
+            if (hours > 0)
+                return $"{hours}:{minutes:D2}:{seconds:D2}";
+            else
+                return $"{minutes}:{seconds:D2}";
+        }
+        
+        private string FormatViewCount(long viewCount)
+        {
+            if (viewCount < 1000)
+                return $"{viewCount} views";
+            else if (viewCount < 1_000_000)
+                return $"{viewCount / 1000.0:F1}K views".Replace(".0K", "K");
+            else
+                return $"{viewCount / 1_000_000.0:F1}M views".Replace(".0M", "M");
         }
 
         private async void ExecutePlaySong(Song song)
@@ -172,17 +198,6 @@ namespace SoundHaven.ViewModels
             }
             
             IsScrollViewerHittestable = true;
-        }
-
-        private string CleanVideoId(string videoId)
-        {
-            // Remove any parameters after '&'
-            int ampersandIndex = videoId.IndexOf('&');
-            if (ampersandIndex != -1)
-            {
-                videoId = videoId.Substring(0, ampersandIndex);
-            }
-            return videoId;
         }
 
         private async void ExecuteDownloadSong(Song song)
