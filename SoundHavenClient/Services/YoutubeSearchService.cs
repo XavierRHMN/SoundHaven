@@ -36,7 +36,8 @@ namespace SoundHaven.Services
                     Author = video.Author.ChannelTitle,
                     Duration = video.Duration,
                     ThumbnailUrl = video.Thumbnails.OrderByDescending(t => t.Resolution.Area).FirstOrDefault()?.Url,
-                    ViewCount = videoDetails.Engagement.ViewCount
+                    ViewCount = videoDetails.Engagement.ViewCount,
+                    Year = videoDetails.UploadDate.Year
                 };
             });
 
@@ -53,5 +54,6 @@ namespace SoundHaven.Services
         public TimeSpan? Duration { get; set; }
         public string ThumbnailUrl { get; set; }
         public long ViewCount { get; set; }
+        public int Year { get; set; }
     }
 }
