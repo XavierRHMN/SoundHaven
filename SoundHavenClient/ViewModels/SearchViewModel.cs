@@ -9,6 +9,7 @@ using SoundHaven.Commands;
 using SoundHaven.Models;
 using SoundHaven.Services;
 using SoundHaven.Helpers;
+using System.Collections.Generic;
 using YoutubeExplode.Videos;
 
 namespace SoundHaven.ViewModels
@@ -129,28 +130,43 @@ namespace SoundHaven.ViewModels
             {
                 LoadingMessage = "Loading songs...";
                 var results = await _youtubeSearchService.SearchVideosAsync(SearchQuery, 15);
-                foreach (var result in results)
-                {
-                    var song = new Song
-                    {
-                        Title = result.Title,
-                        Artist = result.Author,
-                        VideoId = result.VideoId,
-                        ThumbnailUrl = result.ThumbnailUrl,
-                        ChannelTitle = result.Author,
-                        VideoDuration = FormatDurationToMinutesSeconds(result.Duration),
-                        Views = FormatViewCount(result.ViewCount)
-                    };
-                    await song.LoadYouTubeThumbnail();
-                    SearchResults.Add(song);
-                }
+                
+                IsLoading = false;
+                LoadingMessage = string.Empty;
+
+                await AddResultsGradually(results);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error during search: {ex.Message}");
+                IsLoading = false;
+                LoadingMessage = string.Empty;
             }
-            IsLoading = false;
-            LoadingMessage = string.Empty; 
+        }
+
+        private async Task AddResultsGradually(IEnumerable<VideoSearchResult> results)
+        {
+            foreach (var result in results)
+            {
+                var song = new Song
+                {
+                    Title = result.Title,
+                    Artist = result.Author,
+                    VideoId = result.VideoId,
+                    ThumbnailUrl = result.ThumbnailUrl,
+                    ChannelTitle = result.Author,
+                    VideoDuration = FormatDurationToMinutesSeconds(result.Duration),
+                    Views = FormatViewCount(result.ViewCount),
+                    Year = result.Year
+                };
+
+                await song.LoadYouTubeThumbnail();
+
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    SearchResults.Add(song);
+                });
+            }
         }
         
         private string FormatDurationToMinutesSeconds(TimeSpan? duration)
