@@ -204,6 +204,7 @@ namespace SoundHaven.ViewModels
             
             bool isYouTubeVideo = song.IsYouTubeVideo;
             string? source = isYouTubeVideo ? song.VideoId : song.FilePath;
+            Console.WriteLine(source);
 
             if (string.IsNullOrEmpty(source)) throw new ArgumentException("Missing file path/YouTube ID.");
 

@@ -422,7 +422,7 @@ namespace SoundHaven.Services
 
                 if (_currentYoutubeTime > TotalDuration) Stop();
 
-                Console.WriteLine($"Current YouTube Time: {_currentYoutubeTime}");
+                Debug.WriteLine($"Current YouTube Time: {_currentYoutubeTime}");
             }
             OnPropertyChanged(nameof(CurrentYoutubePosition));
         }       
