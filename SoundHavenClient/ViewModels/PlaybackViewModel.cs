@@ -68,6 +68,13 @@ namespace SoundHaven.ViewModels
             get => _currentPlaylist;
             set => SetProperty(ref _currentPlaylist, value);
         }
+        
+        private bool _canPlaybackControl;
+        public bool CanPlaybackControl
+        {
+            get => _canPlaybackControl;
+            set => SetProperty(ref _canPlaybackControl, value);
+        }
 
         public RelayCommand PlayCommand { get; set; }
         public RelayCommand PauseCommand { get; set; }
@@ -89,14 +96,18 @@ namespace SoundHaven.ViewModels
         {
             PlayCommand = new RelayCommand(Play, CanPlay);
             PauseCommand = new RelayCommand(Pause, CanPause);
-            NextCommand = new AsyncRelayCommand(NextTrack);
-            PreviousCommand = new AsyncRelayCommand(PreviousTrack);
+            NextCommand = new AsyncRelayCommand(NextTrack, CanNext);
+            PreviousCommand = new AsyncRelayCommand(PreviousTrack, CanPrevious);
         }
 
-        private bool CanPlay() => CurrentSong != null && !IsPlaying;
+        private bool CanPlay() => CurrentSongExists && !IsPlaying && CanPlaybackControl;
 
-        private bool CanPause() => CurrentSong != null && IsPlaying;
+        private bool CanPause() => CurrentSongExists && IsPlaying && CanPlaybackControl;
 
+        private bool CanNext() => CanPlaybackControl;
+        
+        private bool CanPrevious() =>  CanPlaybackControl;
+        
         public async void Play()
         {
             if (CurrentSong != null)
@@ -227,12 +238,6 @@ namespace SoundHaven.ViewModels
             {
                 CurrentPlaylist.Songs.Add(song);
                 OnPropertyChanged(nameof(CurrentPlaylist));
-
-                // If this is the first song added and no song is currently playing, start playing it
-                if (CurrentPlaylist.Songs.Count == 1 && CurrentSong == null)
-                {
-                    await PlayFromBeginning(song);
-                }
             }
         }
 
@@ -260,6 +265,8 @@ namespace SoundHaven.ViewModels
                 OnPropertyChanged(nameof(IsPlaying));
                 PlayCommand.RaiseCanExecuteChanged();
                 PauseCommand.RaiseCanExecuteChanged();
+                NextCommand.RaiseCanExecuteChanged();
+                PreviousCommand.RaiseCanExecuteChanged();
             });
         }
 

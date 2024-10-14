@@ -25,6 +25,7 @@ namespace SoundHaven.ViewModels
         private bool _isLoading;
         private AudioService _audioService;
         private PlaybackViewModel _playbackViewModel;
+        private SeekSliderViewModel _seekSliderViewModel;
         
         public string SearchQuery
         {
@@ -84,7 +85,8 @@ namespace SoundHaven.ViewModels
         public RelayCommand<Song> OpenFolderCommand { get; }
 
         public SearchViewModel(IYouTubeSearchService youtubeSearchService, IYouTubeDownloadService youTubeDownloadService,
-                               IOpenFileDialogService openFileDialogService, AudioService audioService, PlaybackViewModel playbackViewModel, MpvDownloader mpvDownloader)
+                               IOpenFileDialogService openFileDialogService, AudioService audioService, PlaybackViewModel playbackViewModel, 
+                               MpvDownloader mpvDownloader, SeekSliderViewModel seekSliderViewModel)
         {
             _youtubeSearchService = youtubeSearchService;
             _youTubeDownloadService = youTubeDownloadService;
@@ -92,6 +94,7 @@ namespace SoundHaven.ViewModels
             _audioService = audioService;
             _playbackViewModel = playbackViewModel;
             _mpvDownloader = mpvDownloader;
+            _seekSliderViewModel = seekSliderViewModel;
             
             SearchResults = new ObservableCollection<Song>();
 
@@ -199,6 +202,8 @@ namespace SoundHaven.ViewModels
             try
             {
                 IsScrollViewerHittestable = false;
+                _playbackViewModel.CanPlaybackControl = false;
+                _seekSliderViewModel.CanPlaybackControl = false;
                 _playbackViewModel.CurrentPlaylist = new Playlist();
                 _playbackViewModel.CurrentPlaylist.Name = "Streaming from YouTube";
                 await _playbackViewModel.AddToUpNext(song); 
@@ -210,6 +215,8 @@ namespace SoundHaven.ViewModels
             }
             
             IsScrollViewerHittestable = true;
+            _playbackViewModel.CanPlaybackControl = true;
+            _seekSliderViewModel.CanPlaybackControl = true;
         }
 
         private async void ExecuteDownloadSong(Song song)
