@@ -36,6 +36,13 @@ namespace SoundHaven.ViewModels
                 }
             }
         }
+        
+        private bool _canPlaybackControl;
+        public bool CanPlaybackControl
+        {
+            get => _canPlaybackControl;
+            set => SetProperty(ref _canPlaybackControl, value);
+        }
 
         public SeekSliderViewModel(AudioService audioService, PlaybackViewModel playbackViewModel)
         {
