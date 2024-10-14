@@ -4,6 +4,7 @@ using SoundHaven.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -200,16 +201,19 @@ namespace SoundHaven.ViewModels
 
         public async Task PlayFromBeginning(Song song)
         {
-            if (song == null) throw new ArgumentException("Invalid song.");
-            
-            bool isYouTubeVideo = song.IsYouTubeVideo;
-            string? source = isYouTubeVideo ? song.VideoId : song.FilePath;
-            Console.WriteLine(source);
+            try
+            {
+                bool isYouTubeVideo = song.IsYouTubeVideo;
+                string? source = isYouTubeVideo ? song.VideoId : song.FilePath;
+                Console.WriteLine(source);
 
-            if (string.IsNullOrEmpty(source)) throw new ArgumentException("Missing file path/YouTube ID.");
-
-            CurrentSong = song;
-            await _audioService.StartAsync(source, isYouTubeVideo);
+                CurrentSong = song;
+                await _audioService.StartAsync(source, isYouTubeVideo);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Error playing from beginning: " + ex);
+            }
         }
 
         public async Task AddToUpNext(Song song)
