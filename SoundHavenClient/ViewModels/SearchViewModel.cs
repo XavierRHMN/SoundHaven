@@ -199,10 +199,6 @@ namespace SoundHaven.ViewModels
             try
             {
                 IsScrollViewerHittestable = false;
-                bool isYouTubeVideo = song.IsYouTubeVideo;
-                string? source = isYouTubeVideo ? song.VideoId : song.FilePath;
-                
-                _playbackViewModel.CurrentSong = song;
                 _playbackViewModel.CurrentPlaylist = new Playlist();
                 _playbackViewModel.CurrentPlaylist.Name = "Streaming from YouTube";
                 await _playbackViewModel.AddToUpNext(song); 

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using SoundHaven.Models;
 using System.IO;
+using System.Diagnostics; // Added for Debug.WriteLine
 
 namespace SoundHaven.Services
 {
@@ -54,7 +55,7 @@ namespace SoundHaven.Services
 
             if (_cache.TryGetValue(cacheKey, out IEnumerable<Song> cachedTopTracks))
             {
-                Console.WriteLine("Retrieved Top Tracks from cache.");
+                Debug.WriteLine("Retrieved Top Tracks from cache.");
                 return cachedTopTracks;
             }
 
@@ -82,21 +83,21 @@ namespace SoundHaven.Services
                     song.ArtworkUrl = await GetAlbumImageUrlAsync(track.Artist.Name, track.Name);
 
                     // Log the artwork URL for debugging
-                    Console.WriteLine($"Artwork URL for {song.Title} by {song.Artist}: {song.ArtworkUrl}");
+                    Debug.WriteLine($"Artwork URL for {song.Title} by {song.Artist}: {song.ArtworkUrl}");
 
                     songs.Add(song);
                 }
 
                 // Add to cache
                 _cache.Set(cacheKey, songs, _cacheOptions);
-                Console.WriteLine("Cached Top Tracks.");
+                Debug.WriteLine("Cached Top Tracks.");
 
                 return songs;
             }
             else
             {
                 string? errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error fetching top tracks: {response.StatusCode}, Content: {errorContent}");
+                Debug.WriteLine($"Error fetching top tracks: {response.StatusCode}, Content: {errorContent}");
                 return Enumerable.Empty<Song>();
             }
         }
@@ -119,7 +120,7 @@ namespace SoundHaven.Services
 
             if (_cache.TryGetValue(cacheKey, out IEnumerable<string> cachedTopArtists))
             {
-                Console.WriteLine($"Retrieved Top Artists for '{username}' from cache.");
+                Debug.WriteLine($"Retrieved Top Artists for '{username}' from cache.");
                 return cachedTopArtists;
             }
 
@@ -139,18 +140,18 @@ namespace SoundHaven.Services
                 if (topArtists != null && topArtists.Any())
                 {
                     _cache.Set(cacheKey, topArtists, _cacheOptions);
-                    Console.WriteLine($"Fetched and cached Top Artists for '{username}'.");
+                    Debug.WriteLine($"Fetched and cached Top Artists for '{username}'.");
                     return topArtists;
                 }
                 else
                 {
-                    Console.WriteLine($"No top artists found for user '{username}'.");
+                    Debug.WriteLine($"No top artists found for user '{username}'.");
                 }
             }
             else
             {
                 string? errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error fetching top artists for user {username}: {response.StatusCode}, Content: {errorContent}");
+                Debug.WriteLine($"Error fetching top artists for user {username}: {response.StatusCode}, Content: {errorContent}");
             }
 
             return Enumerable.Empty<string>();
@@ -167,7 +168,7 @@ namespace SoundHaven.Services
         {
             if (string.IsNullOrEmpty(artistName))
             {
-                Console.WriteLine("Artist name is null or empty.");
+                Debug.WriteLine("Artist name is null or empty.");
                 return Enumerable.Empty<Song>();
             }
 
@@ -175,7 +176,7 @@ namespace SoundHaven.Services
 
             if (_cache.TryGetValue(cacheKey, out IEnumerable<Song> cachedTopTracks))
             {
-                Console.WriteLine($"Retrieved Top Tracks for artist '{artistName}' from cache.");
+                Debug.WriteLine($"Retrieved Top Tracks for artist '{artistName}' from cache.");
                 return cachedTopTracks;
             }
 
@@ -201,18 +202,18 @@ namespace SoundHaven.Services
                 if (songs != null && songs.Any())
                 {
                     _cache.Set(cacheKey, songs, _cacheOptions);
-                    Console.WriteLine($"Fetched and cached Top Tracks for artist '{artistName}'.");
+                    Debug.WriteLine($"Fetched and cached Top Tracks for artist '{artistName}'.");
                     return songs;
                 }
                 else
                 {
-                    Console.WriteLine($"No top tracks found for artist '{artistName}'.");
+                    Debug.WriteLine($"No top tracks found for artist '{artistName}'.");
                 }
             }
             else
             {
                 string? errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error fetching top tracks for {artistName}: {response.StatusCode}, Content: {errorContent}");
+                Debug.WriteLine($"Error fetching top tracks for {artistName}: {response.StatusCode}, Content: {errorContent}");
             }
 
             return Enumerable.Empty<Song>();
@@ -261,7 +262,7 @@ namespace SoundHaven.Services
                 }
             }
 
-            Console.WriteLine($"Generated {recommendedTracks.Count} recommended tracks for user '{username}'.");
+            Debug.WriteLine($"Generated {recommendedTracks.Count} recommended tracks for user '{username}'.");
             return recommendedTracks;
         }
 
@@ -283,7 +284,7 @@ namespace SoundHaven.Services
 
             if (_cache.TryGetValue(cacheKey, out IEnumerable<Song> cachedRecentlyPlayed))
             {
-                Console.WriteLine($"Retrieved Recently Played Tracks for '{username}' from cache.");
+                Debug.WriteLine($"Retrieved Recently Played Tracks for '{username}' from cache.");
                 return cachedRecentlyPlayed;
             }
 
@@ -315,14 +316,14 @@ namespace SoundHaven.Services
 
                 // Add to cache
                 _cache.Set(cacheKey, songs, _cacheOptions);
-                Console.WriteLine($"Fetched and cached Recently Played Tracks for '{username}'.");
+                Debug.WriteLine($"Fetched and cached Recently Played Tracks for '{username}'.");
 
                 return songs;
             }
             else
             {
                 string? errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error fetching recent tracks for user {username}: {response.StatusCode}, Content: {errorContent}");
+                Debug.WriteLine($"Error fetching recent tracks for user {username}: {response.StatusCode}, Content: {errorContent}");
                 return Enumerable.Empty<Song>();
             }
         }
@@ -338,7 +339,7 @@ namespace SoundHaven.Services
         {
             if (string.IsNullOrEmpty(artistName))
             {
-                Console.WriteLine("Artist name is null or empty.");
+                Debug.WriteLine("Artist name is null or empty.");
                 return Enumerable.Empty<string>();
             }
 
@@ -346,7 +347,7 @@ namespace SoundHaven.Services
 
             if (_cache.TryGetValue(cacheKey, out IEnumerable<string> cachedSimilarArtists))
             {
-                Console.WriteLine($"Retrieved Similar Artists for '{artistName}' from cache.");
+                Debug.WriteLine($"Retrieved Similar Artists for '{artistName}' from cache.");
                 return cachedSimilarArtists;
             }
 
@@ -366,18 +367,18 @@ namespace SoundHaven.Services
                 if (similarArtists != null && similarArtists.Any())
                 {
                     _cache.Set(cacheKey, similarArtists, _cacheOptions);
-                    Console.WriteLine($"Fetched and cached Similar Artists for '{artistName}'.");
+                    Debug.WriteLine($"Fetched and cached Similar Artists for '{artistName}'.");
                     return similarArtists;
                 }
                 else
                 {
-                    Console.WriteLine($"No similar artists found for '{artistName}'.");
+                    Debug.WriteLine($"No similar artists found for '{artistName}'.");
                 }
             }
             else
             {
                 string? errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error fetching similar artists for {artistName}: {response.StatusCode}, Content: {errorContent}");
+                Debug.WriteLine($"Error fetching similar artists for {artistName}: {response.StatusCode}, Content: {errorContent}");
             }
 
             return Enumerable.Empty<string>();
@@ -394,7 +395,7 @@ namespace SoundHaven.Services
         {
             if (string.IsNullOrEmpty(artistName) || string.IsNullOrEmpty(trackName))
             {
-                Console.WriteLine("Artist name or track name is null or empty.");
+                Debug.WriteLine("Artist name or track name is null or empty.");
                 return "https://example.com/default-artwork.png"; // Replace with your default image URL
             }
 
@@ -402,7 +403,7 @@ namespace SoundHaven.Services
 
             if (_cache.TryGetValue(cacheKey, out string cachedImageUrl))
             {
-                Console.WriteLine($"Retrieved Album Image for '{artistName} - {trackName}' from cache.");
+                Debug.WriteLine($"Retrieved Album Image for '{artistName} - {trackName}' from cache.");
                 return cachedImageUrl;
             }
 
@@ -433,14 +434,14 @@ namespace SoundHaven.Services
 
                 // Add to cache
                 _cache.Set(cacheKey, imageUrl, _cacheOptions);
-                Console.WriteLine($"Cached Album Image for '{artistName} - {trackName}'.");
+                Debug.WriteLine($"Cached Album Image for '{artistName} - {trackName}'.");
 
                 return imageUrl;
             }
             else
             {
                 string? errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error fetching album info for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
+                Debug.WriteLine($"Error fetching album info for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
                 return "https://example.com/default-artwork.png"; // Replace with your default image URL
             }
         }
@@ -452,7 +453,7 @@ namespace SoundHaven.Services
         {
             if (string.IsNullOrEmpty(artistName))
             {
-                Console.WriteLine("Artist name is null or empty.");
+                Debug.WriteLine("Artist name is null or empty.");
                 return "https://example.com/default-artwork.png"; // Replace with your default image URL
             }
 
@@ -460,7 +461,7 @@ namespace SoundHaven.Services
 
             if (_cache.TryGetValue(cacheKey, out string cachedImageUrl))
             {
-                Console.WriteLine($"Retrieved Artist Image for '{artistName}' from cache.");
+                Debug.WriteLine($"Retrieved Artist Image for '{artistName}' from cache.");
                 return cachedImageUrl;
             }
 
@@ -479,7 +480,7 @@ namespace SoundHaven.Services
                 string? encodedArtistName = Uri.EscapeDataString(nameVariant);
                 string? url = $"?method=artist.getinfo&artist={encodedArtistName}&api_key={_apiKey}&format=json";
 
-                Console.WriteLine($"Requesting artist info from URL: {_httpClient.BaseAddress}{url}");
+                Debug.WriteLine($"Requesting artist info from URL: {_httpClient.BaseAddress}{url}");
 
                 var response = await _httpClient.GetAsync(url);
 
@@ -491,7 +492,7 @@ namespace SoundHaven.Services
 
                     if (artistInfoResponse?.Error != 0 || artistInfoResponse?.Artist == null)
                     {
-                        Console.WriteLine($"API Error or no artist data for '{nameVariant}': {artistInfoResponse?.Message}");
+                        Debug.WriteLine($"API Error or no artist data for '{nameVariant}': {artistInfoResponse?.Message}");
                         continue;
                     }
 
@@ -501,29 +502,29 @@ namespace SoundHaven.Services
                         ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "medium")?.Url
                         ?? artistInfoResponse.Artist.Images?.FirstOrDefault(img => img.Size == "small")?.Url;
 
-                    Console.WriteLine($"Artist image URL for '{nameVariant}': {imageUrl}");
+                    Debug.WriteLine($"Artist image URL for '{nameVariant}': {imageUrl}");
 
                     if (!string.IsNullOrEmpty(imageUrl) && !IsPlaceholderImage(imageUrl))
                     {
                         _cache.Set(cacheKey, imageUrl, _cacheOptions);
-                        Console.WriteLine($"Cached Artist Image for '{artistName}'.");
+                        Debug.WriteLine($"Cached Artist Image for '{artistName}'.");
                         return imageUrl;
                     }
                     else
                     {
-                        Console.WriteLine($"No valid image found for '{nameVariant}'. Attempting next variant.");
+                        Debug.WriteLine($"No valid image found for '{nameVariant}'. Attempting next variant.");
                     }
                 }
                 else
                 {
                     string? errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Error fetching artist info for '{nameVariant}': {response.StatusCode}, Content: {errorContent}");
+                    Debug.WriteLine($"Error fetching artist info for '{nameVariant}': {response.StatusCode}, Content: {errorContent}");
                 }
             }
 
             // If no valid image URL found, set to default image
             _cache.Set(cacheKey, "https://example.com/default-artwork.png", _cacheOptions); // Replace with your default image URL
-            Console.WriteLine($"No valid artist image found for '{artistName}'. Set to default image.");
+            Debug.WriteLine($"No valid artist image found for '{artistName}'. Set to default image.");
             return "https://example.com/default-artwork.png"; // Replace with your default image URL
         }
 
@@ -561,7 +562,7 @@ namespace SoundHaven.Services
         {
             if (string.IsNullOrEmpty(artistName) || string.IsNullOrEmpty(trackName))
             {
-                Console.WriteLine("Artist name or track name is null or empty.");
+                Debug.WriteLine("Artist name or track name is null or empty.");
                 return Enumerable.Empty<Song>();
             }
 
@@ -569,7 +570,7 @@ namespace SoundHaven.Services
 
             if (_cache.TryGetValue(cacheKey, out IEnumerable<Song> cachedSimilarTracks))
             {
-                Console.WriteLine($"Retrieved Similar Tracks for '{artistName} - {trackName}' from cache.");
+                Debug.WriteLine($"Retrieved Similar Tracks for '{artistName} - {trackName}' from cache.");
                 return cachedSimilarTracks;
             }
 
@@ -600,14 +601,14 @@ namespace SoundHaven.Services
 
                 // Add to cache
                 _cache.Set(cacheKey, songs, _cacheOptions);
-                Console.WriteLine($"Cached Similar Tracks for '{artistName} - {trackName}'.");
+                Debug.WriteLine($"Cached Similar Tracks for '{artistName} - {trackName}'.");
 
                 return songs;
             }
             else
             {
                 string? errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error fetching similar tracks for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
+                Debug.WriteLine($"Error fetching similar tracks for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
                 return Enumerable.Empty<Song>();
             }
         }
@@ -646,7 +647,7 @@ namespace SoundHaven.Services
             else
             {
                 string? errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error searching for tracks with name {trackName}: {response.StatusCode}, Content: {errorContent}");
+                Debug.WriteLine($"Error searching for tracks with name {trackName}: {response.StatusCode}, Content: {errorContent}");
             }
 
             return null;
@@ -677,7 +678,7 @@ namespace SoundHaven.Services
             else
             {
                 string? errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error fetching track info for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
+                Debug.WriteLine($"Error fetching track info for {trackName} by {artistName}: {response.StatusCode}, Content: {errorContent}");
             }
 
             return null;

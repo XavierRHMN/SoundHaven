@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -50,18 +51,18 @@ namespace SoundHaven.Controls
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"Error decoding bitmap from {url}: {ex.Message}");
+                                Debug.WriteLine($"Error decoding bitmap from {url}: {ex.Message}");
                             }
                         });
                     }
                     else
                     {
-                        Console.WriteLine($"Failed to load image from {url}: {response.StatusCode}");
+                        Debug.WriteLine($"Failed to load image from {url}: {response.StatusCode}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error loading image from {url}: {ex.Message}");
+                    Debug.WriteLine($"Error loading image from {url}: {ex.Message}");
                 }
             }
         }
