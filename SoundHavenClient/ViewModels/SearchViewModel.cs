@@ -202,8 +202,12 @@ namespace SoundHaven.ViewModels
             try
             {
                 IsScrollViewerHittestable = false;
-                _playbackViewModel.CanPlaybackControl = false;
-                _seekSliderViewModel.CanPlaybackControl = false;
+                
+                if (song.IsYouTubeVideo)
+                {
+                    _playbackViewModel.CanPlaybackControl = false;
+                    _seekSliderViewModel.CanInteractSeekSlider = false;
+                }
                 _playbackViewModel.CurrentPlaylist = new Playlist();
                 _playbackViewModel.CurrentPlaylist.Name = "Streaming from YouTube";
                 await _playbackViewModel.AddToUpNext(song); 
@@ -216,7 +220,7 @@ namespace SoundHaven.ViewModels
             
             IsScrollViewerHittestable = true;
             _playbackViewModel.CanPlaybackControl = true;
-            _seekSliderViewModel.CanPlaybackControl = true;
+            _seekSliderViewModel.CanInteractSeekSlider = true;
         }
 
         private async void ExecuteDownloadSong(Song song)

@@ -69,7 +69,7 @@ namespace SoundHaven.ViewModels
             set => SetProperty(ref _currentPlaylist, value);
         }
         
-        private bool _canPlaybackControl;
+        private bool _canPlaybackControl = true;
         public bool CanPlaybackControl
         {
             get => _canPlaybackControl;
@@ -102,11 +102,11 @@ namespace SoundHaven.ViewModels
 
         private bool CanPlay() => CurrentSongExists && !IsPlaying && CanPlaybackControl;
 
-        private bool CanPause() => CurrentSongExists && IsPlaying && CanPlaybackControl;
+        private bool CanPause() => CurrentSongExists && IsPlaying;
 
-        private bool CanNext() => CanPlaybackControl;
-        
-        private bool CanPrevious() =>  CanPlaybackControl;
+        private bool CanNext() => CurrentSongExists && CanPlaybackControl;
+
+        private bool CanPrevious() => CurrentSongExists && CanPlaybackControl;
         
         public async void Play()
         {
