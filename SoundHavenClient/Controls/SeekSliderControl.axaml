@@ -29,7 +29,7 @@
                 Minimum="0"
                 Maximum="{Binding MaximumSeekValue}"
                 Value="{Binding SeekPosition, Mode=TwoWay}"
-                IsHitTestVisible="{Binding CanPlaybackControl}"
+                IsHitTestVisible="{Binding CanInteractSeekSlider}"
                 Margin="10,0" />
 
         <!-- Maximum Duration Display -->

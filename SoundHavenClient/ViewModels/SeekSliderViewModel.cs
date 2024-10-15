@@ -36,12 +36,12 @@ namespace SoundHaven.ViewModels
                 }
             }
         }
-        
-        private bool _canPlaybackControl;
-        public bool CanPlaybackControl
+
+        private bool _canInteractSeekSlider = true;
+        public bool CanInteractSeekSlider
         {
-            get => _canPlaybackControl;
-            set => SetProperty(ref _canPlaybackControl, value);
+            get => _canInteractSeekSlider;
+            set => SetProperty(ref _canInteractSeekSlider, value);
         }
 
         public SeekSliderViewModel(AudioService audioService, PlaybackViewModel playbackViewModel)
