@@ -32,7 +32,7 @@ namespace SoundHaven.ViewModels
                     _hasPausedThisCycle = false;
 
                     // Update text width based on the new song title
-                    TextWidth = ExtractTextWidth(CurrentSong?.Title, "Circular", 18);
+                    TextWidth = ExtractTextWidth(CurrentSong?.Title, "Circular", 19);
 
                     UpdateScrollingState();
                 }
