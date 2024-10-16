@@ -81,6 +81,7 @@ namespace SoundHaven.Services
                 if (SetProperty(ref _audioVolume, value))
                 {
                     _audioVolume = Math.Clamp(value, 0f, 1f);
+                    if (!_isYouTubeStream) _audioVolume *= 0.75f;
                     if (_volumeProvider != null)
                     {
                         _volumeProvider.Volume = (float)Math.Pow(_audioVolume, 2);
@@ -392,6 +393,7 @@ namespace SoundHaven.Services
         {
             _volumeProvider = new VolumeSampleProvider(waveProvider.ToSampleProvider())
             {
+                
                 Volume = (float)Math.Pow(_audioVolume, 2)
             };
 
