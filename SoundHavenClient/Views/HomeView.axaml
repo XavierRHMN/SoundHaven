@@ -80,7 +80,7 @@
         <!-- Main Content Area -->
         <Grid Grid.Row="1">
             <!-- Username Prompt -->
-            <Grid IsVisible="{Binding IsUsernamePromptVisible}"
+            <StackPanel IsVisible="{Binding IsUsernamePromptVisible}"
                   VerticalAlignment="Center"
                   HorizontalAlignment="Center">
                 <Border Background="{StaticResource SurfaceBrush}"
@@ -92,13 +92,18 @@
                                    HorizontalAlignment="Center" />
                         <TextBox Text="{Binding Username}"
                                  Width="250"
-                                 Watermark="Username" />
+                                 Watermark="Username" 
+                                 Margin="0 -25 0 10"/>
                         <Button Content="Submit"
                                 HorizontalAlignment="Center"
-                                Command="{Binding SubmitUsernameAsync}" />
+                                Command="{Binding SubmitUsernameAsync}"
+                                Theme="{StaticResource MaterialOutlineButton}"
+                                Foreground="White"
+                                BorderBrush="White"
+                                CornerRadius="16"/>
                     </StackPanel>
                 </Border>
-            </Grid>
+            </StackPanel>
 
             <!-- Main Content -->
             <ScrollViewer VerticalScrollBarVisibility="Hidden"
