@@ -9,17 +9,16 @@ namespace SoundHaven.ViewModels
 {
     public class HomeViewModel : ViewModelBase
     {
-        private readonly PlaybackViewModel _playbackViewModel;
         private readonly IDataService _dataService;
 
         public ObservableCollection<Song> TopTracks { get; }
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
         public ObservableCollection<Song> RecommendedAlbums { get; }
         
-        private bool _isLoading = true;
+        private bool _isLoading;
         public bool IsLoading
         {
-            get => _isLoading;
+            get => _isLoading && !IsUsernamePromptVisible;
             set => SetProperty(ref _isLoading, value);
         }
         
@@ -37,9 +36,8 @@ namespace SoundHaven.ViewModels
             set => SetProperty(ref _username, value);
         }
 
-        public HomeViewModel(PlaybackViewModel playbackViewModel, IDataService dataService)
+        public HomeViewModel(IDataService dataService)
         {
-            _playbackViewModel = playbackViewModel;
             _dataService = dataService;
 
             TopTracks = new ObservableCollection<Song>();
@@ -58,11 +56,10 @@ namespace SoundHaven.ViewModels
         private async Task  LoadDataAsync()
         {
             IsLoading = true;
-            string username = "NavFan";
             // TODO do something with this
             // var topTracks = await _dataService.GetTopTracksAsync();
-            var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync(username);
-            var recommendedAlbums = await _dataService.GetRecommendedAlbumsAsync(username);
+            var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync(Username);
+            var recommendedAlbums = await _dataService.GetRecommendedAlbumsAsync(Username);
 
             // TopTracks.Clear();
             RecentlyPlayedTracks.Clear();
