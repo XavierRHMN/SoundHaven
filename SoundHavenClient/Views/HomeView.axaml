@@ -63,35 +63,50 @@
         </Style>
     </UserControl.Styles>
 
-    <ScrollViewer VerticalScrollBarVisibility="Hidden"
-                  HorizontalScrollBarVisibility="Disabled"
-                  Background="Transparent">
-        <Grid Background="{StaticResource BackgroundBrush}">
-            <StackPanel>
-                <!-- Welcome Banner (Always visible) -->
-                <Border Background="{StaticResource PlayerColorBrush}"
-                        CornerRadius="0,0,16,16" Padding="16,16">
-                    <TextBlock Text="Welcome Home" HorizontalAlignment="Center"
-                               FontSize="28" FontWeight="Bold" Foreground="Black" />
-                </Border>
 
-                <!-- Content Area (Toggles between loading indicator and main content) -->
-                <Grid Margin="32,24,32,24">
-                    <!-- Loading Indicator -->
-                    <StackPanel IsVisible="{Binding IsLoading}"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Center"
-                                Spacing="20"
-                                Margin=" 0 200 0 0">
-                        <ProgressBar Classes="circular" IsIndeterminate="True" Height="100" Width="100"
-                                     Foreground="{StaticResource PrimaryColor}"/>
-                        <TextBlock Text="Loading songs..."
+<Grid Background="{StaticResource BackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Welcome Banner (Always visible) -->
+        <Border Grid.Row="0" Background="{StaticResource PlayerColorBrush}"
+                CornerRadius="0,0,16,16" Padding="16,16">
+            <TextBlock Text="Welcome Home" HorizontalAlignment="Center"
+                       FontSize="28" FontWeight="Bold" Foreground="Black" />
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <!-- Username Prompt -->
+            <Grid IsVisible="{Binding IsUsernamePromptVisible}"
+                  VerticalAlignment="Center"
+                  HorizontalAlignment="Center">
+                <Border Background="{StaticResource SurfaceBrush}"
+                        CornerRadius="8"
+                        Padding="24">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="Enter your username"
                                    Classes="Headers"
                                    HorizontalAlignment="Center" />
+                        <TextBox Text="{Binding Username}"
+                                 Width="250"
+                                 Watermark="Username" />
+                        <Button Content="Submit"
+                                HorizontalAlignment="Center"
+                                Command="{Binding SubmitUsernameAsync}" />
                     </StackPanel>
+                </Border>
+            </Grid>
 
-                    <!-- Main Content -->
-
+            <!-- Main Content -->
+            <ScrollViewer VerticalScrollBarVisibility="Hidden"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Background="Transparent"
+                          IsVisible="{Binding !IsUsernamePromptVisible}">
+                <Grid Margin="32,24,32,24">
+                    <!-- Content Area -->
                     <ScrollViewer IsVisible="{Binding !IsLoading}"
                                   VerticalScrollBarVisibility="Hidden">
                         <StackPanel Spacing="32">
@@ -157,7 +172,20 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
-            </StackPanel>
+            </ScrollViewer>
+
+            <!-- Loading Indicator -->
+            <Grid IsVisible="{Binding IsLoading}"
+                  VerticalAlignment="Center"
+                  HorizontalAlignment="Center">
+                <StackPanel Spacing="20">
+                    <ProgressBar Classes="circular" IsIndeterminate="True" Height="100" Width="100"
+                                 Foreground="{StaticResource PrimaryColor}"/>
+                    <TextBlock Text="Loading songs..."
+                               Classes="Headers"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+            </Grid>
         </Grid>
-    </ScrollViewer>
+    </Grid>
 </UserControl>
