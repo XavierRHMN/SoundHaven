@@ -84,23 +84,26 @@
                   VerticalAlignment="Center"
                   HorizontalAlignment="Center">
                 <Border Background="{StaticResource SurfaceBrush}"
-                        CornerRadius="8"
-                        Padding="24">
+                        CornerRadius="16"
+                        Padding="24 36">
                     <StackPanel Spacing="16">
-                        <TextBlock Text="Enter your username"
+                        <TextBlock Text="Enter your Last.fm username"
                                    Classes="Headers"
+                                   FontSize="24"
                                    HorizontalAlignment="Center" />
                         <TextBox Text="{Binding Username}"
-                                 Width="250"
+                                 Width="300"
                                  Watermark="Username" 
-                                 Margin="0 -25 0 10"/>
+                                 Margin="0 -25 0 20"
+                                 FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
                         <Button Content="Submit"
                                 HorizontalAlignment="Center"
                                 Command="{Binding SubmitUsernameAsync}"
                                 Theme="{StaticResource MaterialOutlineButton}"
                                 Foreground="White"
                                 BorderBrush="White"
-                                CornerRadius="16"/>
+                                CornerRadius="16"
+                                FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
                     </StackPanel>
                 </Border>
             </StackPanel>
