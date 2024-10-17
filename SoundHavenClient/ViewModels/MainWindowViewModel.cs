@@ -50,7 +50,7 @@ namespace SoundHaven.ViewModels
 
             string lastFmApiKey = apiKeyProvider.GetApiKey("LASTFM_API_KEY.txt");
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var lastFmDataService = new LastFmDataService(lastFmApiKey, memoryCache, loggerFactory);
+            var lastFmDataService = new LastFmDataService(lastFmApiKey, "af0a5b83206911af320ee9d1dc9cb75d", memoryCache, loggerFactory);
             var youtubeLoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 
             // Services
