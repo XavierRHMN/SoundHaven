@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using SoundHaven.Models;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -50,6 +51,7 @@ namespace SoundHaven.Services
                 {
                     Title = track.Name,
                     Artist = track.ArtistName,
+                    ArtworkUrl = track.Images.LastOrDefault()?.ToString() ?? string.Empty,
                     
                 }).ToList();
                 
@@ -80,7 +82,7 @@ namespace SoundHaven.Services
                 {
                     Title = track.Name,
                     Artist = track.ArtistName,
-                    // Map other properties as needed
+                    ArtworkUrl = track.Images.LastOrDefault()?.ToString() ?? string.Empty,
                 }).ToList();
 
                 _cache.Set(cacheKey, songs, _cacheOptions);
@@ -110,7 +112,7 @@ namespace SoundHaven.Services
                 {
                     Title = track.Name,
                     Artist = track.ArtistName,
-                    // Map other properties as needed
+                    ArtworkUrl = track.Images.LastOrDefault()?.ToString() ?? string.Empty,
                 }).ToList();
 
                 _cache.Set(cacheKey, songs, _cacheOptions);
