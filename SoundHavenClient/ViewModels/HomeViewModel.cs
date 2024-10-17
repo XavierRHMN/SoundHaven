@@ -14,12 +14,12 @@ namespace SoundHaven.ViewModels
 
         public ObservableCollection<Song> TopTracks { get; }
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
-        public ObservableCollection<Song> RecommendedTracks { get; }
+        public ObservableCollection<Song> RecommendedAlbums { get; }
         
-        private bool _isLoading;
+        private bool _isLoading = true;
         public bool IsLoading
         {
-            get => _isLoading && !IsUsernamePromptVisible;
+            get => _isLoading;
             set => SetProperty(ref _isLoading, value);
         }
         
@@ -44,7 +44,7 @@ namespace SoundHaven.ViewModels
 
             TopTracks = new ObservableCollection<Song>();
             RecentlyPlayedTracks = new ObservableCollection<Song>();
-            RecommendedTracks = new ObservableCollection<Song>();
+            RecommendedAlbums = new ObservableCollection<Song>();
         }
         
         public async Task SubmitUsernameAsync()
@@ -58,22 +58,22 @@ namespace SoundHaven.ViewModels
         private async Task  LoadDataAsync()
         {
             IsLoading = true;
+            string username = "NavFan";
             // TODO do something with this
             // var topTracks = await _dataService.GetTopTracksAsync();
-            var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync(Username);
-            var recommendedTracks = await _dataService.GetRecommendedTracksAsync(Username);
+            var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync(username);
+            var recommendedAlbums = await _dataService.GetRecommendedAlbumsAsync(username);
 
             // TopTracks.Clear();
             RecentlyPlayedTracks.Clear();
-            RecommendedTracks.Clear();
+            RecommendedAlbums.Clear();
 
             // Shuffle using LINQ's OrderBy with a random key
-            var shuffledTracks = recommendedTracks.OrderBy(track => new Random().Next()).ToList();
+            var shuffledAlbums = recommendedAlbums.OrderBy(track => new Random().Next()).ToList();
 
-            RecommendedTracks.Clear();
-            foreach (var song in shuffledTracks)
+            foreach (var song in shuffledAlbums)
             {
-                RecommendedTracks.Add(song);
+                RecommendedAlbums.Add(song);
             }
 
             foreach (var song in recentlyPlayedTracks.Skip(1))

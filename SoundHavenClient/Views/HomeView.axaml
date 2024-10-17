@@ -112,12 +112,12 @@
                         <StackPanel Spacing="32">
                             <!-- Recommended for You Section -->
                             <StackPanel>
-                                <TextBlock Text="Recommended for You" Classes="Headers" HorizontalAlignment="Center" />
+                                <TextBlock Text="Recommended Albums For You" Classes="Headers" HorizontalAlignment="Center" />
                                 <ScrollViewer Classes="HiddenScrollbar"
                                               HorizontalScrollBarVisibility="Auto"
                                               VerticalScrollBarVisibility="Disabled"
                                               Theme="{StaticResource MaterialModernScrollViewer}">
-                                    <ItemsControl ItemsSource="{Binding RecommendedTracks}">
+                                    <ItemsControl ItemsSource="{Binding RecommendedAlbums}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,20" />
