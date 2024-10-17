@@ -49,8 +49,7 @@ namespace SoundHaven.ViewModels
             var apiKeyProvider = new ApiKeyService();
 
             string lastFmApiKey = apiKeyProvider.GetApiKey("LASTFM_API_KEY.txt");
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var lastFmDataService = new LastFmDataService(lastFmApiKey, "af0a5b83206911af320ee9d1dc9cb75d", memoryCache, loggerFactory);
+            var lastFmDataService = new LastFmDataService(lastFmApiKey, "af0a5b83206911af320ee9d1dc9cb75d", memoryCache);
             var youtubeLoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 
             // Services
@@ -67,7 +66,7 @@ namespace SoundHaven.ViewModels
             ShuffleViewModel = new ShuffleViewModel(PlaybackViewModel);
             PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService(), AppDatabase);
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
-            HomeViewModel = new HomeViewModel(PlaybackViewModel, lastFmDataService);
+            HomeViewModel = new HomeViewModel(lastFmDataService);
             ThemesViewModel = new ThemesViewModel(AppDatabase);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
             SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel, new MpvDownloader(), SeekSliderViewModel);
