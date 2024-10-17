@@ -48,7 +48,6 @@ namespace SoundHaven.ViewModels
             // Shuffle using LINQ's OrderBy with a random key
             var shuffledAlbums = recommendedAlbums.OrderBy(track => new Random().Next()).ToList();
 
-            RecommendedAlbums.Clear();
             foreach (var song in shuffledAlbums)
             {
                 RecommendedAlbums.Add(song);
