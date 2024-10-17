@@ -6,6 +6,7 @@ using SoundHaven.Models;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -15,27 +16,25 @@ namespace SoundHaven.Services
     {
         Task<IEnumerable<Song>> GetTopTracksAsync();
         public Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(string username);
-        Task<IEnumerable<Song>> GetRecommendedTracksAsync(string username);
+        Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(string username);
     }
     
     public class LastFmDataService : IDataService
     {
         private readonly LastfmClient _lastfmClient;
         private readonly IMemoryCache _cache;
-        private readonly ILogger<LastFmDataService> _logger;
         private readonly MemoryCacheEntryOptions _cacheOptions;
 
-        public LastFmDataService(string apiKey, string apiSecret, IMemoryCache cache, ILoggerFactory loggerFactory)
+        public LastFmDataService(string apiKey, string apiSecret, IMemoryCache cache)
         {
             _lastfmClient = new LastfmClient(apiKey, apiSecret);
             _cache = cache;
-            _logger = loggerFactory.CreateLogger<LastFmDataService>();
 
             _cacheOptions = new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(30));
         }
 
-        public async Task<IEnumerable<Song>> GetRecommendedTracksAsync(string username)
+        public async Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(string username)
         {
             string cacheKey = $"recommended_tracks_{username}";
 
@@ -46,22 +45,22 @@ namespace SoundHaven.Services
 
             try
             {
-                var recommendations = await _lastfmClient.User.GetTopAlbums(username, new LastStatsTimeSpan(), 1);
-                var songs = recommendations.Select(track => new Song
+                var topAlbums = await _lastfmClient.User.GetTopAlbums(username, new LastStatsTimeSpan(), 1);
+                var albums = topAlbums.Select(album => new Song
                 {
-                    Title = track.Name,
-                    Artist = track.ArtistName,
-                    ArtworkUrl = track.Images.LastOrDefault()?.ToString() ?? string.Empty,
+                    Title = album.Name,
+                    Artist = album.ArtistName,
+                    ArtworkUrl = album.Images.LastOrDefault()?.ToString() ?? string.Empty,
                     
                 }).ToList();
                 
-                _cache.Set(cacheKey, songs, _cacheOptions);
+                _cache.Set(cacheKey, albums, _cacheOptions);
 
-                return songs;
+                return albums;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching recommended tracks for user {Username}", username);
+                Debug.WriteLine($"Error fetching recommended tracks for user {username}: {ex}");
                 return Enumerable.Empty<Song>();
             }
         }
@@ -91,7 +90,7 @@ namespace SoundHaven.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching top tracks");
+                Debug.WriteLine($"Error fetching top tracks: {ex}");
                 return Enumerable.Empty<Song>();
             }
         }
@@ -121,7 +120,7 @@ namespace SoundHaven.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching recently played tracks for user {Username}", username);
+                Debug.WriteLine($"Error fetching recently played tracks for {username}: {ex}");
                 return Enumerable.Empty<Song>();
             }
         }
