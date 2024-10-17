@@ -25,9 +25,9 @@ namespace SoundHaven.Services
         private readonly IMemoryCache _cache;
         private readonly MemoryCacheEntryOptions _cacheOptions;
 
-        public LastFmDataService(string apiKey, string apiSecret, IMemoryCache cache)
+        public LastFmDataService(string apiKey, IMemoryCache cache)
         {
-            _lastfmClient = new LastfmClient(apiKey, apiSecret);
+            _lastfmClient = new LastfmClient(apiKey, null);
             _cache = cache;
 
             _cacheOptions = new MemoryCacheEntryOptions()
