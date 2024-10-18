@@ -1,5 +1,21 @@
 # SoundHaven PowerShell Menu Script
 
+function Set-ExecutionPolicy-Bypass {
+    try {
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        Write-Host "Execution policy set to Bypass for this session."
+    }
+    catch {
+        Write-Host "Failed to set execution policy. You may need to run this script as an administrator."
+        Write-Host "Error: $_"
+        pause
+        exit
+    }
+}
+
+# Call the function to set execution policy at the start of the script
+Set-ExecutionPolicy-Bypass
+
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $soundHavenPath = Join-Path $scriptPath "SoundHaven"
 $clientPath = Join-Path $soundHavenPath "SoundHavenClient"
