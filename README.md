@@ -3,8 +3,8 @@
 ![SoundHaven](https://github.com/user-attachments/assets/b1f430a6-f878-4fa9-bc14-a1163ec1d5dd)
 
 SoundHaven is a powerful, customizable C# music player application built
-with Avalonia and the MVVM design pattern. It offers streaming YouTube audio directly from source, 
-and downloading said audio in the highest quality for offline use, all in one place. 
+with Avalonia and the MVVM design pattern. It offers streaming YouTube audio directly from source,
+and downloading said audio in the highest quality for offline use, all in one place.
 
 ##  Features
 
@@ -58,14 +58,24 @@ SoundHaven leverages a powerful stack of technologies:
    ```
 6. Set up your Last.fm API key:
    ```
-   echo "YOUR_LASTFM_API_KEY" > ApiKeys/LASTFM_API.txt
-   echo "YOUR_LASTFM_API_SECRET" >> ApiKeys/LASTFM_API.txt
+   echo YOUR_LASTFM_API_KEY > ApiKeys/LASTFM_API.txt
+   echo YOUR_LASTFM_API_SECRET >> ApiKeys/LASTFM_API.txt
    ```
    Replace `YOUR_LASTFM_API_KEY` and `YOUR_LASTFM_API_SECRET` with your actual Last.fm API key and secret respectively.
 7. Run the application:
    ```
    dotnet run
    ```
+
+### Windows Install Script
+
+For a quick installation on Windows:
+
+1. Download [SoundHaven_Install.ps1](https://raw.githubusercontent.com/XavierRHMN/SoundHaven/main/SoundHaven_Install.ps1)
+2. Right-click the downloaded file and select "Run with PowerShell"
+3. Follow the on-screen prompts to complete the installation
+
+The script will clone the repository, set up the necessary directories, and guide you through entering your Last.fm API credentials.
 
 ##  Screenshots
 
