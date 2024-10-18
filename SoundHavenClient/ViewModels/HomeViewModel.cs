@@ -9,7 +9,7 @@ namespace SoundHaven.ViewModels
 {
     public class HomeViewModel : ViewModelBase
     {
-        private readonly IDataService _dataService;
+        private readonly ILastFmDataService _lastFmDataService;
 
         public ObservableCollection<Song> TopTracks { get; }
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
@@ -36,9 +36,9 @@ namespace SoundHaven.ViewModels
             set => SetProperty(ref _username, value);
         }
 
-        public HomeViewModel(IDataService dataService)
+        public HomeViewModel(ILastFmDataService lastFmDataService)
         {
-            _dataService = dataService;
+            _lastFmDataService = lastFmDataService;
 
             TopTracks = new ObservableCollection<Song>();
             RecentlyPlayedTracks = new ObservableCollection<Song>();
@@ -57,9 +57,9 @@ namespace SoundHaven.ViewModels
         {
             IsLoading = true;
             // TODO do something with this
-            // var topTracks = await _dataService.GetTopTracksAsync();
-            var recentlyPlayedTracks = await _dataService.GetRecentlyPlayedTracksAsync(Username);
-            var recommendedAlbums = await _dataService.GetRecommendedAlbumsAsync(Username);
+            // var topTracks = await _lastFmDataService.GetTopTracksAsync();
+            var recentlyPlayedTracks = await _lastFmDataService.GetRecentlyPlayedTracksAsync(Username);
+            var recommendedAlbums = await _lastFmDataService.GetRecommendedAlbumsAsync(Username);
 
             // TopTracks.Clear();
             RecentlyPlayedTracks.Clear();
@@ -73,7 +73,7 @@ namespace SoundHaven.ViewModels
                 RecommendedAlbums.Add(song);
             }
 
-            foreach (var song in recentlyPlayedTracks.Skip(1))
+            foreach (var song in recentlyPlayedTracks)
             {
                 RecentlyPlayedTracks.Add(song);
             }
