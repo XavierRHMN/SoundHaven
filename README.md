@@ -56,7 +56,7 @@ SoundHaven leverages a powerful stack of technologies:
    ```
    mkdir -p ApiKeys
    ```
-6. Set up your Last.fm API key:
+6. Set up your Last.fm API details:
    ```
    echo YOUR_LASTFM_API_KEY > ApiKeys/LASTFM_API.txt
    echo YOUR_LASTFM_API_SECRET >> ApiKeys/LASTFM_API.txt
