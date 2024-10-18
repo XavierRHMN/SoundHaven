@@ -71,7 +71,7 @@ SoundHaven leverages a powerful stack of technologies:
 
 For a quick installation on Windows:
 
-1. Download [SoundHaven_Install.ps1](https://raw.githubusercontent.com/XavierRHMN/SoundHaven/main/SoundHaven_Install.ps1)
+1. Download [SoundHaven_Install.ps1](https://github.com/XavierRHMN/SoundHaven/raw/master/SoundHaven_Install.ps1)
 2. Right-click the downloaded file and select "Run with PowerShell"
 3. Follow the on-screen prompts to complete the installation
 
