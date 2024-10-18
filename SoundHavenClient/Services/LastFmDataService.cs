@@ -21,6 +21,7 @@ namespace SoundHaven.Services
         public Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync();
         Task<IEnumerable<Song>> GetRecommendedAlbumsAsync();
         public Task ScrobbleTrackAsync(string title, string artist, string album);
+        Task<bool> UserExistsAsync(string username, string password);
         public string Username { get; set; }
         public string Password { get; set; }
     }
@@ -53,6 +54,20 @@ namespace SoundHaven.Services
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error scrobbling track {title} by {artist}: {ex}");
+            }
+        }
+        
+        public async Task<bool> UserExistsAsync(string username, string password)
+        {
+            try
+            {
+                var response = await _lastfmClient.Auth.GetSessionTokenAsync(username, password);
+                return response.Success;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error checking user existence: {ex}");
+                return false;
             }
         }
 

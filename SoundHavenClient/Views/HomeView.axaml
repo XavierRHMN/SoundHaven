@@ -85,32 +85,43 @@
                   HorizontalAlignment="Center">
                 <Border Background="{StaticResource SurfaceBrush}"
                         CornerRadius="16"
-                        Padding="24 36">
+                        Padding="24 36"
+                        Margin="0 0 0 20">
                     <StackPanel Spacing="16">
                         <TextBlock Text="Login to Last.fm"
                                    Classes="Headers"
                                    FontSize="24"
-                                   HorizontalAlignment="Center" />
+                                   HorizontalAlignment="Center" 
+                                   Margin="0 0 0 -10"/>
                         <TextBox Text="{Binding Username}"
                                  Width="300"
                                  Watermark="Username" 
-                                 Margin="0 -25 0 20"
                                  FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
                         <TextBox Text="{Binding Password}"
                                  Width="300"
                                  Watermark="Password" 
-                                 Margin="0 -25 0 20"
-                                 FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+                                 FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" 
+                                 Margin="0 0 0 20">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter"
+                                            Command="{Binding SubmitDetailsCommand}" />
+                            </TextBox.KeyBindings>
+                        </TextBox>
                         <Button Content="Enter"
                                 HorizontalAlignment="Center"
-                                Command="{Binding SubmitUsernameAsync}"
+                                Command="{Binding SubmitDetailsCommand}"
                                 Theme="{StaticResource MaterialOutlineButton}"
                                 Foreground="White"
                                 BorderBrush="White"
                                 CornerRadius="16"
-                                FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+                                FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular"/>
                     </StackPanel>
                 </Border>
+                
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="Red"
+                           HorizontalAlignment="Center"
+                           FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular"/>
             </StackPanel>
 
             <!-- Main Content -->
