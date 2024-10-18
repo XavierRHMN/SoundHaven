@@ -1,4 +1,5 @@
-﻿using SoundHaven.Models;
+﻿using SoundHaven.Commands;
+using SoundHaven.Models;
 using SoundHaven.Services;
 using System;
 using System.Collections.ObjectModel;
@@ -41,6 +42,15 @@ namespace SoundHaven.ViewModels
             get => _password;
             set => SetProperty(ref _password, value);
         }
+        
+        private string _errorMessage = string.Empty;
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set => SetProperty(ref _errorMessage, value);
+        }
+
+        public AsyncRelayCommand SubmitDetailsCommand { get; set; }
 
         public HomeViewModel(ILastFmDataService lastFmDataService)
         {
@@ -48,14 +58,33 @@ namespace SoundHaven.ViewModels
 
             RecentlyPlayedTracks = new ObservableCollection<Song>();
             RecommendedAlbums = new ObservableCollection<Song>();
+
+            SubmitDetailsCommand = new AsyncRelayCommand(SubmitDetailsAsync);
         }
         
-        public async Task SubmitUsernameAsync()
+        public async Task SubmitDetailsAsync()
         {
-            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password)) return;
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+            {
+                ErrorMessage = "Username and password are required.";
+                return;
+            }
 
-            IsUsernamePromptVisible = false;
-            await LoadDataAsync();
+            ErrorMessage = string.Empty;
+
+            bool userExists = await _lastFmDataService.UserExistsAsync(Username, Password);
+
+            if (userExists)
+            {
+                IsUsernamePromptVisible = false;
+                _lastFmDataService.Username = Username;
+                _lastFmDataService.Password = Password;
+                await LoadDataAsync();
+            }
+            else
+            {
+                ErrorMessage = "Invalid username or password. Please try again.";
+            }
         }
 
         private async Task  LoadDataAsync()

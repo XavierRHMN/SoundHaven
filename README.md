@@ -58,9 +58,10 @@ SoundHaven leverages a powerful stack of technologies:
    ```
 6. Set up your Last.fm API key:
    ```
-   echo "YOUR_LASTFM_API_KEY" > ApiKeys/LASTFM_API_KEY.txt
+   echo "YOUR_LASTFM_API_KEY" > ApiKeys/LASTFM_API.txt
+   echo "YOUR_LASTFM_API_SECRET" >> ApiKeys/LASTFM_API.txt
    ```
-   Replace `YOUR_LASTFM_API_KEY` with your actual Last.fm API key.
+   Replace `YOUR_LASTFM_API_KEY` and `YOUR_LASTFM_API_SECRET` with your actual Last.fm API key and secret respectively.
 7. Run the application:
    ```
    dotnet run
