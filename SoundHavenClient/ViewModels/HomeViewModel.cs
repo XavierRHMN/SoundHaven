@@ -11,7 +11,6 @@ namespace SoundHaven.ViewModels
     {
         private readonly ILastFmDataService _lastFmDataService;
 
-        public ObservableCollection<Song> TopTracks { get; }
         public ObservableCollection<Song> RecentlyPlayedTracks { get; }
         public ObservableCollection<Song> RecommendedAlbums { get; }
         
@@ -47,7 +46,6 @@ namespace SoundHaven.ViewModels
         {
             _lastFmDataService = lastFmDataService;
 
-            TopTracks = new ObservableCollection<Song>();
             RecentlyPlayedTracks = new ObservableCollection<Song>();
             RecommendedAlbums = new ObservableCollection<Song>();
         }
@@ -70,29 +68,28 @@ namespace SoundHaven.ViewModels
             var recentlyPlayedTracks = await _lastFmDataService.GetRecentlyPlayedTracksAsync();
             var recommendedAlbums = await _lastFmDataService.GetRecommendedAlbumsAsync();
 
-            // TopTracks.Clear();
             RecentlyPlayedTracks.Clear();
             RecommendedAlbums.Clear();
 
             // Shuffle using LINQ's OrderBy with a random key
-            var shuffledAlbums = recommendedAlbums.OrderBy(track => new Random().Next()).ToList();
+            var shuffledAlbums = recommendedAlbums.OrderBy(_ => Guid.NewGuid()).ToList();
 
-            foreach (var song in shuffledAlbums)
-            {
-                RecommendedAlbums.Add(song);
-            }
-
-            foreach (var song in recentlyPlayedTracks)
-            {
-                RecentlyPlayedTracks.Add(song);
-            }
+            await Task.WhenAll(
+                Task.Run(() => {
+                    foreach (var song in shuffledAlbums)
+                    {
+                        RecommendedAlbums.Add(song);
+                    }
+                }),
+                Task.Run(() => {
+                    foreach (var song in recentlyPlayedTracks)
+                    {
+                        RecentlyPlayedTracks.Add(song);
+                    }
+                })
+            );
 
             IsLoading = false;
-
-            // foreach (var song in topTracks)
-            // {
-            //     TopTracks.Add(song);
-            // }
         }
     }
 }
