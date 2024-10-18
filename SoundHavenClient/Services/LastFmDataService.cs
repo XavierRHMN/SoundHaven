@@ -18,9 +18,11 @@ namespace SoundHaven.Services
     public interface ILastFmDataService
     {
         Task<IEnumerable<Song>> GetTopTracksAsync();
-        public Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(string username);
-        Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(string username);
+        public Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync();
+        Task<IEnumerable<Song>> GetRecommendedAlbumsAsync();
         public Task ScrobbleTrackAsync(string title, string artist, string album);
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
     
     public class LastFmLastFmDataService : ILastFmDataService
@@ -28,10 +30,12 @@ namespace SoundHaven.Services
         private readonly LastfmClient _lastfmClient;
         private readonly IMemoryCache _cache;
         private readonly MemoryCacheEntryOptions _cacheOptions;
+        public string Username { get; set; }
+        public string Password { get; set; }
 
-        public LastFmLastFmDataService(string apiKey, IMemoryCache cache)
+        public LastFmLastFmDataService(string apiKey, string apiSecret, IMemoryCache cache)
         {
-            _lastfmClient = new LastfmClient(apiKey, null);
+            _lastfmClient = new LastfmClient(apiKey, apiSecret, new HttpClient());
             _cache = cache;
 
             _cacheOptions = new MemoryCacheEntryOptions()
@@ -40,6 +44,7 @@ namespace SoundHaven.Services
         
         public async Task ScrobbleTrackAsync(string title, string artist, string album)
         {
+            await _lastfmClient.Auth.GetSessionTokenAsync(Username, Password);
             try
             {
                 var scrobble = new Scrobble(artist, album, title, DateTimeOffset.Now);
@@ -51,9 +56,9 @@ namespace SoundHaven.Services
             }
         }
 
-        public async Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(string username)
+        public async Task<IEnumerable<Song>> GetRecommendedAlbumsAsync()
         {
-            string cacheKey = $"recommended_tracks_{username}";
+            string cacheKey = $"recommended_tracks_{Username}";
 
             if (_cache.TryGetValue(cacheKey, out IEnumerable<Song> cachedTracks))
             {
@@ -62,7 +67,7 @@ namespace SoundHaven.Services
 
             try
             {
-                var topAlbums = await _lastfmClient.User.GetTopAlbums(username, new LastStatsTimeSpan(), 1);
+                var topAlbums = await _lastfmClient.User.GetTopAlbums(Username, new LastStatsTimeSpan(), 1);
                 var albums = topAlbums.Select(album => new Song
                 {
                     Title = album.Name,
@@ -77,7 +82,7 @@ namespace SoundHaven.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error fetching recommended tracks for user {username}: {ex}");
+                Debug.WriteLine($"Error fetching recommended tracks for user {Username}: {ex}");
                 return Enumerable.Empty<Song>();
             }
         }
@@ -112,9 +117,9 @@ namespace SoundHaven.Services
             }
         }
 
-        public async Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(string username)
+        public async Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync()
         {
-            string cacheKey = $"recently_played_{username}";
+            string cacheKey = $"recently_played_{Username}";
 
             if (_cache.TryGetValue(cacheKey, out IEnumerable<Song> cachedTracks))
             {
@@ -123,7 +128,7 @@ namespace SoundHaven.Services
 
             try
             {
-                var recentTracks = await _lastfmClient.User.GetRecentScrobbles(username);
+                var recentTracks = await _lastfmClient.User.GetRecentScrobbles(Username);
                 var songs = recentTracks.Select(track => new Song
                 {
                     Title = track.Name,
@@ -137,7 +142,7 @@ namespace SoundHaven.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error fetching recently played tracks for {username}: {ex}");
+                Debug.WriteLine($"Error fetching recently played tracks for {Username}: {ex}");
                 return Enumerable.Empty<Song>();
             }
         }

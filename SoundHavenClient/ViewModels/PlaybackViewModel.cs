@@ -116,7 +116,7 @@ namespace SoundHaven.ViewModels
         {
             try
             { 
-                _lastFmDataService.ScrobbleTrackAsync(CurrentSong.Title!, CurrentSong.Artist!, CurrentSong.ArtworkUrl!);
+                _lastFmDataService.ScrobbleTrackAsync(CurrentSong.Title!, CurrentSong.Artist!, CurrentSong.Album!);
             }
             catch (Exception ex)
             {

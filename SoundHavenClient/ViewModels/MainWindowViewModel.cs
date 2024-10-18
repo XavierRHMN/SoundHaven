@@ -49,7 +49,8 @@ namespace SoundHaven.ViewModels
             var apiKeyProvider = new ApiKeyService();
 
             string lastFmApiKey = apiKeyProvider.GetApiKey("LASTFM_API_KEY.txt");
-            var lastFmDataService = new LastFmLastFmDataService(lastFmApiKey, memoryCache);
+            string lastFmApiSecret = apiKeyProvider.GetApiSecret("LASTFM_API_KEY.txt");
+            var lastFmDataService = new LastFmLastFmDataService(lastFmApiKey, lastFmApiSecret, memoryCache);
 
             // Services
             AudioService = new AudioService();

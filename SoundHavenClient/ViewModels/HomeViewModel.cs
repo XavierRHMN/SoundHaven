@@ -35,6 +35,13 @@ namespace SoundHaven.ViewModels
             get => _username;
             set => SetProperty(ref _username, value);
         }
+        
+        private string _password = string.Empty;
+        public string Password
+        {
+            get => _password;
+            set => SetProperty(ref _password, value);
+        }
 
         public HomeViewModel(ILastFmDataService lastFmDataService)
         {
@@ -47,7 +54,7 @@ namespace SoundHaven.ViewModels
         
         public async Task SubmitUsernameAsync()
         {
-            if (string.IsNullOrWhiteSpace(Username)) return;
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password)) return;
 
             IsUsernamePromptVisible = false;
             await LoadDataAsync();
@@ -58,8 +65,10 @@ namespace SoundHaven.ViewModels
             IsLoading = true;
             // TODO do something with this
             // var topTracks = await _lastFmDataService.GetTopTracksAsync();
-            var recentlyPlayedTracks = await _lastFmDataService.GetRecentlyPlayedTracksAsync(Username);
-            var recommendedAlbums = await _lastFmDataService.GetRecommendedAlbumsAsync(Username);
+            _lastFmDataService.Username = Username;
+            _lastFmDataService.Password = Password;
+            var recentlyPlayedTracks = await _lastFmDataService.GetRecentlyPlayedTracksAsync();
+            var recommendedAlbums = await _lastFmDataService.GetRecommendedAlbumsAsync();
 
             // TopTracks.Clear();
             RecentlyPlayedTracks.Clear();

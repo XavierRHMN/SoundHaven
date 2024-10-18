@@ -87,7 +87,7 @@
                         CornerRadius="16"
                         Padding="24 36">
                     <StackPanel Spacing="16">
-                        <TextBlock Text="Enter your Last.fm username"
+                        <TextBlock Text="Login to Last.fm"
                                    Classes="Headers"
                                    FontSize="24"
                                    HorizontalAlignment="Center" />
@@ -96,7 +96,12 @@
                                  Watermark="Username" 
                                  Margin="0 -25 0 20"
                                  FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
-                        <Button Content="Submit"
+                        <TextBox Text="{Binding Password}"
+                                 Width="300"
+                                 Watermark="Password" 
+                                 Margin="0 -25 0 20"
+                                 FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
+                        <Button Content="Enter"
                                 HorizontalAlignment="Center"
                                 Command="{Binding SubmitUsernameAsync}"
                                 Theme="{StaticResource MaterialOutlineButton}"
