@@ -1,32 +1,32 @@
 ﻿using SoundHaven.Models;
-using System.Collections;
-using System.ComponentModel;
+using SoundHaven.Services;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 
 namespace SoundHaven.ViewModels
 {
     public class PlayerViewModel : ViewModelBase
     {
         private readonly PlaybackViewModel _playbackViewModel;
+
         public ObservableCollection<Song>? UpNextSongs
         {
             get => _playbackViewModel.CurrentPlaylist?.Songs;
         }
-        
+
         public string ActivePlaylistName
         {
             get => _playbackViewModel.CurrentPlaylist?.Name ?? "No Active Playlist";
-        }
+        } 
 
-        private Song _playerViewSong;
-        public Song PlayerViewSong
+        private Song? _playerViewSong;
+        public Song? PlayerViewSong
         {
-            get => _playerViewSong;
+            get => _playbackViewModel.CurrentSong;
             set
             {
                 if (SetProperty(ref _playerViewSong, value))
                 {
-                    // Update the PlaybackViewModel's CurrentSong
                     _playbackViewModel.CurrentSong = value;
                 }
             }
@@ -36,25 +36,20 @@ namespace SoundHaven.ViewModels
         {
             _playbackViewModel = playbackViewModel;
             _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
-            UpdatePlayerViewSong();
         }
 
-        private void PlaybackViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void PlaybackViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(PlaybackViewModel.CurrentSong))
+            switch (e.PropertyName)
             {
-                UpdatePlayerViewSong();
+                case nameof(PlaybackViewModel.CurrentSong):
+                    OnPropertyChanged(nameof(PlayerViewSong));
+                    break;
+                case nameof(PlaybackViewModel.CurrentPlaylist):
+                    OnPropertyChanged(nameof(UpNextSongs));
+                    OnPropertyChanged(nameof(ActivePlaylistName));
+                    break;
             }
-            else if (e.PropertyName == nameof(PlaybackViewModel.CurrentPlaylist))
-            {
-                OnPropertyChanged(nameof(UpNextSongs));
-                OnPropertyChanged(nameof(ActivePlaylistName));
-            }
-        }
-
-        private void UpdatePlayerViewSong()
-        {
-            PlayerViewSong = _playbackViewModel.CurrentSong;
         }
     }
 }

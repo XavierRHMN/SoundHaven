@@ -1,5 +1,7 @@
 ﻿using IF.Lastfm.Core.Api;
 using IF.Lastfm.Core.Api.Enums;
+using IF.Lastfm.Core.Objects;
+using IF.Lastfm.Core.Scrobblers;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using SoundHaven.Models;
@@ -8,30 +10,45 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace SoundHaven.Services
 {
-    public interface IDataService
+    public interface ILastFmDataService
     {
         Task<IEnumerable<Song>> GetTopTracksAsync();
         public Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(string username);
         Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(string username);
+        public Task ScrobbleTrackAsync(string title, string artist, string album);
     }
     
-    public class LastFmDataService : IDataService
+    public class LastFmLastFmDataService : ILastFmDataService
     {
         private readonly LastfmClient _lastfmClient;
         private readonly IMemoryCache _cache;
         private readonly MemoryCacheEntryOptions _cacheOptions;
 
-        public LastFmDataService(string apiKey, IMemoryCache cache)
+        public LastFmLastFmDataService(string apiKey, IMemoryCache cache)
         {
             _lastfmClient = new LastfmClient(apiKey, null);
             _cache = cache;
 
             _cacheOptions = new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromMinutes(30));
+        }
+        
+        public async Task ScrobbleTrackAsync(string title, string artist, string album)
+        {
+            try
+            {
+                var scrobble = new Scrobble(artist, album, title, DateTimeOffset.Now);
+                await _lastfmClient.Scrobbler.ScrobbleAsync(scrobble);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error scrobbling track {title} by {artist}: {ex}");
+            }
         }
 
         public async Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(string username)

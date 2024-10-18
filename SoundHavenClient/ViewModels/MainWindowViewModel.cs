@@ -49,7 +49,7 @@ namespace SoundHaven.ViewModels
             var apiKeyProvider = new ApiKeyService();
 
             string lastFmApiKey = apiKeyProvider.GetApiKey("LASTFM_API_KEY.txt");
-            var lastFmDataService = new LastFmDataService(lastFmApiKey, memoryCache);
+            var lastFmDataService = new LastFmLastFmDataService(lastFmApiKey, memoryCache);
 
             // Services
             AudioService = new AudioService();
@@ -61,7 +61,7 @@ namespace SoundHaven.ViewModels
 
             // ViewModels
             RepeatViewModel = new RepeatViewModel();
-            PlaybackViewModel = new PlaybackViewModel(AudioService, YouTubeDownloadService, RepeatViewModel);
+            PlaybackViewModel = new PlaybackViewModel(AudioService, YouTubeDownloadService, RepeatViewModel, lastFmDataService);
             ShuffleViewModel = new ShuffleViewModel(PlaybackViewModel);
             PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService(), AppDatabase);
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);

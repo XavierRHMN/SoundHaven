@@ -12,6 +12,7 @@ namespace SoundHaven.ViewModels
 {
     public class PlaybackViewModel : ViewModelBase
     {
+        private readonly ILastFmDataService _lastFmDataService;
         private RepeatViewModel _repeatViewModel;
         private readonly IYouTubeDownloadService _youTubeDownloadService;
         public event EventHandler SeekPositionReset;
@@ -53,6 +54,8 @@ namespace SoundHaven.ViewModels
                     SeekPositionReset?.Invoke(this, EventArgs.Empty);
                     
                     if (!_currentSong.IsYouTubeVideo) PlayFromBeginning(value);
+
+                    ScrobbleCurrentSongAsync();
                 }
             }
         }
@@ -81,8 +84,9 @@ namespace SoundHaven.ViewModels
         public AsyncRelayCommand NextCommand { get; set; }
         public AsyncRelayCommand PreviousCommand { get; set; }
 
-        public PlaybackViewModel(AudioService audioService, IYouTubeDownloadService youTubeDownloadService, RepeatViewModel repeatViewModel)
+        public PlaybackViewModel(AudioService audioService, IYouTubeDownloadService youTubeDownloadService, RepeatViewModel repeatViewModel, LastFmLastFmDataService lastFmDataService)
         {
+            _lastFmDataService = lastFmDataService;
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
             _youTubeDownloadService = youTubeDownloadService ?? throw new ArgumentNullException(nameof(youTubeDownloadService));
             _audioService.PlaybackStateChanged += OnPlaybackStateChanged;
@@ -107,6 +111,18 @@ namespace SoundHaven.ViewModels
         private bool CanNext() => CurrentSongExists && CanPlaybackControl;
 
         private bool CanPrevious() => CurrentSongExists && CanPlaybackControl;
+        
+        private void ScrobbleCurrentSongAsync()
+        {
+            try
+            { 
+                _lastFmDataService.ScrobbleTrackAsync(CurrentSong.Title!, CurrentSong.Artist!, CurrentSong.ArtworkUrl!);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error scrobbling track: {ex}");
+            }
+        }
         
         public async void Play()
         {
