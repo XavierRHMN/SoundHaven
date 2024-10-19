@@ -43,19 +43,19 @@
         </Style>
 
         <Style Selector="Button.TitleBarButton">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Width" Value="46" />
-            <Setter Property="Height" Value="30" />
+            <Setter Property="Width" Value="15" />
+            <Setter Property="Height" Value="15" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="100" />
         </Style>
     </Window.Styles>
 
-    <Grid>
+    <Grid Margin="8">
         <Grid.RowDefinitions>
-            <RowDefinition Height="30" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="80" />
         </Grid.RowDefinitions>
@@ -63,12 +63,12 @@
         <!-- Custom Title Bar -->
         <Grid Grid.Row="0" Background="#FF1E1E1E">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="30" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Image Grid.Column="0" Source="/Assets/Icons/SoundHavenClient.png" Margin="5" />
+            <Image Grid.Column="0" Source="/Assets/Icons/SoundHavenClient.ico" Margin="5"/>
             <TextBlock Grid.Column="1" Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
                        VerticalAlignment="Center" Margin="5" Foreground="White" />
 
@@ -77,9 +77,9 @@
                     PointerPressed="OnPointerPressedTitleBar" />
 
             <StackPanel Grid.Column="2" Orientation="Horizontal">
-                <Button Content="🗕" Click="MinimizeButton_Click" Classes="TitleBarButton" />
-                <Button Content="🗗" Click="MaximizeRestoreButton_Click" Classes="TitleBarButton" />
-                <Button Content="🗙" Click="CloseButton_Click" Classes="TitleBarButton" />
+                <Button Click="MaximizeRestoreButton_Click" Classes="TitleBarButton" Margin="0 0 10 0" Background="LawnGreen" />
+                <Button Click="MinimizeButton_Click" Classes="TitleBarButton" Margin="0 0 10 0" Background="Gold"/>
+                <Button Click="CloseButton_Click" Classes="TitleBarButton"  Margin="0 0 15 0" Background="Red"/>
             </StackPanel>
         </Grid>
 
