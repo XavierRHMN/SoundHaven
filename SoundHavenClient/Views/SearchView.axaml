@@ -5,6 +5,7 @@
              xmlns:vm="using:SoundHaven.ViewModels"
              xmlns:models="clr-namespace:SoundHaven.Models"
              xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
+             xmlns:assists="clr-namespace:Material.Styles.Assists;assembly=Material.Styles"
              mc:Ignorable="d" 
              d:DesignWidth="800" 
              d:DesignHeight="450"
@@ -79,8 +80,8 @@
         
         <!-- Search Box and Results -->
         <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,0,0,0">
-            <!-- Search Box -->
-            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="10,0">
+            <!-- Search Box with Toggle Switch -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="10,0">
                 <TextBox Grid.Column="0" 
                          Text="{Binding SearchQuery, Mode=TwoWay}"
                          Watermark="Search for songs...">
@@ -89,11 +90,20 @@
                                     Command="{Binding SearchCommand}" />
                     </TextBox.KeyBindings>
                 </TextBox>
-                <Button Grid.Column="1" 
-                        Content="Search" 
+                <ToggleSwitch Grid.Column="1"
+                              IsChecked="{Binding ToggleSearchResults, Mode=TwoWay}"
+                              Margin="10,0"
+                              VerticalAlignment="Center"
+                              BorderBrush="{DynamicResource PrimaryColor}"
+                              assists:ToggleSwitchAssist.SwitchTrackOffBackground="{DynamicResource PrimaryColor}"
+                              assists:ToggleSwitchAssist.SwitchThumbOffBackground="{DynamicResource PrimaryColor}"
+                              assists:ToggleSwitchAssist.SwitchTrackOnBackground="{DynamicResource PrimaryColor}"
+                              assists:ToggleSwitchAssist.SwitchThumbOnBackground="{DynamicResource PrimaryColor}"/>
+                <Button Grid.Column="2" 
+                        Content="{Binding SearchButtonText}"
                         Command="{Binding SearchCommand}"
                         Margin="10,0,0,0"
-                        Width="90"
+                        Width="150"
                         Height="30"
                         CornerRadius="16"
                         Theme="{StaticResource MaterialOutlineButton}"
