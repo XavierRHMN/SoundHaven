@@ -27,7 +27,7 @@ namespace SoundHaven
                 BindingPlugins.DataValidators.RemoveAt(0);
 
                 _audioService = new AudioService();
-                var mainViewModel = new MainWindowViewModel();
+                var mainViewModel = new MainWindowViewModel(_audioService);
 
                 desktop.MainWindow = new MainWindow
                 {

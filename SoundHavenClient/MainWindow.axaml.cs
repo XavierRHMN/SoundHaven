@@ -9,7 +9,6 @@ namespace SoundHaven
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainWindowViewModel();
         }
 
         private void MinimizeButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)

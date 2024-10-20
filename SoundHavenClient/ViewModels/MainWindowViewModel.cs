@@ -38,7 +38,7 @@ namespace SoundHaven.ViewModels
         public IYouTubeDownloadService YouTubeDownloadService { get; set; }
         public IYouTubeSearchService YoutubeSearchService { get; set; }
 
-        public MainWindowViewModel()
+        public MainWindowViewModel(AudioService audioService)
         {
             // SQLite Database
             string dbPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "AppDatabase.db");
@@ -53,7 +53,7 @@ namespace SoundHaven.ViewModels
             var lastFmDataService = new LastFmLastFmDataService(lastFmApiKey, lastFmApiSecret, memoryCache);
 
             // Services
-            AudioService = new AudioService();
+            AudioService = audioService;
             YouTubeDownloadService = new YouTubeDownloadService();
             YoutubeSearchService = new YouTubeSearchService();
 
