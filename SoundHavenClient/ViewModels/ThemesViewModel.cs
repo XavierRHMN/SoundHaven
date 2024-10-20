@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Media;
 using SoundHaven.Commands;
 using SoundHaven.Data;
+using SoundHaven.Helpers;
 
 namespace SoundHaven.ViewModels
 {
@@ -62,7 +63,9 @@ namespace SoundHaven.ViewModels
             Color.Parse("#757575"), // Grey (600)
             Color.Parse("#546E7A"), // Blue Grey (600)
 
-            Color.Parse("#FFFFFF") // White
+            Color.Parse("#FFFFFF"), // White
+            
+            Color.Parse("#000000"), // Black
         };
 
         public ThemesViewModel(AppDatabase appDatabase)
