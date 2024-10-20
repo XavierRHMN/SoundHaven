@@ -52,7 +52,7 @@
         <Style Selector="CheckBox:pointerover /template/ Border#PART_Border">
             <Setter Property="Background">
                 <Setter.Value>
-                    <SolidColorBrush Color="{StaticResource PrimaryColor}" Opacity="0.1" />
+                    <SolidColorBrush Color="{DynamicResource PrimaryColor}" Opacity="0.1" />
                 </Setter.Value>
             </Setter>
         </Style>

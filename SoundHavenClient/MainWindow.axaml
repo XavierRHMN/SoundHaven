@@ -98,7 +98,7 @@
         </Grid>
 
         <!-- Player Controls -->
-        <Grid Grid.Row="2" Background="{StaticResource PlayerBarColor}">
+        <Grid Grid.Row="2" Background="{DynamicResource PlayerBarColor}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
                 <ColumnDefinition Width="*" />
