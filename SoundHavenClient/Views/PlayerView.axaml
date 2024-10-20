@@ -13,7 +13,7 @@
     <UserControl.Styles>
         <!-- Override Selected Item Foreground and Background -->
         <Style Selector="ListBoxItem:selected">
-            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
             <Setter Property="Background" Value="Transparent" />
         </Style>
 
@@ -75,7 +75,7 @@
     <Grid RowDefinitions="Auto, *" Background="{StaticResource ToolbarColor}">
         <!-- Playlist Banner -->
         <Border Grid.Row="0"
-                Background="{StaticResource PrimaryColor}"
+                Background="{DynamicResource PrimaryColor}"
                 CornerRadius="0,0,10,10"
                 Padding="0,15">
             <TextBlock Text="{Binding ActivePlaylistName}"

@@ -27,13 +27,13 @@
                                 Width="20"
                                 Height="20"
                                 Background="Transparent"
-                                BorderBrush="{StaticResource PrimaryColor}"
+                                BorderBrush="{DynamicResource PrimaryColor}"
                                 BorderThickness="2"
                                 CornerRadius="10">
                             <Ellipse x:Name="PART_CheckGlyph"
                                      Width="12"
                                      Height="12"
-                                     Fill="{StaticResource PrimaryColor}"
+                                     Fill="{DynamicResource PrimaryColor}"
                                      Opacity="0" />
                         </Border>
                         <ContentPresenter x:Name="PART_ContentPresenter"
@@ -62,16 +62,16 @@
         </Style>
 
         <Style Selector="CheckBox:indeterminate /template/ Border#PART_Border">
-            <Setter Property="Background" Value="{StaticResource PrimaryColor}" />
+            <Setter Property="Background" Value="{DynamicResource PrimaryColor}" />
         </Style>
     </UserControl.Styles>
 
     <!-- Define Custom Resources -->
     <UserControl.Resources>
-        <SolidColorBrush x:Key="MaterialSelectionBrush" Color="{StaticResource PrimaryColor}" Opacity="0.1" />
+        <SolidColorBrush x:Key="MaterialSelectionBrush" Color="{DynamicResource PrimaryColor}" Opacity="0.1" />
     </UserControl.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Background="{StaticResource ToolbarColor}">
+    <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Background="{DynamicResource ToolbarColor}">
 
         <!-- TextBox bound to DisplayedPlaylist.Name -->
         <TextBox Grid.Row="0" Grid.Column="0"
@@ -90,26 +90,26 @@
                     Height="30"
                     CornerRadius="16"
                     HorizontalAlignment="Center"
-                    Foreground="{StaticResource PrimaryColor}"
-                    BorderBrush="{StaticResource PrimaryColor}" />
+                    Foreground="{DynamicResource PrimaryColor}"
+                    BorderBrush="{DynamicResource PrimaryColor}" />
             <Button Command="{Binding ToggleEditModeCommand}"
-                    Theme="{StaticResource MaterialOutlineButton}"
+                    Theme="{DynamicResource MaterialOutlineButton}"
                     Content="{Binding EditButtonContent}"
                     ToolTip.Tip="Toggle edit mode"
                     Width="80"
                     Height="30"
                     CornerRadius="16"
-                    Foreground="{StaticResource PrimaryColor}"
-                    BorderBrush="{StaticResource PrimaryColor}" />
+                    Foreground="{DynamicResource PrimaryColor}"
+                    BorderBrush="{DynamicResource PrimaryColor}" />
             <Button Command="{Binding DeleteSelectedSongsCommand}"
-                    Theme="{StaticResource MaterialOutlineButton}"
+                    Theme="{DynamicResource MaterialOutlineButton}"
                     Content="Delete"
                     ToolTip.Tip="Delete selected songs"
                     Width="80"
                     Height="30"
                     CornerRadius="16"
-                    Foreground="{StaticResource PrimaryColor}"
-                    BorderBrush="{StaticResource PrimaryColor}"
+                    Foreground="{DynamicResource PrimaryColor}"
+                    BorderBrush="{DynamicResource PrimaryColor}"
                     IsEnabled="{Binding IsEditMode}" />
         </StackPanel>
 
