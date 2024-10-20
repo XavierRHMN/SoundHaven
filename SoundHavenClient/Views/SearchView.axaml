@@ -14,7 +14,7 @@
 
     <!-- Resources -->
     <UserControl.Resources>
-        <SolidColorBrush x:Key="PlayerColorBrush" Color="{StaticResource PrimaryColor}" />
+        <SolidColorBrush x:Key="PlayerColorBrush" Color="{DynamicResource PrimaryColor}" />
     </UserControl.Resources>
 
     <!-- Styles -->
@@ -63,7 +63,7 @@
     <Grid RowDefinitions="Auto,*">
         <!-- Search Banner -->
         <Border Grid.Row="0"
-                Background="{StaticResource PlayerColorBrush}"
+                Background="{DynamicResource PlayerColorBrush}"
                 CornerRadius="0,0,10,10"
                 Padding="0,15">
             <TextBlock Text="Search"
@@ -91,8 +91,8 @@
                         Height="30"
                         CornerRadius="16"
                         Theme="{StaticResource MaterialOutlineButton}"
-                        Foreground="{StaticResource PrimaryColor}"
-                        BorderBrush="{StaticResource PrimaryColor}" />
+                        Foreground="{DynamicResource PrimaryColor}"
+                        BorderBrush="{DynamicResource PrimaryColor}" />
             </Grid>
 
             <!-- Search Results and Loading Overlays -->
@@ -190,7 +190,7 @@
                                      IsIndeterminate="True" 
                                      Height="100" 
                                      Width="100"
-                                     Foreground="{StaticResource PrimaryColor}" />
+                                     Foreground="{DynamicResource PrimaryColor}" />
                         <TextBlock Text="{Binding LoadingMessage}"
                                    Classes="Headers"
                                    Foreground="White"
@@ -213,7 +213,7 @@
                              IsIndeterminate="True" 
                              Height="100" 
                              Width="100"
-                             Foreground="{StaticResource PrimaryColor}" />
+                             Foreground="{DynamicResource PrimaryColor}" />
                 <TextBlock Text="{Binding LoadingMessage}"
                            Classes="Headers"
                            Foreground="White"

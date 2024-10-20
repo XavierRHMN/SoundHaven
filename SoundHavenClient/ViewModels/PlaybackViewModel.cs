@@ -59,7 +59,8 @@ namespace SoundHaven.ViewModels
                     if (!_currentSong.IsYouTubeVideo) PlayFromBeginning(value);
 
                     Task.Run(ScrobbleCurrentSongAsync);
-                    Task.Run(SetDynamicTheme);
+                    // Only run SetDynamicTheme if the dynamic theme is selected
+                    if (_themesViewModel.IsDynamicThemeSelected) Task.Run(SetDynamicTheme);
                 }
             }
         }

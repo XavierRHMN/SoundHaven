@@ -9,7 +9,7 @@
              x:DataType="vm:HomeViewModel">
 
     <UserControl.Resources>
-        <SolidColorBrush x:Key="PlayerColorBrush" Color="{StaticResource PrimaryColor}" />
+        <SolidColorBrush x:Key="PlayerColorBrush" Color="{DynamicResource PrimaryColor}" />
         <SolidColorBrush x:Key="BackgroundBrush" Color="#121212" />
         <SolidColorBrush x:Key="SurfaceBrush" Color="#282828" />
     </UserControl.Resources>
@@ -204,7 +204,7 @@
                   HorizontalAlignment="Center">
                 <StackPanel Spacing="20">
                     <ProgressBar Classes="circular" IsIndeterminate="True" Height="100" Width="100"
-                                 Foreground="{StaticResource PrimaryColor}"/>
+                                 Foreground="{DynamicResource PrimaryColor}"/>
                     <TextBlock Text="Loading songs..."
                                Classes="Headers"
                                HorizontalAlignment="Center" />
