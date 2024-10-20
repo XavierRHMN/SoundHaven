@@ -22,15 +22,25 @@
         <Setter Property="Background" Value="Transparent" />
     </Style>
 
-    <!-- Style for the ProgressBar used as the slider track -->
+    <!-- Updated Style for the ProgressBar used as the slider track -->
     <Style Selector="Slider /template/ ProgressBar#PART_ProgressLayer">
         <Setter Property="Theme" Value="{StaticResource MaterialSliderTrackBarV2}" />
         <Style Selector="^ /template/ Border#PART_InactiveState">
             <Setter Property="Background" Value="{DynamicResource PrimaryColor}" />
             <Setter Property="Opacity" Value="0.3" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.3" />
+                </Transitions>
+            </Setter>
         </Style>
         <Style Selector="^ /template/ Border#PART_Indicator">
             <Setter Property="Background" Value="{DynamicResource PrimaryColor}" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.3" />
+                </Transitions>
+            </Setter>
         </Style>
     </Style>
 
@@ -47,6 +57,7 @@
                         <Ellipse.Transitions>
                             <Transitions>
                                 <DoubleTransition Property="Opacity" Duration="0:0:0.25" Easing="CircularEaseOut" />
+                                <BrushTransition Property="Fill" Duration="0:0:0.3" />
                             </Transitions>
                         </Ellipse.Transitions>
                     </Ellipse>
@@ -54,7 +65,13 @@
                     <Ellipse Width="12" Height="12"
                              Fill="White"
                              Stroke="{DynamicResource PrimaryColor}"
-                             StrokeThickness="2" />
+                             StrokeThickness="2">
+                        <Ellipse.Transitions>
+                            <Transitions>
+                                <BrushTransition Property="Stroke" Duration="0:0:0.3" />
+                            </Transitions>
+                        </Ellipse.Transitions>
+                    </Ellipse>
                 </Grid>
             </ControlTemplate>
         </Setter>
