@@ -12,9 +12,8 @@ namespace SoundHaven.ViewModels
 {
     public class ThemesViewModel : ViewModelBase
     {
-        private readonly PlaybackViewModel _playbackViewModel;
         private readonly AppDatabase _appDatabase;
-        public AsyncRelayCommand<Color> ChangeThemeCommand { get; }
+        public RelayCommand<Color> ChangeThemeCommand { get; }
 
         public List<Color> ThemeColors { get; } = new List<Color>
         {
@@ -71,17 +70,15 @@ namespace SoundHaven.ViewModels
             Color.Parse("#000000"), // Black
         };
 
-        public ThemesViewModel(AppDatabase appDatabase, PlaybackViewModel playbackViewModel)
+        public ThemesViewModel(AppDatabase appDatabase)
         {
-            _playbackViewModel = playbackViewModel;
-            _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
             _appDatabase = appDatabase;
-            ChangeThemeCommand = new AsyncRelayCommand<Color>(ChangeTheme);
+            ChangeThemeCommand = new RelayCommand<Color>(ChangeTheme);
             LoadSavedTheme();
         }
 
 
-        public async Task ChangeTheme(Color newColor)
+        public void ChangeTheme(Color newColor)
         {
             if (Application.Current != null)
             {
@@ -96,30 +93,14 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        private async void LoadSavedTheme()
+        private void LoadSavedTheme()
         {
             string savedColorHex = _appDatabase.GetThemeColor();
             if (!string.IsNullOrEmpty(savedColorHex))
             {
                 var savedColor = Color.Parse(savedColorHex);
-                await ChangeTheme(savedColor);
+                ChangeTheme(savedColor);
             }
-        }
-        
-        private async void PlaybackViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(PlaybackViewModel.CurrentSong))
-            {
-                if (_playbackViewModel.CurrentSong.Artwork != null)
-                {
-                    await ChangeTheme(DominantColorFinder.GetDominantColor(_playbackViewModel.CurrentSong.Artwork));
-                }
-            }
-        }
-        
-        public override void Dispose()
-        {
-            _playbackViewModel.PropertyChanged -= PlaybackViewModel_PropertyChanged;
         }
     }
 }

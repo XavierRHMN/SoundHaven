@@ -62,8 +62,8 @@ namespace SoundHaven.ViewModels
 
             // ViewModels
             RepeatViewModel = new RepeatViewModel();
-            PlaybackViewModel = new PlaybackViewModel(AudioService, YouTubeDownloadService, RepeatViewModel, lastFmDataService);
-            ThemesViewModel = new ThemesViewModel(AppDatabase, PlaybackViewModel);
+            ThemesViewModel = new ThemesViewModel(AppDatabase);
+            PlaybackViewModel = new PlaybackViewModel(AudioService, YouTubeDownloadService, RepeatViewModel, lastFmDataService, ThemesViewModel);
             ShuffleViewModel = new ShuffleViewModel(PlaybackViewModel);
             PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService(), AppDatabase);
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
