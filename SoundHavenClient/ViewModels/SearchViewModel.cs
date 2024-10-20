@@ -170,6 +170,7 @@ namespace SoundHaven.ViewModels
                 {
                     Title = result.Title,
                     Artist = result.Author,
+                    Album = result.Album,
                     VideoId = result.VideoId,
                     ThumbnailUrl = result.ThumbnailUrl,
                     ChannelTitle = result.Author,
