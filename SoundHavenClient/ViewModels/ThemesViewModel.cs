@@ -80,6 +80,7 @@ namespace SoundHaven.ViewModels
         {
             _appDatabase = appDatabase;
             ChangeThemeCommand = new RelayCommand<Color>(ChangeTheme);
+            ChangeTheme(ThemeColors.LastOrDefault());
             LoadSavedTheme();
         }
 

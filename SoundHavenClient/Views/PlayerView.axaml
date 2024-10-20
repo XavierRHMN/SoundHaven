@@ -78,6 +78,13 @@
                 Background="{DynamicResource PrimaryColor}"
                 CornerRadius="0,0,10,10"
                 Padding="0,15">
+            <Border.Transitions>
+                <Transitions>
+                    <!-- Animate the Background property when it changes -->
+                    <BrushTransition Property="Background" Duration="0:0:0.5" />
+                </Transitions>
+            </Border.Transitions>
+
             <TextBlock Text="{Binding ActivePlaylistName}"
                        HorizontalAlignment="Center"
                        FontSize="28"

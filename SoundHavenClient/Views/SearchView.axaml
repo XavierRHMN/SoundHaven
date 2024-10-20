@@ -10,7 +10,7 @@
              d:DesignHeight="450"
              x:Class="SoundHaven.Views.SearchView"
              x:DataType="vm:SearchViewModel"
-             Background="{StaticResource ToolbarColor}">
+             Background="{DynamicResource ToolbarColor}">
 
     <!-- Resources -->
     <UserControl.Resources>
@@ -63,14 +63,20 @@
     <Grid RowDefinitions="Auto,*">
         <!-- Search Banner -->
         <Border Grid.Row="0"
-                Background="{DynamicResource PlayerColorBrush}"
+                Background="{DynamicResource PrimaryColor}"
                 CornerRadius="0,0,10,10"
                 Padding="0,15">
+            <Border.Transitions>
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.5" />
+                </Transitions>
+            </Border.Transitions>
+
             <TextBlock Text="Search"
                        HorizontalAlignment="Center"
                        Classes="Headers" />
         </Border>
-
+        
         <!-- Search Box and Results -->
         <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,0,0,0">
             <!-- Search Box -->

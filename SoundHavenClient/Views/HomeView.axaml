@@ -71,11 +71,19 @@
         </Grid.RowDefinitions>
 
         <!-- Welcome Banner (Always visible) -->
-        <Border Grid.Row="0" Background="{StaticResource PlayerColorBrush}"
+        <Border Grid.Row="0" Background="{DynamicResource PrimaryColor}"
                 CornerRadius="0,0,16,16" Padding="16,16">
+            <Border.Transitions>
+                <Transitions>
+                    <!-- Smooth transition for background color -->
+                    <BrushTransition Property="Background" Duration="0:0:0.5" />
+                </Transitions>
+            </Border.Transitions>
+
             <TextBlock Text="Welcome Home" HorizontalAlignment="Center"
                        FontSize="28" FontWeight="Bold" Foreground="Black" />
         </Border>
+
 
         <!-- Main Content Area -->
         <Grid Grid.Row="1">
