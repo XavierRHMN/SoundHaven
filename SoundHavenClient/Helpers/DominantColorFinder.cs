@@ -11,11 +11,12 @@ namespace SoundHaven.Helpers
 {
     public static class DominantColorFinder
     {
-        public static Color GetDominantColor(Bitmap avaloniaBitmap)
+        public static Color GetDominantColor(Bitmap avaloniaBitmap, int maxDimension = 100)
         {
             using (SKBitmap skiaBitmap = ConvertAvaloniaToSkiaSharp(avaloniaBitmap))
             {
-                Rgb dominantColor = AnalyzeDominantColor(skiaBitmap);
+                SKBitmap downsampledBitmap = DownsampleBitmap(skiaBitmap, maxDimension);
+                Rgb dominantColor = AnalyzeDominantColor(downsampledBitmap);
                 return ConvertToAvaloniaColor(dominantColor);
             }
         }
@@ -30,6 +31,21 @@ namespace SoundHaven.Helpers
             }
         }
 
+        private static SKBitmap DownsampleBitmap(SKBitmap original, int maxDimension)
+        {
+            float scale = Math.Min(1, (float)maxDimension / Math.Max(original.Width, original.Height));
+            int newWidth = (int)(original.Width * scale);
+            int newHeight = (int)(original.Height * scale);
+
+            SKBitmap resized = new SKBitmap(newWidth, newHeight);
+            using (SKCanvas canvas = new SKCanvas(resized))
+            {
+                canvas.DrawBitmap(original, SKRect.Create(original.Width, original.Height), SKRect.Create(newWidth, newHeight));
+            }
+
+            return resized;
+        }
+
         private static Rgb AnalyzeDominantColor(SKBitmap bitmap)
         {
             int width = bitmap.Width;
@@ -38,9 +54,9 @@ namespace SoundHaven.Helpers
             Dictionary<Lab, ColorInfo> colorInfos = new Dictionary<Lab, ColorInfo>();
             double totalWeight = 0;
 
-            for(int x = 0;x < width;x++)
+            for(int x = 0; x < width; x++)
             {
-                for(int y = 0;y < height;y++)
+                for(int y = 0; y < height; y++)
                 {
                     SKColor pixelColor = bitmap.GetPixel(x, y);
                     if (pixelColor.Alpha < 128) continue; // Skip fully transparent pixels
@@ -121,7 +137,6 @@ namespace SoundHaven.Helpers
         {
             return new Color(255, (byte)rgb.R, (byte)rgb.G, (byte)rgb.B);
         }
-
 
         private class ColorInfo
         {
