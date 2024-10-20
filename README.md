@@ -54,7 +54,7 @@ SoundHaven leverages a powerful stack of technologies:
    ```
 5. Create the ApiKeys directory:
    ```
-   mkdir -p ApiKeys
+   mkdir ApiKeys
    ```
 6. Set up your Last.fm API details:
    ```
