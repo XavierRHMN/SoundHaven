@@ -62,12 +62,12 @@ namespace SoundHaven.ViewModels
 
             // ViewModels
             RepeatViewModel = new RepeatViewModel();
-            PlaybackViewModel = new PlaybackViewModel(AudioService, YouTubeDownloadService, RepeatViewModel, lastFmDataService);
+            ThemesViewModel = new ThemesViewModel(AppDatabase);
+            PlaybackViewModel = new PlaybackViewModel(AudioService, YouTubeDownloadService, RepeatViewModel, lastFmDataService, ThemesViewModel);
             ShuffleViewModel = new ShuffleViewModel(PlaybackViewModel);
             PlaylistViewModel = new PlaylistViewModel(PlaybackViewModel, new OpenFileDialogService(), AppDatabase);
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
             HomeViewModel = new HomeViewModel(lastFmDataService);
-            ThemesViewModel = new ThemesViewModel(AppDatabase);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
             SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel, new MpvDownloader(), SeekSliderViewModel);
             ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);

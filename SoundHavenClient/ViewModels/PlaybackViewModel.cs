@@ -1,10 +1,12 @@
 ﻿using SoundHaven.Commands;
+using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,6 +14,7 @@ namespace SoundHaven.ViewModels
 {
     public class PlaybackViewModel : ViewModelBase
     {
+        private readonly ThemesViewModel _themesViewModel;
         private readonly ILastFmDataService _lastFmDataService;
         private RepeatViewModel _repeatViewModel;
         private readonly IYouTubeDownloadService _youTubeDownloadService;
@@ -56,7 +59,19 @@ namespace SoundHaven.ViewModels
                     if (!_currentSong.IsYouTubeVideo) PlayFromBeginning(value);
 
                     ScrobbleCurrentSongAsync();
+                    SetDynamicTheme();
                 }
+            }
+        }
+        
+                
+        private void SetDynamicTheme()
+        {
+            // Add a dynamic theme color based on the current dominant color of the album artwork
+            if (CurrentSong != null)
+            {
+                var dominantColor = DominantColorFinder.GetDominantColor(CurrentSong.ArtworkData, (int) CurrentSong.Artwork.Size.Width, (int) CurrentSong.Artwork.Size.Height);
+                _themesViewModel.ThemeColors[^1] = dominantColor;
             }
         }
 
@@ -84,8 +99,10 @@ namespace SoundHaven.ViewModels
         public AsyncRelayCommand NextCommand { get; set; }
         public AsyncRelayCommand PreviousCommand { get; set; }
 
-        public PlaybackViewModel(AudioService audioService, IYouTubeDownloadService youTubeDownloadService, RepeatViewModel repeatViewModel, LastFmLastFmDataService lastFmDataService)
+        public PlaybackViewModel(AudioService audioService, IYouTubeDownloadService youTubeDownloadService,
+                                 RepeatViewModel repeatViewModel, LastFmLastFmDataService lastFmDataService, ThemesViewModel themesViewModel)
         {
+            _themesViewModel = themesViewModel;
             _lastFmDataService = lastFmDataService;
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
             _youTubeDownloadService = youTubeDownloadService ?? throw new ArgumentNullException(nameof(youTubeDownloadService));
@@ -112,11 +129,11 @@ namespace SoundHaven.ViewModels
 
         private bool CanPrevious() => CurrentSongExists && CanPlaybackControl;
         
-        private void ScrobbleCurrentSongAsync()
+        private async void ScrobbleCurrentSongAsync()
         {
             try
             { 
-                _lastFmDataService.ScrobbleTrackAsync(CurrentSong.Title!, CurrentSong.Artist!, CurrentSong.Album!);
+                await _lastFmDataService.ScrobbleTrackAsync(CurrentSong.Title!, CurrentSong.Artist!, CurrentSong.Album!);
             }
             catch (Exception ex)
             {
