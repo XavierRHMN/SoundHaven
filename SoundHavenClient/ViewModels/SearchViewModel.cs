@@ -78,6 +78,21 @@ namespace SoundHaven.ViewModels
             get => _isScrollViewerHittestable;
             set => SetProperty(ref _isScrollViewerHittestable, value);
         }
+
+        private bool _toggleSearchResults = true;
+        public bool ToggleSearchResults
+        {
+            get => _toggleSearchResults;
+            set
+            {
+                if (SetProperty(ref _toggleSearchResults, value))
+                {
+                    OnPropertyChanged(nameof(SearchButtonText));
+                }
+            }
+        }
+        
+        public string SearchButtonText => ToggleSearchResults ? "Search Songs" : "Search Videos";
         
         public RelayCommand SearchCommand { get; }
         public RelayCommand<Song> PlaySongCommand { get; }
@@ -132,7 +147,7 @@ namespace SoundHaven.ViewModels
             try
             {
                 LoadingMessage = "Loading songs...";
-                var results = await _youtubeSearchService.SearchVideosAsync(SearchQuery, 15);
+                var results = await _youtubeSearchService.SearchAsync(SearchQuery, 15, ToggleSearchResults);
                 
                 IsLoading = false;
                 LoadingMessage = string.Empty;
