@@ -65,7 +65,6 @@ namespace SoundHaven.ViewModels
             }
         }
         
-                
         private void SetDynamicTheme()
         {
             // Add a dynamic theme color based on the current dominant color of the album artwork
@@ -185,7 +184,7 @@ namespace SoundHaven.ViewModels
                 return;
             }
 
-            Song? nextSong = null;
+            Song? nextSong;
 
             SeekPositionReset?.Invoke(this, EventArgs.Empty);
 
