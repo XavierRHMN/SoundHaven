@@ -40,9 +40,9 @@ namespace SoundHaven
             base.OnFrameworkInitializationCompleted();
         }
         
-        private void OnDesktopExit(object sender, ControlledApplicationLifetimeExitEventArgs e)
+        private async void OnDesktopExit(object sender, ControlledApplicationLifetimeExitEventArgs e)
         {
-            _audioService.SendMpvCommand("stop");
+            _audioService.SendMpvCommandAsync("stop");
             _audioService?.Dispose();
         }
     }
