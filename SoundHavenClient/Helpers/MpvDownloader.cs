@@ -8,18 +8,12 @@ using System.Threading.Tasks;
 
 public class MpvDownloader
 {
-    private readonly string scriptsDir;
-    private readonly string binariesDir;
-    private readonly string sevenZipDir;
-    private readonly string sevenZipPath;
+    private readonly string baseDir;
     private readonly HttpClient httpClient;
 
     public MpvDownloader()
     {
-        scriptsDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Binaries"));
-        binariesDir = Path.Combine(scriptsDir, "mpv");
-        sevenZipDir = Path.Combine(scriptsDir, "7z");
-        sevenZipPath = Path.Combine(sevenZipDir, "7zr.exe");
+        baseDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory));
         httpClient = new HttpClient();
     }
 
@@ -27,15 +21,8 @@ public class MpvDownloader
     {
         try
         {
-            CreateDirectories();
             VerifySevenZipExists();
-
-            string mpvExePath = Path.Combine(binariesDir, "mpv.exe");
-            if (File.Exists(mpvExePath))
-            {
-                Console.WriteLine("mpv.exe already exists. Skipping download and extraction.");
-                return;
-            }
+            if (VerifyMpvExists()) return;
 
             string mpvUrl = await GetLatestMpvReleaseUrlAsync();
             string mpvArchive = await DownloadMpvAsync(mpvUrl);
@@ -54,20 +41,26 @@ public class MpvDownloader
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            Console.WriteLine($"{ex.Message}");
         }
     }
 
-    private void CreateDirectories()
+    private bool VerifyMpvExists()
     {
-        Directory.CreateDirectory(binariesDir);
+        string mpvExePath = Path.Combine(baseDir, "mpv.exe");
+        if (File.Exists(mpvExePath))
+        {
+            Console.WriteLine("mpv.exe already exists. Skipping download and extraction.");
+            return true;
+        }
+        return false;
     }
 
     private void VerifySevenZipExists()
     {
-        if (!File.Exists(sevenZipPath))
+        if (!File.Exists(Path.Combine(baseDir, "7zr.exe")))
         {
-            throw new FileNotFoundException($"7zr.exe not found at {sevenZipPath}. Please ensure it's in the correct location.");
+            throw new FileNotFoundException($"7zr.exe not found at {baseDir}. Please ensure it's in the correct location.");
         }
     }
 
@@ -83,7 +76,7 @@ public class MpvDownloader
 
     private async Task<string> DownloadMpvAsync(string mpvUrl)
     {
-        string mpvArchive = Path.Combine(binariesDir, "mpv.7z");
+        string mpvArchive = Path.Combine(baseDir, "mpv.7z");
         Console.WriteLine($"Downloading {mpvUrl}");
         using (var response = await httpClient.GetAsync(mpvUrl, HttpCompletionOption.ResponseHeadersRead))
         {
@@ -99,11 +92,12 @@ public class MpvDownloader
 
     private void ExtractMpvExe(string archivePath)
     {
-        Console.WriteLine($"Extracting mpv.exe from {archivePath} to {binariesDir}");
+        Console.WriteLine($"Extracting mpv.exe from {archivePath} to {baseDir}");
+        string _7zipPath = Path.Combine(baseDir, "7zr.exe");
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
-            FileName = sevenZipPath,
-            Arguments = $"e -y \"-o{binariesDir}\" {archivePath} mpv.exe",
+            FileName = _7zipPath,
+            Arguments = $"e -y \"-o{baseDir}\" {archivePath} mpv.exe",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -124,10 +118,10 @@ public class MpvDownloader
 
     private void VerifyMpvExtraction()
     {
-        string mpvExePath = Path.Combine(binariesDir, "mpv.exe");
+        string mpvExePath = Path.Combine(baseDir, "mpv.exe");
         if (!File.Exists(mpvExePath))
         {
-            throw new Exception($"MPV extraction failed. mpv.exe not found in {binariesDir}");
+            throw new Exception($"MPV extraction failed. mpv.exe not found in {baseDir}");
         }
     }
 
