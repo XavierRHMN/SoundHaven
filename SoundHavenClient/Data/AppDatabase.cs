@@ -3,15 +3,23 @@ using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
 using SoundHaven.Models;
+using System.IO;
 
 namespace SoundHaven.Data
 {
     public class AppDatabase
     {
         private string connectionString;
-
-        public AppDatabase(string dbPath)
+        private const string DEFAULT_DB_NAME = "AppdataBase.db";
+        
+        public AppDatabase(string? dbPath = null)
         {
+            // If no path is provided, create the database in the application's base directory
+            if (string.IsNullOrEmpty(dbPath))
+            {
+                dbPath = Path.Combine(AppContext.BaseDirectory, DEFAULT_DB_NAME);
+            }
+
             connectionString = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
             InitializeDatabase();
         }

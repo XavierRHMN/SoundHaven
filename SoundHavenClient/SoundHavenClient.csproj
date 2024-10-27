@@ -85,9 +85,11 @@
 
     <ItemGroup>
         <None Remove="Behaviors\**"/>
+        <None Include="bin\Debug\net8.0\AppDatabase.db" />
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="bin\Debug\net8.0\" />
         <Folder Include="Tracks\"/>
     </ItemGroup>
 </Project>
