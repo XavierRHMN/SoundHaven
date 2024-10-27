@@ -1,45 +1,17 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
 
-namespace SoundHaven.Services
+
+public class ApiKeyService
 {
-    public class ApiKeyService
+    public string GetApiKey()
     {
-        private string GetApiInfo(string fileName, int lineNumber)
-        {
-            string _filePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "ApiKeys", fileName);
+        return Environment.GetEnvironmentVariable("LASTFM_API_KEY") 
+            ?? throw new InvalidOperationException("LASTFM_API_KEY environment variable not found.");
+    }
 
-            if (!File.Exists(_filePath))
-            {
-                throw new FileNotFoundException($"API info file not found at {_filePath}");
-            }
-
-            string[] lines = File.ReadAllLines(_filePath);
-
-            if (lines.Length < lineNumber)
-            {
-                throw new InvalidOperationException($"File does not contain line {lineNumber}.");
-            }
-
-            string info = lines[lineNumber - 1].Trim();
-
-            if (string.IsNullOrEmpty(info))
-            {
-                throw new InvalidOperationException($"API info on line {lineNumber} is empty.");
-            }
-
-            return info;
-        }
-
-        public string GetApiKey(string fileName)
-        {
-            return GetApiInfo(fileName, 1);
-        }
-
-        public string GetApiSecret(string fileName)
-        {
-            return GetApiInfo(fileName, 2);
-        }
+    public string GetApiSecret()
+    {
+        return Environment.GetEnvironmentVariable("LASTFM_API_SECRET") 
+            ?? throw new InvalidOperationException("LASTFM_API_SECRET environment variable not found.");
     }
 }
