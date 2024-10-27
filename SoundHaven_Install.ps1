@@ -61,7 +61,6 @@ function Set-ApiKey {
     [System.Environment]::SetEnvironmentVariable('LASTFM_API_KEY', $apiKey, 'User')
 
     Write-Host "API Key has been set in environment variables."
-    Write-Host "Note: You may need to restart Rider to see the updated environment variables."
     pause
 }
 
@@ -75,7 +74,6 @@ function Set-ApiSecret {
     [System.Environment]::SetEnvironmentVariable('LASTFM_API_SECRET', $apiSecret, 'User')
 
     Write-Host "API Secret has been set in environment variables."
-    Write-Host "Note: You may need to restart Rider to see the updated environment variables."
     pause
 }
 

@@ -52,17 +52,26 @@ SoundHaven leverages a powerful stack of technologies:
    ```
    dotnet build
    ```
-5. Create the ApiKeys directory:
+5. Set up your Last.fm API environment variables:
+
+   #### Windows 
+   ```cmd
+   setx LASTFM_API_KEY "YOUR_LASTFM_API_KEY"
+   setx LASTFM_API_SECRET "YOUR_LASTFM_API_SECRET"
    ```
-   mkdir ApiKeys
+
+   #### Linux / macOS
+   ```bash
+   echo 'export LASTFM_API_KEY="YOUR_LASTFM_API_KEY"' >> ~/.bashrc
+   echo 'export LASTFM_API_SECRET="YOUR_LASTFM_API_SECRET"' >> ~/.bashrc
+   source ~/.bashrc
    ```
-6. Set up your Last.fm API details:
-   ```
-   echo YOUR_LASTFM_API_KEY > ApiKeys/LASTFM_API.txt
-   echo YOUR_LASTFM_API_SECRET >> ApiKeys/LASTFM_API.txt
-   ```
-   Replace `YOUR_LASTFM_API_KEY` and `YOUR_LASTFM_API_SECRET` with your actual Last.fm API key and secret respectively.
-7. Run the application:
+
+   Replace `YOUR_LASTFM_API_KEY` and `YOUR_LASTFM_API_SECRET` with your actual Last.fm API credentials.
+
+**Note:** After setting environment variables, you may need to restart your terminal or IDE for the changes to take effect.
+
+6. Run the application:
    ```
    dotnet run
    ```
