@@ -207,7 +207,10 @@ namespace SoundHaven.Services
 
         private async void StartMpvProcess(string streamUrl)
         {
-            string mpvPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Binaries", "mpv", "mpv.exe");
+            Console.WriteLine(Path.Combine(AppContext.BaseDirectory));
+            string mpvPath = Path.Combine(AppContext.BaseDirectory, "mpv.exe");
+            Console.WriteLine(mpvPath);
+
             _mpvProcess = new Process
             {
                 StartInfo = new ProcessStartInfo
