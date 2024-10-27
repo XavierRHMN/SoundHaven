@@ -41,8 +41,7 @@ namespace SoundHaven.ViewModels
         public MainWindowViewModel(AudioService audioService)
         {
             // SQLite Database
-            string dbPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Data", "AppDatabase.db");
-            AppDatabase = new AppDatabase(dbPath);
+            AppDatabase = new AppDatabase();
 
             // LastFM Song Caching and LastFM Api Key provider
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
