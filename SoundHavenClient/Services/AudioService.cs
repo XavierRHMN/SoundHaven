@@ -89,12 +89,12 @@ namespace SoundHaven.Services
                 if (isYouTubeVideo)
                 {
                     await StartYouTubeStreamAsync(_youTubeDownloadService.CleanVideoId(source));
-                    StartPositionLogging();
+                    await StartPositionLogging();
                 }
                 else
                 {
-                    StartLocalFile(source);
-                    Seek(startingPosition);
+                    await StartLocalFile(source);
+                    await Seek(startingPosition);
                 }
 
                 if (_waveOutDevice != null && (_audioFileReader != null || _bufferedWaveProvider != null))
@@ -122,7 +122,7 @@ namespace SoundHaven.Services
             }
         }
 
-        public async void Seek(TimeSpan position)
+        public async Task Seek(TimeSpan position)
         {
             if (_audioFileReader != null)
             {
@@ -136,7 +136,7 @@ namespace SoundHaven.Services
             }
         }
 
-        public async void Pause()
+        public async Task Pause()
         {
             _waveOutDevice?.Pause();
             if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
@@ -144,23 +144,28 @@ namespace SoundHaven.Services
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public async void Resume()
+        public async Task Resume()
         {
-            if ((_mpvProcess == null || _mpvProcess.HasExited) && _isYouTubeStream)
-                await StartAsync(_currentStreamUrl, _isYouTubeStream);
-            
             _waveOutDevice.Play();
-            
-            if (_isYouTubeStream && _mpvProcess != null && !_mpvProcess.HasExited)
-                await SendMpvCommandAsync("set_property", "pause", false);
-                
+
+            if (_isYouTubeStream)
+            {
+                if (_mpvProcess != null && !_mpvProcess.HasExited)
+                {
+                    await SendMpvCommandAsync("set_property", "pause", false);
+                }
+                else
+                {
+                    await StartAsync(_currentStreamUrl, _isYouTubeStream);
+                }
+            }
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public void Stop()
         {
             _positionLogTimer?.Dispose();
-            _bufferingCancellationTokenSource?.Cancel();  // Added this line
+            _bufferingCancellationTokenSource?.Cancel();  
             _waveOutDevice?.Stop();
             _audioFileReader?.Dispose();
             _audioFileReader = null;
@@ -177,22 +182,19 @@ namespace SoundHaven.Services
             var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
             if (streamInfo == null) throw new InvalidOperationException("No audio stream found.");
 
-            _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 16, 2)) 
-            { 
-                BufferLength = 8 * 1024 * 1024 
-            };
+            _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 16, 2));
 
-            InitializeAudio(_bufferedWaveProvider);
+            await InitializeAudio(_bufferedWaveProvider);
             _bufferingCancellationTokenSource = new CancellationTokenSource(); 
             var videoDetails = await _youtubeClient.Videos.GetAsync(videoId);
             TotalDuration = videoDetails.Duration ?? TimeSpan.Zero;
-            StartAndUpdateMpvProcess(streamInfo.Url, _bufferingCancellationTokenSource.Token);
+            await StartAndUpdateMpvProcess(streamInfo.Url, _bufferingCancellationTokenSource.Token);
         }
         
         // Added this method back
-        private void StartAndUpdateMpvProcess(string streamUrl, CancellationToken cancellationToken)
+        private async Task StartAndUpdateMpvProcess(string streamUrl, CancellationToken cancellationToken)
         {
-            StartMpvProcess(streamUrl);
+            await StartMpvProcess(streamUrl);
     
             cancellationToken.Register(() =>
             {
@@ -205,11 +207,9 @@ namespace SoundHaven.Services
             });
         }
 
-        private async void StartMpvProcess(string streamUrl)
+        private async Task StartMpvProcess(string streamUrl)
         {
-            Console.WriteLine(Path.Combine(AppContext.BaseDirectory));
             string mpvPath = Path.Combine(AppContext.BaseDirectory, "mpv.exe");
-            Console.WriteLine(mpvPath);
 
             _mpvProcess = new Process
             {
@@ -298,18 +298,18 @@ namespace SoundHaven.Services
             }
         }
 
-        private void StartLocalFile(string filePath)
+        private async Task StartLocalFile(string filePath)
         {
             _audioFileReader = new AudioFileReader(filePath);
             var silence = new OffsetSampleProvider(new SilenceProvider(_audioFileReader.WaveFormat).ToSampleProvider()) 
             { 
                 Take = TimeSpan.FromSeconds(0.5) 
             };
-            InitializeAudio(new ConcatenatingSampleProvider(new[] { silence, _audioFileReader.ToSampleProvider() }).ToWaveProvider());
+            await InitializeAudio(new ConcatenatingSampleProvider(new[] { silence, _audioFileReader.ToSampleProvider() }).ToWaveProvider());
             TotalDuration = _audioFileReader.TotalTime + TimeSpan.FromSeconds(0.5);
         }
 
-        private void InitializeAudio(IWaveProvider waveProvider)
+        private async Task InitializeAudio(IWaveProvider waveProvider)
         {
             _volumeProvider = new VolumeSampleProvider(waveProvider.ToSampleProvider()) 
             { 
@@ -318,7 +318,7 @@ namespace SoundHaven.Services
             _waveOutDevice.Init(_volumeProvider);
         }
 
-        private void StartPositionLogging()
+        private async Task StartPositionLogging()
         {
             _positionLogTimer?.Dispose();
             _positionLogTimer = new Timer(_ => UpdateCurrentPosition(), null, 0, 100);

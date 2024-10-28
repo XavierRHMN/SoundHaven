@@ -95,8 +95,8 @@ namespace SoundHaven.ViewModels
             set => SetProperty(ref _canPlaybackControl, value);
         }
 
-        public RelayCommand PlayCommand { get; set; }
-        public RelayCommand PauseCommand { get; set; }
+        public AsyncRelayCommand PlayCommand { get; set; }
+        public AsyncRelayCommand PauseCommand { get; set; }
         public AsyncRelayCommand NextCommand { get; set; }
         public AsyncRelayCommand PreviousCommand { get; set; }
 
@@ -116,8 +116,8 @@ namespace SoundHaven.ViewModels
 
         private void InitializeCommands()
         {
-            PlayCommand = new RelayCommand(Play, CanPlay);
-            PauseCommand = new RelayCommand(Pause, CanPause);
+            PlayCommand = new AsyncRelayCommand(Play, CanPlay);
+            PauseCommand = new AsyncRelayCommand(Pause, CanPause);
             NextCommand = new AsyncRelayCommand(NextTrack, CanNext);
             PreviousCommand = new AsyncRelayCommand(PreviousTrack, CanPrevious);
         }
@@ -142,7 +142,7 @@ namespace SoundHaven.ViewModels
             }
         }
         
-        public async void Play()
+        public async Task Play()
         {
             if (CurrentSong != null)
             {
@@ -152,7 +152,7 @@ namespace SoundHaven.ViewModels
                 }
                 else
                 {
-                    _audioService.Resume();
+                    await _audioService.Resume();
                 }
             }
             else if (CurrentPlaylist?.Songs.Count > 0)
@@ -160,17 +160,13 @@ namespace SoundHaven.ViewModels
                 CurrentSong = CurrentPlaylist.Songs[0];
                 await PlayFromBeginning(CurrentSong);
             }
-            else
-            {
-                Console.WriteLine("No song or playlist available to play.");
-            }
         }
 
-        public void Pause()
+        public async Task Pause()
         {
             if (_audioService.IsPlaying)
             {
-                _audioService.Pause();
+                await _audioService.Pause();
             }
         }
 
@@ -250,7 +246,6 @@ namespace SoundHaven.ViewModels
             {
                 bool isYouTubeVideo = song.IsYouTubeVideo;
                 string? source = isYouTubeVideo ? song.VideoId : song.FilePath;
-                Console.WriteLine(source);
 
                 CurrentSong = song;
                 await _audioService.StartAsync(source, isYouTubeVideo);

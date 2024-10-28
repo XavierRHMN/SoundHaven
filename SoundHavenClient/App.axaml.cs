@@ -42,7 +42,7 @@ namespace SoundHaven
         
         private async void OnDesktopExit(object sender, ControlledApplicationLifetimeExitEventArgs e)
         {
-            _audioService.SendMpvCommandAsync("stop");
+            await _audioService.SendMpvCommandAsync("stop");
             _audioService?.Dispose();
         }
     }
