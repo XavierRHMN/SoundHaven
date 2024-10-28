@@ -105,7 +105,6 @@ namespace SoundHaven.Models
             {
                 if (SetProperty(ref _videoId, value))
                 {
-                    Console.WriteLine(_videoId);
                     // Notify that IsYouTubeVideo has changed when VideoId changes
                     OnPropertyChanged(nameof(IsYouTubeVideo));
                 }
