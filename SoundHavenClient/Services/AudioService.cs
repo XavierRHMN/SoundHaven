@@ -100,7 +100,6 @@ namespace SoundHaven.Services
                 if (_waveOutDevice != null && (_audioFileReader != null || _bufferedWaveProvider != null))
                 {
                     _waveOutDevice.Play();
-                    PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
             catch (Exception ex)
@@ -108,18 +107,7 @@ namespace SoundHaven.Services
                 Console.WriteLine($"Error in StartAsync: {ex.Message}");
                 throw;
             }
-            OnPlaybackStateChanged();
-        }
-        
-        protected virtual void OnPlaybackStateChanged()
-        {
-            if (PlaybackStateChanged != null)
-            {
-                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                {
-                    PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
-                });
-            }
+            PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public async Task Seek(TimeSpan position)
