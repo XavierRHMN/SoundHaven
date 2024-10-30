@@ -123,29 +123,36 @@ namespace SoundHaven.ViewModels
 
         private async Task AddSongAsync()
         {
-            if (DisplayedPlaylist != null)
+            try
             {
-                var applicationLifetime = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
-                var parentWindow = applicationLifetime.MainWindow;
-                if (parentWindow == null)
+                if (DisplayedPlaylist != null)
                 {
-                    Console.WriteLine("Parent window is not available.");
-                    return;
-                }
+                    var applicationLifetime = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
+                    var parentWindow = applicationLifetime.MainWindow;
+                    if (parentWindow == null)
+                    {
+                        Console.WriteLine("Parent window is not available.");
+                        return;
+                    }
 
-                string? filePath = await _openFileDialogService.ShowOpenFileDialogAsync(parentWindow);
-                if (!string.IsNullOrEmpty(filePath))
+                    string? filePath = await _openFileDialogService.ShowOpenFileDialogAsync(parentWindow);
+                    if (!string.IsNullOrEmpty(filePath))
+                    {
+                        var newSong = Mp3ToSongHelper.GetSongFromMp3(filePath);
+                        DisplayedPlaylist.Songs.Add(newSong);
+                        newSong.SetArtworkData(newSong.Artwork);
+                        _appDatabase.AddSongToPlaylist(DisplayedPlaylist.Id, newSong);
+                        Console.WriteLine($"Added song: {newSong.Title} to playlist: {DisplayedPlaylist.Name}");
+                    }
+                }
+                else
                 {
-                    var newSong = Mp3ToSongHelper.GetSongFromMp3(filePath);
-                    DisplayedPlaylist.Songs.Add(newSong);
-                    newSong.SetArtworkData(newSong.Artwork);
-                    _appDatabase.AddSongToPlaylist(DisplayedPlaylist.Id, newSong);
-                    Console.WriteLine($"Added song: {newSong.Title} to playlist: {DisplayedPlaylist.Name}");
+                    Console.WriteLine("No playlist is currently displayed.");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("No playlist is currently displayed.");
+                Console.WriteLine($"An error occurred while adding a song: {ex.Message}");
             }
         }
 

@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Avalonia.Platform;
 
 namespace SoundHaven.Controls
 {
@@ -14,7 +15,8 @@ namespace SoundHaven.Controls
         public static readonly StyledProperty<string> SourceUrlProperty =
             AvaloniaProperty.Register<AsyncImageControl, string>(nameof(SourceUrl));
 
-        private static readonly HttpClient _httpClient = new HttpClient();
+        private static readonly HttpClient HttpClient = new();
+        private static readonly string FallbackImagePath = "avares://SoundHavenClient/Assets/Covers/MissingAlbum.png";
 
         public string SourceUrl
         {
@@ -29,35 +31,29 @@ namespace SoundHaven.Controls
 
         private async void OnSourceUrlChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            await Dispatcher.UIThread.InvokeAsync(() => Source = new Bitmap(@"C:\Users\mdsha\RiderProjects\SoundHaven\SoundHavenClient\Assets\Covers\MissingAlbum.png"));
+            // Set fallback image first
+            await Dispatcher.UIThread.InvokeAsync(() => 
+            {
+                var uri = new Uri(FallbackImagePath);
+                var assetLoader = AssetLoader.Open(uri);
+                Source = new Bitmap(assetLoader);
+            });
 
             string? url = e.NewValue as string;
             if (!string.IsNullOrEmpty(url))
             {
                 try
                 {
-                    var response = await _httpClient.GetAsync(url);
+                    var response = await HttpClient.GetAsync(url);
                     if (response.IsSuccessStatusCode)
                     {
-                        var stream = await response.Content.ReadAsStreamAsync();
-
                         // Ensure bitmap decoding happens on the UI thread
+                        var stream = await response.Content.ReadAsStreamAsync();
                         await Dispatcher.UIThread.InvokeAsync(() =>
                         {
-                            try
-                            {
-                                var bitmap = new Bitmap(stream);
-                                Source = bitmap;
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.WriteLine($"Error decoding bitmap from {url}: {ex.Message}");
-                            }
+                            var bitmap = new Bitmap(stream);
+                            Source = bitmap;
                         });
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"Failed to load image from {url}: {response.StatusCode}");
                     }
                 }
                 catch (Exception ex)
