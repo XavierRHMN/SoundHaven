@@ -100,6 +100,7 @@ namespace SoundHaven.Services
                 if (_waveOutDevice != null && (_audioFileReader != null || _bufferedWaveProvider != null))
                 {
                     _waveOutDevice.Play();
+                    PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
             catch (Exception ex)
@@ -107,7 +108,18 @@ namespace SoundHaven.Services
                 Console.WriteLine($"Error in StartAsync: {ex.Message}");
                 throw;
             }
-            PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
+            OnPlaybackStateChanged();
+        }
+        
+        protected virtual void OnPlaybackStateChanged()
+        {
+            if (PlaybackStateChanged != null)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
+                });
+            }
         }
 
         public async Task Seek(TimeSpan position)
@@ -358,8 +370,10 @@ namespace SoundHaven.Services
 
         private void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
-            if (!IsPaused && (_audioFileReader?.CurrentTime.TotalSeconds + 5 >= _audioFileReader?.TotalTime.TotalSeconds 
-                || _bufferedWaveProvider != null || _currentYoutubeTime >= TotalDuration))
+            var isPlaying = !IsPaused;
+            var timeExceeded = (_audioFileReader?.CurrentTime.TotalSeconds >= _audioFileReader?.TotalTime.TotalSeconds - 1 || _currentYoutubeTime >= TotalDuration);
+            var waveProviderExists = _bufferedWaveProvider != null;
+            if (isPlaying && timeExceeded || waveProviderExists)
             {
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
