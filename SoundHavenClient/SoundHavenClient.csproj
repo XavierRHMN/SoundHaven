@@ -8,10 +8,9 @@
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <RootNamespace>SoundHaven</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ApplicationIcon>Assets\Icons\SoundHavenCLient.ico</ApplicationIcon>
     </PropertyGroup>
     
-    
-
     <ItemGroup>
         <AvaloniaResource Include="Assets\**"/>
         <AvaloniaResource Remove="Behaviors\**"/>
