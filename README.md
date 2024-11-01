@@ -31,7 +31,7 @@ SoundHaven leverages a powerful stack of technologies:
 
 ### Prerequisites
 
-- .NET 6.0 SDK or later
+- .NET 6.0 Runtime or later
 - Last.fm API key
 
 ### Installation
