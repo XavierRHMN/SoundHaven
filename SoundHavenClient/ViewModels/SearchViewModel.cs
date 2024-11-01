@@ -16,7 +16,7 @@ namespace SoundHaven.ViewModels
 {
     public class SearchViewModel : ViewModelBase
     {
-        private readonly MpvDownloader _mpvDownloader;
+        private readonly FileDownloader _fileDownloader;
         private readonly IYouTubeSearchService _youtubeSearchService;
         private readonly IYouTubeDownloadService _youTubeDownloadService;
         private readonly IOpenFileDialogService _openFileDialogService;
@@ -106,7 +106,7 @@ namespace SoundHaven.ViewModels
             IOpenFileDialogService openFileDialogService,
             AudioService audioService,
             PlaybackViewModel playbackViewModel,
-            MpvDownloader mpvDownloader,
+            FileDownloader fileDownloader,
             SeekSliderViewModel seekSliderViewModel)
         {
             _youtubeSearchService = youtubeSearchService;
@@ -114,7 +114,7 @@ namespace SoundHaven.ViewModels
             _openFileDialogService = openFileDialogService;
             _audioService = audioService;
             _playbackViewModel = playbackViewModel;
-            _mpvDownloader = mpvDownloader;
+            _fileDownloader = fileDownloader;
             _seekSliderViewModel = seekSliderViewModel;
 
             SearchResults = new ObservableCollection<Song>();
@@ -139,7 +139,7 @@ namespace SoundHaven.ViewModels
                     LoadingMessage = "Initializing MPV...";
                 });
 
-                await Task.Run(async () => await _mpvDownloader.DownloadAndUpdateMpvAsync());
+                await Task.Run(async () => await _fileDownloader.DownloadAndUpdateFilesAsync());
             }
             catch (Exception ex)
             {

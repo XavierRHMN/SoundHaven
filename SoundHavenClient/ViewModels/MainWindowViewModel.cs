@@ -46,7 +46,7 @@ namespace SoundHaven.ViewModels
             // LastFM Song Caching and LastFM Api Key provider
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             
-            var apiKeyProvider = new ApiKeyService();
+            var apiKeyProvider = new ApiKeyHelper();
             string lastFmApiKey = apiKeyProvider.GetApiKey();
             string lastFmApiSecret = apiKeyProvider.GetApiSecret();
             var lastFmDataService = new LastFmLastFmDataService(lastFmApiKey, lastFmApiSecret, memoryCache);
@@ -68,7 +68,7 @@ namespace SoundHaven.ViewModels
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
             HomeViewModel = new HomeViewModel(lastFmDataService);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
-            SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel, new MpvDownloader(), SeekSliderViewModel);
+            SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel, new FileDownloader(), SeekSliderViewModel);
             ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
             SongInfoViewModel = new SongInfoViewModel(PlaybackViewModel, AudioService);
