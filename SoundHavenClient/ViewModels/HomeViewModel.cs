@@ -87,7 +87,7 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        private async Task  LoadDataAsync()
+        private async Task LoadDataAsync()
         {
             IsLoading = true;
             // TODO do something with this
@@ -103,20 +103,15 @@ namespace SoundHaven.ViewModels
             // Shuffle using LINQ's OrderBy with a random key
             var shuffledAlbums = recommendedAlbums.OrderBy(_ => Guid.NewGuid()).ToList();
 
-            await Task.WhenAll(
-                Task.Run(() => {
-                    foreach (var song in shuffledAlbums)
-                    {
-                        RecommendedAlbums.Add(song);
-                    }
-                }),
-                Task.Run(() => {
-                    foreach (var song in recentlyPlayedTracks)
-                    {
-                        RecentlyPlayedTracks.Add(song);
-                    }
-                })
-            );
+            foreach (var song in shuffledAlbums)
+            {
+                RecommendedAlbums.Add(song);
+            }
+            
+            foreach (var song in recentlyPlayedTracks)
+            {
+                RecentlyPlayedTracks.Add(song);
+            }
 
             IsLoading = false;
         }
