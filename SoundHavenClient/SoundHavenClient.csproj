@@ -10,10 +10,9 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ApplicationIcon>Assets\Icons\SoundHavenCLient.ico</ApplicationIcon>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <AvaloniaResource Include="Assets\**"/>
-        <AvaloniaResource Remove="Behaviors\**"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -22,7 +21,6 @@
         <PackageReference Include="Avalonia.Desktop" Version="11.1.3"/>
         <PackageReference Include="Avalonia.Svg" Version="11.1.0.1"/>
         <PackageReference Include="Avalonia.Fonts.Inter" Version="11.1.3"/>
-        <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
         <PackageReference Include="ColorMine" Version="1.1.3" />
         <PackageReference Include="FFMpegCore" Version="5.1.0"/>
         <PackageReference Include="Inflatable.Lastfm" Version="1.2.0" />
@@ -30,10 +28,6 @@
         <PackageReference Include="Material.Avalonia.DataGrid" Version="3.7.3"/>
         <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.8"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.8">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
         <PackageReference Include="NAudio" Version="2.2.1"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
@@ -46,52 +40,20 @@
     <ItemGroup>
         <Compile Update="MainWindow.axaml.cs">
             <DependentUpon>MainWindow.axaml</DependentUpon>
-            <SubType>Code</SubType>
         </Compile>
         <Compile Update="Views\PlayerView.axaml.cs">
             <DependentUpon>PlaylistCardView.axaml</DependentUpon>
-            <SubType>Code</SubType>
         </Compile>
-        <Compile Remove="Behaviors\**"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Black.ttf"/>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-BlackItalic.ttf"/>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Bold.ttf"/>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-BoldItalic.ttf"/>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Italic.ttf"/>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Light.ttf"/>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-LightItalic.ttf"/>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Regular.ttf"/>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-Thin.ttf"/>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\Lato-ThinItalic.ttf"/>
-        <UpToDateCheckInput Remove="Assets\Fonts\Lato\OFL.txt"/>
-        <UpToDateCheckInput Remove="Themes\SliderColors.axaml"/>
-        <UpToDateCheckInput Remove="Resources\SliderStyle\.axaml"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <AvaloniaXaml Remove="Behaviors\**"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <EmbeddedResource Remove="Behaviors\**"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <AdditionalFiles Remove="Behaviors\**"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Remove="Behaviors\**"/>
-        <None Include="bin\Debug\net8.0\AppDatabase.db" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Tracks\"/>
-    </ItemGroup>
-
+    <!-- Custom target to clean up extra files -->
+    <Target Name="RemoveCustomFiles" AfterTargets="Clean">
+        <Delete Files="$(OutputPath)ffmpeg.exe" />  
+        <Delete Files="$(OutputPath)mpv.exe" />
+        <Delete Files="$(OutputPath)AppdataBase.db" />
+    </Target>
+    
+    <!-- FFmpeg handling -->
     <Target Name="CopyFFmpeg" AfterTargets="Build">
         <Copy SourceFiles="Binaries\ffmpeg.7z" DestinationFolder="$(OutputPath)" />
     </Target>
