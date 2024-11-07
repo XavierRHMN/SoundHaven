@@ -92,7 +92,7 @@
         <Folder Include="Tracks\"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Content Include="bin\Debug\net8.0\ffmpeg.7z" />
-    </ItemGroup>
+    <Target Name="CopyFFmpeg" AfterTargets="Build">
+        <Copy SourceFiles="Binaries\ffmpeg.7z" DestinationFolder="$(OutputPath)" />
+    </Target>
 </Project>
