@@ -33,8 +33,8 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="SharpCompress" Version="0.38.0" />
         <PackageReference Include="TagLibSharp" Version="2.3.0"/>
-        <PackageReference Include="YoutubeExplode" Version="6.4.2"/>
-        <PackageReference Include="YouTubeMusicAPI" Version="1.3.1" />
+        <PackageReference Include="YoutubeExplode" Version="6.5.3" />
+        <PackageReference Include="YouTubeMusicAPI" Version="2.2.2" />
     </ItemGroup>
 
     <ItemGroup>

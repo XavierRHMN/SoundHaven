@@ -218,9 +218,13 @@ namespace SoundHaven.ViewModels
                 return;
             }
 
-            if (CurrentSong.IsYouTubeVideo || _audioService.CurrentLocalPosition.TotalSeconds > 5)
+            if (CurrentSong.IsYouTubeVideo)
             {
                 // For YouTube videos or if we're outside the first 3 seconds of any song, always restart
+                await _audioService.SendMpvCommandAsync("seek", 0, "absolute");
+            }
+            else if (_audioService.CurrentLocalPosition.TotalSeconds > 5)
+            {
                 await PlayFromBeginning(CurrentSong);
             }
             else
@@ -275,11 +279,11 @@ namespace SoundHaven.ViewModels
             switch (_repeatViewModel.RepeatMode)
             {
                 case RepeatMode.One:
-                    await PreviousTrack();
+                    await PlayFromBeginning(CurrentSong);
                     _repeatViewModel.SetRepeatModeOff();
                     break;
                 case RepeatMode.All:
-                    await PreviousTrack();
+                    await PlayFromBeginning(CurrentSong);
                     break;
                 case RepeatMode.Off:
                     await NextTrack();

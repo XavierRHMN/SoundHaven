@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using YoutubeExplode;
 using YoutubeExplode.Common;
 using YouTubeMusicAPI.Client;
-using Song = YouTubeMusicAPI.Models.Song;
+using Song = YouTubeMusicAPI.Models.Search.SongSearchResult;
 
 namespace SoundHaven.Services
 {
