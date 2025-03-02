@@ -109,7 +109,9 @@
                                  Width="300"
                                  Watermark="Password" 
                                  FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" 
-                                 Margin="0 0 0 20">
+                                 Margin="0 0 0 20"
+                                 PasswordChar="*"
+                                 Classes="revealPasswordButton">
                             <TextBox.KeyBindings>
                                 <KeyBinding Gesture="Enter"
                                             Command="{Binding SubmitDetailsCommand}" />
