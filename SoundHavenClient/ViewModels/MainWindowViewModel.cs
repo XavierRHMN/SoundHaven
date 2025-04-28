@@ -45,10 +45,9 @@ namespace SoundHaven.ViewModels
 
             // LastFM Song Caching and LastFM Api Key provider
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            
-            var apiKeyProvider = new ApiKeyHelper();
-            string lastFmApiKey = apiKeyProvider.GetApiKey();
-            string lastFmApiSecret = apiKeyProvider.GetApiSecret();
+;
+            string lastFmApiKey = ApiKeyHelper.GetApiKey();
+            string lastFmApiSecret = ApiKeyHelper.GetApiSecret();
             var lastFmDataService = new LastFmLastFmDataService(lastFmApiKey, lastFmApiSecret, memoryCache);
 
             // Services

@@ -1,19 +1,15 @@
-﻿// Models/LastFmModels.cs
+﻿
 using Newtonsoft.Json;
 using System.Collections.Generic;
 
 namespace SoundHaven.Models
 {
-    // Existing Models
-
-
     public class AlbumInfoResponse
     {
         [JsonProperty("album")]
         public LastFmAlbum Album { get; set; }
     }
-
-
+    
     public class ArtistInfoResponse
     {
         [JsonProperty("artist")]
@@ -26,21 +22,18 @@ namespace SoundHaven.Models
         public string Message { get; set; }
     }
 
-
     public class TopTracksResponse
     {
         [JsonProperty("tracks")]
         public TracksContainer Tracks { get; set; }
     }
-
-
+    
     public class TracksContainer
     {
         [JsonProperty("track")]
         public List<LastFmTrack> TrackList { get; set; }
     }
-
-
+    
     public class LastFmAlbum
     {
         [JsonProperty("name")]
@@ -52,17 +45,14 @@ namespace SoundHaven.Models
         [JsonProperty("image")]
         public List<LastFmImage> Images { get; set; }
 
-        // Add other properties if needed
     }
-
-
+    
     public class TrackInfoResponse
     {
         [JsonProperty("track")]
         public LastFmTrackInfo Track { get; set; }
     }
-
-
+    
     public class LastFmTrackInfo
     {
         [JsonProperty("name")]
@@ -71,10 +61,8 @@ namespace SoundHaven.Models
         [JsonProperty("album")]
         public LastFmAlbum Album { get; set; }
 
-        // Add other properties if needed
     }
-
-
+    
     public class LastFmImage
     {
         [JsonProperty("#text")]
@@ -83,8 +71,7 @@ namespace SoundHaven.Models
         [JsonProperty("size")]
         public string Size { get; set; }
     }
-
-
+    
     public class LastFmTrack
     {
         [JsonProperty("name")]
@@ -99,8 +86,7 @@ namespace SoundHaven.Models
         [JsonProperty("image")]
         public List<LastFmImage> Images { get; set; }
     }
-
-
+    
     public class LastFmArtist
     {
         [JsonProperty("name")]
@@ -109,26 +95,19 @@ namespace SoundHaven.Models
         [JsonProperty("image")]
         public List<LastFmImage> Images { get; set; }
     }
-
-
-    // New Models Introduced in Previous Response
-
-
-    // Recent Tracks Models
+    
     public class RecentTracksResponse
     {
         [JsonProperty("recenttracks")]
         public RecentTracks RecentTracks { get; set; }
     }
 
-
     public class RecentTracks
     {
         [JsonProperty("track")]
         public List<RecentTrack> TrackList { get; set; }
     }
-
-
+    
     public class RecentTrack
     {
         [JsonProperty("name")]
@@ -143,44 +122,37 @@ namespace SoundHaven.Models
         [JsonProperty("date")]
         public TrackDate Date { get; set; }
     }
-
-
+    
     public class SimpleArtist
     {
         [JsonProperty("#text")]
         public string Name { get; set; }
     }
-
-
+    
     public class SimpleAlbum
     {
         [JsonProperty("#text")]
         public string Title { get; set; }
     }
-
-
+    
     public class TrackDate
     {
         [JsonProperty("uts")]
         public string UnixTimestamp { get; set; }
     }
-
-
-    // Similar Tracks Models
+    
     public class SimilarTracksResponse
     {
         [JsonProperty("similartracks")]
         public SimilarTracks SimilarTracks { get; set; }
     }
-
-
+    
     public class SimilarTracks
     {
         [JsonProperty("track")]
         public List<SimilarTrack> TrackList { get; set; }
     }
-
-
+    
     public class SimilarTrack
     {
         [JsonProperty("name")]
@@ -193,35 +165,29 @@ namespace SoundHaven.Models
         public List<LastFmImage> Images { get; set; }
     }
 
-
     public class SimilarTrackArtist
     {
         [JsonProperty("name")]
         public string Name { get; set; }
     }
-
-
-    // Models for Track Search
+    
     public class TrackSearchResponse
     {
         [JsonProperty("results")]
         public TrackSearchResults Results { get; set; }
     }
-
-
+    
     public class TrackSearchResults
     {
         [JsonProperty("trackmatches")]
         public TrackMatches TrackMatches { get; set; }
     }
-
-
+    
     public class TrackMatches
     {
         [JsonProperty("track")]
         public List<TrackSearchResult> TrackList { get; set; }
     }
-
 
     public class TrackSearchResult
     {
@@ -231,17 +197,13 @@ namespace SoundHaven.Models
         [JsonProperty("artist")]
         public string Artist { get; set; }
 
-        // Add other properties if needed
     }
-
-
-    // Models for User's Top Tracks
+    
     public class UserTopTracksResponse
     {
         [JsonProperty("toptracks")]
         public UserTopTracks TopTracks { get; set; }
     }
-
 
     public class UserTopTracks
     {
@@ -251,7 +213,6 @@ namespace SoundHaven.Models
         [JsonProperty("@attr")]
         public TopTracksAttr Attr { get; set; }
     }
-
 
     public class UserTopTrack
     {
@@ -266,11 +227,9 @@ namespace SoundHaven.Models
 
         [JsonProperty("duration")]
         public string Duration { get; set; }
-
-        // Add other properties if needed
+        
     }
-
-
+    
     public class TopTracksAttr
     {
         [JsonProperty("user")]
@@ -288,15 +247,12 @@ namespace SoundHaven.Models
         [JsonProperty("total")]
         public string Total { get; set; }
     }
-
-
-    // Similar Artists Models
+    
     public class SimilarArtistsResponse
     {
         [JsonProperty("similarartists")]
         public SimilarArtists SimilarArtists { get; set; }
     }
-
 
     public class SimilarArtists
     {
@@ -304,55 +260,44 @@ namespace SoundHaven.Models
         public List<SimilarArtist> ArtistList { get; set; }
     }
 
-
     public class SimilarArtist
     {
         [JsonProperty("name")]
         public string Name { get; set; }
-
-        // Add other properties if needed
+        
     }
 
-
-    // User's Top Artists Models
     public class UserTopArtistsResponse
     {
         [JsonProperty("topartists")]
         public UserTopArtists TopArtists { get; set; }
     }
-
-
+    
     public class UserTopArtists
     {
         [JsonProperty("artist")]
         public List<UserTopArtist> ArtistList { get; set; }
     }
-
-
+    
     public class UserTopArtist
     {
         [JsonProperty("name")]
         public string Name { get; set; }
-
-        // Add other properties if needed
+        
     }
-
-
-    // Artist's Top Tracks Models
+    
     public class ArtistTopTracksResponse
     {
         [JsonProperty("toptracks")]
         public ArtistTopTracks TopTracks { get; set; }
     }
-
-
+    
     public class ArtistTopTracks
     {
         [JsonProperty("track")]
         public List<ArtistTopTrack> TrackList { get; set; }
     }
-
-
+    
     public class ArtistTopTrack
     {
         [JsonProperty("name")]
@@ -360,11 +305,5 @@ namespace SoundHaven.Models
 
         [JsonProperty("duration")]
         public string Duration { get; set; }
-
-        // Add other properties if needed
     }
-
-
-    // Additional Models for Recommended Tracks (if needed)
-    // If you plan to extend functionality in the future, consider adding more models here.
 }
