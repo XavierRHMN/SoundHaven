@@ -20,7 +20,7 @@ namespace SoundHaven.ViewModels
         public double MaximumSeekValue
         {
             get => _audioService.TotalDuration.TotalSeconds;
-            set => SetProperty(ref _maximumSeekValue, value);
+            private set => SetProperty(ref _maximumSeekValue, value);
         }
         
         public double SeekPosition
@@ -46,8 +46,8 @@ namespace SoundHaven.ViewModels
 
         public SeekSliderViewModel(AudioService audioService, PlaybackViewModel playbackViewModel)
         {
-            _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
-            _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
+            _audioService = audioService;
+            _playbackViewModel = playbackViewModel;
 
             _audioService.PropertyChanged += AudioService_PropertyChanged;
             _playbackViewModel.PropertyChanged += PlaybackViewModelPropertyChanged;

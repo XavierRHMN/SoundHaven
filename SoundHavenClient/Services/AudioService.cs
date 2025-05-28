@@ -4,10 +4,11 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using LibVLCSharp.Shared;
 using SoundHaven.ViewModels;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
+using YouTubeMusicAPI.Client;
+using YouTubeMusicAPI.Models.Streaming;
 
 namespace SoundHaven.Services
 {
@@ -21,10 +22,7 @@ namespace SoundHaven.Services
         private BufferedWaveProvider _bufferedWaveProvider;
         private VolumeSampleProvider _volumeProvider;
         private float _audioVolume = 1.0f;
-        private TimeSpan _currentYoutubeTime;
         private TimeSpan _totalDuration;
-        private string _currentStreamUrl;
-        private CancellationTokenSource _bufferingCancellationTokenSource;
 
         public event EventHandler TrackEnded;
         public event EventHandler PlaybackStateChanged;
@@ -74,8 +72,6 @@ namespace SoundHaven.Services
         {
             Stop();
             _isYouTubeStream = isYouTubeVideo;
-            _currentYoutubeTime = startingPosition;
-            _currentStreamUrl = source;
 
             try
             {
@@ -139,7 +135,6 @@ namespace SoundHaven.Services
         public void Stop()
         {
             _positionLogTimer?.Dispose();
-            _bufferingCancellationTokenSource?.Cancel();
             _waveOutDevice?.Stop();
             _audioFileReader?.Dispose();
             _audioFileReader = null;
@@ -154,15 +149,21 @@ namespace SoundHaven.Services
         {
             try
             {
-                var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(videoId);
-                var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-                if (streamInfo == null) throw new InvalidOperationException("No audio stream found.");
+                var youtubeMusicClient = new YouTubeMusicClient();
+                var videoDetails = await youtubeMusicClient.GetSongVideoInfoAsync(videoId);
+                
+                // var videoDetails = await _youtubeClient.Videos.GetAsync(videoId);
+                TotalDuration = videoDetails?.Duration ?? TimeSpan.Zero;
 
-                var videoDetails = await _youtubeClient.Videos.GetAsync(videoId);
-                TotalDuration = videoDetails.Duration ?? TimeSpan.Zero;
-
-                // Create a MediaFoundationReader for the stream URL
-                _audioFileReader = new MediaFoundationReader(streamInfo.Url);
+                StreamingData streamingData = await youtubeMusicClient.GetStreamingDataAsync(videoId);
+                
+                foreach (MediaStreamInfo streamInfo in streamingData.StreamInfo)
+                {
+                    if (streamInfo is AudioStreamInfo audioStreamInfo)
+                    {
+                        _audioFileReader = new MediaFoundationReader(audioStreamInfo.Url);
+                    }
+                }
 
                 await InitializeAudio(_audioFileReader);
             }
@@ -214,13 +215,6 @@ namespace SoundHaven.Services
                 TrackEnded?.Invoke(this, EventArgs.Empty);
             }
             PlaybackStateChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        public override void Dispose()
-        {
-            Stop();
-            _waveOutDevice?.Dispose();
-            _positionLogTimer?.Dispose();
         }
     }
 }
