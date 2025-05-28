@@ -67,7 +67,7 @@ namespace SoundHaven.ViewModels
             PlayerViewModel = new PlayerViewModel(PlaybackViewModel);
             HomeViewModel = new HomeViewModel(lastFmDataService);
             SeekSliderViewModel = new SeekSliderViewModel(AudioService, PlaybackViewModel);
-            SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel, new FileDownloader(), SeekSliderViewModel);
+            SearchViewModel = new SearchViewModel(YoutubeSearchService, YouTubeDownloadService, new OpenFileDialogService(), AudioService, PlaybackViewModel, SeekSliderViewModel);
             ToolbarViewModel = new ToolbarViewModel(this, PlaylistViewModel, HomeViewModel, PlayerViewModel, PlaylistStore, SearchViewModel, ThemesViewModel);
             VolumeViewModel = new VolumeViewModel(AudioService);
             SongInfoViewModel = new SongInfoViewModel(PlaybackViewModel, AudioService);

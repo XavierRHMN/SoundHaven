@@ -222,10 +222,6 @@ namespace SoundHaven.ViewModels
             {
                 _audioService.Restart();
             }
-            // else if (_audioService.CurrentPosition.TotalSeconds > 5)
-            // {
-            //     await PlayFromBeginning(CurrentSong);
-            // }
             else
             {
                 // For local files, if we're before 5 seconds, try to go to the previous song

@@ -215,26 +215,5 @@
                 </Border>
             </Grid>
         </Grid>
-
-        <!-- MPV Loading Overlay (covers the entire window) -->
-        <Border Grid.RowSpan="2"
-                IsVisible="{Binding IsMpvLoading}"
-                Background="#80000000"
-                VerticalAlignment="Stretch"
-                HorizontalAlignment="Stretch">
-            <StackPanel VerticalAlignment="Center"
-                        HorizontalAlignment="Center"
-                        Spacing="20">
-                <ProgressBar Classes="circular" 
-                             IsIndeterminate="True" 
-                             Height="100" 
-                             Width="100"
-                             Foreground="{DynamicResource PrimaryColor}" />
-                <TextBlock Text="{Binding LoadingMessage}"
-                           Classes="Headers"
-                           Foreground="White"
-                           HorizontalAlignment="Center" />
-            </StackPanel>
-        </Border>
     </Grid>
 </UserControl>
