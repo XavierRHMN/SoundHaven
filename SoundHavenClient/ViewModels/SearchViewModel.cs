@@ -16,7 +16,6 @@ namespace SoundHaven.ViewModels
 {
     public class SearchViewModel : ViewModelBase
     {
-        private readonly FileDownloader _fileDownloader;
         private readonly IYouTubeSearchService _youtubeSearchService;
         private readonly IYouTubeDownloadService _youTubeDownloadService;
         private readonly IOpenFileDialogService _openFileDialogService;
@@ -29,7 +28,6 @@ namespace SoundHaven.ViewModels
         private bool _isLoading;
         private string _loadingMessage;
         private Song _selectedSong;
-        private bool _isMpvLoading;
         private bool _isScrollViewerHittestable = true;
         private bool _toggleSearchResults = true;
 
@@ -69,12 +67,6 @@ namespace SoundHaven.ViewModels
             }
         }
 
-        public bool IsMpvLoading
-        {
-            get => _isMpvLoading;
-            set => SetProperty(ref _isMpvLoading, value);
-        }
-
         public bool IsScrollViewerHittestable
         {
             get => _isScrollViewerHittestable;
@@ -106,7 +98,6 @@ namespace SoundHaven.ViewModels
             IOpenFileDialogService openFileDialogService,
             AudioService audioService,
             PlaybackViewModel playbackViewModel,
-            FileDownloader fileDownloader,
             SeekSliderViewModel seekSliderViewModel)
         {
             _youtubeSearchService = youtubeSearchService;
@@ -114,7 +105,6 @@ namespace SoundHaven.ViewModels
             _openFileDialogService = openFileDialogService;
             _audioService = audioService;
             _playbackViewModel = playbackViewModel;
-            _fileDownloader = fileDownloader;
             _seekSliderViewModel = seekSliderViewModel;
 
             SearchResults = new ObservableCollection<Song>();
@@ -124,35 +114,7 @@ namespace SoundHaven.ViewModels
             PlaySongCommand = new AsyncRelayCommand<Song>(ExecutePlaySongAsync);
             DownloadSongCommand = new AsyncRelayCommand<Song>(ExecuteDownloadSongAsync);
             OpenFolderCommand = new AsyncRelayCommand<Song>(ExecuteOpenFolderAsync);
-
-            // Start MPV initialization in the background
-            _ = InitializeMpvAsync();
-        }
-
-        private async Task InitializeMpvAsync()
-        {
-            try
-            {
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    IsMpvLoading = true;
-                    LoadingMessage = "Initializing MPV...";
-                });
-
-                await Task.Run(async () => await _fileDownloader.DownloadAndUpdateFilesAsync());
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error initializing MPV: {ex.Message}");
-            }
-            finally
-            {
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    IsMpvLoading = false;
-                    LoadingMessage = string.Empty;
-                });
-            }
+            
         }
 
         private async Task ExecuteSearchAsync()

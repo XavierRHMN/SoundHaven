@@ -52,7 +52,7 @@ namespace SoundHaven.Services
                 ?? throw new Exception("No suitable audio stream found.");
         }
 
-        private async Task<string> DownloadAudioStreamAsync(IStreamInfo streamInfo, string title, IProgress<double> progress)
+        public async Task<string> DownloadAudioStreamAsync(IStreamInfo streamInfo, string title, IProgress<double> progress)
         {
             string tempFileName = SanitizeFileName($"{title}.{streamInfo.Container}");
             string tempFilePath = Path.Combine(Path.GetTempPath(), tempFileName);

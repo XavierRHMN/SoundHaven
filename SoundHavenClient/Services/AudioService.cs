@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using LibVLCSharp.Shared;
 using SoundHaven.ViewModels;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
@@ -163,13 +164,7 @@ namespace SoundHaven.Services
                 // Create a MediaFoundationReader for the stream URL
                 _audioFileReader = new MediaFoundationReader(streamInfo.Url);
 
-                // Initialize with volume control
-                _volumeProvider = new VolumeSampleProvider(_audioFileReader.ToSampleProvider())
-                {
-                    Volume = (float)Math.Pow(_audioVolume, 2)
-                };
-
-                _waveOutDevice.Init(_volumeProvider);
+                await InitializeAudio(_audioFileReader);
             }
             catch (Exception ex)
             {
