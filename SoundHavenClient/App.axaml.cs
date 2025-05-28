@@ -33,17 +33,9 @@ namespace SoundHaven
                 {
                     DataContext = mainViewModel
                 };
-
-                desktop.Exit += OnDesktopExit;
             }
 
             base.OnFrameworkInitializationCompleted();
-        }
-        
-        private async void OnDesktopExit(object sender, ControlledApplicationLifetimeExitEventArgs e)
-        {
-            await _audioService.SendMpvCommandAsync("stop");
-            _audioService?.Dispose();
         }
     }
 }
