@@ -28,7 +28,9 @@ namespace SoundHaven.ViewModels
             get => _seekPosition;
             set
             {
-                if (SetProperty(ref _seekPosition, value) && !_isUpdatingFromTimer)
+                // clamp between 0 and the current maximum
+                var clamped = Math.Clamp(value, 0, MaximumSeekValue);
+                if (SetProperty(ref _seekPosition, clamped) && !_isUpdatingFromTimer)
                 {
                     _isUserSeeking = true;
                     _debounceTimer.Stop();
