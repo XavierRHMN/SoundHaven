@@ -178,17 +178,30 @@ namespace SoundHaven.Services
 
         private async Task StartYouTubeStreamAsync(string videoId)
         {
+            
             var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(videoId);
             var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
             if (streamInfo == null) throw new InvalidOperationException("No audio stream found.");
+            
+            var url = streamInfo.Url;
+            using(var mf = new MediaFoundationReader(url))
+            using(var wo = new WasapiOut())
+            {
+                wo.Init(mf);
+                wo.Play();
+                while (wo.PlaybackState == PlaybackState.Playing)
+                {
+                    Thread.Sleep(1000);
+                }
+            }
 
-            _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 16, 2));
-
-            await InitializeAudio(_bufferedWaveProvider);
-            _bufferingCancellationTokenSource = new CancellationTokenSource(); 
-            var videoDetails = await _youtubeClient.Videos.GetAsync(videoId);
-            TotalDuration = videoDetails.Duration ?? TimeSpan.Zero;
-            await StartAndUpdateMpvProcess(streamInfo.Url, _bufferingCancellationTokenSource.Token);
+            // _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 16, 2));
+            //
+            // await InitializeAudio(_bufferedWaveProvider);
+            // _bufferingCancellationTokenSource = new CancellationTokenSource(); 
+            // var videoDetails = await _youtubeClient.Videos.GetAsync(videoId);
+            // TotalDuration = videoDetails.Duration ?? TimeSpan.Zero;
+            // await StartAndUpdateMpvProcess(streamInfo.Url, _bufferingCancellationTokenSource.Token);
         }
         
         // Added this method back
