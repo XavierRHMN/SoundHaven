@@ -1,8 +1,3 @@
-
-NOTICE: Youtube has broken the streaming functionality of SoundHaven, although downloading audio from 
-YouTube still works. This is due to changes in YouTube's internal system forbidding unauthorized music streaming, 
-which SoundHaven relies on. There is currently no ETA for this fix.
-
 # <img src="SoundHavenClient/Assets/Icons/SoundHavenClient.ico" alt="SoundHaven Icon" width="32" height="32"> SoundHaven
 
 ![SoundHaven](https://github.com/user-attachments/assets/b1f430a6-f878-4fa9-bc14-a1163ec1d5dd)
