@@ -30,11 +30,7 @@ namespace SoundHaven.Models
 
             // Find the index of the current song
             int index = Songs.IndexOf(currentSong);
-
-            // If the current song is not found in the list, return null
-            if (index == -1)
-                return null;
-
+            
             // Calculate the new index based on the direction
             int newIndex = (index + (int)direction) % Songs.Count;
 

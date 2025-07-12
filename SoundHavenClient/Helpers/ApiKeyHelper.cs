@@ -5,13 +5,15 @@ public static class ApiKeyHelper
 {
     public static string GetApiKey()
     {
-        return Environment.GetEnvironmentVariable("LASTFM_API_KEY") 
-            ?? throw new InvalidOperationException("LASTFM_API_KEY environment variable not found.");
+        string? key = Environment.GetEnvironmentVariable("LASTFM_API_KEY");
+        if (key == null) return "Key";
+        return key;
     }
 
     public static string GetApiSecret()
     {
-        return Environment.GetEnvironmentVariable("LASTFM_API_SECRET") 
-            ?? throw new InvalidOperationException("LASTFM_API_SECRET environment variable not found.");
+        string? secret = Environment.GetEnvironmentVariable("LASTFM_API_SECRET");
+        if (secret == null) return "Secret";
+        return secret;
     }
 }
