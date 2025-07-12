@@ -7,8 +7,13 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <RootNamespace>SoundHaven</RootNamespace>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ApplicationIcon>Assets\Icons\SoundHavenCLient.ico</ApplicationIcon>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     </PropertyGroup>
 
     <ItemGroup>
@@ -45,9 +50,4 @@
             <DependentUpon>PlaylistCardView.axaml</DependentUpon>
         </Compile>
     </ItemGroup>
-
-    <!-- Custom target to clean up extra files -->
-    <Target Name="RemoveCustomFiles" AfterTargets="Clean">
-        <Delete Files="$(OutputPath)AppdataBase.db" />
-    </Target>
 </Project>
