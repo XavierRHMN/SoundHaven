@@ -78,6 +78,36 @@
             <Setter Property="FontSize" Value="13" />
             <Setter Property="Margin" Value="0,4,0,8" />
         </Style>
+
+        <!-- Icon-only overflow: strip Material chrome so no filled background shows. -->
+        <Style Selector="Button.IconOnly">
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="18"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <!-- Make icon-only overflow easier to hit without adding a constant background. -->
+        <Style Selector="Button.IconOnly:pointerover">
+            <Setter Property="Background" Value="#22000000" />
+        </Style>
+
+        <Style Selector="Button.IconOnly:pressed">
+            <Setter Property="Background" Value="#33000000" />
+        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto, *" Background="{StaticResource ToolbarColor}">
@@ -213,18 +243,17 @@
                                            Classes="SongArtistName" />
                             </StackPanel>
                             <Button Grid.Column="2"
+                                    Classes="IconOnly"
                                     Width="36"
                                     Height="36"
-                                    Padding="5"
-                                    CornerRadius="18"
-                                    Background="Transparent"
                                     VerticalAlignment="Center"
                                     Click="OnPlayingOverflowButtonClick"
                                     ToolTip.Tip="More options">
                                 <Svg Path="avares://SoundHavenClient/Assets/Icons/more_vert.svg"
                                      Stretch="Uniform"
                                      Width="20"
-                                     Height="20" />
+                                     Height="20"
+                                     Opacity="0.95" />
                             </Button>
                         </Grid>
                     </Border>
@@ -297,11 +326,9 @@
                                     </StackPanel>
 
                                     <Button Grid.Column="3"
+                                            Classes="IconOnly"
                                             Width="36"
                                             Height="36"
-                                            Padding="5"
-                                            CornerRadius="18"
-                                            Background="Transparent"
                                             VerticalAlignment="Center"
                                             PointerPressed="OnActionsPointerPressed"
                                             Click="OnUpNextOverflowButtonClick"
@@ -309,7 +336,8 @@
                                         <Svg Path="avares://SoundHavenClient/Assets/Icons/more_vert.svg"
                                              Stretch="Uniform"
                                              Width="20"
-                                             Height="20" />
+                                             Height="20"
+                                             Opacity="0.95" />
                                     </Button>
 
                                     <Border Grid.Column="4"

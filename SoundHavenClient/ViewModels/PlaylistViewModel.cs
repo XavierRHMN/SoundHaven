@@ -120,25 +120,25 @@ namespace SoundHaven.ViewModels
 
         public ObservableCollection<PlaylistTrackRow> TrackRows => _trackRows;
 
-            public Bitmap? CoverSlot0 => DisplayedPlaylist?.HasCustomCover == true
-                ? DisplayedPlaylist.CoverImage
-                : _coverSlots[0];
-            public Bitmap? CoverSlot1 => DisplayedPlaylist?.HasCustomCover == true ? null : _coverSlots[1];
-            public Bitmap? CoverSlot2 => DisplayedPlaylist?.HasCustomCover == true ? null : _coverSlots[2];
-            public Bitmap? CoverSlot3 => DisplayedPlaylist?.HasCustomCover == true ? null : _coverSlots[3];
+        public Bitmap? CoverSlot0 => DisplayedPlaylist?.HasCustomCover == true
+            ? DisplayedPlaylist.CoverImage
+            : _coverSlots[0];
+        public Bitmap? CoverSlot1 => DisplayedPlaylist?.HasCustomCover == true ? null : _coverSlots[1];
+        public Bitmap? CoverSlot2 => DisplayedPlaylist?.HasCustomCover == true ? null : _coverSlots[2];
+        public Bitmap? CoverSlot3 => DisplayedPlaylist?.HasCustomCover == true ? null : _coverSlots[3];
 
-            public bool HasCoverArt =>
-                DisplayedPlaylist?.HasCustomCover == true
-                || _coverSlots.Any(slot => slot is not null);
+        public bool HasCoverArt =>
+            DisplayedPlaylist?.HasCustomCover == true
+            || _coverSlots.Any(slot => slot is not null);
 
-            public bool HasMosaicCover =>
-                DisplayedPlaylist?.HasCustomCover != true
-                && Songs.Count >= 4
-                && _coverSlots[0] is not null;
+        public bool HasMosaicCover =>
+            DisplayedPlaylist?.HasCustomCover != true
+            && Songs.Count >= 4
+            && _coverSlots[0] is not null;
 
-            public bool HasSingleCover =>
-                DisplayedPlaylist?.HasCustomCover == true
-                || (HasCoverArt && !HasMosaicCover);
+        public bool HasSingleCover =>
+            DisplayedPlaylist?.HasCustomCover == true
+            || (HasCoverArt && !HasMosaicCover);
 
         public string TrackStatsText
         {
