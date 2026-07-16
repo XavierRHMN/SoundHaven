@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Media;
 using Avalonia.Threading;
 using SoundHaven.Commands;
 using SoundHaven.Helpers;
@@ -69,8 +72,23 @@ public sealed class PlaybackViewModel : ViewModelBase
         get => _currentSong;
         set
         {
+            if (ReferenceEquals(_currentSong, value))
+            {
+                return;
+            }
+
+            if (_currentSong is not null)
+            {
+                _currentSong.PropertyChanged -= OnCurrentSongPropertyChanged;
+            }
+
             if (SetProperty(ref _currentSong, value))
             {
+                if (_currentSong is not null)
+                {
+                    _currentSong.PropertyChanged += OnCurrentSongPropertyChanged;
+                }
+
                 OnPropertyChanged(nameof(CurrentSongExists));
                 RaiseCommandStates();
             }
@@ -200,6 +218,7 @@ public sealed class PlaybackViewModel : ViewModelBase
         {
             PlaybackSource source = SelectPlaybackSource(song, File.Exists);
             await _audioService.StartAsync(source, cancellationToken: replacementCancellation.Token);
+            await EnsureArtworkForThemeAsync(song, replacementCancellation.Token);
             CurrentSong = song;
             _ = ScrobbleCurrentSongAsync(song, replacementCancellation.Token);
             ApplyDynamicTheme(song);
@@ -211,22 +230,263 @@ public sealed class PlaybackViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Plays a random song from <paramref name="songs"/> and queues the remaining
+    /// tracks in a random order. Does not mutate the source collection.
+    /// </summary>
+    public async Task PlayShuffledAsync(IReadOnlyList<Song> songs, string? playlistName = null)
+    {
+        ArgumentNullException.ThrowIfNull(songs);
+        if (songs.Count == 0)
+        {
+            throw new ArgumentException("At least one song is required.", nameof(songs));
+        }
+
+        var shuffled = songs.ToList();
+        ShuffleInPlace(shuffled);
+
+        // Sequential playback through the shuffled queue (not continuous random pick).
+        IsShuffleEnabled = false;
+        CurrentPlaylist = new Playlist
+        {
+            Name = string.IsNullOrWhiteSpace(playlistName) ? "Shuffle" : playlistName,
+            Songs = new ObservableCollection<Song>(shuffled)
+        };
+
+        await PlayFromBeginning(shuffled[0]);
+    }
+
+    private static void ShuffleInPlace(IList<Song> songs)
+    {
+        for (int i = songs.Count - 1; i > 0; i--)
+        {
+            int j = Random.Shared.Next(i + 1);
+            (songs[i], songs[j]) = (songs[j], songs[i]);
+        }
+    }
+
     public Task AddToUpNext(Song song)
     {
         ArgumentNullException.ThrowIfNull(song);
-        CurrentPlaylist ??= new Playlist
-        {
-            Name = "Streaming from YouTube",
-            Songs = new ObservableCollection<Song>()
-        };
+        EnsureQueuePlaylist();
 
-        if (!CurrentPlaylist.Songs.Contains(song))
+        // Always append a queue copy so duplicates are allowed.
+        CurrentPlaylist!.Songs.Add(song.CloneForQueue());
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Inserts a copy of <paramref name="song"/> at the front of Up Next
+    /// (immediately after the currently playing track). Does not start playback.
+    /// </summary>
+    public Task PlayNext(Song song)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+        EnsureQueuePlaylist();
+
+        ObservableCollection<Song> songs = CurrentPlaylist!.Songs;
+        Song queued = song.CloneForQueue();
+
+        int insertIndex = 0;
+        if (CurrentSong is not null)
         {
-            CurrentPlaylist.Songs.Add(song);
-            OnPropertyChanged(nameof(CurrentPlaylist));
+            int currentIndex = FindSongIndexByReference(songs, CurrentSong);
+            if (currentIndex >= 0)
+            {
+                insertIndex = currentIndex + 1;
+            }
         }
 
+        insertIndex = Math.Clamp(insertIndex, 0, songs.Count);
+        songs.Insert(insertIndex, queued);
         return Task.CompletedTask;
+    }
+
+    private void EnsureQueuePlaylist()
+    {
+        CurrentPlaylist ??= new Playlist
+        {
+            Name = "Up Next",
+            Songs = new ObservableCollection<Song>()
+        };
+    }
+
+    /// <summary>
+    /// Songs queued after the currently playing track.
+    /// </summary>
+    public IReadOnlyList<Song> GetUpcomingSongs()
+    {
+        if (CurrentPlaylist?.Songs is not { Count: > 0 } songs)
+        {
+            return Array.Empty<Song>();
+        }
+
+        if (CurrentSong is null)
+        {
+            return songs.ToList();
+        }
+
+        int currentIndex = FindSongIndexByReference(songs, CurrentSong);
+        if (currentIndex < 0)
+        {
+            return songs.ToList();
+        }
+
+        if (currentIndex >= songs.Count - 1)
+        {
+            return Array.Empty<Song>();
+        }
+
+        var upcoming = new List<Song>(songs.Count - currentIndex - 1);
+        for (int i = currentIndex + 1; i < songs.Count; i++)
+        {
+            upcoming.Add(songs[i]);
+        }
+
+        return upcoming;
+    }
+
+    /// <summary>
+    /// Reorders an upcoming queue entry. Indices are relative to <see cref="GetUpcomingSongs"/>.
+    /// </summary>
+    public bool MoveUpNext(int fromUpNextIndex, int toUpNextIndex)
+    {
+        if (CurrentPlaylist?.Songs is not { } songs || songs.Count == 0)
+        {
+            return false;
+        }
+
+        int baseIndex = 0;
+        if (CurrentSong is not null)
+        {
+            int currentIndex = FindSongIndexByReference(songs, CurrentSong);
+            if (currentIndex < 0)
+            {
+                return false;
+            }
+
+            baseIndex = currentIndex + 1;
+        }
+
+        int from = baseIndex + fromUpNextIndex;
+        int to = baseIndex + toUpNextIndex;
+        if (from < baseIndex || from >= songs.Count || to < baseIndex || to >= songs.Count)
+        {
+            return false;
+        }
+
+        if (from == to)
+        {
+            return true;
+        }
+
+        songs.Move(from, to);
+        return true;
+    }
+
+    /// <summary>
+    /// Removes a queued song from Up Next by upcoming-queue index (0 = next to play).
+    /// </summary>
+    public bool RemoveFromUpNextAt(int upNextIndex)
+    {
+        if (CurrentPlaylist?.Songs is not { } songs || songs.Count == 0)
+        {
+            return false;
+        }
+
+        int baseIndex = 0;
+        if (CurrentSong is not null)
+        {
+            int currentIndex = FindSongIndexByReference(songs, CurrentSong);
+            if (currentIndex >= 0)
+            {
+                baseIndex = currentIndex + 1;
+            }
+        }
+
+        int playlistIndex = baseIndex + upNextIndex;
+        if (playlistIndex < baseIndex || playlistIndex >= songs.Count)
+        {
+            return false;
+        }
+
+        songs.RemoveAt(playlistIndex);
+        return true;
+    }
+
+    /// <summary>
+    /// Removes a queued song from Up Next. Does not affect the currently playing track.
+    /// </summary>
+    public bool RemoveFromUpNext(Song song)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+        if (CurrentPlaylist?.Songs is not { } songs || songs.Count == 0)
+        {
+            return false;
+        }
+
+        if (CurrentSong is not null && ReferenceEquals(CurrentSong, song))
+        {
+            return false;
+        }
+
+        int index = FindSongIndexByReference(songs, song);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        // Only allow removing songs after the currently playing track when it is in the queue.
+        if (CurrentSong is not null)
+        {
+            int currentIndex = FindSongIndexByReference(songs, CurrentSong);
+            if (currentIndex >= 0 && index <= currentIndex)
+            {
+                return false;
+            }
+        }
+
+        songs.RemoveAt(index);
+        return true;
+    }
+
+    private static int FindSongIndexByReference(ObservableCollection<Song> songs, Song song)
+    {
+        for (int i = 0; i < songs.Count; i++)
+        {
+            if (ReferenceEquals(songs[i], song))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private static int FindSongIndex(ObservableCollection<Song> songs, Song song)
+    {
+        for (int i = 0; i < songs.Count; i++)
+        {
+            Song candidate = songs[i];
+            if (ReferenceEquals(candidate, song))
+            {
+                return i;
+            }
+
+            if (!string.IsNullOrWhiteSpace(song.VideoId)
+                && string.Equals(candidate.VideoId, song.VideoId, StringComparison.Ordinal))
+            {
+                return i;
+            }
+
+            if (!string.IsNullOrWhiteSpace(song.FilePath)
+                && string.Equals(candidate.FilePath, song.FilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     public static PlaybackSource SelectPlaybackSource(
@@ -256,6 +516,11 @@ public sealed class PlaybackViewModel : ViewModelBase
 
     public override void Dispose()
     {
+        if (_currentSong is not null)
+        {
+            _currentSong.PropertyChanged -= OnCurrentSongPropertyChanged;
+        }
+
         _trackCancellation.Cancel();
         _trackCancellation.Dispose();
         _audioService.PlaybackStateChanged -= OnPlaybackStateChanged;
@@ -392,18 +657,84 @@ public sealed class PlaybackViewModel : ViewModelBase
         }
     }
 
-    private void ApplyDynamicTheme(Song song)
+    private async Task EnsureArtworkForThemeAsync(Song song, CancellationToken cancellationToken)
     {
-        if (!_themesViewModel.IsDynamicThemeSelected || song.Artwork is null)
+        if (!_themesViewModel.IsDynamicThemeSelected)
+        {
+            return;
+        }
+
+        if (!song.NeedsHigherQualityArtwork()
+            && song.ArtworkData is { Length: > 0 })
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(song.ThumbnailUrl) && string.IsNullOrWhiteSpace(song.VideoId))
         {
             return;
         }
 
         try
         {
-            var dominantColor = DominantColorFinder.GetDominantColor(song.Artwork);
-            _themesViewModel.ThemeColors[^1] = dominantColor;
-            _themesViewModel.ChangeTheme(dominantColor);
+            await song.LoadThumbnailAsync(
+                forceReload: song.NeedsHigherQualityArtwork(),
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            // Artwork is optional for playback; theme will stay as-is.
+        }
+    }
+
+    private void OnCurrentSongPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (sender is not Song song
+            || !ReferenceEquals(song, CurrentSong)
+            || e.PropertyName is not (nameof(Song.ArtworkData) or nameof(Song.Artwork)))
+        {
+            return;
+        }
+
+        void Apply() => ApplyDynamicTheme(song);
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            Apply();
+        }
+        else
+        {
+            Dispatcher.UIThread.Post(Apply);
+        }
+    }
+
+    private void ApplyDynamicTheme(Song song)
+    {
+        if (!_themesViewModel.IsDynamicThemeSelected)
+        {
+            return;
+        }
+
+        try
+        {
+            Color dominantColor;
+            if (song.ArtworkData is { Length: > 0 })
+            {
+                dominantColor = DominantColorFinder.GetDominantColor(song.ArtworkData);
+            }
+            else if (song.Artwork is not null)
+            {
+                dominantColor = DominantColorFinder.GetDominantColor(song.Artwork);
+            }
+            else
+            {
+                return;
+            }
+
+            _themesViewModel.ApplyDynamicColor(dominantColor);
         }
         catch
         {

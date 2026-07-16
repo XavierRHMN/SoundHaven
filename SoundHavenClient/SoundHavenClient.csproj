@@ -13,7 +13,7 @@
         <Authors>SoundHaven contributors</Authors>
         <Description>Windows desktop music player with local and YouTube audio playback.</Description>
         <RepositoryUrl>https://github.com/XavierRHMN/SoundHaven</RepositoryUrl>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
     </PropertyGroup>
 
     <ItemGroup>

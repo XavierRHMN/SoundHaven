@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using SoundHaven.Models;
 using SoundHaven.ViewModels;
 
 namespace SoundHaven.Views;
@@ -14,10 +13,10 @@ public partial class PlaylistView : UserControl
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
     {
         if (DataContext is PlaylistViewModel { IsEditMode: false } viewModel
-            && sender is DataGrid { SelectedItem: Song song }
-            && viewModel.PlaySongCommand.CanExecute(song))
+            && sender is DataGrid { SelectedItem: PlaylistTrackRow row }
+            && viewModel.PlaySongCommand.CanExecute(row.Song))
         {
-            viewModel.PlaySongCommand.Execute(song);
+            viewModel.PlaySongCommand.Execute(row.Song);
         }
     }
 }

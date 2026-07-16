@@ -54,9 +54,11 @@ domain. See <https://sqlite.org/copyright.html>.
 
 ## TagLibSharp
 
-SoundHaven uses the unmodified TagLibSharp 2.3.0 library for audio metadata.
-TagLibSharp is licensed under the GNU Lesser General Public License,
-version 2.1 only (LGPL-2.1-only).
+SoundHaven uses TagLibSharp 2.3.0 for audio metadata and embedded artwork
+(including downloaded M4A thumbnails). TagLibSharp is licensed under the GNU
+Lesser General Public License, version 2.1 only (LGPL-2.1-only). SoundHaven
+itself is licensed under LGPL-2.1-or-later to keep that combination simple for
+binary redistribution.
 
 - Source: <https://github.com/mono/taglib-sharp/tree/2.3.0.0>
 - License: `licenses/TagLibSharp-LGPL-2.1.txt`

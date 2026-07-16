@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using NAudio.Wave;
+using SoundHaven.Helpers;
 using SoundHaven.Services;
 
 namespace SoundHaven.Tests;
@@ -62,6 +63,31 @@ public sealed class YouTubeMediaServiceTests
                 candidates,
                 candidate => candidate.Container == "mp4",
                 candidate => candidate.Bitrate));
+    }
+
+    [Fact]
+    public void GetStableThumbnailUrl_FallsBackToMaxResWhenNoPreferredUrlExists()
+    {
+        string? url = YouTubeMediaService.GetStableThumbnailUrl(
+            "jNQXAC9IVRw",
+            Array.Empty<YoutubeExplode.Common.Thumbnail>());
+
+        Assert.Equal("https://i.ytimg.com/vi/jNQXAC9IVRw/maxresdefault.jpg", url);
+    }
+
+    [Theory]
+    [InlineData(
+        "https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg",
+        "https://i.ytimg.com/vi/jNQXAC9IVRw/maxresdefault.jpg")]
+    [InlineData(
+        "https://lh3.googleusercontent.com/abc=w120-h120-l90-rj",
+        "https://lh3.googleusercontent.com/abc=w1200-h1200-l90-rj")]
+    [InlineData(
+        "https://lh3.googleusercontent.com/abc=s60-c-k-c0x00ffffff-no-rj",
+        "https://lh3.googleusercontent.com/abc=s1200-c-k-c0x00ffffff-no-rj")]
+    public void UpgradeThumbnailUrl_PrefersHigherResolutionSources(string input, string expected)
+    {
+        Assert.Equal(expected, YouTubeThumbnailHelper.UpgradeThumbnailUrl(input));
     }
 
     [Fact]

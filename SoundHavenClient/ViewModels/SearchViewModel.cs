@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using SoundHaven.Commands;
 using SoundHaven.Models;
 using SoundHaven.Services;
+using SoundHaven.Stores;
 
 namespace SoundHaven.ViewModels;
 
@@ -15,6 +16,7 @@ public sealed class SearchViewModel : ViewModelBase
 {
     private readonly IYouTubeMediaService _youTubeMediaService;
     private readonly PlaybackViewModel _playbackViewModel;
+    private readonly PlaylistStore _playlistStore;
     private readonly IUserNotificationService _notifications;
     private CancellationTokenSource _searchCancellation = new();
     private CancellationTokenSource _lifetimeCancellation = new();
@@ -22,18 +24,22 @@ public sealed class SearchViewModel : ViewModelBase
     private bool _isLoading;
     private string _loadingMessage = string.Empty;
     private Song? _selectedSong;
+    private Song? _menuSong;
     private bool _isScrollViewerHittestable = true;
-    private bool _toggleSearchResults = true;
+    private bool _searchSongs = true;
 
     public SearchViewModel(
         IYouTubeMediaService youTubeMediaService,
         PlaybackViewModel playbackViewModel,
+        PlaylistStore playlistStore,
         IUserNotificationService notifications)
     {
         _youTubeMediaService = youTubeMediaService
             ?? throw new ArgumentNullException(nameof(youTubeMediaService));
         _playbackViewModel = playbackViewModel
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
+        _playlistStore = playlistStore
+            ?? throw new ArgumentNullException(nameof(playlistStore));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
         SearchResults = [];
@@ -42,6 +48,20 @@ public sealed class SearchViewModel : ViewModelBase
             ExecutePlaySongAsync,
             song => song is not null,
             ShowFailure);
+        PlayNextCommand = new AsyncRelayCommand<Song>(
+            ExecutePlayNextAsync,
+            song => song is not null,
+            ShowFailure);
+        AddToUpNextCommand = new AsyncRelayCommand<Song>(
+            ExecuteAddToUpNextAsync,
+            song => song is not null,
+            ShowFailure);
+        AddToPlaylistCommand = new RelayCommand<Playlist>(
+            ExecuteAddToPlaylist,
+            playlist => playlist is not null && playlist.Id > 0 && _menuSong is not null);
+        CreatePlaylistAndAddSongCommand = new RelayCommand(
+            ExecuteCreatePlaylistAndAddSong,
+            () => _menuSong is not null);
         DownloadSongCommand = new AsyncRelayCommand<Song>(
             ExecuteDownloadSongAsync,
             song => song is not null && song.CurrentDownloadState == DownloadState.NotDownloaded,
@@ -59,6 +79,8 @@ public sealed class SearchViewModel : ViewModelBase
     }
 
     public ObservableCollection<Song> SearchResults { get; }
+
+    public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
 
     public bool IsLoading
     {
@@ -84,27 +106,63 @@ public sealed class SearchViewModel : ViewModelBase
         private set => SetProperty(ref _isScrollViewerHittestable, value);
     }
 
-    public bool ToggleSearchResults
+    /// <summary>
+    /// When true, search prefers music/audio-oriented results; otherwise general videos.
+    /// </summary>
+    public bool SearchSongs
     {
-        get => _toggleSearchResults;
+        get => _searchSongs;
         set
         {
-            if (SetProperty(ref _toggleSearchResults, value))
+            if (!SetProperty(ref _searchSongs, value))
             {
-                OnPropertyChanged(nameof(SearchButtonText));
+                return;
+            }
+
+            OnPropertyChanged(nameof(SearchButtonText));
+            OnPropertyChanged(nameof(SearchModeDescription));
+
+            if (!string.IsNullOrWhiteSpace(SearchQuery) && SearchCommand.CanExecute(null))
+            {
+                _ = SearchCommand.ExecuteAsync();
             }
         }
     }
 
-    public string SearchButtonText => ToggleSearchResults ? "Search Songs" : "Search Videos";
+    // Kept for existing SearchView bindings.
+    public bool ToggleSearchResults
+    {
+        get => SearchSongs;
+        set => SearchSongs = value;
+    }
+
+    public string SearchButtonText => SearchSongs ? "Search Songs" : "Search Videos";
+
+    public string SearchModeDescription =>
+        SearchSongs ? "Mode: YouTube Music songs" : "Mode: YouTube videos";
 
     public AsyncRelayCommand SearchCommand { get; }
 
     public AsyncRelayCommand<Song> PlaySongCommand { get; }
 
+    public AsyncRelayCommand<Song> PlayNextCommand { get; }
+
+    public AsyncRelayCommand<Song> AddToUpNextCommand { get; }
+
+    public RelayCommand<Playlist> AddToPlaylistCommand { get; }
+
+    public RelayCommand CreatePlaylistAndAddSongCommand { get; }
+
     public AsyncRelayCommand<Song> DownloadSongCommand { get; }
 
     public AsyncRelayCommand<Song> OpenFolderCommand { get; }
+
+    public void SetMenuSong(Song? song)
+    {
+        _menuSong = song;
+        AddToPlaylistCommand.RaiseCanExecuteChanged();
+        CreatePlaylistAndAddSongCommand.RaiseCanExecuteChanged();
+    }
 
     public override void Dispose()
     {
@@ -130,21 +188,23 @@ public sealed class SearchViewModel : ViewModelBase
         previousCancellation.Cancel();
         previousCancellation.Dispose();
 
+        bool searchSongs = SearchSongs;
         IsLoading = true;
-        LoadingMessage = ToggleSearchResults ? "Searching for songs..." : "Searching for videos...";
+        LoadingMessage = searchSongs ? "Searching for songs..." : "Searching for videos...";
+        SelectedSong = null;
         SearchResults.Clear();
         try
         {
             var results = await _youTubeMediaService.SearchAsync(
                 SearchQuery,
                 15,
-                ToggleSearchResults,
+                searchSongs,
                 nextCancellation.Token);
 
             foreach (YouTubeSearchResult result in results)
             {
                 nextCancellation.Token.ThrowIfCancellationRequested();
-                SearchResults.Add(new Song
+                var song = new Song
                 {
                     Title = result.Title,
                     Artist = result.Author,
@@ -154,9 +214,11 @@ public sealed class SearchViewModel : ViewModelBase
                     ChannelTitle = result.Author,
                     Duration = result.Duration ?? TimeSpan.Zero,
                     VideoDuration = FormatDuration(result.Duration),
-                    Views = FormatViewCount(result.ViewCount),
+                    Views = result.ViewCount > 0 ? FormatViewCount(result.ViewCount) : null,
                     Year = result.Year
-                });
+                };
+                SearchResults.Add(song);
+                _ = LoadResultThumbnailAsync(song, nextCancellation.Token);
             }
         }
         finally
@@ -166,6 +228,22 @@ public sealed class SearchViewModel : ViewModelBase
                 IsLoading = false;
                 LoadingMessage = string.Empty;
             }
+        }
+    }
+
+    private static async Task LoadResultThumbnailAsync(Song song, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await song.LoadThumbnailAsync(cancellationToken: cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer search superseded this load.
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Thumbnail load failed for {song.VideoId}: {exception.Message}");
         }
     }
 
@@ -179,14 +257,102 @@ public sealed class SearchViewModel : ViewModelBase
         IsScrollViewerHittestable = false;
         try
         {
-            var playlist = new Playlist { Name = "Streaming from YouTube" };
+            if (song.NeedsHigherQualityArtwork())
+            {
+                await song.LoadThumbnailAsync(
+                    forceReload: true,
+                    cancellationToken: _lifetimeCancellation.Token);
+            }
+
+            var playlist = new Playlist
+            {
+                Name = "Up Next",
+                Songs = new ObservableCollection<Song> { song }
+            };
             _playbackViewModel.CurrentPlaylist = playlist;
-            await _playbackViewModel.AddToUpNext(song);
             await _playbackViewModel.PlayFromBeginning(song);
         }
         finally
         {
             IsScrollViewerHittestable = true;
+        }
+    }
+
+    private async Task ExecutePlayNextAsync(Song? song)
+    {
+        if (song is null)
+        {
+            return;
+        }
+
+        if (song.NeedsHigherQualityArtwork())
+        {
+            await song.LoadThumbnailAsync(
+                forceReload: true,
+                cancellationToken: _lifetimeCancellation.Token);
+        }
+
+        await _playbackViewModel.PlayNext(song);
+        _notifications.ShowInfo($"Queued “{song.Title}” to play next.");
+    }
+
+    private async Task ExecuteAddToUpNextAsync(Song? song)
+    {
+        if (song is null)
+        {
+            return;
+        }
+
+        if (song.NeedsHigherQualityArtwork())
+        {
+            await song.LoadThumbnailAsync(
+                forceReload: true,
+                cancellationToken: _lifetimeCancellation.Token);
+        }
+
+        await _playbackViewModel.AddToUpNext(song);
+        _notifications.ShowInfo($"Added “{song.Title}” to Up Next.");
+    }
+
+    private void ExecuteAddToPlaylist(Playlist? playlist)
+    {
+        if (playlist is null || _menuSong is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _playlistStore.AddSongToPlaylist(playlist, _menuSong);
+            _notifications.ShowInfo($"Added “{_menuSong.Title}” to “{playlist.Name}”.");
+        }
+        catch (Exception exception)
+        {
+            ShowFailure(exception);
+        }
+    }
+
+    private void ExecuteCreatePlaylistAndAddSong()
+    {
+        if (_menuSong is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var playlist = new Playlist
+            {
+                Name = $"Playlist #{_playlistStore.Playlists.Count + 1}",
+                Songs = []
+            };
+            _playlistStore.AddPlaylist(playlist);
+            _playlistStore.AddSongToPlaylist(playlist, _menuSong);
+            _notifications.ShowInfo($"Created “{playlist.Name}” and added “{_menuSong.Title}”.");
+        }
+        catch (Exception exception)
+        {
+            ShowFailure(exception);
         }
     }
 
@@ -220,6 +386,11 @@ public sealed class SearchViewModel : ViewModelBase
             song.Duration = downloadedSong.Duration;
             song.Year = downloadedSong.Year;
             song.ArtworkData = downloadedSong.ArtworkData;
+            if (!string.IsNullOrWhiteSpace(downloadedSong.ThumbnailUrl))
+            {
+                song.ThumbnailUrl = downloadedSong.ThumbnailUrl;
+            }
+
             song.CurrentDownloadState = DownloadState.Downloaded;
             song.DownloadProgress = 100;
             _notifications.ShowInfo($"Downloaded “{song.Title}” to your Music folder.");

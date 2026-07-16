@@ -36,6 +36,48 @@ namespace SoundHaven.Stores
             }
         }
 
+        public void AddSongToPlaylist(Playlist playlist, Song song)
+        {
+            ArgumentNullException.ThrowIfNull(playlist);
+            ArgumentNullException.ThrowIfNull(song);
+
+            if (playlist.Id <= 0)
+            {
+                throw new InvalidOperationException("Save the playlist before adding songs.");
+            }
+
+            _appDatabase.AddSongToPlaylist(playlist.Id, song);
+
+            Playlist? stored = Playlists.FirstOrDefault(existing =>
+                ReferenceEquals(existing, playlist)
+                || (playlist.Id > 0 && existing.Id == playlist.Id));
+
+            ObservableCollection<Song> targetSongs = stored?.Songs ?? playlist.Songs;
+            if (targetSongs.Any(existing => SongMatches(existing, song)))
+            {
+                return;
+            }
+
+            targetSongs.Add(song);
+        }
+
+        private static bool SongMatches(Song left, Song right)
+        {
+            if (left.Id > 0 && left.Id == right.Id)
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(right.VideoId)
+                && string.Equals(left.VideoId, right.VideoId, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            return !string.IsNullOrWhiteSpace(right.FilePath)
+                && string.Equals(left.FilePath, right.FilePath, StringComparison.OrdinalIgnoreCase);
+        }
+
         public void RemovePlaylist(Playlist playlist)
         {
             ArgumentNullException.ThrowIfNull(playlist);

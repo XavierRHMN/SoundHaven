@@ -106,6 +106,37 @@ public sealed class PlaybackViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task PlayShuffledAsync_QueuesRemainingSongsAfterRandomStart()
+    {
+        var repeat = new RepeatViewModel { RepeatMode = RepeatMode.Off };
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+        Song first = CreateYouTubeSong("First", "jNQXAC9IVRw");
+        Song second = CreateYouTubeSong("Second", "dQw4w9WgXcQ");
+        Song third = CreateYouTubeSong("Third", "9bZkp7q19f0");
+        var sourceOrder = new[] { first, second, third };
+        Playlist sourcePlaylist = CreatePlaylist(first, second, third);
+
+        await viewModel.PlayShuffledAsync(sourcePlaylist.Songs, sourcePlaylist.Name);
+
+        Assert.False(viewModel.IsShuffleEnabled);
+        Assert.Contains(viewModel.CurrentSong, sourceOrder);
+        Assert.Equal(2, viewModel.GetUpcomingSongs().Count);
+
+        var playedAndQueued = new[] { viewModel.CurrentSong! }
+            .Concat(viewModel.GetUpcomingSongs())
+            .ToList();
+        Assert.Equal(3, playedAndQueued.Count);
+        Assert.Equal(sourceOrder.OrderBy(song => song.Title), playedAndQueued.OrderBy(song => song.Title));
+
+        // Source playlist order must stay intact.
+        Assert.Same(first, sourcePlaylist.Songs[0]);
+        Assert.Same(second, sourcePlaylist.Songs[1]);
+        Assert.Same(third, sourcePlaylist.Songs[2]);
+        Assert.NotSame(sourcePlaylist, viewModel.CurrentPlaylist);
+    }
+
+    [Fact]
     public async Task ShuffleNavigation_NeverReplaysCurrentTrackWhenAlternativesExist()
     {
         var repeat = new RepeatViewModel();
@@ -149,6 +180,156 @@ public sealed class PlaybackViewModelTests : IDisposable
 
         audio.SetStatus(PlaybackStatus.Playing);
         Assert.True(slider.CanInteractSeekSlider);
+    }
+
+    [Fact]
+    public async Task PlayNext_InsertsImmediatelyAfterCurrentSong()
+    {
+        var repeat = new RepeatViewModel { RepeatMode = RepeatMode.Off };
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+
+        Song current = CreateYouTubeSong("Current", "jNQXAC9IVRw");
+        Song queued = CreateYouTubeSong("Already queued", "aaaaaaaaaaa");
+        Song playNext = CreateYouTubeSong("Play next", "dQw4w9WgXcQ");
+
+        viewModel.CurrentPlaylist = CreatePlaylist(current, queued);
+        viewModel.CurrentSong = current;
+
+        await viewModel.PlayNext(playNext);
+
+        Assert.Equal(3, viewModel.CurrentPlaylist!.Songs.Count);
+        Assert.Equal("Current", viewModel.CurrentPlaylist.Songs[0].Title);
+        Assert.Equal("Play next", viewModel.CurrentPlaylist.Songs[1].Title);
+        Assert.Equal("Already queued", viewModel.CurrentPlaylist.Songs[2].Title);
+        Assert.Same(current, viewModel.CurrentSong);
+        Assert.Empty(audio.StartedSources);
+    }
+
+    [Fact]
+    public async Task PlayNext_CreatesQueueWhenEmpty()
+    {
+        var repeat = new RepeatViewModel();
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+        Song song = CreateYouTubeSong("Solo", "jNQXAC9IVRw");
+
+        await viewModel.PlayNext(song);
+
+        Assert.Equal("Up Next", viewModel.CurrentPlaylist?.Name);
+        Song queued = Assert.Single(viewModel.CurrentPlaylist!.Songs);
+        Assert.Equal(song.VideoId, queued.VideoId);
+        Assert.NotSame(song, queued);
+        Assert.Empty(audio.StartedSources);
+    }
+
+    [Fact]
+    public async Task PlayNext_AllowsDuplicateSongsInQueue()
+    {
+        var repeat = new RepeatViewModel();
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+
+        Song current = CreateYouTubeSong("Current", "jNQXAC9IVRw");
+        Song favorite = CreateYouTubeSong("Favorite", "dQw4w9WgXcQ");
+        viewModel.CurrentPlaylist = CreatePlaylist(current);
+        viewModel.CurrentSong = current;
+
+        await viewModel.PlayNext(favorite);
+        await viewModel.PlayNext(favorite);
+
+        Assert.Equal(3, viewModel.CurrentPlaylist!.Songs.Count);
+        Assert.Equal("Current", viewModel.CurrentPlaylist.Songs[0].Title);
+        Assert.Equal("Favorite", viewModel.CurrentPlaylist.Songs[1].Title);
+        Assert.Equal("Favorite", viewModel.CurrentPlaylist.Songs[2].Title);
+        Assert.NotSame(
+            viewModel.CurrentPlaylist.Songs[1],
+            viewModel.CurrentPlaylist.Songs[2]);
+    }
+
+    [Fact]
+    public void MoveUpNext_ReordersUpcomingSongsOnly()
+    {
+        var repeat = new RepeatViewModel();
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+
+        Song current = CreateYouTubeSong("Current", "jNQXAC9IVRw");
+        Song first = CreateYouTubeSong("First", "aaaaaaaaaaa");
+        Song second = CreateYouTubeSong("Second", "bbbbbbbbbbb");
+        viewModel.CurrentPlaylist = CreatePlaylist(current, first, second);
+        viewModel.CurrentSong = current;
+
+        Assert.True(viewModel.MoveUpNext(0, 1));
+
+        Assert.Equal("Current", viewModel.CurrentPlaylist!.Songs[0].Title);
+        Assert.Equal("Second", viewModel.CurrentPlaylist.Songs[1].Title);
+        Assert.Equal("First", viewModel.CurrentPlaylist.Songs[2].Title);
+
+        IReadOnlyList<Song> upcoming = viewModel.GetUpcomingSongs();
+        Assert.Equal(2, upcoming.Count);
+        Assert.Equal("Second", upcoming[0].Title);
+        Assert.Equal("First", upcoming[1].Title);
+    }
+
+    [Fact]
+    public async Task AddToUpNext_AppendsToEndOfQueue()
+    {
+        var repeat = new RepeatViewModel();
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+
+        Song current = CreateYouTubeSong("Current", "jNQXAC9IVRw");
+        Song first = CreateYouTubeSong("First", "aaaaaaaaaaa");
+        Song second = CreateYouTubeSong("Second", "bbbbbbbbbbb");
+        viewModel.CurrentPlaylist = CreatePlaylist(current, first);
+        viewModel.CurrentSong = current;
+
+        await viewModel.AddToUpNext(second);
+
+        Assert.Equal(3, viewModel.CurrentPlaylist!.Songs.Count);
+        Assert.Equal("Current", viewModel.CurrentPlaylist.Songs[0].Title);
+        Assert.Equal("First", viewModel.CurrentPlaylist.Songs[1].Title);
+        Assert.Equal("Second", viewModel.CurrentPlaylist.Songs[2].Title);
+    }
+
+    [Fact]
+    public void RemoveFromUpNextAt_RemovesByUpcomingIndex()
+    {
+        var repeat = new RepeatViewModel();
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+
+        Song current = CreateYouTubeSong("Current", "jNQXAC9IVRw");
+        Song first = CreateYouTubeSong("First", "aaaaaaaaaaa");
+        Song second = CreateYouTubeSong("Second", "bbbbbbbbbbb");
+        viewModel.CurrentPlaylist = CreatePlaylist(current, first, second);
+        viewModel.CurrentSong = current;
+
+        Assert.True(viewModel.RemoveFromUpNextAt(0));
+        Assert.Equal("Second", Assert.Single(viewModel.GetUpcomingSongs()).Title);
+    }
+
+    [Fact]
+    public void RemoveFromUpNext_RemovesQueuedSongOnly()
+    {
+        var repeat = new RepeatViewModel();
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+
+        Song current = CreateYouTubeSong("Current", "jNQXAC9IVRw");
+        Song first = CreateYouTubeSong("First", "aaaaaaaaaaa");
+        Song second = CreateYouTubeSong("Second", "bbbbbbbbbbb");
+        viewModel.CurrentPlaylist = CreatePlaylist(current, first, second);
+        viewModel.CurrentSong = current;
+
+        Assert.True(viewModel.RemoveFromUpNext(first));
+        Assert.False(viewModel.RemoveFromUpNext(current));
+
+        Assert.Equal(2, viewModel.CurrentPlaylist!.Songs.Count);
+        Assert.Equal("Current", viewModel.CurrentPlaylist.Songs[0].Title);
+        Assert.Equal("Second", viewModel.CurrentPlaylist.Songs[1].Title);
+        Assert.Equal("Second", Assert.Single(viewModel.GetUpcomingSongs()).Title);
     }
 
     public void Dispose()

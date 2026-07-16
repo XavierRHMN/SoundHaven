@@ -9,26 +9,21 @@
              xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
              x:DataType="viewModels:PlayerViewModel">
 
-    <!-- Consolidated Styles Section -->
     <UserControl.Styles>
-        <!-- Override Selected Item Foreground and Background -->
         <Style Selector="ListBoxItem:selected">
             <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
             <Setter Property="Background" Value="Transparent" />
         </Style>
 
-        <!-- Override the Opacity of PART_HoverEffect to Remove Grayish Tint -->
         <Style Selector="ListBoxItem:selected /template/ Border#PART_HoverEffect">
             <Setter Property="Opacity" Value="0" />
         </Style>
 
-        <!-- Remove Ripple Effect -->
         <Style Selector="ListBoxItem:pressed /template/ ripple|RippleEffect#PART_Ripple">
             <Setter Property="RippleFill" Value="Transparent" />
             <Setter Property="Opacity" Value="1.0" />
         </Style>
 
-        <!-- Header Style -->
         <Style Selector="TextBlock.Headers">
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
@@ -36,7 +31,15 @@
             <Setter Property="FontSize" Value="20" />
         </Style>
 
-        <!-- Track Title Style -->
+        <Style Selector="TextBlock.SectionHeader">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="Margin" Value="0,16,0,8" />
+        </Style>
+
         <Style Selector="TextBlock.ArtworkTrackTitle">
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
@@ -45,7 +48,6 @@
             <Setter Property="Margin" Value="0 20 0 0" />
         </Style>
 
-        <!-- Artist Name Style -->
         <Style Selector="TextBlock.ArtworkArtistName">
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
@@ -54,7 +56,6 @@
             <Setter Property="Margin" Value="0 5 0 0" />
         </Style>
 
-        <!-- Track Title Style -->
         <Style Selector="TextBlock.SongTrackTitle">
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
@@ -62,7 +63,6 @@
             <Setter Property="Margin" Value="0 5 0 0" />
         </Style>
 
-        <!-- Artist Name Style -->
         <Style Selector="TextBlock.SongArtistName">
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
@@ -70,17 +70,23 @@
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Margin" Value="0 5 0 0" />
         </Style>
+
+        <Style Selector="TextBlock.EmptyQueueHint">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="0,4,0,8" />
+        </Style>
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto, *" Background="{StaticResource ToolbarColor}">
-        <!-- Playlist Banner -->
         <Border Grid.Row="0"
                 Background="{DynamicResource PrimaryColor}"
                 CornerRadius="0,0,10,10"
                 Padding="0,15">
             <Border.Transitions>
                 <Transitions>
-                    <!-- Animate the Background property when it changes -->
                     <BrushTransition Property="Background" Duration="0:0:0.5" />
                 </Transitions>
             </Border.Transitions>
@@ -93,34 +99,45 @@
                        Classes="Headers" />
         </Border>
 
-        <!-- Content Grid -->
         <Grid Grid.Row="1" MinWidth="900">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.7*" MinWidth="500" /> <!-- Resizable with initial max width -->
+                <ColumnDefinition Width="0.7*" MinWidth="500" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="0.3*" MinWidth="40" />
             </Grid.ColumnDefinitions>
 
-            <!-- Left Column: Album Cover and Song Info -->
-            <Grid Grid.Column="0" RowDefinitions="Auto,Auto,*">
-                <Border Grid.Row="0"
-                        x:Name="AlbumCoverBorder"
-                        CornerRadius="10" ClipToBounds="True"
-                        HorizontalAlignment="Center"
-                        Margin="20,20,10,0">
-                    <Image Source="{Binding PlayerViewSong.Artwork}" Stretch="UniformToFill" />
-                </Border>
-                <TextBlock Grid.Row="1"
-                           Text="{Binding PlayerViewSong.Title}"
-                           Classes="ArtworkTrackTitle"
-                           HorizontalAlignment="Center" />
-                <TextBlock Grid.Row="2"
-                           Text="{Binding PlayerViewSong.Artist}"
-                           Classes="ArtworkArtistName"
-                           HorizontalAlignment="Center" />
+            <!-- Cover + title scale together to fill the left pane, then stay centered in it. -->
+            <Grid Grid.Column="0" Margin="24,24,16,24">
+                <Viewbox Stretch="Uniform"
+                         StretchDirection="Both"
+                         HorizontalAlignment="Stretch"
+                         VerticalAlignment="Stretch">
+                    <StackPanel Width="520">
+                        <Border x:Name="AlbumCoverBorder"
+                                Width="520"
+                                Height="520"
+                                CornerRadius="12"
+                                ClipToBounds="True"
+                                HorizontalAlignment="Center">
+                            <Image Source="{Binding PlayerViewSong.Artwork}"
+                                   Stretch="Uniform" />
+                        </Border>
+                        <TextBlock Text="{Binding PlayerViewSong.Title}"
+                                   Classes="ArtworkTrackTitle"
+                                   Width="520"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding PlayerViewSong.Artist}"
+                                   Classes="ArtworkArtistName"
+                                   Width="520"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Viewbox>
             </Grid>
 
-            <!-- GridSplitter -->
             <GridSplitter Grid.Column="1"
                           Width="30"
                           ResizeBehavior="PreviousAndNext"
@@ -154,46 +171,97 @@
                 </GridSplitter.Styles>
             </GridSplitter>
 
-            <!-- Right Column: Up Next List -->
-            <Grid Grid.Column="2" Margin="0,0 20 0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+            <!-- Right Column: Playing + Up Next -->
+            <ScrollViewer Grid.Column="2"
+                          Margin="0,0,20,0"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Hidden"
+                          Theme="{StaticResource MaterialModernScrollViewer}">
+                <StackPanel Margin="0,16,0,16">
+                    <TextBlock Text="Playing"
+                               Classes="SectionHeader"
+                               HorizontalAlignment="Left" />
+                    <Rectangle Height="1"
+                               Fill="White"
+                               Opacity="0.1"
+                               IsHitTestVisible="False"
+                               Margin="0,0,0,8" />
 
-                <TextBlock Grid.Row="0"
-                           HorizontalAlignment="Center"
-                           Margin="0,30,0,10"
-                           Classes="Headers">
-                    <Run Text="Up Next:" />
-                </TextBlock>
+                    <Border IsVisible="{Binding HasPlayingSong}"
+                            Background="#14FFFFFF"
+                            CornerRadius="8"
+                            Padding="8"
+                            Margin="0,0,0,4">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Border Grid.Column="0"
+                                    CornerRadius="5"
+                                    ClipToBounds="True"
+                                    Margin="0,0,10,0">
+                                <Image Width="50"
+                                       Height="50"
+                                       Source="{Binding PlayerViewSong.Artwork}"
+                                       Stretch="UniformToFill" />
+                            </Border>
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Vertical"
+                                        VerticalAlignment="Center">
+                                <TextBlock Text="{Binding PlayerViewSong.Title}"
+                                           Classes="SongTrackTitle"
+                                           Foreground="{DynamicResource PrimaryColor}" />
+                                <TextBlock Text="{Binding PlayerViewSong.Artist}"
+                                           Classes="SongArtistName" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <TextBlock Text="Nothing playing"
+                               Classes="EmptyQueueHint"
+                               IsVisible="{Binding !HasPlayingSong}" />
 
-                <!-- Separator between "Up Next" and ListBox -->
-                <Rectangle Grid.Row="1"
-                           Height="1"
-                           Fill="White"
-                           Opacity="0.1"
-                           IsHitTestVisible="False" />
+                    <TextBlock Text="Up Next"
+                               Classes="SectionHeader"
+                               HorizontalAlignment="Left" />
+                    <Rectangle Height="1"
+                               Fill="White"
+                               Opacity="0.1"
+                               IsHitTestVisible="False"
+                               Margin="0,0,0,8" />
 
-                <ScrollViewer Grid.Row="2"
-                              HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Hidden"
-                              Theme="{StaticResource MaterialModernScrollViewer}">
-                    <ListBox ItemsSource="{Binding UpNextSongs}"
+                    <TextBlock Text="Queue is empty — use Play next from search"
+                               Classes="EmptyQueueHint"
+                               IsVisible="{Binding !HasUpNextSongs}" />
+
+                    <ListBox x:Name="UpNextList"
+                             ItemsSource="{Binding UpNextSongs}"
                              Background="Transparent"
                              Theme="{StaticResource MaterialModernListBox}"
                              SelectedItem="{Binding PlayerViewSong, Mode=OneWay}"
-                             SelectionChanged="OnSelectionChanged">
+                             SelectionChanged="OnSelectionChanged"
+                             IsVisible="{Binding HasUpNextSongs}">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:Song">
-                                <Grid Margin="0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-
+                                <Grid ColumnDefinitions="Auto,Auto,*,Auto"
+                                      Margin="0,2">
                                     <Border Grid.Column="0"
+                                            Width="28"
+                                            Height="50"
+                                            Background="Transparent"
+                                            Cursor="SizeAll"
+                                            ToolTip.Tip="Drag to reorder"
+                                            PointerPressed="OnDragHandlePointerPressed"
+                                            PointerMoved="OnDragHandlePointerMoved"
+                                            PointerReleased="OnDragHandlePointerReleased"
+                                            PointerCaptureLost="OnDragHandlePointerCaptureLost">
+                                        <Svg Path="avares://SoundHavenClient/Assets/Icons/drag_handle.svg"
+                                             Width="18"
+                                             Height="18"
+                                             Stretch="Uniform"
+                                             Opacity="0.45"
+                                             VerticalAlignment="Center"
+                                             HorizontalAlignment="Center"
+                                             IsHitTestVisible="False" />
+                                    </Border>
+
+                                    <Border Grid.Column="1"
                                             CornerRadius="5"
                                             ClipToBounds="True"
                                             Margin="0,0,10,0">
@@ -203,7 +271,7 @@
                                                Stretch="UniformToFill" />
                                     </Border>
 
-                                    <StackPanel Grid.Column="1"
+                                    <StackPanel Grid.Column="2"
                                                 Orientation="Vertical"
                                                 VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Title}"
@@ -211,12 +279,29 @@
                                         <TextBlock Text="{Binding Artist}"
                                                    Classes="SongArtistName" />
                                     </StackPanel>
+
+                                    <Border Grid.Column="3"
+                                            Width="32"
+                                            Height="50"
+                                            Background="Transparent"
+                                            Cursor="Hand"
+                                            ToolTip.Tip="Remove from Up Next"
+                                            PointerPressed="OnRemoveFromUpNextPointerPressed">
+                                        <Svg Path="avares://SoundHavenClient/Assets/Icons/close.svg"
+                                             Width="16"
+                                             Height="16"
+                                             Stretch="Uniform"
+                                             Opacity="0.55"
+                                             VerticalAlignment="Center"
+                                             HorizontalAlignment="Center"
+                                             IsHitTestVisible="False" />
+                                    </Border>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                </ScrollViewer>
-            </Grid>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
     </Grid>
 </UserControl>

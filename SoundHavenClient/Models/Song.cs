@@ -1,12 +1,19 @@
 using System;
 using System.IO;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
+using SoundHaven.Helpers;
 using SoundHaven.ViewModels;
 
 namespace SoundHaven.Models
 {
     public class Song : ViewModelBase
     {
+        private static readonly HttpClient ThumbnailHttpClient = CreateThumbnailHttpClient();
+
         // Existing properties with backing fields
 
         private int _id;
@@ -123,7 +130,15 @@ namespace SoundHaven.Models
         public string? ThumbnailUrl
         {
             get => _thumbnailUrl;
-            set => SetProperty(ref _thumbnailUrl, value);
+            set
+            {
+                if (SetProperty(ref _thumbnailUrl, value)
+                    && string.IsNullOrWhiteSpace(value)
+                    && (_artworkData is null || _artworkData.Length == 0))
+                {
+                    Artwork = null;
+                }
+            }
         }
 
         private string? _channelTitle;
@@ -225,5 +240,133 @@ namespace SoundHaven.Models
             }
         }
 
+        public Song CloneForQueue()
+        {
+            return new Song
+            {
+                Title = Title,
+                Artist = Artist,
+                Album = Album,
+                Duration = Duration,
+                FilePath = FilePath,
+                Genre = Genre,
+                Year = Year,
+                VideoId = VideoId,
+                ThumbnailUrl = ThumbnailUrl,
+                ChannelTitle = ChannelTitle,
+                Views = Views,
+                VideoDuration = VideoDuration,
+                ArtworkData = ArtworkData is { Length: > 0 }
+                    ? (byte[])ArtworkData.Clone()
+                    : Array.Empty<byte>(),
+                ArtworkUrl = ArtworkUrl,
+                CurrentDownloadState = CurrentDownloadState
+            };
+        }
+
+        public async Task LoadThumbnailAsync(
+            HttpClient? httpClient = null,
+            bool forceReload = false,
+            CancellationToken cancellationToken = default)
+        {
+            if (!forceReload
+                && _artworkData is { Length: > 0 }
+                && _artwork is not null)
+            {
+                return;
+            }
+
+            string? sourceUrl = YouTubeThumbnailHelper.UpgradeThumbnailUrl(ThumbnailUrl);
+            if (!string.IsNullOrWhiteSpace(sourceUrl)
+                && !string.Equals(ThumbnailUrl, sourceUrl, StringComparison.Ordinal))
+            {
+                ThumbnailUrl = sourceUrl;
+            }
+
+            if (string.IsNullOrWhiteSpace(ThumbnailUrl) && string.IsNullOrWhiteSpace(VideoId))
+            {
+                return;
+            }
+
+            HttpClient client = httpClient ?? ThumbnailHttpClient;
+            foreach (string candidateUrl in YouTubeThumbnailHelper.GetDownloadCandidates(
+                         ThumbnailUrl,
+                         VideoId))
+            {
+                try
+                {
+                    using HttpResponseMessage response = await client.GetAsync(
+                        candidateUrl,
+                        HttpCompletionOption.ResponseHeadersRead,
+                        cancellationToken).ConfigureAwait(false);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        continue;
+                    }
+
+                    byte[] imageBytes = await response.Content
+                        .ReadAsByteArrayAsync(cancellationToken)
+                        .ConfigureAwait(false);
+                    if (imageBytes.Length == 0
+                        || YouTubeThumbnailHelper.LooksLikeMissingYouTubeThumbnail(imageBytes))
+                    {
+                        continue;
+                    }
+
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        ArtworkData = imageBytes;
+                        ThumbnailUrl = candidateUrl;
+                    });
+                    return;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (HttpRequestException)
+                {
+                    // Try the next higher/fallback thumbnail candidate.
+                }
+                catch (IOException)
+                {
+                    // Try the next higher/fallback thumbnail candidate.
+                }
+            }
+        }
+
+        public bool NeedsHigherQualityArtwork()
+        {
+            if (string.IsNullOrWhiteSpace(ThumbnailUrl) && string.IsNullOrWhiteSpace(VideoId))
+            {
+                return false;
+            }
+
+            if (Artwork is null || ArtworkData is null || ArtworkData.Length == 0)
+            {
+                return true;
+            }
+
+            return Artwork.PixelSize.Width < YouTubeThumbnailHelper.LowQualityPixelThreshold
+                || Artwork.PixelSize.Height < YouTubeThumbnailHelper.LowQualityPixelThreshold;
+        }
+
+        private static HttpClient CreateThumbnailHttpClient()
+        {
+            var handler = new HttpClientHandler
+            {
+                AutomaticDecompression = System.Net.DecompressionMethods.All
+            };
+            var client = new HttpClient(handler)
+            {
+                Timeout = TimeSpan.FromSeconds(20)
+            };
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                + "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+            client.DefaultRequestHeaders.Accept.ParseAdd("image/*");
+            client.DefaultRequestHeaders.Referrer = new Uri("https://music.youtube.com/");
+            return client;
+        }
     }
 }

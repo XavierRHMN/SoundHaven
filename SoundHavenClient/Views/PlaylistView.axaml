@@ -4,18 +4,72 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
              xmlns:helpers="clr-namespace:SoundHaven.Helpers"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
              x:Class="SoundHaven.Views.PlaylistView"
              x:DataType="viewModels:PlaylistViewModel">
 
-    <!-- Styling for TextBlocks in the toolbar -->
     <UserControl.Styles>
-        <Style Selector="TextBox.PlaylistText">
-            <Setter Property="FontSize" Value="24" />
+        <Style Selector="TextBox.PlaylistTitle">
+            <Setter Property="FontSize" Value="42" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontWeight" Value="ExtraLight" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+        </Style>
+
+        <Style Selector="TextBlock.PlaylistMeta">
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="#A0A0A0" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <Style Selector="TextBlock.TrackTitle">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+
+        <Style Selector="TextBlock.TrackTitle.Playing">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
+        </Style>
+
+        <Style Selector="TextBlock.TrackMeta">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="#C8C8C8" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+
+        <Style Selector="TextBlock.ColumnHeader">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="#8A8A8A" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="LetterSpacing" Value="0.8" />
+        </Style>
+
+        <Style Selector="Button.PlaylistAction">
+            <Setter Property="Height" Value="40" />
+            <Setter Property="MinWidth" Value="110" />
+            <Setter Property="CornerRadius" Value="20" />
+            <Setter Property="Padding" Value="18,0" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+
+        <Style Selector="Button.PlaylistUtility">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Background" Value="Transparent" />
         </Style>
 
         <Style Selector="CheckBox">
@@ -61,93 +115,291 @@
             <Setter Property="Opacity" Value="1" />
         </Style>
 
-        <Style Selector="CheckBox:indeterminate /template/ Border#PART_Border">
-            <Setter Property="Background" Value="{DynamicResource PrimaryColor}" />
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="RowBackground" Value="Transparent" />
+            <Setter Property="GridLinesVisibility" Value="None" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+        </Style>
+
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#8A8A8A" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Padding" Value="8,10" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="BorderBrush" Value="#22FFFFFF" />
+        </Style>
+
+        <Style Selector="DataGridRow">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="MinHeight" Value="56" />
+        </Style>
+
+        <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#14FFFFFF" />
+        </Style>
+
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#1FFFFFFF" />
         </Style>
     </UserControl.Styles>
 
-    <!-- Define Custom Resources -->
     <UserControl.Resources>
         <SolidColorBrush x:Key="MaterialSelectionBrush" Color="{DynamicResource PrimaryColor}" Opacity="0.1" />
     </UserControl.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Background="{DynamicResource ToolbarColor}">
+    <Grid RowDefinitions="Auto,Auto,*" Background="{DynamicResource ToolbarColor}">
 
-        <!-- TextBox bound to DisplayedPlaylist.Name -->
-        <TextBox Grid.Row="0" Grid.Column="0"
-                 Text="{Binding DisplayedPlaylist.Name, Mode=TwoWay, FallbackValue='No Playlist Selected'}"
-                 Margin="0 20 0 0"
-                 HorizontalAlignment="Center"
-                 Classes="PlaylistText" />
+        <!-- Playlist header -->
+        <Grid Grid.Row="0"
+              ColumnDefinitions="Auto,*"
+              Margin="28,24,28,8"
+              IsVisible="{Binding HasPlaylist}">
+            <!-- Cover mosaic -->
+            <Border Grid.Column="0"
+                    Width="176"
+                    Height="176"
+                    CornerRadius="6"
+                    ClipToBounds="True"
+                    Margin="0,0,28,0"
+                    Background="#1A1A1A"
+                    BoxShadow="0 8 24 0 #40000000">
+                <Panel>
+                    <Image Source="/Assets/Covers/MissingAlbum.png"
+                           Stretch="UniformToFill"
+                           IsVisible="{Binding !HasCoverArt}" />
+                    <Image Source="{Binding CoverSlot0}"
+                           Stretch="UniformToFill"
+                           IsVisible="{Binding HasSingleCover}" />
+                    <UniformGrid Rows="2" Columns="2" IsVisible="{Binding HasMosaicCover}">
+                        <Image Source="{Binding CoverSlot0}" Stretch="UniformToFill" />
+                        <Image Source="{Binding CoverSlot1}" Stretch="UniformToFill" />
+                        <Image Source="{Binding CoverSlot2}" Stretch="UniformToFill" />
+                        <Image Source="{Binding CoverSlot3}" Stretch="UniformToFill" />
+                    </UniformGrid>
+                </Panel>
+            </Border>
 
-        <!-- StackPanel for Buttons -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="16">
-            <Button Command="{Binding AddSongCommand}"
-                    Theme="{StaticResource MaterialOutlineButton}"
-                    Content="Add"
-                    ToolTip.Tip="Add a new song"
-                    Width="80"
-                    Height="30"
-                    CornerRadius="16"
-                    HorizontalAlignment="Center"
-                    Foreground="{DynamicResource PrimaryColor}"
-                    BorderBrush="{DynamicResource PrimaryColor}" />
-            <Button Command="{Binding ToggleEditModeCommand}"
-                    Theme="{DynamicResource MaterialOutlineButton}"
-                    Content="{Binding EditButtonContent}"
-                    ToolTip.Tip="Toggle edit mode"
-                    Width="80"
-                    Height="30"
-                    CornerRadius="16"
-                    Foreground="{DynamicResource PrimaryColor}"
-                    BorderBrush="{DynamicResource PrimaryColor}" />
-            <Button Command="{Binding DeleteSelectedSongsCommand}"
-                    Theme="{DynamicResource MaterialOutlineButton}"
-                    Content="Delete"
-                    ToolTip.Tip="Delete selected songs"
-                    Width="80"
-                    Height="30"
-                    CornerRadius="16"
-                    Foreground="{DynamicResource PrimaryColor}"
-                    BorderBrush="{DynamicResource PrimaryColor}"
-                    IsEnabled="{Binding IsEditMode}" />
-        </StackPanel>
+            <!-- Metadata + actions -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*,Auto" VerticalAlignment="Stretch">
+                <TextBox Grid.Row="0"
+                         Text="{Binding PlaylistName, Mode=TwoWay}"
+                         Classes="PlaylistTitle"
+                         Watermark="Playlist name" />
 
+                <TextBlock Grid.Row="1"
+                           Text="{Binding TrackStatsText}"
+                           Classes="PlaylistMeta"
+                           Margin="0,6,0,0" />
 
-        <!-- DataGrid for Songs -->
+                <StackPanel Grid.Row="3"
+                            Orientation="Horizontal"
+                            Spacing="12"
+                            VerticalAlignment="Bottom">
+                    <Button Classes="PlaylistAction"
+                            Command="{Binding PlayPlaylistCommand}"
+                            Background="White"
+                            Foreground="#111111"
+                            ToolTip.Tip="Play playlist">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Svg Path="avares://SoundHavenClient/Assets/Icons/play.svg"
+                                 Width="16" Height="16"
+                                 Css="path { fill: #111111; }" />
+                            <TextBlock Text="Play"
+                                       VerticalAlignment="Center"
+                                       Foreground="#111111"
+                                       FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Classes="PlaylistAction"
+                            Command="{Binding ShufflePlaylistCommand}"
+                            Theme="{StaticResource MaterialOutlineButton}"
+                            Foreground="White"
+                            BorderBrush="#55FFFFFF"
+                            ToolTip.Tip="Shuffle play">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Svg Path="avares://SoundHavenClient/Assets/Icons/shuffle.svg"
+                                 Width="16" Height="16" />
+                            <TextBlock Text="Shuffle" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Classes="PlaylistAction"
+                            Command="{Binding AddSongCommand}"
+                            Theme="{StaticResource MaterialOutlineButton}"
+                            Foreground="{DynamicResource PrimaryColor}"
+                            BorderBrush="{DynamicResource PrimaryColor}"
+                            Content="Add"
+                            ToolTip.Tip="Add a local song" />
+
+                    <Button Classes="PlaylistAction"
+                            Command="{Binding ToggleEditModeCommand}"
+                            Theme="{StaticResource MaterialOutlineButton}"
+                            Foreground="{DynamicResource PrimaryColor}"
+                            BorderBrush="{DynamicResource PrimaryColor}"
+                            Content="{Binding EditButtonContent}"
+                            ToolTip.Tip="Toggle edit mode" />
+
+                    <Button Classes="PlaylistAction"
+                            Command="{Binding DeleteSelectedSongsCommand}"
+                            Theme="{StaticResource MaterialOutlineButton}"
+                            Foreground="{DynamicResource PrimaryColor}"
+                            BorderBrush="{DynamicResource PrimaryColor}"
+                            Content="Delete"
+                            IsEnabled="{Binding IsEditMode}"
+                            ToolTip.Tip="Delete selected songs" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- Empty state -->
+        <TextBlock Grid.Row="0"
+                   Text="Select a playlist to get started"
+                   Classes="PlaylistMeta"
+                   FontSize="16"
+                   HorizontalAlignment="Center"
+                   Margin="0,48,0,24"
+                   IsVisible="{Binding !HasPlaylist}" />
+
+        <!-- Filter bar -->
+        <Border Grid.Row="1"
+                Margin="28,12,28,8"
+                Background="#14FFFFFF"
+                CornerRadius="8"
+                Padding="12,0"
+                Height="42"
+                IsVisible="{Binding HasPlaylist}">
+            <Grid ColumnDefinitions="Auto,*">
+                <Svg Grid.Column="0"
+                     Path="avares://SoundHavenClient/Assets/Icons/search.svg"
+                     Width="16" Height="16"
+                     VerticalAlignment="Center"
+                     Margin="0,0,10,0"
+                     Opacity="0.55" />
+                <TextBox Grid.Column="1"
+                         Text="{Binding FilterText, Mode=TwoWay}"
+                         Watermark="Filter playlist on title, artist or album"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         VerticalAlignment="Center"
+                         FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular"
+                         FontSize="14"
+                         Foreground="White" />
+            </Grid>
+        </Border>
+
+        <!-- Track list -->
         <DataGrid Grid.Row="2"
-                  ItemsSource="{Binding Songs}"
-                  SelectedItem="{Binding SelectedSong}"
+                  Margin="16,0,16,16"
+                  ItemsSource="{Binding TrackRows}"
+                  SelectedItem="{Binding SelectedTrackRow}"
                   SelectionChanged="OnSelectionChanged"
                   AutoGenerateColumns="False"
-                  CanUserReorderColumns="True"
+                  CanUserReorderColumns="False"
                   CanUserResizeColumns="True"
-                  CanUserSortColumns="True"
-                  GridLinesVisibility="None"
+                  CanUserSortColumns="False"
                   SelectionMode="Extended"
                   IsReadOnly="True"
-                  BorderBrush="{StaticResource ToolbarColor}"
+                  IsVisible="{Binding HasPlaylist}"
                   helpers:DataGridHelper.SelectedItems="{Binding SelectedItems}">
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="Select"
-                                        Width="Auto"
+                <DataGridTemplateColumn Header=""
+                                        Width="48"
                                         IsVisible="{Binding IsEditMode}">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                        <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
+                            <CheckBox IsChecked="{Binding Song.IsSelected, Mode=TwoWay}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Center" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*" />
-                <DataGridTextColumn Header="Artist" Binding="{Binding Artist}" Width="120" />
-                <DataGridTextColumn Header="Duration"
-                                    Binding="{Binding Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}"
-                                    Width="Auto" />
-                <DataGridTextColumn Header="File Path"
-                                    Binding="{Binding FilePath}"
-                                    Width="2*" />
+
+                <DataGridTemplateColumn Header="#" Width="48">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
+                            <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Number}"
+                                           Classes="TrackMeta"
+                                           HorizontalAlignment="Center"
+                                           IsVisible="{Binding !IsCurrentlyPlaying}" />
+                                <Svg Path="avares://SoundHavenClient/Assets/Icons/sound.svg"
+                                     Width="14" Height="14"
+                                     IsVisible="{Binding IsCurrentlyPlaying}" />
+                            </Panel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="TITLE" Width="2.2*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
+                            <Grid ColumnDefinitions="Auto,*" Margin="0,4">
+                                <Border Grid.Column="0"
+                                        Width="40"
+                                        Height="40"
+                                        CornerRadius="4"
+                                        ClipToBounds="True"
+                                        Margin="0,0,12,0"
+                                        Background="#22FFFFFF">
+                                    <Panel>
+                                        <Image Source="{Binding Song.Artwork}"
+                                               Stretch="UniformToFill"
+                                               IsVisible="{Binding Song.Artwork, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                        <Image Source="/Assets/Covers/MissingAlbum.png"
+                                               Stretch="UniformToFill"
+                                               IsVisible="{Binding Song.Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
+                                    </Panel>
+                                </Border>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Song.Title}"
+                                           Classes="TrackTitle"
+                                           Classes.Playing="{Binding IsCurrentlyPlaying}"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="ARTIST" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
+                            <TextBlock Text="{Binding Song.Artist}"
+                                       Classes="TrackMeta"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="ALBUM" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
+                            <TextBlock Text="{Binding Song.Album}"
+                                       Classes="TrackMeta"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="TIME" Width="72">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
+                            <TextBlock Text="{Binding Song.Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}"
+                                       Classes="TrackMeta"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       Margin="0,0,8,0" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

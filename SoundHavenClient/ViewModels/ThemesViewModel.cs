@@ -86,16 +86,37 @@ namespace SoundHaven.ViewModels
 
         public void ChangeTheme(Color newColor)
         {
-            if (Application.Current != null)
+            if (Application.Current is null)
             {
-                Application.Current.Resources["PrimaryColor"] = newColor;
-                Application.Current.Resources["PrimaryHueMidBrush"] = new SolidColorBrush(newColor);
-
-                IsDynamicThemeSelected = newColor == ThemeColors[^1];
-
-                // Save the new theme color to the database
-                _appDatabase.SaveThemeColor(newColor.ToString());
+                return;
             }
+
+            Application.Current.Resources["PrimaryColor"] = newColor;
+            Application.Current.Resources["PrimaryHueMidBrush"] = new SolidColorBrush(newColor);
+
+            // The last swatch is the "dynamic" slot (starts white, then follows artwork).
+            IsDynamicThemeSelected = ThemeColors.Count > 0
+                && newColor.Equals(ThemeColors[^1]);
+
+            _appDatabase.SaveThemeColor(newColor.ToString());
+        }
+
+        public void ApplyDynamicColor(Color color)
+        {
+            if (!IsDynamicThemeSelected || Application.Current is null)
+            {
+                return;
+            }
+
+            if (ThemeColors.Count > 0)
+            {
+                ThemeColors[^1] = color;
+            }
+
+            Application.Current.Resources["PrimaryColor"] = color;
+            Application.Current.Resources["PrimaryHueMidBrush"] = new SolidColorBrush(color);
+            _appDatabase.SaveThemeColor(color.ToString());
+            OnPropertyChanged(nameof(ThemeColors));
         }
 
         private void LoadSavedTheme()
@@ -104,6 +125,13 @@ namespace SoundHaven.ViewModels
             if (!string.IsNullOrEmpty(savedColorHex))
             {
                 var savedColor = Color.Parse(savedColorHex);
+                if (ThemeColors.Count > 0
+                    && !ThemeColors.Take(ThemeColors.Count - 1).Contains(savedColor))
+                {
+                    ThemeColors[^1] = savedColor;
+                    IsDynamicThemeSelected = true;
+                }
+
                 ChangeTheme(savedColor);
             }
         }

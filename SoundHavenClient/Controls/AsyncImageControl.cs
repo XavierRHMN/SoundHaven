@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 
 namespace SoundHaven.Controls;
 
@@ -16,6 +18,7 @@ public sealed class AsyncImageControl : Image, IDisposable
 
     private static readonly HttpClient HttpClient = CreateHttpClient();
     private CancellationTokenSource? _loadCancellation;
+    private int _loadGeneration;
 
     static AsyncImageControl()
     {
@@ -52,28 +55,53 @@ public sealed class AsyncImageControl : Image, IDisposable
         }
 
         _loadCancellation = new CancellationTokenSource();
-        _ = LoadAsync(url, _loadCancellation.Token);
+        int generation = Interlocked.Increment(ref _loadGeneration);
+        _ = LoadAsync(url, generation, _loadCancellation.Token);
     }
 
-    private async Task LoadAsync(string url, CancellationToken cancellationToken)
+    private async Task LoadAsync(
+        string url,
+        int generation,
+        CancellationToken cancellationToken)
     {
         try
         {
             using HttpResponseMessage response = await HttpClient.GetAsync(
                 url,
                 HttpCompletionOption.ResponseHeadersRead,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
-            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            var bitmap = new Bitmap(stream);
 
-            if (cancellationToken.IsCancellationRequested)
+            // Avalonia's Bitmap decoder needs a seekable stream; network streams are not.
+            byte[] imageBytes = await response.Content
+                .ReadAsByteArrayAsync(cancellationToken)
+                .ConfigureAwait(false);
+            if (imageBytes.Length == 0)
+            {
+                return;
+            }
+
+            using var memoryStream = new MemoryStream(imageBytes, writable: false);
+            var bitmap = new Bitmap(memoryStream);
+
+            if (cancellationToken.IsCancellationRequested
+                || generation != Volatile.Read(ref _loadGeneration))
             {
                 bitmap.Dispose();
                 return;
             }
 
-            ReplaceSource(bitmap);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (cancellationToken.IsCancellationRequested
+                    || generation != Volatile.Read(ref _loadGeneration))
+                {
+                    bitmap.Dispose();
+                    return;
+                }
+
+                ReplaceSource(bitmap);
+            });
         }
         catch (OperationCanceledException)
         {
@@ -81,16 +109,40 @@ public sealed class AsyncImageControl : Image, IDisposable
         }
         catch (HttpRequestException)
         {
-            ReplaceSource(null);
+            await ClearSourceOnUiAsync(generation, cancellationToken).ConfigureAwait(false);
+        }
+        catch (IOException)
+        {
+            await ClearSourceOnUiAsync(generation, cancellationToken).ConfigureAwait(false);
         }
         catch (ArgumentException)
         {
-            ReplaceSource(null);
+            await ClearSourceOnUiAsync(generation, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private async Task ClearSourceOnUiAsync(
+        int generation,
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested
+            || generation != Volatile.Read(ref _loadGeneration))
+        {
+            return;
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (generation == Volatile.Read(ref _loadGeneration))
+            {
+                ReplaceSource(null);
+            }
+        });
     }
 
     private void CancelLoad()
     {
+        Interlocked.Increment(ref _loadGeneration);
         _loadCancellation?.Cancel();
         _loadCancellation?.Dispose();
         _loadCancellation = null;
@@ -108,12 +160,19 @@ public sealed class AsyncImageControl : Image, IDisposable
 
     private static HttpClient CreateHttpClient()
     {
-        var client = new HttpClient
+        var handler = new HttpClientHandler
         {
-            Timeout = TimeSpan.FromSeconds(15)
+            AutomaticDecompression = System.Net.DecompressionMethods.All
         };
-        client.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("SoundHaven", "1.0"));
+        var client = new HttpClient(handler)
+        {
+            Timeout = TimeSpan.FromSeconds(20)
+        };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            + "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+        client.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("image/*"));
         return client;
     }
 }

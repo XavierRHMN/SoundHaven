@@ -63,12 +63,14 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
     private const int MetadataConcurrency = 4;
     private readonly YoutubeClient _youtubeClient;
     private readonly HttpClient _httpClient;
+    private readonly YouTubeMusicSearchClient _youTubeMusicSearch;
     private readonly SemaphoreSlim _cacheLock = new(1, 1);
 
     public YouTubeMediaService(HttpClient httpClient)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _youtubeClient = new YoutubeClient();
+        _youTubeMusicSearch = new YouTubeMusicSearchClient(_httpClient);
     }
 
     public async Task<IReadOnlyList<YouTubeSearchResult>> SearchAsync(
@@ -84,13 +86,49 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
 
-        string effectiveQuery = searchSongs ? $"{query.Trim()} music" : query.Trim();
+        if (searchSongs)
+        {
+            try
+            {
+                return await _youTubeMusicSearch
+                    .SearchSongsAsync(query, limit, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch when (!cancellationToken.IsCancellationRequested)
+            {
+                // Fall back to general YouTube video search if Music catalogue search fails.
+            }
+        }
+
+        return await SearchVideosAsync(query, limit, searchSongs, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private async Task<IReadOnlyList<YouTubeSearchResult>> SearchVideosAsync(
+        string query,
+        int limit,
+        bool preferMusicLikeResults,
+        CancellationToken cancellationToken)
+    {
+        string trimmedQuery = query.Trim();
+        string effectiveQuery = preferMusicLikeResults
+            ? $"{trimmedQuery} official audio"
+            : trimmedQuery;
+
+        int fetchCount = preferMusicLikeResults ? Math.Min(limit * 3, 45) : limit;
         var searchResults = await _youtubeClient.Search
             .GetVideosAsync(effectiveQuery, cancellationToken)
-            .CollectAsync(limit);
+            .CollectAsync(fetchCount);
+
+        IEnumerable<YoutubeExplode.Search.VideoSearchResult> ranked = preferMusicLikeResults
+            ? searchResults
+                .OrderBy(result => ScoreSongCandidate(result.Duration, result.Title))
+                .ThenByDescending(result => result.Thumbnails.Count)
+                .Take(limit)
+            : searchResults.Take(limit);
 
         using var gate = new SemaphoreSlim(MetadataConcurrency, MetadataConcurrency);
-        var tasks = searchResults.Select(async result =>
+        var tasks = ranked.Select(async result =>
         {
             await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
@@ -107,13 +145,18 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
                     // Search results are still useful if an enrichment request fails.
                 }
 
+                string? thumbnailUrl = GetStableThumbnailUrl(result.Id, result.Thumbnails)
+                    ?? GetStableThumbnailUrl(
+                        result.Id,
+                        details?.Thumbnails ?? Array.Empty<Thumbnail>());
+
                 return new YouTubeSearchResult(
                     result.Id,
                     result.Title,
                     result.Author.ChannelTitle,
                     null,
-                    result.Duration,
-                    result.Thumbnails.OrderByDescending(thumbnail => thumbnail.Resolution.Area).FirstOrDefault()?.Url,
+                    result.Duration ?? details?.Duration,
+                    thumbnailUrl,
                     details?.Engagement.ViewCount ?? 0,
                     details?.UploadDate.Year);
             }
@@ -124,6 +167,70 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
         });
 
         return await Task.WhenAll(tasks).ConfigureAwait(false);
+    }
+
+    internal static string? GetStableThumbnailUrl(
+        string videoId,
+        IEnumerable<Thumbnail> thumbnails)
+    {
+        if (string.IsNullOrWhiteSpace(videoId))
+        {
+            return null;
+        }
+
+        // Prefer YoutubeExplode's largest thumbnail when it already points at i.ytimg.com,
+        // then upgrade hq/sd links to maxres when possible.
+        string? preferred = thumbnails
+            .OrderByDescending(thumbnail => thumbnail.Resolution.Area)
+            .Select(thumbnail => thumbnail.Url)
+            .FirstOrDefault(url =>
+                !string.IsNullOrWhiteSpace(url)
+                && url.Contains("i.ytimg.com", StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrWhiteSpace(preferred))
+        {
+            return YouTubeThumbnailHelper.UpgradeThumbnailUrl(preferred);
+        }
+
+        // Stable CDN URLs avoid signed ggpht/googleusercontent links that often 403
+        // for desktop User-Agents. Prefer maxres; loaders fall back if missing.
+        return YouTubeThumbnailHelper.GetVideoThumbnailUrl(videoId);
+    }
+
+    private static int ScoreSongCandidate(TimeSpan? duration, string title)
+    {
+        int score = 0;
+        string normalizedTitle = title ?? string.Empty;
+
+        if (duration is null)
+        {
+            score += 50;
+        }
+        else if (duration.Value.TotalMinutes is >= 1.5 and <= 8)
+        {
+            score -= 20;
+        }
+        else if (duration.Value.TotalMinutes > 20)
+        {
+            score += 40;
+        }
+
+        if (normalizedTitle.Contains("official audio", StringComparison.OrdinalIgnoreCase)
+            || normalizedTitle.Contains("lyrics", StringComparison.OrdinalIgnoreCase)
+            || normalizedTitle.Contains("topic", StringComparison.OrdinalIgnoreCase))
+        {
+            score -= 15;
+        }
+
+        if (normalizedTitle.Contains("live", StringComparison.OrdinalIgnoreCase)
+            || normalizedTitle.Contains("concert", StringComparison.OrdinalIgnoreCase)
+            || normalizedTitle.Contains("interview", StringComparison.OrdinalIgnoreCase)
+            || normalizedTitle.Contains("trailer", StringComparison.OrdinalIgnoreCase))
+        {
+            score += 25;
+        }
+
+        return score;
     }
 
     public async Task<YouTubeStreamSource> ResolveStreamAsync(
@@ -173,9 +280,7 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
                 Duration = media.Video.Duration ?? TimeSpan.Zero,
                 FilePath = outputPath,
                 VideoId = media.Video.Id,
-                ThumbnailUrl = media.Video.Thumbnails
-                    .OrderByDescending(thumbnail => thumbnail.Resolution.Area)
-                    .FirstOrDefault()?.Url,
+                ThumbnailUrl = GetStableThumbnailUrl(media.Video.Id, media.Video.Thumbnails),
                 ChannelTitle = media.Video.Author.ChannelTitle,
                 Views = media.Video.Engagement.ViewCount.ToString(CultureInfo.InvariantCulture),
                 Year = media.Video.UploadDate.Year,
@@ -329,11 +434,9 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
     {
         byte[]? artwork = null;
         string? mimeType = null;
-        string? thumbnailUrl = video.Thumbnails
-            .OrderByDescending(thumbnail => thumbnail.Resolution.Area)
-            .FirstOrDefault()?.Url;
-
-        if (!string.IsNullOrWhiteSpace(thumbnailUrl))
+        foreach (string thumbnailUrl in YouTubeThumbnailHelper.GetDownloadCandidates(
+                     GetStableThumbnailUrl(video.Id, video.Thumbnails),
+                     video.Id.Value))
         {
             try
             {
@@ -341,14 +444,26 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
                     thumbnailUrl,
                     HttpCompletionOption.ResponseHeadersRead,
                     cancellationToken).ConfigureAwait(false);
-                response.EnsureSuccessStatusCode();
-                mimeType = response.Content.Headers.ContentType?.MediaType;
-                artwork = await response.Content.ReadAsByteArrayAsync(cancellationToken)
+                if (!response.IsSuccessStatusCode)
+                {
+                    continue;
+                }
+
+                byte[] imageBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken)
                     .ConfigureAwait(false);
+                if (imageBytes.Length == 0
+                    || YouTubeThumbnailHelper.LooksLikeMissingYouTubeThumbnail(imageBytes))
+                {
+                    continue;
+                }
+
+                mimeType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                artwork = imageBytes;
+                break;
             }
             catch when (!cancellationToken.IsCancellationRequested)
             {
-                artwork = null;
+                // Try the next candidate.
             }
         }
 

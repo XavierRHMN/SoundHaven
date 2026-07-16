@@ -55,8 +55,13 @@ public partial class App : Application, IDisposable
         {
             Timeout = TimeSpan.FromSeconds(30)
         };
-        _httpClient.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("SoundHaven", "1.0"));
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            + "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+        _httpClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("image/*"));
+        _httpClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("*/*"));
 
         var notifications = new NotificationService();
         var database = new AppDatabase();
@@ -89,13 +94,14 @@ public partial class App : Application, IDisposable
             _audioService,
             playbackViewModel,
             notifications);
+        var playlistStore = new PlaylistStore(database);
         var searchViewModel = new SearchViewModel(
             _youTubeMediaService,
             playbackViewModel,
+            playlistStore,
             notifications);
         var volumeViewModel = new VolumeViewModel(_audioService);
         var songInfoViewModel = new SongInfoViewModel(playbackViewModel, _audioService);
-        var playlistStore = new PlaylistStore(database);
         var navigation = new NavigationService(homeViewModel);
         var toolbarViewModel = new ToolbarViewModel(
             navigation,

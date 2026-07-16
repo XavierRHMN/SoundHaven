@@ -22,6 +22,21 @@ public static class DominantColorFinder
         return Analyze(sampled);
     }
 
+    public static Color GetDominantColor(byte[] imageBytes, int maxDimension = 100)
+    {
+        ArgumentNullException.ThrowIfNull(imageBytes);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxDimension);
+        if (imageBytes.Length == 0)
+        {
+            return FallbackColor;
+        }
+
+        using SKBitmap original = SKBitmap.Decode(imageBytes)
+            ?? throw new InvalidDataException("The artwork could not be decoded.");
+        using SKBitmap sampled = Downsample(original, maxDimension);
+        return Analyze(sampled);
+    }
+
     private static SKBitmap ConvertToSkia(Bitmap bitmap)
     {
         using var stream = new MemoryStream();
@@ -58,7 +73,7 @@ public static class DominantColorFinder
             for (int x = 0; x < bitmap.Width; x++)
             {
                 SKColor pixel = bitmap.GetPixel(x, y);
-                if (pixel.Alpha < 128)
+                if (pixel.Alpha < 128 || IsNeutralPadding(pixel))
                 {
                     continue;
                 }
@@ -86,8 +101,8 @@ public static class DominantColorFinder
             .Select(bucket => new
             {
                 Bucket = bucket,
-                Score = (bucket.Weight / totalWeight * 0.65)
-                    + (bucket.AverageSaturation * 0.35)
+                Score = (bucket.Weight / totalWeight * 0.55)
+                    + (bucket.AverageSaturation * 0.45)
             })
             .OrderByDescending(candidate => candidate.Score)
             .ToArray();
@@ -102,6 +117,19 @@ public static class DominantColorFinder
             (byte)Math.Clamp(Math.Round(selected.Red / selected.Weight), 0, 255),
             (byte)Math.Clamp(Math.Round(selected.Green / selected.Weight), 0, 255),
             (byte)Math.Clamp(Math.Round(selected.Blue / selected.Weight), 0, 255));
+    }
+
+    // YouTube Music thumbs often use circular (-rj) art on white/black padding.
+    private static bool IsNeutralPadding(SKColor color)
+    {
+        int maximum = Math.Max(color.Red, Math.Max(color.Green, color.Blue));
+        int minimum = Math.Min(color.Red, Math.Min(color.Green, color.Blue));
+        if (maximum - minimum < 28)
+        {
+            return true;
+        }
+
+        return maximum < 28 || minimum > 235;
     }
 
     private static int Quantize(SKColor color)
@@ -119,7 +147,8 @@ public static class DominantColorFinder
             Math.Pow(x - centerX, 2)
             + Math.Pow(y - centerY, 2));
         double maximum = Math.Sqrt(Math.Pow(centerX, 2) + Math.Pow(centerY, 2));
-        return maximum <= 0 ? 1 : 1 - (distance / maximum * 0.35);
+        // Stronger center bias helps circular YouTube Music artwork.
+        return maximum <= 0 ? 1 : 1 - (distance / maximum * 0.65);
     }
 
     private sealed class ColorBucket
