@@ -1,0 +1,207 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:SoundHaven.ViewModels"
+        mc:Ignorable="d"
+        x:Class="SoundHaven.Views.EditPlaylistWindow"
+        x:DataType="vm:EditPlaylistViewModel"
+        Title="{Binding DialogTitle}"
+        Width="640"
+        Height="460"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="None"
+        Background="#181818"
+        TransparencyLevelHint="None">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.DialogTitle">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+
+        <Style Selector="TextBlock.FieldLabel">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#B3B3B3" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+
+        <Style Selector="TextBox.DialogField">
+            <Setter Property="Background" Value="#282828" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="CaretBrush" Value="White" />
+            <Setter Property="SelectionBrush" Value="#44FFFFFF" />
+            <Setter Property="BorderBrush" Value="#3E3E3E" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="FontSize" Value="14" />
+            <!-- Strip Material chrome so single-line and multiline share identical padding. -->
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            MinHeight="{TemplateBinding MinHeight}">
+                        <Panel Margin="{TemplateBinding Padding}">
+                            <TextBlock Text="{TemplateBinding Watermark}"
+                                       Foreground="#8A8A8A"
+                                       FontFamily="{TemplateBinding FontFamily}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       IsHitTestVisible="False"
+                                       IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+                            <TextPresenter Name="PART_TextPresenter"
+                                           Text="{TemplateBinding Text}"
+                                           CaretBrush="{TemplateBinding CaretBrush}"
+                                           SelectionBrush="{TemplateBinding SelectionBrush}"
+                                           TextWrapping="{TemplateBinding TextWrapping}"
+                                           TextAlignment="{TemplateBinding TextAlignment}" />
+                        </Panel>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="TextBox.DialogField /template/ TextPresenter#PART_TextPresenter">
+            <Setter Property="(TextElement.Foreground)" Value="White" />
+            <Setter Property="(TextElement.FontFamily)"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="(TextElement.FontSize)" Value="14" />
+        </Style>
+
+        <Style Selector="Button.DialogSecondary">
+            <Setter Property="Background" Value="#282828" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="#3E3E3E" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+        </Style>
+
+        <Style Selector="Button.DialogPrimary">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Foreground" Value="#111111" />
+            <Setter Property="CornerRadius" Value="20" />
+            <Setter Property="Padding" Value="28,10" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+    </Window.Styles>
+
+    <Border Background="#181818"
+            BorderBrush="#2A2A2A"
+            BorderThickness="1"
+            CornerRadius="10"
+            Padding="24">
+        <Grid RowDefinitions="Auto,*,Auto">
+            <!-- Header -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,24">
+                <TextBlock Text="{Binding DialogTitle}"
+                           Classes="DialogTitle"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="1"
+                        Command="{Binding CloseCommand}"
+                        Width="36"
+                        Height="36"
+                        Padding="6"
+                        CornerRadius="18"
+                        Background="Transparent"
+                        ToolTip.Tip="Close">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/close.svg"
+                         Width="18"
+                         Height="18" />
+                </Button>
+            </Grid>
+
+            <!-- Body: cover | fields with shared top alignment -->
+            <Grid Grid.Row="1" ColumnDefinitions="180,*" RowDefinitions="Auto,*">
+                <Border Grid.Row="0"
+                        Grid.Column="0"
+                        Width="180"
+                        Height="180"
+                        CornerRadius="6"
+                        ClipToBounds="True"
+                        Background="#282828"
+                        Margin="0,0,28,0">
+                    <Panel>
+                        <Border Background="#3A3A3A"
+                                IsVisible="{Binding !HasCoverArt}" />
+                        <Image Source="{Binding CoverSlot0}"
+                               Stretch="UniformToFill"
+                               IsVisible="{Binding HasSingleCover}" />
+                        <UniformGrid Rows="2" Columns="2" IsVisible="{Binding HasMosaicCover}">
+                            <Image Source="{Binding CoverSlot0}" Stretch="UniformToFill" />
+                            <Image Source="{Binding CoverSlot1}" Stretch="UniformToFill" />
+                            <Image Source="{Binding CoverSlot2}" Stretch="UniformToFill" />
+                            <Image Source="{Binding CoverSlot3}" Stretch="UniformToFill" />
+                        </UniformGrid>
+                    </Panel>
+                </Border>
+
+                <Button Grid.Row="1"
+                        Grid.Column="0"
+                        Classes="DialogSecondary"
+                        Content="Change Image"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalAlignment="Top"
+                        Margin="0,12,28,0"
+                        Command="{Binding ChangeImageCommand}" />
+
+                <!-- Title + Description share the same left edge and column width -->
+                <Grid Grid.Row="0"
+                      Grid.RowSpan="2"
+                      Grid.Column="1"
+                      RowDefinitions="Auto,*,Auto">
+                    <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                        <TextBlock Text="Title" Classes="FieldLabel" />
+                        <TextBox Text="{Binding PlaylistTitle, Mode=TwoWay}"
+                                 Classes="DialogField"
+                                 Watermark="Playlist title" />
+                    </StackPanel>
+
+                    <DockPanel Grid.Row="1" LastChildFill="True">
+                        <TextBlock DockPanel.Dock="Top"
+                                   Text="Description"
+                                   Classes="FieldLabel" />
+                        <TextBlock DockPanel.Dock="Bottom"
+                                   Text="{Binding DescriptionCounterText}"
+                                   HorizontalAlignment="Right"
+                                   Margin="0,8,0,0"
+                                   Foreground="#8A8A8A"
+                                   FontSize="12"
+                                   FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                        <TextBox Text="{Binding Description, Mode=TwoWay}"
+                                 Classes="DialogField"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 Watermark="Optional description"
+                                 MaxLength="{x:Static vm:EditPlaylistViewModel.MaxDescriptionLength}"
+                                 MinHeight="120"
+                                 VerticalContentAlignment="Top" />
+                    </DockPanel>
+                </Grid>
+            </Grid>
+
+            <!-- Footer -->
+            <Button Grid.Row="2"
+                    Classes="DialogPrimary"
+                    Content="Save"
+                    HorizontalAlignment="Right"
+                    Margin="0,24,0,0"
+                    Command="{Binding SaveCommand}" />
+        </Grid>
+    </Border>
+</Window>

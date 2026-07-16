@@ -86,4 +86,132 @@
     <Style Selector="Slider /template/ Thumb#PART_SliderThumb:pressed /template/ Ellipse#PART_GlowEffect">
         <Setter Property="Opacity" Value="0.5" />
     </Style>
+
+    <!-- Dark menus matching Edit playlist dialog -->
+    <Style Selector="MenuFlyoutPresenter">
+        <Setter Property="Background" Value="#181818" />
+        <Setter Property="BorderBrush" Value="#2A2A2A" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="6" />
+        <Setter Property="MinWidth" Value="200" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        Padding="{TemplateBinding Padding}"
+                        BoxShadow="0 12 28 0 #80000000"
+                        ClipToBounds="True">
+                    <ItemsPresenter Name="PART_ItemsPresenter"
+                                    ItemsPanel="{TemplateBinding ItemsPanel}"
+                                    KeyboardNavigation.TabNavigation="Continue" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="MenuItem">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="12,9" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="FontFamily"
+                Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="PART_LayoutRoot"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        Padding="{TemplateBinding Padding}"
+                        MinHeight="{TemplateBinding MinHeight}">
+                    <Panel>
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <ContentPresenter Name="PART_IconPresenter"
+                                              Grid.Column="0"
+                                              Content="{TemplateBinding Icon}"
+                                              Width="16"
+                                              Height="16"
+                                              Margin="0,0,10,0"
+                                              VerticalAlignment="Center"
+                                              IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            <ContentPresenter Name="PART_HeaderPresenter"
+                                              Grid.Column="1"
+                                              Content="{TemplateBinding Header}"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                            <Path Name="PART_Arrow"
+                                  Grid.Column="2"
+                                  Margin="12,0,0,0"
+                                  VerticalAlignment="Center"
+                                  Width="5"
+                                  Height="9"
+                                  Stretch="Uniform"
+                                  Data="M0,0 L1,0.5 L0,1 Z"
+                                  Fill="#B3B3B3"
+                                  IsVisible="False" />
+                        </Grid>
+                        <Popup Name="PART_Popup"
+                               WindowManagerAddShadowHint="False"
+                               IsOpen="{TemplateBinding IsSubMenuOpen, Mode=TwoWay}"
+                               Placement="RightEdgeAlignedTop"
+                               IsLightDismissEnabled="False">
+                            <Border Background="#181818"
+                                    BorderBrush="#2A2A2A"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="6"
+                                    MinWidth="180"
+                                    BoxShadow="0 12 28 0 #80000000"
+                                    ClipToBounds="True">
+                                <ItemsPresenter Name="PART_ItemsPresenter"
+                                                ItemsPanel="{TemplateBinding ItemsPanel}"
+                                                KeyboardNavigation.TabNavigation="Continue"
+                                                Grid.IsSharedSizeScope="True" />
+                            </Border>
+                        </Popup>
+                    </Panel>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="MenuItem:pointerover /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="#282828" />
+    </Style>
+
+    <Style Selector="MenuItem /template/ ContentPresenter#PART_HeaderPresenter">
+        <Setter Property="(TextElement.Foreground)" Value="White" />
+    </Style>
+
+    <Style Selector="MenuItem:selected /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="#282828" />
+    </Style>
+
+    <Style Selector="MenuItem:pressed /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="#333333" />
+    </Style>
+
+    <Style Selector="MenuItem:disabled">
+        <Setter Property="Opacity" Value="0.45" />
+    </Style>
+
+    <Style Selector="Separator">
+        <Setter Property="Margin" Value="8,4" />
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="#2A2A2A" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Height="1"
+                        Background="#2A2A2A"
+                        Margin="{TemplateBinding Margin}" />
+            </ControlTemplate>
+        </Setter>
+    </Style>
 </Styles>

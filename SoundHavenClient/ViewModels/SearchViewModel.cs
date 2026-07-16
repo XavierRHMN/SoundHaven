@@ -343,7 +343,7 @@ public sealed class SearchViewModel : ViewModelBase
         {
             var playlist = new Playlist
             {
-                Name = $"Playlist #{_playlistStore.Playlists.Count + 1}",
+                Name = "New playlist",
                 Songs = []
             };
             _playlistStore.AddPlaylist(playlist);

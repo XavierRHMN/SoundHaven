@@ -106,6 +106,7 @@ public partial class App : Application, IDisposable
         var toolbarViewModel = new ToolbarViewModel(
             navigation,
             playlistViewModel,
+            playbackViewModel,
             homeViewModel,
             playerViewModel,
             playlistStore,

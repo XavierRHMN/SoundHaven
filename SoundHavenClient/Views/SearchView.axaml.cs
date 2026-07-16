@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.ViewModels;
 
@@ -41,10 +42,7 @@ public partial class SearchView : UserControl
 
         viewModel.SetMenuSong(song);
 
-        var flyout = new MenuFlyout
-        {
-            Placement = PlacementMode.BottomEdgeAlignedLeft
-        };
+        var flyout = DarkMenuFlyout.Create(PlacementMode.BottomEdgeAlignedLeft);
 
         flyout.Items.Add(new MenuItem
         {
@@ -89,7 +87,8 @@ public partial class SearchView : UserControl
             {
                 Data = StreamGeometry.Parse("M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"),
                 Width = 16,
-                Height = 16
+                Height = 16,
+                Foreground = Brushes.White
             }
         });
 

@@ -84,23 +84,29 @@
         </Grid>
 
         <!-- Main Content -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" Background="{DynamicResource ToolbarColor}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" />
-                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="Gray">
+            <Border Grid.Column="0"
+                    Background="{DynamicResource ToolbarColor}"
+                    BorderThickness="0,0,1,0"
+                    BorderBrush="#22FFFFFF"
+                    ClipToBounds="True">
                 <controls:ToolbarControl DataContext="{Binding ToolbarViewModel}" />
             </Border>
 
-            <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" />
+            <Border Grid.Column="1" Background="{DynamicResource ToolbarColor}">
+                <ContentControl Content="{Binding CurrentViewModel}" />
+            </Border>
         </Grid>
 
         <!-- Player Controls -->
         <Grid Grid.Row="2" Background="{DynamicResource PlayerBarColor}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="280" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -136,8 +142,14 @@
                 MaxWidth="800"
                 CornerRadius="8"
                 Background="#EE242424"
-                BorderBrush="#FFE57373"
-                BorderThickness="1">
+                BorderBrush="#33FFFFFF"
+                BorderThickness="1"
+                Classes.Error="{Binding Notifications.IsError}">
+            <Border.Styles>
+                <Style Selector="Border.Error">
+                    <Setter Property="BorderBrush" Value="#66E57373" />
+                </Style>
+            </Border.Styles>
             <TextBlock Text="{Binding Notifications.Message}"
                        Foreground="White"
                        TextWrapping="Wrap" />

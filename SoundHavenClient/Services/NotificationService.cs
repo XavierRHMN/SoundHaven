@@ -44,12 +44,12 @@ public sealed class NotificationService : ViewModelBase, IUserNotificationServic
 
     public void ShowError(string message)
     {
-        Show(message, true, TimeSpan.FromSeconds(8));
+        Show(message, true, TimeSpan.FromSeconds(4));
     }
 
     public void ShowInfo(string message)
     {
-        Show(message, false, TimeSpan.FromSeconds(5));
+        Show(message, false, TimeSpan.FromSeconds(2.5));
     }
 
     public void Clear()

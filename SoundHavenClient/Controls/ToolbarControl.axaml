@@ -3,158 +3,236 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignWidth="200" d:DesignHeight="600"
-             xmlns:controls="clr-namespace:Material.Styles.Controls;assembly=Material.Styles"
+             d:DesignWidth="280" d:DesignHeight="700"
              x:Class="SoundHaven.Controls.ToolbarControl"
              xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
+             xmlns:models="clr-namespace:SoundHaven.Models"
              xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
-             xmlns:local="clr-namespace:SoundHaven.Controls"
              x:DataType="viewModels:ToolbarViewModel">
 
-    <!-- Root Grid for Toolbar -->
-    <StackPanel Background="{StaticResource ToolbarColor}">
-        <StackPanel.Styles>
-            <Style Selector="TextBlock.ToolbarText">
-                <Setter Property="FontSize" Value="14" />
-                <Setter Property="FontWeight" Value="Light" />
-                <Setter Property="FontFamily"
-                        Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
-            </Style>
+    <UserControl.Styles>
+        <Style Selector="TextBlock.ToolbarText">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Light" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+        </Style>
 
-            <Style Selector="TextBlock.Playlists">
-                <Setter Property="FontSize" Value="11" />
-                <Setter Property="Foreground" Value="White" />
-                <Setter Property="Opacity" Value="0.8" />
-                <Setter Property="FontFamily"
-                        Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
-                <Setter Property="TextAlignment" Value="Center" />
-            </Style>
+        <Style Selector="TextBlock.PlaylistsHeader">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+        </Style>
 
-            <Style Selector="controls|FloatingButton">
-                <Setter Property="FontSize" Value="14" />
-                <Setter Property="Foreground" Value="White" />
-                <Setter Property="FontWeight" Value="Light" />
-                <Setter Property="FontFamily"
-                        Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
-            </Style>
+        <Style Selector="TextBlock.PlaylistName">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
 
-            <!-- Override Selected Item Foreground and Background -->
-            <Style Selector="ListBoxItem:selected TextBlock.Playlists">
-                <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
-                <Setter Property="Opacity" Value="1.0" /> <!-- Optional: Adjust if needed -->
-            </Style>
+        <Style Selector="TextBlock.PlaylistCount">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8A8A8A" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+        </Style>
 
-            <!-- Override the Opacity of PART_HoverEffect to Remove Grayish Tint -->
-            <Style Selector="ListBoxItem:selected /template/ Border#PART_HoverEffect">
-                <Setter Property="Opacity" Value="0" /> <!-- Remove hover effect opacity -->
-            </Style>
+        <Style Selector="Button.SidebarIcon">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Content="{TemplateBinding Content}"
+                                      Background="Transparent"
+                                      Padding="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="Center"
+                                      VerticalContentAlignment="Center" />
+                </ControlTemplate>
+            </Setter>
+        </Style>
 
-            <!-- **New Style to Remove Ripple Effect** -->
-            <Style Selector="ListBoxItem:pressed /template/ ripple|RippleEffect#PART_Ripple">
-                <Setter Property="RippleFill" Value="Transparent" />
-                <Setter Property="Opacity" Value="1.0" />
-            </Style>
+        <Style Selector="ListBox.PlaylistSidebar">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="8,0" />
+        </Style>
 
-            <Style Selector="TextBlock.CreatePlaylist">
-                <Setter Property="FontFamily"
-                        Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
-                <Setter Property="Foreground" Value="White" />
-                <Setter Property="FontSize" Value="14" />
-                <Setter Property="Margin" Value="0 5 0 0" />
-            </Style>
-        </StackPanel.Styles>
+        <Style Selector="ListBox.PlaylistSidebar ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,3" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="PART_Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="10,8"
+                            ClipToBounds="True">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
 
+        <Style Selector="ListBox.PlaylistSidebar ListBoxItem:pointerover /template/ Border#PART_Root">
+            <Setter Property="Background" Value="#14FFFFFF" />
+        </Style>
 
-        <!-- Toolbar Buttons with Icons -->
-        <Button Background="Transparent" Foreground="White" Command="{Binding ShowHomeViewCommand}" Width="200"
-                HorizontalContentAlignment="Left">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHavenClient/Assets/Icons/home.svg" Width="16" Height="16"
-                     HorizontalAlignment="Left" />
-                <TextBlock Classes="ToolbarText" Text="Home" VerticalAlignment="Center" Margin="10,5,0,0" />
-            </StackPanel>
-        </Button>
+        <Style Selector="ListBox.PlaylistSidebar ListBoxItem:selected /template/ Border#PART_Root">
+            <Setter Property="Background" Value="#2A2A2A" />
+        </Style>
 
-        <Button Background="Transparent" Foreground="White" Command="{Binding ShowSearchViewCommand}" Width="200"
-                HorizontalContentAlignment="Left">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHavenClient/Assets/Icons/search.svg" Width="16" Height="16"
-                     HorizontalAlignment="Left" />
-                <TextBlock Classes="ToolbarText" Text="Search" VerticalAlignment="Center" Margin="10,5,0,0" />
-            </StackPanel>
-        </Button>
+        <Style Selector="ListBox.PlaylistSidebar ListBoxItem:selected TextBlock.PlaylistName">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
+        </Style>
 
-        <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlayerViewCommand}" Width="200"
-                HorizontalContentAlignment="Left">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHavenClient/Assets/Icons/player.svg" Width="16" Height="16"
-                     HorizontalAlignment="Left" />
-                <TextBlock Classes="ToolbarText" Text="Player" VerticalAlignment="Center" Margin="10,5,0,0" />
-            </StackPanel>
-        </Button>
+        <Style Selector="ListBox.PlaylistSidebar ListBoxItem:selected Border.PlayingBadge">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
 
-        <Button Background="Transparent" Foreground="White" Command="{Binding ShowThemesViewCommand}" Width="200"
-                HorizontalContentAlignment="Left">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10">
-                <Svg Path="avares://SoundHavenClient/Assets/Icons/palette.svg" Width="16" Height="16"
-                     HorizontalAlignment="Left" />
-                <TextBlock Classes="ToolbarText" Text="Themes" VerticalAlignment="Center" Margin="10,5,0,0" />
-            </StackPanel>
-        </Button>
+        <Style Selector="ListBoxItem:pressed /template/ ripple|RippleEffect#PART_Ripple">
+            <Setter Property="RippleFill" Value="Transparent" />
+            <Setter Property="Opacity" Value="1.0" />
+        </Style>
+    </UserControl.Styles>
 
-        <Separator Background="White" Opacity="0.1" />
+    <Grid RowDefinitions="Auto,*,Auto" Background="{StaticResource ToolbarColor}">
+        <!-- Nav -->
+        <StackPanel Grid.Row="0">
+            <Button Background="Transparent" Foreground="White" Command="{Binding ShowHomeViewCommand}"
+                    HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Margin="12,10">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/home.svg" Width="16" Height="16" />
+                    <TextBlock Classes="ToolbarText" Text="Home" VerticalAlignment="Center" Margin="12,0,0,0" />
+                </StackPanel>
+            </Button>
 
-        <controls:FloatingButton VerticalAlignment="Center"
-                                 Theme="{StaticResource MaterialFlatButton}"
-                                 IsExtended="True"
-                                 Command="{Binding CreatePlaylistCommand}">
-            <controls:FloatingButton.Content>
-                <TextBlock Text="Create Playlist" Classes="CreatePlaylist" />
-            </controls:FloatingButton.Content>
-        </controls:FloatingButton>
+            <Button Background="Transparent" Foreground="White" Command="{Binding ShowSearchViewCommand}"
+                    HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Margin="12,10">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/search.svg" Width="16" Height="16" />
+                    <TextBlock Classes="ToolbarText" Text="Search" VerticalAlignment="Center" Margin="12,0,0,0" />
+                </StackPanel>
+            </Button>
 
-        <Separator Background="White" Opacity="0.1" />
+            <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlayerViewCommand}"
+                    HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Margin="12,10">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/player.svg" Width="16" Height="16" />
+                    <TextBlock Classes="ToolbarText" Text="Player" VerticalAlignment="Center" Margin="12,0,0,0" />
+                </StackPanel>
+            </Button>
 
-        <!-- ScrollViewer for ListBox -->
-        <ScrollViewer Margin="0 0 0 0"
-                      FlowDirection="RightToLeft"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalContentAlignment="Left"
-                      MaxHeight="300"
-                      Theme="{StaticResource MaterialModernScrollViewer}">
+            <Button Background="Transparent" Foreground="White" Command="{Binding ShowThemesViewCommand}"
+                    HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Margin="12,10">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/palette.svg" Width="16" Height="16" />
+                    <TextBlock Classes="ToolbarText" Text="Themes" VerticalAlignment="Center" Margin="12,0,0,0" />
+                </StackPanel>
+            </Button>
 
-            <ListBox Margin="0"
-                     ItemsSource="{Binding PlaylistCollection}"
-                     SelectedItem="{Binding ToolbarSelectedPlaylist, Mode=TwoWay}"
-                     Width="200"
-                     Classes="ToolbarText"
-                     local:ListBoxHelper.DeleteCommand="{Binding DeletePlaylistCommand}">
+            <Separator Background="White" Opacity="0.08" Margin="12,8" />
+        </StackPanel>
 
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <DockPanel LastChildFill="True">
-                            <Button DockPanel.Dock="Left"
-                                    Background="Transparent"
-                                    Command="{Binding (local:ListBoxHelper.DeleteCommand), RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                    CommandParameter="{Binding}"
-                                    VerticalAlignment="Stretch"
-                                    Padding="0,0"
-                                    Margin="0 0 10 0">
-                                <TextBlock Text="×"
-                                           FontSize="14"
-                                           Foreground="White"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Center" />
-                            </Button>
-                            <TextBlock Text="{Binding Name, Mode=TwoWay}"
-                                       Classes="Playlists"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center"
-                                       Margin="0 4 0 0 " />
-                        </DockPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </ScrollViewer>
-    </StackPanel>
+        <!-- All playlists -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,4,0,0">
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="16,4,8,12">
+                <TextBlock Text="All playlists"
+                           Classes="PlaylistsHeader"
+                           VerticalAlignment="Center" />
+
+                <Button Grid.Column="1"
+                        Classes="SidebarIcon"
+                        Command="{Binding CreatePlaylistCommand}"
+                        ToolTip.Tip="Create playlist">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/add_circle.svg"
+                         Width="20" Height="20"
+                         Opacity="0.75" />
+                </Button>
+
+                <Button Grid.Column="2"
+                        Classes="SidebarIcon"
+                        Command="{Binding SortPlaylistsCommand}"
+                        ToolTip.Tip="Sort playlists">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/sort.svg"
+                         Width="18" Height="18"
+                         Opacity="0.75" />
+                </Button>
+            </Grid>
+
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Theme="{StaticResource MaterialModernScrollViewer}">
+                <ListBox Classes="PlaylistSidebar"
+                         ItemsSource="{Binding PlaylistCollection}"
+                         SelectedItem="{Binding ToolbarSelectedPlaylist, Mode=TwoWay}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:Playlist">
+                            <Grid ColumnDefinitions="Auto,*"
+                                  HorizontalAlignment="Stretch"
+                                  Background="Transparent"
+                                  PointerPressed="OnPlaylistPointerPressed">
+                                <Border Grid.Column="0"
+                                        Width="48"
+                                        Height="48"
+                                        CornerRadius="6"
+                                        ClipToBounds="True"
+                                        Background="#1A1A1A"
+                                        Margin="0,0,12,0"
+                                        IsHitTestVisible="False">
+                                    <Panel>
+                                        <Border Background="#3A3A3A"
+                                                IsVisible="{Binding !HasSidebarCover}" />
+                                        <Image Source="{Binding SidebarSlot0}"
+                                               Stretch="UniformToFill"
+                                               IsVisible="{Binding HasSidebarSingleCover}" />
+                                        <UniformGrid Rows="2" Columns="2"
+                                                     IsVisible="{Binding HasSidebarMosaic}">
+                                            <Image Source="{Binding SidebarSlot0}" Stretch="UniformToFill" />
+                                            <Image Source="{Binding SidebarSlot1}" Stretch="UniformToFill" />
+                                            <Image Source="{Binding SidebarSlot2}" Stretch="UniformToFill" />
+                                            <Image Source="{Binding SidebarSlot3}" Stretch="UniformToFill" />
+                                        </UniformGrid>
+
+                                        <Border Classes="PlayingBadge"
+                                                IsVisible="False"
+                                                Background="#66000000"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch">
+                                            <Svg Path="avares://SoundHavenClient/Assets/Icons/sound.svg"
+                                                 Width="16" Height="16"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center" />
+                                        </Border>
+                                    </Panel>
+                                </Border>
+
+                                <StackPanel Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Spacing="2"
+                                            IsHitTestVisible="False">
+                                    <TextBlock Text="{Binding Name}" Classes="PlaylistName" />
+                                    <TextBlock Text="{Binding ItemCountText}" Classes="PlaylistCount" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
 </UserControl>

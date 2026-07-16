@@ -43,9 +43,26 @@ public sealed class AppDatabaseTests : IDisposable
         Assert.True(song.Id > 0);
         Assert.Equal(playlist.Id, loaded.Id);
         Assert.Equal("Test playlist", loaded.Name);
+        Assert.Equal(string.Empty, loaded.Description);
+        Assert.Empty(loaded.CoverImageData);
         Assert.Equal("Test track", loadedSong.Title);
         Assert.Equal(song.Duration, loadedSong.Duration);
         Assert.Equal(song.FilePath, loadedSong.FilePath);
+    }
+
+    [Fact]
+    public void UpdatePlaylistDetails_PersistsDescriptionAndCover()
+    {
+        var playlist = new Playlist { Name = "Cover playlist" };
+        _database.SavePlaylist(playlist);
+
+        byte[] cover = [1, 2, 3, 4, 5];
+        _database.UpdatePlaylistDetails(playlist.Id, "Renamed", "A short description", cover);
+
+        Playlist loaded = Assert.Single(_database.GetAllPlaylists());
+        Assert.Equal("Renamed", loaded.Name);
+        Assert.Equal("A short description", loaded.Description);
+        Assert.Equal(cover, loaded.CoverImageData);
     }
 
     [Fact]
@@ -83,7 +100,7 @@ public sealed class AppDatabaseTests : IDisposable
         foreignKeysCommand.CommandText = "PRAGMA foreign_keys;";
         long foreignKeys = (long)(foreignKeysCommand.ExecuteScalar() ?? 0L);
 
-        Assert.Equal(1, version);
+        Assert.Equal(2, version);
         Assert.Equal(1, foreignKeys);
     }
 

@@ -11,7 +11,7 @@ namespace SoundHaven.Data
 {
     public class AppDatabase
     {
-        private const int CurrentSchemaVersion = 1;
+        private const int CurrentSchemaVersion = 2;
         private const string DatabaseDirectoryName = "SoundHaven";
         private const string DatabaseFileName = "AppDatabase.db";
         private const string LegacyDatabaseFileName = "AppdataBase.db";
@@ -166,6 +166,11 @@ namespace SoundHaven.Data
                 RebuildPlaylistSongsTable(connection, transaction);
             }
 
+            if (schemaVersion < 2)
+            {
+                MigratePlaylistsToV2(connection, transaction);
+            }
+
             using (var indexCommand = connection.CreateCommand())
             {
                 indexCommand.Transaction = transaction;
@@ -229,7 +234,9 @@ namespace SoundHaven.Data
 
                 CREATE TABLE IF NOT EXISTS Playlists (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Name TEXT NOT NULL
+                    Name TEXT NOT NULL,
+                    Description TEXT NOT NULL DEFAULT '',
+                    CoverImageData BLOB
                 );
 
                 CREATE TABLE IF NOT EXISTS AppSettings (
@@ -242,6 +249,51 @@ namespace SoundHaven.Data
                     ColorHex TEXT NOT NULL
                 );";
             command.ExecuteNonQuery();
+        }
+
+        private static void MigratePlaylistsToV2(
+            SqliteConnection connection,
+            SqliteTransaction transaction)
+        {
+            EnsureColumnExists(
+                connection,
+                transaction,
+                "Playlists",
+                "Description",
+                "ALTER TABLE Playlists ADD COLUMN Description TEXT NOT NULL DEFAULT '';");
+            EnsureColumnExists(
+                connection,
+                transaction,
+                "Playlists",
+                "CoverImageData",
+                "ALTER TABLE Playlists ADD COLUMN CoverImageData BLOB;");
+        }
+
+        private static void EnsureColumnExists(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            string tableName,
+            string columnName,
+            string alterSql)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = $"PRAGMA table_info({tableName});";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                if (string.Equals(reader.GetString(1), columnName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            reader.Close();
+
+            using var alterCommand = connection.CreateCommand();
+            alterCommand.Transaction = transaction;
+            alterCommand.CommandText = alterSql;
+            alterCommand.ExecuteNonQuery();
         }
 
         private static bool TableExists(
@@ -357,17 +409,61 @@ namespace SoundHaven.Data
 
         public void UpdatePlaylistName(int playlistId, string newName)
         {
+            UpdatePlaylistDetails(playlistId, newName, description: null, coverImageData: null, updateDescription: false, updateCover: false);
+        }
+
+        public void UpdatePlaylistDetails(
+            int playlistId,
+            string name,
+            string description,
+            byte[]? coverImageData)
+        {
+            UpdatePlaylistDetails(
+                playlistId,
+                name,
+                description,
+                coverImageData,
+                updateDescription: true,
+                updateCover: true);
+        }
+
+        private void UpdatePlaylistDetails(
+            int playlistId,
+            string name,
+            string? description,
+            byte[]? coverImageData,
+            bool updateDescription,
+            bool updateCover)
+        {
             if (playlistId <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(playlistId), "A saved playlist ID is required.");
             }
 
-            ArgumentNullException.ThrowIfNull(newName);
+            ArgumentNullException.ThrowIfNull(name);
 
             using var connection = OpenConnection();
             using var command = connection.CreateCommand();
-            command.CommandText = "UPDATE Playlists SET Name = @name WHERE Id = @id";
-            command.Parameters.AddWithValue("@name", newName);
+
+            if (updateDescription && updateCover)
+            {
+                command.CommandText = @"
+                    UPDATE Playlists
+                    SET Name = @name,
+                        Description = @description,
+                        CoverImageData = @cover
+                    WHERE Id = @id;";
+                command.Parameters.AddWithValue("@description", description ?? string.Empty);
+                command.Parameters.AddWithValue(
+                    "@cover",
+                    (object?)coverImageData ?? DBNull.Value);
+            }
+            else
+            {
+                command.CommandText = "UPDATE Playlists SET Name = @name WHERE Id = @id;";
+            }
+
+            command.Parameters.AddWithValue("@name", name);
             command.Parameters.AddWithValue("@id", playlistId);
             command.ExecuteNonQuery();
         }
@@ -385,8 +481,19 @@ namespace SoundHaven.Data
             {
                 using var updateCommand = connection.CreateCommand();
                 updateCommand.Transaction = transaction;
-                updateCommand.CommandText = "UPDATE Playlists SET Name = @name WHERE Id = @id;";
+                updateCommand.CommandText = @"
+                    UPDATE Playlists
+                    SET Name = @name,
+                        Description = @description,
+                        CoverImageData = @cover
+                    WHERE Id = @id;";
                 updateCommand.Parameters.AddWithValue("@name", playlist.Name);
+                updateCommand.Parameters.AddWithValue("@description", playlist.Description ?? string.Empty);
+                updateCommand.Parameters.AddWithValue(
+                    "@cover",
+                    playlist.CoverImageData is { Length: > 0 }
+                        ? playlist.CoverImageData
+                        : DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@id", playlistId);
                 if (updateCommand.ExecuteNonQuery() == 0)
                 {
@@ -397,8 +504,16 @@ namespace SoundHaven.Data
             {
                 using var insertCommand = connection.CreateCommand();
                 insertCommand.Transaction = transaction;
-                insertCommand.CommandText = "INSERT INTO Playlists (Name) VALUES (@name);";
+                insertCommand.CommandText = @"
+                    INSERT INTO Playlists (Name, Description, CoverImageData)
+                    VALUES (@name, @description, @cover);";
                 insertCommand.Parameters.AddWithValue("@name", playlist.Name);
+                insertCommand.Parameters.AddWithValue("@description", playlist.Description ?? string.Empty);
+                insertCommand.Parameters.AddWithValue(
+                    "@cover",
+                    playlist.CoverImageData is { Length: > 0 }
+                        ? playlist.CoverImageData
+                        : DBNull.Value);
                 insertCommand.ExecuteNonQuery();
 
                 insertCommand.CommandText = "SELECT last_insert_rowid();";
@@ -478,14 +593,18 @@ namespace SoundHaven.Data
 
             using (var command = connection.CreateCommand())
             {
-                command.CommandText = "SELECT Id, Name FROM Playlists ORDER BY Id;";
+                command.CommandText = "SELECT Id, Name, Description, CoverImageData FROM Playlists ORDER BY Id;";
                 using var reader = command.ExecuteReader();
                 while (reader.Read())
                 {
                     playlists.Add(new Playlist
                     {
                         Id = reader.GetInt32(0),
-                        Name = reader.GetString(1)
+                        Name = reader.GetString(1),
+                        Description = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                        CoverImageData = reader.IsDBNull(3)
+                            ? []
+                            : reader.GetFieldValue<byte[]>(3)
                     });
                 }
             }

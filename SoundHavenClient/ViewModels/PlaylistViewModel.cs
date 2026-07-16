@@ -88,7 +88,10 @@ namespace SoundHaven.ViewModels
                 OnPropertyChanged(nameof(Songs));
                 OnPropertyChanged(nameof(HasPlaylist));
                 OnPropertyChanged(nameof(PlaylistName));
+                OnPropertyChanged(nameof(PlaylistDescription));
+                OnPropertyChanged(nameof(HasPlaylistDescription));
                 RefreshTracksAndHeader();
+                OpenEditPlaylistCommand?.RaiseCanExecuteChanged();
                 _ = EnsureThumbnailsAsync();
             }
         }
@@ -109,20 +112,33 @@ namespace SoundHaven.ViewModels
             }
         }
 
+        public string PlaylistDescription => DisplayedPlaylist?.Description?.Trim() ?? string.Empty;
+
+        public bool HasPlaylistDescription => !string.IsNullOrWhiteSpace(PlaylistDescription);
+
         public ObservableCollection<Song> Songs => DisplayedPlaylist?.Songs ?? _emptySongs;
 
         public ObservableCollection<PlaylistTrackRow> TrackRows => _trackRows;
 
-        public Bitmap? CoverSlot0 => _coverSlots[0];
-        public Bitmap? CoverSlot1 => _coverSlots[1];
-        public Bitmap? CoverSlot2 => _coverSlots[2];
-        public Bitmap? CoverSlot3 => _coverSlots[3];
+            public Bitmap? CoverSlot0 => DisplayedPlaylist?.HasCustomCover == true
+                ? DisplayedPlaylist.CoverImage
+                : _coverSlots[0];
+            public Bitmap? CoverSlot1 => DisplayedPlaylist?.HasCustomCover == true ? null : _coverSlots[1];
+            public Bitmap? CoverSlot2 => DisplayedPlaylist?.HasCustomCover == true ? null : _coverSlots[2];
+            public Bitmap? CoverSlot3 => DisplayedPlaylist?.HasCustomCover == true ? null : _coverSlots[3];
 
-        public bool HasCoverArt => _coverSlots.Any(slot => slot is not null);
+            public bool HasCoverArt =>
+                DisplayedPlaylist?.HasCustomCover == true
+                || _coverSlots.Any(slot => slot is not null);
 
-        public bool HasMosaicCover => _coverSlots.Count(slot => slot is not null) >= 2;
+            public bool HasMosaicCover =>
+                DisplayedPlaylist?.HasCustomCover != true
+                && Songs.Count >= 4
+                && _coverSlots[0] is not null;
 
-        public bool HasSingleCover => HasCoverArt && !HasMosaicCover;
+            public bool HasSingleCover =>
+                DisplayedPlaylist?.HasCustomCover == true
+                || (HasCoverArt && !HasMosaicCover);
 
         public string TrackStatsText
         {
@@ -163,6 +179,12 @@ namespace SoundHaven.ViewModels
                 {
                     OnPropertyChanged(nameof(EditButtonContent));
                     PlaySongCommand.RaiseCanExecuteChanged();
+                    PlayPlaylistNextCommand.RaiseCanExecuteChanged();
+                    AddSongCommand.RaiseCanExecuteChanged();
+                    OpenEditPlaylistCommand.RaiseCanExecuteChanged();
+                    EnterRemoveSongsCommand.RaiseCanExecuteChanged();
+                    CancelRemoveSongsCommand.RaiseCanExecuteChanged();
+                    DeleteSelectedSongsCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -205,8 +227,11 @@ namespace SoundHaven.ViewModels
         public AsyncRelayCommand AddSongCommand { get; }
         public AsyncRelayCommand PlayPlaylistCommand { get; }
         public AsyncRelayCommand ShufflePlaylistCommand { get; }
+        public AsyncRelayCommand PlayPlaylistNextCommand { get; }
         public AsyncRelayCommand<Song> PlaySongCommand { get; }
-        public RelayCommand ToggleEditModeCommand { get; }
+        public AsyncRelayCommand OpenEditPlaylistCommand { get; }
+        public RelayCommand EnterRemoveSongsCommand { get; }
+        public RelayCommand CancelRemoveSongsCommand { get; }
         public RelayCommand DeleteSelectedSongsCommand { get; }
 
         public PlaylistViewModel(
@@ -224,7 +249,8 @@ namespace SoundHaven.ViewModels
 
             AddSongCommand = new AsyncRelayCommand(
                 AddSongAsync,
-                onException: exception => _notifications.ShowError(exception.Message));
+                () => DisplayedPlaylist is { Id: > 0 } && !IsEditMode,
+                exception => _notifications.ShowError(exception.Message));
             PlayPlaylistCommand = new AsyncRelayCommand(
                 PlayPlaylistAsync,
                 () => Songs.Count > 0,
@@ -233,12 +259,21 @@ namespace SoundHaven.ViewModels
                 ShufflePlaylistAsync,
                 () => Songs.Count > 0,
                 exception => _notifications.ShowError(exception.Message));
+            PlayPlaylistNextCommand = new AsyncRelayCommand(
+                PlayPlaylistNextAsync,
+                () => Songs.Count > 0 && !IsEditMode,
+                exception => _notifications.ShowError(exception.Message));
             PlaySongCommand = new AsyncRelayCommand<Song>(
                 PlaySongAsync,
                 song => song is not null && !IsEditMode,
                 exception => _notifications.ShowError(exception.Message));
-            ToggleEditModeCommand = new RelayCommand(ToggleEditMode);
-            DeleteSelectedSongsCommand = new RelayCommand(DeleteSelectedSongs);
+            OpenEditPlaylistCommand = new AsyncRelayCommand(
+                () => EditPlaylistAsync(DisplayedPlaylist),
+                () => DisplayedPlaylist is { Id: > 0 } && !IsEditMode,
+                exception => _notifications.ShowError(exception.Message));
+            EnterRemoveSongsCommand = new RelayCommand(EnterRemoveSongsMode, () => DisplayedPlaylist is { Id: > 0 } && !IsEditMode);
+            CancelRemoveSongsCommand = new RelayCommand(CancelRemoveSongsMode, () => IsEditMode);
+            DeleteSelectedSongsCommand = new RelayCommand(DeleteSelectedSongs, () => IsEditMode);
         }
 
         private async Task AddSongAsync()
@@ -300,24 +335,112 @@ namespace SoundHaven.ViewModels
             await _playbackViewModel.PlayShuffledAsync(playlist.Songs, playlist.Name);
         }
 
-        private void ToggleEditMode()
+        private async Task PlayPlaylistNextAsync()
         {
-            if (DisplayedPlaylist is not { Id: > 0 })
+            Playlist? playlist = DisplayedPlaylist;
+            if (playlist is null || playlist.Songs.Count == 0)
             {
-                IsEditMode = false;
                 return;
             }
 
-            IsEditMode = !IsEditMode;
+            // Insert in reverse so playlist order is preserved at the front of Up Next.
+            for (int i = playlist.Songs.Count - 1; i >= 0; i--)
+            {
+                await _playbackViewModel.PlayNext(playlist.Songs[i]);
+            }
+
+            _notifications.ShowInfo($"Queued “{playlist.Name}” to play next.");
+        }
+
+        public async Task EditPlaylistAsync(Playlist? playlist)
+        {
+            playlist ??= DisplayedPlaylist;
+            if (playlist is not { Id: > 0 })
+            {
+                return;
+            }
+
+            if (!await PromptPlaylistDetailsAsync(playlist, isCreating: false))
+            {
+                return;
+            }
+
+            _appDatabase.UpdatePlaylistDetails(
+                playlist.Id,
+                playlist.Name,
+                playlist.Description,
+                playlist.CoverImageData);
+
+            if (ReferenceEquals(DisplayedPlaylist, playlist))
+            {
+                OnPropertyChanged(nameof(PlaylistName));
+                OnPropertyChanged(nameof(PlaylistDescription));
+                OnPropertyChanged(nameof(HasPlaylistDescription));
+                RefreshCoverSlots();
+            }
+            else
+            {
+                playlist.RefreshSidebarCovers();
+            }
+
+            _notifications.ShowInfo("Playlist updated.");
+        }
+
+        public async Task<bool> PromptPlaylistDetailsAsync(Playlist playlist, bool isCreating)
+        {
+            ArgumentNullException.ThrowIfNull(playlist);
+
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime applicationLifetime
+                || applicationLifetime.MainWindow is not { } parentWindow)
+            {
+                throw new InvalidOperationException("The desktop application window is unavailable.");
+            }
+
+            var dialog = new Views.EditPlaylistWindow();
+            var editViewModel = new EditPlaylistViewModel(
+                playlist,
+                _openFileDialogService,
+                dialog,
+                isCreating);
+            dialog.DataContext = editViewModel;
+            editViewModel.CloseRequested += (_, saved) => dialog.Close(saved);
+
+            bool saved = await dialog.ShowDialog<bool>(parentWindow);
+            if (!saved)
+            {
+                return false;
+            }
+
+            playlist.Name = editViewModel.SavedTitle;
+            playlist.Description = editViewModel.SavedDescription;
+            playlist.CoverImageData = editViewModel.SavedCoverImageData;
+            return true;
+        }
+
+        private void EnterRemoveSongsMode()
+        {
+            if (DisplayedPlaylist is not { Id: > 0 })
+            {
+                return;
+            }
+
+            IsEditMode = true;
+        }
+
+        private void CancelRemoveSongsMode()
+        {
             if (!IsEditMode)
             {
-                foreach (var song in Songs)
-                {
-                    song.IsSelected = false;
-                }
-
-                SelectedItems.Clear();
+                return;
             }
+
+            foreach (Song song in Songs)
+            {
+                song.IsSelected = false;
+            }
+
+            SelectedItems.Clear();
+            IsEditMode = false;
         }
 
         private void DeleteSelectedSongs()
@@ -331,6 +454,12 @@ namespace SoundHaven.ViewModels
                 }
 
                 var songsToRemove = playlist.Songs.Where(song => song.IsSelected).Distinct().ToList();
+                if (songsToRemove.Count == 0)
+                {
+                    _notifications.ShowInfo("Select one or more songs to remove.");
+                    return;
+                }
+
                 _appDatabase.RemoveSongsFromPlaylist(playlist.Id, songsToRemove.Select(song => (long)song.Id));
 
                 foreach (Song song in songsToRemove)
@@ -341,6 +470,10 @@ namespace SoundHaven.ViewModels
 
                 SelectedItems.Clear();
                 IsEditMode = false;
+                _notifications.ShowInfo(
+                    songsToRemove.Count == 1
+                        ? "Removed 1 song from the playlist."
+                        : $"Removed {songsToRemove.Count} songs from the playlist.");
             }
             catch (Exception exception)
             {
