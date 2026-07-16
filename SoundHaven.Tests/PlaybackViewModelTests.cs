@@ -94,7 +94,7 @@ public sealed class PlaybackViewModelTests : IDisposable
 
         Assert.True(viewModel.IsTransitioningTracks);
         Assert.False(viewModel.CanPlaybackControl);
-        Assert.Null(viewModel.CurrentSong);
+        Assert.Same(song, viewModel.CurrentSong);
 
         audio.StartGate.SetResult(true);
         await playTask;
