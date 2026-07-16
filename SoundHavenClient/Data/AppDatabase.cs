@@ -1,284 +1,772 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using Microsoft.Data.Sqlite;
 using System.Collections.ObjectModel;
-using SoundHaven.Models;
+using System.Globalization;
 using System.IO;
+using System.Linq;
+using Microsoft.Data.Sqlite;
+using SoundHaven.Models;
 
 namespace SoundHaven.Data
 {
     public class AppDatabase
     {
-        private string connectionString;
-        private const string DEFAULT_DB_NAME = "AppdataBase.db";
-        
+        private const int CurrentSchemaVersion = 1;
+        private const string DatabaseDirectoryName = "SoundHaven";
+        private const string DatabaseFileName = "AppDatabase.db";
+        private const string LegacyDatabaseFileName = "AppdataBase.db";
+
+        private readonly string _connectionString;
+
         public AppDatabase(string? dbPath = null)
         {
-            // If no path is provided, create the database in the application's base directory
-            if (string.IsNullOrEmpty(dbPath))
+            string databasePath = ResolveDatabasePath(dbPath);
+            _connectionString = new SqliteConnectionStringBuilder
             {
-                dbPath = Path.Combine(AppContext.BaseDirectory, DEFAULT_DB_NAME);
+                DataSource = databasePath,
+                ForeignKeys = true
+            }.ToString();
+
+            InitializeDatabase();
+        }
+
+        private static string ResolveDatabasePath(string? dbPath)
+        {
+            if (!string.IsNullOrWhiteSpace(dbPath))
+            {
+                string customPath = Path.GetFullPath(dbPath);
+                string? customDirectory = Path.GetDirectoryName(customPath);
+                if (!string.IsNullOrEmpty(customDirectory))
+                {
+                    Directory.CreateDirectory(customDirectory);
+                }
+
+                return customPath;
             }
 
-            connectionString = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
-            InitializeDatabase();
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (string.IsNullOrWhiteSpace(localAppData))
+            {
+                throw new InvalidOperationException("The local application data directory is unavailable.");
+            }
+
+            string databaseDirectory = Path.Combine(localAppData, DatabaseDirectoryName);
+            Directory.CreateDirectory(databaseDirectory);
+
+            string databasePath = Path.Combine(databaseDirectory, DatabaseFileName);
+            MigrateLegacyDatabase(databasePath);
+            return databasePath;
+        }
+
+        private static void MigrateLegacyDatabase(string databasePath)
+        {
+            if (File.Exists(databasePath))
+            {
+                return;
+            }
+
+            string legacyPath = Path.Combine(AppContext.BaseDirectory, LegacyDatabaseFileName);
+            if (!File.Exists(legacyPath) || PathsAreEqual(legacyPath, databasePath))
+            {
+                return;
+            }
+
+            string temporaryPath = $"{databasePath}.{Guid.NewGuid():N}.migrating";
+            try
+            {
+                using (var source = new SqliteConnection(new SqliteConnectionStringBuilder
+                {
+                    DataSource = legacyPath,
+                    Mode = SqliteOpenMode.ReadOnly
+                }.ToString()))
+                using (var destination = new SqliteConnection(new SqliteConnectionStringBuilder
+                {
+                    DataSource = temporaryPath,
+                    Mode = SqliteOpenMode.ReadWriteCreate
+                }.ToString()))
+                {
+                    source.Open();
+                    destination.Open();
+                    source.BackupDatabase(destination);
+
+                    using var checkCommand = destination.CreateCommand();
+                    checkCommand.CommandText = "PRAGMA quick_check;";
+                    string? result = checkCommand.ExecuteScalar()?.ToString();
+                    if (!string.Equals(result, "ok", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidDataException($"The legacy SoundHaven database failed validation: {result ?? "no result"}.");
+                    }
+                }
+
+                try
+                {
+                    File.Move(temporaryPath, databasePath);
+                }
+                catch (IOException) when (File.Exists(databasePath))
+                {
+                    // Another SoundHaven process completed the one-time migration first.
+                }
+            }
+            finally
+            {
+                TryDeleteFile(temporaryPath);
+                TryDeleteFile($"{temporaryPath}-journal");
+                TryDeleteFile($"{temporaryPath}-shm");
+                TryDeleteFile($"{temporaryPath}-wal");
+            }
+        }
+
+        private static bool PathsAreEqual(string firstPath, string secondPath)
+        {
+            StringComparison comparison = OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+
+            return string.Equals(
+                Path.GetFullPath(firstPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                Path.GetFullPath(secondPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                comparison);
+        }
+
+        private static void TryDeleteFile(string path)
+        {
+            try
+            {
+                File.Delete(path);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
         }
 
         private void InitializeDatabase()
         {
-            using (var connection = new SqliteConnection(connectionString))
+            using var connection = OpenConnection();
+            using var transaction = connection.BeginTransaction();
+
+            int schemaVersion = GetSchemaVersion(connection, transaction);
+            if (schemaVersion > CurrentSchemaVersion)
+            {
+                throw new InvalidOperationException(
+                    $"Database schema version {schemaVersion} is newer than supported version {CurrentSchemaVersion}.");
+            }
+
+            CreateCoreTables(connection, transaction);
+
+            bool playlistSongsExists = TableExists(connection, transaction, "PlaylistSongs");
+            if (!playlistSongsExists)
+            {
+                CreatePlaylistSongsTable(connection, transaction);
+            }
+            else if (schemaVersion < 1)
+            {
+                RebuildPlaylistSongsTable(connection, transaction);
+            }
+
+            using (var indexCommand = connection.CreateCommand())
+            {
+                indexCommand.Transaction = transaction;
+                indexCommand.CommandText =
+                    "CREATE INDEX IF NOT EXISTS IX_PlaylistSongs_SongId ON PlaylistSongs (SongId);";
+                indexCommand.ExecuteNonQuery();
+            }
+
+            using (var settingsCommand = connection.CreateCommand())
+            {
+                settingsCommand.Transaction = transaction;
+                settingsCommand.CommandText = @"
+                    INSERT INTO AppSettings ([Key], Value)
+                    VALUES ('SchemaVersion', @version)
+                    ON CONFLICT([Key]) DO UPDATE SET Value = excluded.Value;";
+                settingsCommand.Parameters.AddWithValue(
+                    "@version",
+                    CurrentSchemaVersion.ToString(CultureInfo.InvariantCulture));
+                settingsCommand.ExecuteNonQuery();
+            }
+
+            using (var versionCommand = connection.CreateCommand())
+            {
+                versionCommand.Transaction = transaction;
+                versionCommand.CommandText = $"PRAGMA user_version = {CurrentSchemaVersion};";
+                versionCommand.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
+        }
+
+        private static int GetSchemaVersion(SqliteConnection connection, SqliteTransaction transaction)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "PRAGMA user_version;";
+            return Convert.ToInt32(command.ExecuteScalar(), CultureInfo.InvariantCulture);
+        }
+
+        private static void CreateCoreTables(SqliteConnection connection, SqliteTransaction transaction)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = @"
+                CREATE TABLE IF NOT EXISTS Songs (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Title TEXT NOT NULL,
+                    Artist TEXT,
+                    Album TEXT,
+                    Duration REAL,
+                    FilePath TEXT,
+                    Genre TEXT,
+                    Year INTEGER,
+                    PlayCount INTEGER DEFAULT 0,
+                    VideoId TEXT,
+                    ArtworkData BLOB,
+                    ChannelTitle TEXT,
+                    Views TEXT,
+                    VideoDuration TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS Playlists (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS AppSettings (
+                    [Key] TEXT PRIMARY KEY,
+                    Value TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS ThemeSettings (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ColorHex TEXT NOT NULL
+                );";
+            command.ExecuteNonQuery();
+        }
+
+        private static bool TableExists(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            string tableName)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = @"
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM sqlite_master
+                    WHERE type = 'table' AND name = @tableName
+                );";
+            command.Parameters.AddWithValue("@tableName", tableName);
+            return Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture) != 0;
+        }
+
+        private static void CreatePlaylistSongsTable(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            string tableName = "PlaylistSongs")
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = $@"
+                CREATE TABLE {tableName} (
+                    PlaylistId INTEGER NOT NULL,
+                    SongId INTEGER NOT NULL,
+                    PRIMARY KEY (PlaylistId, SongId),
+                    FOREIGN KEY (PlaylistId) REFERENCES Playlists(Id) ON DELETE CASCADE,
+                    FOREIGN KEY (SongId) REFERENCES Songs(Id) ON DELETE CASCADE
+                );";
+            command.ExecuteNonQuery();
+        }
+
+        private static void RebuildPlaylistSongsTable(
+            SqliteConnection connection,
+            SqliteTransaction transaction)
+        {
+            const string migrationTable = "PlaylistSongs_v1";
+
+            using (var dropCommand = connection.CreateCommand())
+            {
+                dropCommand.Transaction = transaction;
+                dropCommand.CommandText = $"DROP TABLE IF EXISTS {migrationTable};";
+                dropCommand.ExecuteNonQuery();
+            }
+
+            CreatePlaylistSongsTable(connection, transaction, migrationTable);
+
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = $@"
+                INSERT OR IGNORE INTO {migrationTable} (PlaylistId, SongId)
+                SELECT ps.PlaylistId, ps.SongId
+                FROM PlaylistSongs ps
+                INNER JOIN Playlists p ON p.Id = ps.PlaylistId
+                INNER JOIN Songs s ON s.Id = ps.SongId;
+
+                DROP TABLE PlaylistSongs;
+                ALTER TABLE {migrationTable} RENAME TO PlaylistSongs;";
+            command.ExecuteNonQuery();
+        }
+
+        private SqliteConnection OpenConnection()
+        {
+            var connection = new SqliteConnection(_connectionString);
+            try
             {
                 connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText = @"
-            CREATE TABLE IF NOT EXISTS Songs (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Title TEXT NOT NULL,
-                Artist TEXT,
-                Album TEXT,
-                Duration INTEGER,
-                FilePath TEXT,
-                Genre TEXT,
-                Year INTEGER,
-                PlayCount INTEGER DEFAULT 0,
-                VideoId TEXT,
-                ArtworkData BLOB,
-                ChannelTitle TEXT,
-                Views TEXT,
-                VideoDuration TEXT
-            );
 
-            CREATE TABLE IF NOT EXISTS Playlists (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS PlaylistSongs (
-                PlaylistId INTEGER,
-                SongId INTEGER,
-                FOREIGN KEY(PlaylistId) REFERENCES Playlists(Id),
-                FOREIGN KEY(SongId) REFERENCES Songs(Id),
-                PRIMARY KEY(PlaylistId, SongId)
-            );
-
-            CREATE TABLE IF NOT EXISTS AppSettings (
-                Key TEXT PRIMARY KEY,
-                Value TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS ThemeSettings (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ColorHex TEXT NOT NULL
-            );";
+                using var command = connection.CreateCommand();
+                command.CommandText = "PRAGMA foreign_keys = ON;";
                 command.ExecuteNonQuery();
+
+                command.CommandText = "PRAGMA foreign_keys;";
+                if (Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture) != 1)
+                {
+                    throw new InvalidOperationException("SQLite foreign key enforcement could not be enabled.");
+                }
+
+                return connection;
+            }
+            catch
+            {
+                connection.Dispose();
+                throw;
             }
         }
 
         public void SaveThemeColor(string colorHex)
         {
-            using (var connection = new SqliteConnection(connectionString))
-            {
-                connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText = @"
-                INSERT OR REPLACE INTO ThemeSettings (Id, ColorHex) 
+            ArgumentNullException.ThrowIfNull(colorHex);
+
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT OR REPLACE INTO ThemeSettings (Id, ColorHex)
                 VALUES (1, @colorHex);";
-                command.Parameters.AddWithValue("@colorHex", colorHex);
-                command.ExecuteNonQuery();
-            }
+            command.Parameters.AddWithValue("@colorHex", colorHex);
+            command.ExecuteNonQuery();
         }
 
         public string GetThemeColor()
         {
-            using (var connection = new SqliteConnection(connectionString))
-            {
-                connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText = "SELECT ColorHex FROM ThemeSettings WHERE Id = 1";
-                object? result = command.ExecuteScalar();
-                return result?.ToString();
-            }
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT ColorHex FROM ThemeSettings WHERE Id = 1";
+            return command.ExecuteScalar()?.ToString() ?? string.Empty;
         }
 
         public void UpdatePlaylistName(int playlistId, string newName)
         {
-            using (var connection = new SqliteConnection(connectionString))
+            if (playlistId <= 0)
             {
-                connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText = "UPDATE Playlists SET Name = @name WHERE Id = @id";
-                command.Parameters.AddWithValue("@name", newName);
-                command.Parameters.AddWithValue("@id", playlistId);
-                command.ExecuteNonQuery();
+                throw new ArgumentOutOfRangeException(nameof(playlistId), "A saved playlist ID is required.");
             }
+
+            ArgumentNullException.ThrowIfNull(newName);
+
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE Playlists SET Name = @name WHERE Id = @id";
+            command.Parameters.AddWithValue("@name", newName);
+            command.Parameters.AddWithValue("@id", playlistId);
+            command.ExecuteNonQuery();
         }
 
         public void SavePlaylist(Playlist playlist)
         {
-            using (var connection = new SqliteConnection(connectionString))
-            {
-                connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText = @"
-                    INSERT INTO Playlists (Name) VALUES (@name);
-                    SELECT last_insert_rowid();";
-                command.Parameters.AddWithValue("@name", playlist.Name);
-                long playlistId = (long)command.ExecuteScalar();
+            ArgumentNullException.ThrowIfNull(playlist);
+            ArgumentNullException.ThrowIfNull(playlist.Songs);
 
-                foreach (var song in playlist.Songs)
+            using var connection = OpenConnection();
+            using var transaction = connection.BeginTransaction();
+
+            long playlistId = playlist.Id;
+            if (playlistId > 0)
+            {
+                using var updateCommand = connection.CreateCommand();
+                updateCommand.Transaction = transaction;
+                updateCommand.CommandText = "UPDATE Playlists SET Name = @name WHERE Id = @id;";
+                updateCommand.Parameters.AddWithValue("@name", playlist.Name);
+                updateCommand.Parameters.AddWithValue("@id", playlistId);
+                if (updateCommand.ExecuteNonQuery() == 0)
                 {
-                    command.CommandText = "INSERT INTO PlaylistSongs (PlaylistId, SongId) VALUES (@playlistId, @songId)";
-                    command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@playlistId", playlistId);
-                    command.Parameters.AddWithValue("@songId", song.Id);
-                    command.ExecuteNonQuery();
+                    throw new InvalidOperationException($"Playlist {playlistId} does not exist.");
                 }
+            }
+            else
+            {
+                using var insertCommand = connection.CreateCommand();
+                insertCommand.Transaction = transaction;
+                insertCommand.CommandText = "INSERT INTO Playlists (Name) VALUES (@name);";
+                insertCommand.Parameters.AddWithValue("@name", playlist.Name);
+                insertCommand.ExecuteNonQuery();
+
+                insertCommand.CommandText = "SELECT last_insert_rowid();";
+                insertCommand.Parameters.Clear();
+                playlistId = Convert.ToInt64(insertCommand.ExecuteScalar(), CultureInfo.InvariantCulture);
+            }
+
+            using (var clearCommand = connection.CreateCommand())
+            {
+                clearCommand.Transaction = transaction;
+                clearCommand.CommandText = "DELETE FROM PlaylistSongs WHERE PlaylistId = @playlistId;";
+                clearCommand.Parameters.AddWithValue("@playlistId", playlistId);
+                clearCommand.ExecuteNonQuery();
+            }
+
+            var savedSongs = new List<(Song Song, long Id, string Title)>();
+            foreach (Song song in playlist.Songs.Distinct())
+            {
+                string title = GetRequiredSongTitle(song);
+                long songId = GetOrCreateSong(connection, transaction, song, title);
+                savedSongs.Add((song, songId, title));
+
+                using var linkCommand = connection.CreateCommand();
+                linkCommand.Transaction = transaction;
+                linkCommand.CommandText = @"
+                    INSERT OR IGNORE INTO PlaylistSongs (PlaylistId, SongId)
+                    VALUES (@playlistId, @songId);";
+                linkCommand.Parameters.AddWithValue("@playlistId", playlistId);
+                linkCommand.Parameters.AddWithValue("@songId", songId);
+                linkCommand.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
+
+            playlist.Id = checked((int)playlistId);
+            foreach ((Song song, long songId, string title) in savedSongs)
+            {
+                song.Id = checked((int)songId);
+                song.Title = title;
             }
         }
 
         public void RemovePlaylist(Playlist playlist)
         {
-            using (var connection = new SqliteConnection(connectionString))
+            ArgumentNullException.ThrowIfNull(playlist);
+            if (playlist.Id <= 0)
             {
-                connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText = @"
-                    DELETE FROM PlaylistSongs WHERE PlaylistId = @id;
-                    DELETE FROM Playlists WHERE Id = @id;";
-                command.Parameters.AddWithValue("@id", playlist.Id);
-                command.ExecuteNonQuery();
+                return;
             }
+
+            using var connection = OpenConnection();
+            using var transaction = connection.BeginTransaction();
+
+            using (var linksCommand = connection.CreateCommand())
+            {
+                linksCommand.Transaction = transaction;
+                linksCommand.CommandText = "DELETE FROM PlaylistSongs WHERE PlaylistId = @id;";
+                linksCommand.Parameters.AddWithValue("@id", playlist.Id);
+                linksCommand.ExecuteNonQuery();
+            }
+
+            using (var playlistCommand = connection.CreateCommand())
+            {
+                playlistCommand.Transaction = transaction;
+                playlistCommand.CommandText = "DELETE FROM Playlists WHERE Id = @id;";
+                playlistCommand.Parameters.AddWithValue("@id", playlist.Id);
+                playlistCommand.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
         }
 
         public ObservableCollection<Playlist> GetAllPlaylists()
         {
             var playlists = new ObservableCollection<Playlist>();
-            using (var connection = new SqliteConnection(connectionString))
+            using var connection = OpenConnection();
+
+            using (var command = connection.CreateCommand())
             {
-                connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText = "SELECT Id, Name FROM Playlists";
-                using (var reader = command.ExecuteReader())
+                command.CommandText = "SELECT Id, Name FROM Playlists ORDER BY Id;";
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
                 {
-                    while (reader.Read())
+                    playlists.Add(new Playlist
                     {
-                        var playlist = new Playlist
-                        {
-                            Id = reader.GetInt32(0),
-                            Name = reader.GetString(1)
-                        };
-                        playlists.Add(playlist);
-                    }
-                }
-
-                foreach (var playlist in playlists)
-                {
-                    command.CommandText = @"
-                SELECT s.Id, s.Title, s.Artist, s.Album, s.Duration, s.FilePath, s.Genre, s.Year, s.ArtworkData,
-                       s.VideoId, s.ChannelTitle, s.Views, s.VideoDuration
-                FROM Songs s
-                JOIN PlaylistSongs ps ON s.Id = ps.SongId
-                WHERE ps.PlaylistId = @playlistId";
-                    command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@playlistId", playlist.Id);
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            var song = new Song
-                            {
-                                Id = reader.GetInt32(0),
-                                Title = reader.GetString(1),
-                                Artist = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                Album = reader.IsDBNull(3) ? null : reader.GetString(3),
-                                Duration = TimeSpan.FromSeconds(reader.GetInt32(4)),
-                                FilePath = reader.GetString(5),
-                                Genre = reader.IsDBNull(6) ? null : reader.GetString(6),
-                                Year = reader.IsDBNull(7) ? null : (int?)reader.GetInt32(7),
-                                ArtworkData = reader.IsDBNull(8) ? null : (byte[])reader.GetValue(8),
-                                VideoId = reader.IsDBNull(9) ? null : reader.GetString(9),
-                                ChannelTitle = reader.IsDBNull(10) ? null : reader.GetString(10),
-                                Views = reader.IsDBNull(11) ? null : reader.GetString(11),
-                                VideoDuration = reader.IsDBNull(12) ? null : reader.GetString(12)
-                            };
-
-                            playlist.Songs.Add(song);
-                        }
-                    }
+                        Id = reader.GetInt32(0),
+                        Name = reader.GetString(1)
+                    });
                 }
             }
+
+            foreach (Playlist playlist in playlists)
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = @"
+                    SELECT s.Id, s.Title, s.Artist, s.Album, s.Duration, s.FilePath, s.Genre, s.Year,
+                           s.PlayCount, s.ArtworkData, s.VideoId, s.ChannelTitle, s.Views, s.VideoDuration
+                    FROM Songs s
+                    INNER JOIN PlaylistSongs ps ON s.Id = ps.SongId
+                    WHERE ps.PlaylistId = @playlistId
+                    ORDER BY ps.rowid;";
+                command.Parameters.AddWithValue("@playlistId", playlist.Id);
+
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    playlist.Songs.Add(new Song
+                    {
+                        Id = reader.GetInt32(0),
+                        Title = reader.GetString(1),
+                        Artist = reader.IsDBNull(2) ? null : reader.GetString(2),
+                        Album = reader.IsDBNull(3) ? null : reader.GetString(3),
+                        Duration = TimeSpan.FromSeconds(reader.IsDBNull(4) ? 0 : reader.GetDouble(4)),
+                        FilePath = reader.IsDBNull(5) ? null : reader.GetString(5),
+                        Genre = reader.IsDBNull(6) ? null : reader.GetString(6),
+                        Year = reader.IsDBNull(7) ? null : reader.GetInt32(7),
+                        PlayCount = reader.IsDBNull(8) ? 0 : reader.GetInt32(8),
+                        ArtworkData = reader.IsDBNull(9) ? Array.Empty<byte>() : reader.GetFieldValue<byte[]>(9),
+                        VideoId = reader.IsDBNull(10) ? null : reader.GetString(10),
+                        ChannelTitle = reader.IsDBNull(11) ? null : reader.GetString(11),
+                        Views = reader.IsDBNull(12) ? null : reader.GetString(12),
+                        VideoDuration = reader.IsDBNull(13) ? null : reader.GetString(13)
+                    });
+                }
+            }
+
             return playlists;
         }
 
         public void AddSongToPlaylist(long playlistId, Song song)
         {
-            using (var connection = new SqliteConnection(connectionString))
+            if (playlistId <= 0)
             {
-                connection.Open();
-                var command = connection.CreateCommand();
+                throw new ArgumentOutOfRangeException(nameof(playlistId), "A saved playlist ID is required.");
+            }
 
-                // First, ensure the song exists in the Songs table
+            ArgumentNullException.ThrowIfNull(song);
+
+            using var connection = OpenConnection();
+            using var transaction = connection.BeginTransaction();
+
+            if (!PlaylistExists(connection, transaction, playlistId))
+            {
+                throw new InvalidOperationException($"Playlist {playlistId} does not exist.");
+            }
+
+            string title = GetRequiredSongTitle(song);
+            long songId = GetOrCreateSong(connection, transaction, song, title);
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Transaction = transaction;
                 command.CommandText = @"
-        INSERT OR IGNORE INTO Songs (Title, Artist, Album, Duration, FilePath, Genre, Year, ArtworkData, VideoId, ChannelTitle, Views, VideoDuration)
-        VALUES (@title, @artist, @album, @duration, @filePath, @genre, @year, @artworkData, @videoId, @channelTitle, @views, @videoDuration);
-        SELECT Id FROM Songs WHERE Title = @title AND FilePath = @filePath;";
-                command.Parameters.AddWithValue("@title", song.Title);
-                command.Parameters.AddWithValue("@artist", song.Artist ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@album", song.Album ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@duration", song.Duration.TotalSeconds);
-                command.Parameters.AddWithValue("@filePath", song.FilePath);
-                command.Parameters.AddWithValue("@genre", song.Genre ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@year", song.Year ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@artworkData", song.ArtworkData ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@videoId", song.VideoId ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@channelTitle", song.ChannelTitle ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@views", song.Views ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@videoDuration", song.VideoDuration ?? (object)DBNull.Value);
-                long songId = (long)command.ExecuteScalar();
-
-                // Now, add the song to the playlist
-                command.CommandText = "INSERT OR IGNORE INTO PlaylistSongs (PlaylistId, SongId) VALUES (@playlistId, @songId)";
-                command.Parameters.Clear();
+                    INSERT OR IGNORE INTO PlaylistSongs (PlaylistId, SongId)
+                    VALUES (@playlistId, @songId);";
                 command.Parameters.AddWithValue("@playlistId", playlistId);
                 command.Parameters.AddWithValue("@songId", songId);
                 command.ExecuteNonQuery();
             }
+
+            transaction.Commit();
+            song.Id = checked((int)songId);
+            song.Title = title;
         }
 
         public void RemoveSongFromPlaylist(long playlistId, long songId)
         {
-            using (var connection = new SqliteConnection(connectionString))
+            if (playlistId <= 0 || songId <= 0)
             {
-                connection.Open();
-                var command = connection.CreateCommand();
+                return;
+            }
 
-                command.CommandText = @"
-                DELETE FROM PlaylistSongs 
-                WHERE PlaylistId = @playlistId AND SongId = @songId";
-                command.Parameters.AddWithValue("@playlistId", playlistId);
-                command.Parameters.AddWithValue("@songId", songId);
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                DELETE FROM PlaylistSongs
+                WHERE PlaylistId = @playlistId AND SongId = @songId;";
+            command.Parameters.AddWithValue("@playlistId", playlistId);
+            command.Parameters.AddWithValue("@songId", songId);
+            command.ExecuteNonQuery();
+        }
+
+        public void RemoveSongsFromPlaylist(long playlistId, IEnumerable<long> songIds)
+        {
+            ArgumentNullException.ThrowIfNull(songIds);
+            if (playlistId <= 0)
+            {
+                return;
+            }
+
+            long[] distinctSongIds = songIds.Where(id => id > 0).Distinct().ToArray();
+            if (distinctSongIds.Length == 0)
+            {
+                return;
+            }
+
+            using var connection = OpenConnection();
+            using var transaction = connection.BeginTransaction();
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = @"
+                DELETE FROM PlaylistSongs
+                WHERE PlaylistId = @playlistId AND SongId = @songId;";
+            command.Parameters.AddWithValue("@playlistId", playlistId);
+            var songIdParameter = command.Parameters.Add("@songId", SqliteType.Integer);
+
+            foreach (long songId in distinctSongIds)
+            {
+                songIdParameter.Value = songId;
                 command.ExecuteNonQuery();
             }
+
+            transaction.Commit();
         }
 
         public long GetPlaylistId(string playlistName)
         {
-            using (var connection = new SqliteConnection(connectionString))
+            ArgumentNullException.ThrowIfNull(playlistName);
+
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT Id
+                FROM Playlists
+                WHERE Name = @name
+                ORDER BY Id DESC
+                LIMIT 1;";
+            command.Parameters.AddWithValue("@name", playlistName);
+
+            object? result = command.ExecuteScalar();
+            return result is null or DBNull
+                ? -1
+                : Convert.ToInt64(result, CultureInfo.InvariantCulture);
+        }
+
+        private static bool PlaylistExists(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            long playlistId)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "SELECT EXISTS (SELECT 1 FROM Playlists WHERE Id = @id);";
+            command.Parameters.AddWithValue("@id", playlistId);
+            return Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture) != 0;
+        }
+
+        private static long GetOrCreateSong(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            Song song,
+            string title)
+        {
+            if (song.Id > 0 && SongExists(connection, transaction, song.Id))
             {
-                connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText = "SELECT Id FROM Playlists WHERE Name = @name";
-                command.Parameters.AddWithValue("@name", playlistName);
-
-                object? result = command.ExecuteScalar();
-
-                if (result != null && result != DBNull.Value)
-                {
-                    return Convert.ToInt64(result);
-                }
-
-                return -1;
+                return song.Id;
             }
+
+            long? existingId = FindSongId(connection, transaction, song);
+            if (existingId.HasValue)
+            {
+                return existingId.Value;
+            }
+
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = @"
+                INSERT INTO Songs (
+                    Title, Artist, Album, Duration, FilePath, Genre, Year, PlayCount,
+                    ArtworkData, VideoId, ChannelTitle, Views, VideoDuration
+                )
+                VALUES (
+                    @title, @artist, @album, @duration, @filePath, @genre, @year, @playCount,
+                    @artworkData, @videoId, @channelTitle, @views, @videoDuration
+                );";
+            AddSongParameters(command, song, title);
+            command.ExecuteNonQuery();
+
+            command.CommandText = "SELECT last_insert_rowid();";
+            command.Parameters.Clear();
+            return Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture);
+        }
+
+        private static bool SongExists(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            long songId)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "SELECT EXISTS (SELECT 1 FROM Songs WHERE Id = @id);";
+            command.Parameters.AddWithValue("@id", songId);
+            return Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture) != 0;
+        }
+
+        private static long? FindSongId(
+            SqliteConnection connection,
+            SqliteTransaction transaction,
+            Song song)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+
+            if (!string.IsNullOrWhiteSpace(song.FilePath))
+            {
+                command.CommandText = @"
+                    SELECT Id
+                    FROM Songs
+                    WHERE FilePath = @value COLLATE NOCASE
+                    ORDER BY Id
+                    LIMIT 1;";
+                command.Parameters.AddWithValue("@value", song.FilePath);
+            }
+            else if (!string.IsNullOrWhiteSpace(song.VideoId))
+            {
+                command.CommandText = @"
+                    SELECT Id
+                    FROM Songs
+                    WHERE VideoId = @value
+                    ORDER BY Id
+                    LIMIT 1;";
+                command.Parameters.AddWithValue("@value", song.VideoId);
+            }
+            else
+            {
+                return null;
+            }
+
+            object? result = command.ExecuteScalar();
+            return result is null or DBNull
+                ? null
+                : Convert.ToInt64(result, CultureInfo.InvariantCulture);
+        }
+
+        private static string GetRequiredSongTitle(Song song)
+        {
+            if (!string.IsNullOrWhiteSpace(song.Title))
+            {
+                return song.Title;
+            }
+
+            if (!string.IsNullOrWhiteSpace(song.FilePath))
+            {
+                string fileName = Path.GetFileNameWithoutExtension(song.FilePath);
+                if (!string.IsNullOrWhiteSpace(fileName))
+                {
+                    return fileName;
+                }
+            }
+
+            return "Unknown Title";
+        }
+
+        private static void AddSongParameters(SqliteCommand command, Song song, string title)
+        {
+            command.Parameters.AddWithValue("@title", title);
+            command.Parameters.AddWithValue("@artist", (object?)song.Artist ?? DBNull.Value);
+            command.Parameters.AddWithValue("@album", (object?)song.Album ?? DBNull.Value);
+            command.Parameters.AddWithValue("@duration", song.Duration.TotalSeconds);
+            command.Parameters.AddWithValue("@filePath", (object?)song.FilePath ?? DBNull.Value);
+            command.Parameters.AddWithValue("@genre", (object?)song.Genre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@year", (object?)song.Year ?? DBNull.Value);
+            command.Parameters.AddWithValue("@playCount", song.PlayCount);
+            command.Parameters.AddWithValue("@artworkData", (object?)song.ArtworkData ?? DBNull.Value);
+            command.Parameters.AddWithValue("@videoId", (object?)song.VideoId ?? DBNull.Value);
+            command.Parameters.AddWithValue("@channelTitle", (object?)song.ChannelTitle ?? DBNull.Value);
+            command.Parameters.AddWithValue("@views", (object?)song.Views ?? DBNull.Value);
+            command.Parameters.AddWithValue("@videoDuration", (object?)song.VideoDuration ?? DBNull.Value);
         }
     }
 }

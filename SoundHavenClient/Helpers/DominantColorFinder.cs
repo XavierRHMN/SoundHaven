@@ -1,147 +1,157 @@
-using Avalonia.Media.Imaging;
-using Avalonia.Media;
-using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using ColorMine.ColorSpaces;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using SkiaSharp;
 
-namespace SoundHaven.Helpers
+namespace SoundHaven.Helpers;
+
+public static class DominantColorFinder
 {
-    public static class DominantColorFinder
+    private static readonly Color FallbackColor = Color.Parse("#546E7A");
+
+    public static Color GetDominantColor(Bitmap bitmap, int maxDimension = 100)
     {
-        public static Color GetDominantColor(Bitmap avaloniaBitmap, int maxDimension = 100)
+        ArgumentNullException.ThrowIfNull(bitmap);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxDimension);
+
+        using SKBitmap original = ConvertToSkia(bitmap);
+        using SKBitmap sampled = Downsample(original, maxDimension);
+        return Analyze(sampled);
+    }
+
+    private static SKBitmap ConvertToSkia(Bitmap bitmap)
+    {
+        using var stream = new MemoryStream();
+        bitmap.Save(stream);
+        stream.Position = 0;
+        return SKBitmap.Decode(stream)
+            ?? throw new InvalidDataException("The artwork could not be decoded.");
+    }
+
+    private static SKBitmap Downsample(SKBitmap original, int maxDimension)
+    {
+        float scale = Math.Min(
+            1f,
+            (float)maxDimension / Math.Max(original.Width, original.Height));
+        int width = Math.Max(1, (int)Math.Round(original.Width * scale));
+        int height = Math.Max(1, (int)Math.Round(original.Height * scale));
+
+        var resized = new SKBitmap(width, height);
+        using var canvas = new SKCanvas(resized);
+        canvas.DrawBitmap(
+            original,
+            SKRect.Create(original.Width, original.Height),
+            SKRect.Create(width, height));
+        return resized;
+    }
+
+    private static Color Analyze(SKBitmap bitmap)
+    {
+        var buckets = new Dictionary<int, ColorBucket>();
+        double totalWeight = 0;
+
+        for (int y = 0; y < bitmap.Height; y++)
         {
-            using (SKBitmap skiaBitmap = ConvertAvaloniaToSkiaSharp(avaloniaBitmap))
+            for (int x = 0; x < bitmap.Width; x++)
             {
-                SKBitmap downsampledBitmap = DownsampleBitmap(skiaBitmap, maxDimension);
-                Rgb dominantColor = AnalyzeDominantColor(downsampledBitmap);
-                return ConvertToAvaloniaColor(dominantColor);
-            }
-        }
-
-        private static SKBitmap ConvertAvaloniaToSkiaSharp(Bitmap avaloniaBitmap)
-        {
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                avaloniaBitmap.Save(memoryStream);
-                memoryStream.Position = 0;
-                return SKBitmap.Decode(memoryStream);
-            }
-        }
-
-        private static SKBitmap DownsampleBitmap(SKBitmap original, int maxDimension)
-        {
-            float scale = Math.Min(1, (float)maxDimension / Math.Max(original.Width, original.Height));
-            int newWidth = (int)(original.Width * scale);
-            int newHeight = (int)(original.Height * scale);
-
-            SKBitmap resized = new SKBitmap(newWidth, newHeight);
-            using (SKCanvas canvas = new SKCanvas(resized))
-            {
-                canvas.DrawBitmap(original, SKRect.Create(original.Width, original.Height), SKRect.Create(newWidth, newHeight));
-            }
-
-            return resized;
-        }
-
-        private static Rgb AnalyzeDominantColor(SKBitmap bitmap)
-        {
-            int width = bitmap.Width;
-            int height = bitmap.Height;
-
-            Dictionary<Lab, ColorInfo> colorInfos = new Dictionary<Lab, ColorInfo>();
-            double totalWeight = 0;
-
-            for(int x = 0; x < width; x++)
-            {
-                for(int y = 0; y < height; y++)
+                SKColor pixel = bitmap.GetPixel(x, y);
+                if (pixel.Alpha < 128)
                 {
-                    SKColor pixelColor = bitmap.GetPixel(x, y);
-                    if (pixelColor.Alpha < 128) continue; // Skip fully transparent pixels
-
-                    Rgb rgb = new Rgb { R = pixelColor.Red, G = pixelColor.Green, B = pixelColor.Blue };
-                    Lab lab = rgb.To<Lab>();
-
-                    double weight = GetPixelWeight(x, y, width, height);
-                    totalWeight += weight;
-
-                    double vibrancy = CalculateVibrancy(rgb);
-
-                    if (colorInfos.ContainsKey(lab))
-                    {
-                        colorInfos[lab].Weight += weight;
-                    }
-                    else
-                    {
-                        colorInfos[lab] = new ColorInfo { Weight = weight, Vibrancy = vibrancy };
-                    }
+                    continue;
                 }
+
+                double weight = GetPixelWeight(x, y, bitmap.Width, bitmap.Height);
+                int key = Quantize(pixel);
+                if (!buckets.TryGetValue(key, out ColorBucket? bucket))
+                {
+                    bucket = new ColorBucket();
+                    buckets.Add(key, bucket);
+                }
+
+                bucket.Add(pixel, weight);
+                totalWeight += weight;
             }
+        }
 
-            // Filter out colors that occupy less than 5% of the image
-            var significantColors = colorInfos.Where(pair => pair.Value.Weight / totalWeight > 0.05).ToList();
+        if (buckets.Count == 0 || totalWeight <= 0)
+        {
+            return FallbackColor;
+        }
 
-            if (!significantColors.Any())
+        var candidates = buckets.Values
+            .Where(bucket => bucket.Weight / totalWeight >= 0.01)
+            .Select(bucket => new
             {
-                significantColors = colorInfos.ToList(); // If no significant colors, use all colors
-            }
+                Bucket = bucket,
+                Score = (bucket.Weight / totalWeight * 0.65)
+                    + (bucket.AverageSaturation * 0.35)
+            })
+            .OrderByDescending(candidate => candidate.Score)
+            .ToArray();
 
-            // Combine dominance and vibrancy scores
-            var scoredColors = significantColors.Select(pair => new
-            {
-                Color = pair.Key,
-                Score = (pair.Value.Weight / totalWeight) * 0.6 + pair.Value.Vibrancy * 0.4
-            }).OrderByDescending(c => c.Score);
+        ColorBucket selected = candidates
+            .FirstOrDefault(candidate => candidate.Bucket.AverageBrightness is >= 0.18 and <= 0.85)
+            ?.Bucket
+            ?? candidates.First().Bucket;
 
-            Lab selectedLab = scoredColors.First().Color;
+        return new Color(
+            255,
+            (byte)Math.Clamp(Math.Round(selected.Red / selected.Weight), 0, 255),
+            (byte)Math.Clamp(Math.Round(selected.Green / selected.Weight), 0, 255),
+            (byte)Math.Clamp(Math.Round(selected.Blue / selected.Weight), 0, 255));
+    }
 
-            // If the selected color is too light or dark, choose the next best option
-            if (IsTooLightOrDark(selectedLab))
-            {
-                selectedLab = scoredColors.Where(c => !IsTooLightOrDark(c.Color))
-                    .FirstOrDefault().Color;
-            }
+    private static int Quantize(SKColor color)
+    {
+        return ((color.Red >> 3) << 10)
+            | ((color.Green >> 3) << 5)
+            | (color.Blue >> 3);
+    }
 
-            return selectedLab.To<Rgb>();
-        }
+    private static double GetPixelWeight(int x, int y, int width, int height)
+    {
+        double centerX = (width - 1) / 2d;
+        double centerY = (height - 1) / 2d;
+        double distance = Math.Sqrt(
+            Math.Pow(x - centerX, 2)
+            + Math.Pow(y - centerY, 2));
+        double maximum = Math.Sqrt(Math.Pow(centerX, 2) + Math.Pow(centerY, 2));
+        return maximum <= 0 ? 1 : 1 - (distance / maximum * 0.35);
+    }
 
-        private static double GetPixelWeight(int x, int y, int width, int height)
+    private sealed class ColorBucket
+    {
+        public double Weight { get; private set; }
+
+        public double Red { get; private set; }
+
+        public double Green { get; private set; }
+
+        public double Blue { get; private set; }
+
+        public double Saturation { get; private set; }
+
+        public double Brightness { get; private set; }
+
+        public double AverageSaturation => Saturation / Weight;
+
+        public double AverageBrightness => Brightness / Weight;
+
+        public void Add(SKColor color, double weight)
         {
-            // Give more weight to pixels near the center of the image
-            double distanceFromCenter = Math.Sqrt(Math.Pow(x - width / 2.0, 2) + Math.Pow(y - height / 2.0, 2));
-            double maxDistance = Math.Sqrt(Math.Pow(width / 2.0, 2) + Math.Pow(height / 2.0, 2));
-            return 1 - (distanceFromCenter / maxDistance);
-        }
+            Weight += weight;
+            Red += color.Red * weight;
+            Green += color.Green * weight;
+            Blue += color.Blue * weight;
 
-        private static bool IsTooLightOrDark(Lab color)
-        {
-            // Use the L value from Lab color space for a more accurate brightness assessment
-            return color.L < 20 || color.L > 80;
-        }
-
-        private static double CalculateVibrancy(Rgb rgb)
-        {
-            // Convert RGB to HSV
-            var hsv = rgb.To<Hsv>();
-
-            // Calculate vibrancy based on saturation and value (brightness)
-            double saturationWeight = 0.7;
-            double valueWeight = 0.3;
-
-            return (hsv.S / 100.0) * saturationWeight + (hsv.V / 100.0) * valueWeight;
-        }
-
-        private static Color ConvertToAvaloniaColor(Rgb rgb)
-        {
-            return new Color(255, (byte)rgb.R, (byte)rgb.G, (byte)rgb.B);
-        }
-
-        private class ColorInfo
-        {
-            public double Weight { get; set; }
-            public double Vibrancy { get; set; }
+            double maximum = Math.Max(color.Red, Math.Max(color.Green, color.Blue)) / 255d;
+            double minimum = Math.Min(color.Red, Math.Min(color.Green, color.Blue)) / 255d;
+            double saturation = maximum <= 0 ? 0 : (maximum - minimum) / maximum;
+            Saturation += saturation * weight;
+            Brightness += maximum * weight;
         }
     }
 }

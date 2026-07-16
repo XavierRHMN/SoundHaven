@@ -125,5 +125,22 @@
                                         Margin="-5 0 0 0"/>
             </Grid>
         </Grid>
+
+        <Border Grid.RowSpan="3"
+                ZIndex="1000"
+                IsVisible="{Binding Notifications.IsVisible}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="20,50,20,0"
+                Padding="18,10"
+                MaxWidth="800"
+                CornerRadius="8"
+                Background="#EE242424"
+                BorderBrush="#FFE57373"
+                BorderThickness="1">
+            <TextBlock Text="{Binding Notifications.Message}"
+                       Foreground="White"
+                       TextWrapping="Wrap" />
+        </Border>
     </Grid>
 </Window>

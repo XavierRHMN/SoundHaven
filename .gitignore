@@ -1,5 +1,44 @@
-bin/
-obj/
-/packages/
+# .NET build output
+[Bb]in/
+[Oo]bj/
+[Aa]rtifacts/
+[Pp]ackages/
+*.nupkg
+*.snupkg
+
+# IDE state
+.vs/
+.idea/
+*.suo
+*.user
+*.rsuser
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+*_ReSharper.Caches/
+*.sln.iml
 riderModule.iml
-/_ReSharper.Caches/
+
+# Test and coverage output
+[Tt]est[Rr]esults/
+[Cc]overage/
+*.coverage
+*.coveragexml
+coverage.*
+
+# Local runtime data
+identifier.sqlite
+*.db-shm
+*.db-wal
+*.sqlite-shm
+*.sqlite-wal
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini

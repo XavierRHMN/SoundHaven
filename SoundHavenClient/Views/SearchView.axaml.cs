@@ -1,12 +1,24 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
+using Avalonia.Controls.Selection;
+using SoundHaven.Models;
+using SoundHaven.ViewModels;
 
-namespace SoundHaven.Views
+namespace SoundHaven.Views;
+
+public partial class SearchView : UserControl
 {
-    public partial class SearchView : UserControl
+    public SearchView()
     {
-        public SearchView()
+        InitializeComponent();
+    }
+
+    private void OnSelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
+    {
+        if (DataContext is SearchViewModel viewModel
+            && sender is ListBox { SelectedItem: Song song }
+            && viewModel.PlaySongCommand.CanExecute(song))
         {
-            InitializeComponent();
+            viewModel.PlaySongCommand.Execute(song);
         }
     }
 }

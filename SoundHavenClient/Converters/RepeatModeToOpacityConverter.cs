@@ -1,13 +1,13 @@
-﻿using Avalonia.Data.Converters;
-using SoundHaven.ViewModels;
 using System;
 using System.Globalization;
+using Avalonia.Data.Converters;
+using SoundHaven.ViewModels;
 
 namespace SoundHaven.Converters
 {
     public class RepeatModeToOpacityConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is RepeatMode mode)
             {
@@ -22,6 +22,7 @@ namespace SoundHaven.Converters
             return 0.5;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+            throw new NotSupportedException();
     }
 }

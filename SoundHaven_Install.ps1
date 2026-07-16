@@ -1,154 +1,189 @@
-# SoundHaven PowerShell Menu Script
+[CmdletBinding()]
+param(
+    [string]$Version = "latest",
+    [string]$Repository = "XavierRHMN/SoundHaven",
+    [switch]$NoShortcuts,
+    [string]$PackagePath,
+    [string]$ChecksumPath,
+    [string]$InstallDirectory
+)
 
-function Set-ExecutionPolicy-Bypass {
-    try {
-        Set-ExecutionPolicy Bypass -Scope Process -Force
-        Write-Host "Execution policy set to Bypass for this session."
-    }
-    catch {
-        Write-Host "Failed to set execution policy. You may need to run this script as an administrator."
-        Write-Host "Error: $_"
-        pause
-        exit
-    }
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
+
+if ($Repository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
+    throw "Repository must use the 'owner/name' format."
 }
 
-# Call the function to set execution policy at the start of the script
-Set-ExecutionPolicy-Bypass
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
-$soundHavenPath = Join-Path $scriptPath "SoundHaven"
-$clientPath = Join-Path $soundHavenPath "SoundHavenClient"
-
-function Show-Menu {
-    Clear-Host
-    Write-Host "================ SoundHaven Menu ================"
-    Write-Host "1: Run SoundHaven Application"
-    Write-Host "2: Set Last.fm API Key"
-    Write-Host "3: Set Last.fm API Secret"
-    Write-Host "4: Run Complete Setup"
-    Write-Host "5: Delete SoundHaven"
-    Write-Host "6: View Current API Settings"
-    Write-Host "Q: Quit"
-    Write-Host "================================================="
+if ([string]::IsNullOrWhiteSpace($InstallDirectory)) {
+    $InstallDirectory = Join-Path $env:LOCALAPPDATA "Programs\SoundHaven"
 }
 
-function Run-Application {
-    Set-Location $clientPath
-    dotnet run
+$destinationDirectory = [System.IO.Path]::GetFullPath($InstallDirectory)
+$programsRoot = Split-Path -Parent $destinationDirectory
+if ([string]::IsNullOrWhiteSpace($programsRoot)) {
+    throw "InstallDirectory must have a parent directory."
 }
 
-function Get-ValidInput {
-    param (
-        [string]$prompt
+$useLocalPackage = (-not [string]::IsNullOrWhiteSpace($PackagePath)) -or (-not [string]::IsNullOrWhiteSpace($ChecksumPath))
+if ($useLocalPackage -and (
+        [string]::IsNullOrWhiteSpace($PackagePath) -or
+        [string]::IsNullOrWhiteSpace($ChecksumPath))) {
+    throw "PackagePath and ChecksumPath must be supplied together."
+}
+
+$startMenuDirectory = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"
+$applicationShortcut = Join-Path $startMenuDirectory "SoundHaven.lnk"
+$uninstallShortcut = Join-Path $startMenuDirectory "Uninstall SoundHaven.lnk"
+$downloadDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("SoundHaven-Install-" + [Guid]::NewGuid().ToString("N"))
+$stagingDirectory = Join-Path $programsRoot (".SoundHaven-staging-" + [Guid]::NewGuid().ToString("N"))
+$backupDirectory = Join-Path $programsRoot (".SoundHaven-backup-" + [Guid]::NewGuid().ToString("N"))
+$backupCreated = $false
+$newInstallCreated = $false
+
+function New-Shortcut {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$TargetPath,
+        [string]$Arguments = "",
+        [string]$WorkingDirectory = "",
+        [string]$IconLocation = ""
     )
-    do {
-        $input = Read-Host $prompt
-        if ($input.Length -ne 32) {
-            Write-Host "Input must be exactly 32 characters long. Please try again."
-        }
-    } while ($input.Length -ne 32)
-    return $input
+
+    $shell = New-Object -ComObject WScript.Shell
+    $shortcut = $shell.CreateShortcut($Path)
+    $shortcut.TargetPath = $TargetPath
+    $shortcut.Arguments = $Arguments
+    $shortcut.WorkingDirectory = $WorkingDirectory
+    $shortcut.IconLocation = $IconLocation
+    $shortcut.Save()
 }
 
-function Set-ApiKey {
-    $apiKey = Get-ValidInput "Enter your Last.fm API key (must be 32 characters)"
+try {
+    New-Item -ItemType Directory -Path $programsRoot -Force | Out-Null
+    New-Item -ItemType Directory -Path $downloadDirectory -Force | Out-Null
 
-    # Set for current session
-    $env:LASTFM_API_KEY = $apiKey
-
-    # Set permanently for user
-    [System.Environment]::SetEnvironmentVariable('LASTFM_API_KEY', $apiKey, 'User')
-
-    Write-Host "API Key has been set in environment variables."
-    pause
-}
-
-function Set-ApiSecret {
-    $apiSecret = Get-ValidInput "Enter your Last.fm API secret (must be 32 characters)"
-
-    # Set for current session
-    $env:LASTFM_API_SECRET = $apiSecret
-
-    # Set permanently for user
-    [System.Environment]::SetEnvironmentVariable('LASTFM_API_SECRET', $apiSecret, 'User')
-
-    Write-Host "API Secret has been set in environment variables."
-    pause
-}
-
-function View-ApiSettings {
-    Write-Host "`nCurrent API Settings:"
-    Write-Host "LASTFM_API_KEY: $env:LASTFM_API_KEY"
-    Write-Host "LASTFM_API_SECRET: $env:LASTFM_API_SECRET"
-    Write-Host "`nNote: If empty, try restarting your terminal or IDE."
-    pause
-}
-
-function Redo-Setup {
-    # Clone the repository
-    Set-Location $scriptPath
-    if (Test-Path $soundHavenPath) {
-        Remove-Item -Path $soundHavenPath -Recurse -Force
-    }
-    git clone https://github.com/XavierRHMN/SoundHaven.git
-
-    # Build the project
-    Set-Location $clientPath
-    dotnet build
-
-    # Set API key and secret
-    Set-ApiKey
-    Set-ApiSecret
-
-    Write-Host "Setup completed successfully."
-    pause
-}
-
-function Delete-SoundHaven {
-    if (Test-Path $soundHavenPath) {
-        $confirmation = Read-Host "Are you sure you want to delete SoundHaven? This action cannot be undone. (Y/N)"
-        if ($confirmation -eq 'Y' -or $confirmation -eq 'y') {
-            Remove-Item -Path $soundHavenPath -Recurse -Force
-
-            # Option to remove environment variables
-            $removeEnv = Read-Host "Do you want to remove the API environment variables as well? (Y/N)"
-            if ($removeEnv -eq 'Y' -or $removeEnv -eq 'y') {
-                [System.Environment]::SetEnvironmentVariable('LASTFM_API_KEY', $null, 'User')
-                [System.Environment]::SetEnvironmentVariable('LASTFM_API_SECRET', $null, 'User')
-                $env:LASTFM_API_KEY = $null
-                $env:LASTFM_API_SECRET = $null
-                Write-Host "Environment variables have been removed."
-            }
-
-            Write-Host "SoundHaven has been deleted successfully."
-        }
-        else {
-            Write-Host "Deletion cancelled."
-        }
+    if ($useLocalPackage) {
+        $resolvedPackagePath = (Resolve-Path -LiteralPath $PackagePath).Path
+        $resolvedChecksumPath = (Resolve-Path -LiteralPath $ChecksumPath).Path
     }
     else {
-        Write-Host "SoundHaven directory does not exist."
-    }
-    pause
-}
+        $headers = @{
+            Accept = "application/vnd.github+json"
+            "User-Agent" = "SoundHaven-Installer"
+            "X-GitHub-Api-Version" = "2022-11-28"
+        }
 
-# Main script logic
-if (-not (Test-Path $soundHavenPath)) {
-    Write-Host "SoundHaven is not set up. Running initial setup..."
-    Redo-Setup
-}
+        if ($Version -eq "latest") {
+            $releaseUri = "https://api.github.com/repos/$Repository/releases/latest"
+        }
+        else {
+            $releaseTag = if ($Version.StartsWith("v")) { $Version } else { "v$Version" }
+            $releaseUri = "https://api.github.com/repos/$Repository/releases/tags/$releaseTag"
+        }
 
-do {
-    Show-Menu
-    $selection = Read-Host "Please make a selection"
-    switch ($selection) {
-        '1' { Run-Application }
-        '2' { Set-ApiKey }
-        '3' { Set-ApiSecret }
-        '4' { Redo-Setup }
-        '5' { Delete-SoundHaven }
-        '6' { View-ApiSettings }
-        'Q' { return }
+        Write-Host "Resolving SoundHaven release..."
+        $release = Invoke-RestMethod -Uri $releaseUri -Headers $headers
+        $zipAsset = $release.assets |
+            Where-Object { $_.name -match '^SoundHaven-.+-win-x64\.zip$' } |
+            Select-Object -First 1
+
+        if ($null -eq $zipAsset) {
+            throw "The selected release does not contain a win-x64 SoundHaven ZIP."
+        }
+
+        $checksumAssetName = "$($zipAsset.name).sha256"
+        $checksumAsset = $release.assets |
+            Where-Object { $_.name -eq $checksumAssetName } |
+            Select-Object -First 1
+
+        if ($null -eq $checksumAsset) {
+            throw "The selected release is missing $checksumAssetName."
+        }
+
+        $resolvedPackagePath = Join-Path $downloadDirectory $zipAsset.name
+        $resolvedChecksumPath = Join-Path $downloadDirectory $checksumAsset.name
+
+        Write-Host "Downloading $($zipAsset.name)..."
+        Invoke-WebRequest -Uri $zipAsset.browser_download_url -Headers $headers -OutFile $resolvedPackagePath -UseBasicParsing
+        Invoke-WebRequest -Uri $checksumAsset.browser_download_url -Headers $headers -OutFile $resolvedChecksumPath -UseBasicParsing
     }
-} until ($selection -eq 'Q')
+
+    $checksumText = (Get-Content -LiteralPath $resolvedChecksumPath -Raw).Trim()
+    if ($checksumText -notmatch '^(?<hash>[A-Fa-f0-9]{64})(?:\s+\*?.+)?$') {
+        throw "The release checksum file has an invalid format."
+    }
+
+    $expectedHash = $Matches.hash.ToLowerInvariant()
+    $actualHash = (Get-FileHash -LiteralPath $resolvedPackagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actualHash -ne $expectedHash) {
+        throw "Checksum verification failed. The downloaded release was not installed."
+    }
+
+    New-Item -ItemType Directory -Path $stagingDirectory -Force | Out-Null
+    Expand-Archive -LiteralPath $resolvedPackagePath -DestinationPath $stagingDirectory
+
+    $stagedApplication = Join-Path $stagingDirectory "SoundHaven"
+    $stagedExecutable = Join-Path $stagedApplication "SoundHavenClient.exe"
+    if (-not (Test-Path -LiteralPath $stagedExecutable -PathType Leaf)) {
+        throw "The release archive does not contain SoundHavenClient.exe."
+    }
+
+    if (Test-Path -LiteralPath $destinationDirectory) {
+        [System.IO.Directory]::Move($destinationDirectory, $backupDirectory)
+        $backupCreated = $true
+    }
+
+    [System.IO.Directory]::Move($stagedApplication, $destinationDirectory)
+    $newInstallCreated = $true
+
+    if (-not $NoShortcuts) {
+        New-Item -ItemType Directory -Path $startMenuDirectory -Force | Out-Null
+        $installedExecutable = Join-Path $destinationDirectory "SoundHavenClient.exe"
+        New-Shortcut `
+            -Path $applicationShortcut `
+            -TargetPath $installedExecutable `
+            -WorkingDirectory $destinationDirectory `
+            -IconLocation "$installedExecutable,0"
+
+        $uninstaller = Join-Path $destinationDirectory "SoundHaven_Uninstall.ps1"
+        if (Test-Path -LiteralPath $uninstaller) {
+            $powerShellPath = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
+            New-Shortcut `
+                -Path $uninstallShortcut `
+                -TargetPath $powerShellPath `
+                -Arguments "-NoProfile -ExecutionPolicy Bypass -File `"$uninstaller`"" `
+                -WorkingDirectory $programsRoot
+        }
+    }
+
+    if ($backupCreated -and (Test-Path -LiteralPath $backupDirectory)) {
+        Remove-Item -LiteralPath $backupDirectory -Recurse -Force
+        $backupCreated = $false
+    }
+
+    Write-Host "SoundHaven is installed at $destinationDirectory"
+}
+catch {
+    if ($newInstallCreated -and (Test-Path -LiteralPath $destinationDirectory)) {
+        Remove-Item -LiteralPath $destinationDirectory -Recurse -Force
+    }
+
+    if ($backupCreated -and (Test-Path -LiteralPath $backupDirectory)) {
+        [System.IO.Directory]::Move($backupDirectory, $destinationDirectory)
+    }
+
+    throw
+}
+finally {
+    if (Test-Path -LiteralPath $downloadDirectory) {
+        Remove-Item -LiteralPath $downloadDirectory -Recurse -Force
+    }
+
+    if (Test-Path -LiteralPath $stagingDirectory) {
+        Remove-Item -LiteralPath $stagingDirectory -Recurse -Force
+    }
+}

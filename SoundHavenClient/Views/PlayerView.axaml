@@ -183,7 +183,8 @@
                     <ListBox ItemsSource="{Binding UpNextSongs}"
                              Background="Transparent"
                              Theme="{StaticResource MaterialModernListBox}"
-                             SelectedItem="{Binding PlayerViewSong}">
+                             SelectedItem="{Binding PlayerViewSong, Mode=OneWay}"
+                             SelectionChanged="OnSelectionChanged">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:Song">
                                 <Grid Margin="0,0">

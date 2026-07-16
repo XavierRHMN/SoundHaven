@@ -1,66 +1,119 @@
-﻿using Avalonia;
+using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading;
+using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
-using Avalonia.Threading;
-using System;
-using System.Diagnostics;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Avalonia.Platform;
 
-namespace SoundHaven.Controls
+namespace SoundHaven.Controls;
+
+public sealed class AsyncImageControl : Image, IDisposable
 {
-    public class AsyncImageControl : Image
+    public static readonly StyledProperty<string?> SourceUrlProperty =
+        AvaloniaProperty.Register<AsyncImageControl, string?>(nameof(SourceUrl));
+
+    private static readonly HttpClient HttpClient = CreateHttpClient();
+    private CancellationTokenSource? _loadCancellation;
+
+    static AsyncImageControl()
     {
-        public static readonly StyledProperty<string> SourceUrlProperty =
-            AvaloniaProperty.Register<AsyncImageControl, string>(nameof(SourceUrl));
+        SourceUrlProperty.Changed.AddClassHandler<AsyncImageControl>(
+            static (control, change) => control.OnSourceUrlChanged(change.NewValue as string));
+    }
 
-        private static readonly HttpClient HttpClient = new();
-        private static readonly string FallbackImagePath = "avares://SoundHavenClient/Assets/Covers/MissingAlbum.png";
+    public AsyncImageControl()
+    {
+        DetachedFromVisualTree += (_, _) => CancelLoad();
+    }
 
-        public string SourceUrl
+    public string? SourceUrl
+    {
+        get => GetValue(SourceUrlProperty);
+        set => SetValue(SourceUrlProperty, value);
+    }
+
+    public void Dispose()
+    {
+        CancelLoad();
+        ReplaceSource(null);
+        GC.SuppressFinalize(this);
+    }
+
+    private void OnSourceUrlChanged(string? url)
+    {
+        CancelLoad();
+        ReplaceSource(null);
+
+        if (string.IsNullOrWhiteSpace(url))
         {
-            get => GetValue(SourceUrlProperty);
-            set => SetValue(SourceUrlProperty, value);
+            return;
         }
 
-        static AsyncImageControl()
-        {
-            SourceUrlProperty.Changed.AddClassHandler<AsyncImageControl>((x, e) => x.OnSourceUrlChanged(e));
-        }
+        _loadCancellation = new CancellationTokenSource();
+        _ = LoadAsync(url, _loadCancellation.Token);
+    }
 
-        private async void OnSourceUrlChanged(AvaloniaPropertyChangedEventArgs e)
+    private async Task LoadAsync(string url, CancellationToken cancellationToken)
+    {
+        try
         {
-            // Set fallback image first
-            await Dispatcher.UIThread.InvokeAsync(() => 
-            {
-                var uri = new Uri(FallbackImagePath);
-                var assetLoader = AssetLoader.Open(uri);
-                Source = new Bitmap(assetLoader);
-            });
+            using HttpResponseMessage response = await HttpClient.GetAsync(
+                url,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+            response.EnsureSuccessStatusCode();
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var bitmap = new Bitmap(stream);
 
-            string? url = e.NewValue as string;
-            if (!string.IsNullOrEmpty(url))
+            if (cancellationToken.IsCancellationRequested)
             {
-                try
-                {
-                    var response = await HttpClient.GetAsync(url);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        // Ensure bitmap decoding happens on the UI thread
-                        var stream = await response.Content.ReadAsStreamAsync();
-                        await Dispatcher.UIThread.InvokeAsync(() =>
-                        {
-                            var bitmap = new Bitmap(stream);
-                            Source = bitmap;
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error loading image from {url}: {ex.Message}");
-                }
+                bitmap.Dispose();
+                return;
             }
+
+            ReplaceSource(bitmap);
         }
+        catch (OperationCanceledException)
+        {
+            // The control was recycled or received a newer URL.
+        }
+        catch (HttpRequestException)
+        {
+            ReplaceSource(null);
+        }
+        catch (ArgumentException)
+        {
+            ReplaceSource(null);
+        }
+    }
+
+    private void CancelLoad()
+    {
+        _loadCancellation?.Cancel();
+        _loadCancellation?.Dispose();
+        _loadCancellation = null;
+    }
+
+    private void ReplaceSource(Bitmap? bitmap)
+    {
+        if (Source is Bitmap oldBitmap && !ReferenceEquals(oldBitmap, bitmap))
+        {
+            oldBitmap.Dispose();
+        }
+
+        Source = bitmap;
+    }
+
+    private static HttpClient CreateHttpClient()
+    {
+        var client = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(15)
+        };
+        client.DefaultRequestHeaders.UserAgent.Add(
+            new ProductInfoHeaderValue("SoundHaven", "1.0"));
+        return client;
     }
 }

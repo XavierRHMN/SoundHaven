@@ -1,143 +1,174 @@
-﻿using Avalonia.Threading;
-using SoundHaven.Services;
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+using Avalonia.Threading;
+using SoundHaven.Services;
 
-namespace SoundHaven.ViewModels
+namespace SoundHaven.ViewModels;
+
+public sealed class SeekSliderViewModel : ViewModelBase
 {
-    public class SeekSliderViewModel : ViewModelBase, IDisposable
+    private readonly IAudioService _audioService;
+    private readonly PlaybackViewModel _playbackViewModel;
+    private readonly IUserNotificationService _notifications;
+    private readonly DispatcherTimer _debounceTimer;
+    private CancellationTokenSource _seekCancellation = new();
+    private double _seekPosition;
+    private bool _isUpdatingFromPlayer;
+    private bool _isUserSeeking;
+
+    public SeekSliderViewModel(
+        IAudioService audioService,
+        PlaybackViewModel playbackViewModel,
+        IUserNotificationService notifications)
     {
-        private readonly AudioService _audioService;
-        private readonly PlaybackViewModel _playbackViewModel;
-        private DispatcherTimer _seekTimer;
-        private DispatcherTimer _debounceTimer;
-        private double _seekPosition;
-        private bool _isUpdatingFromTimer;
-        private double _maximumSeekValue;
-        private bool _isUserSeeking;
+        _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
+        _playbackViewModel = playbackViewModel
+            ?? throw new ArgumentNullException(nameof(playbackViewModel));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
-        public double MaximumSeekValue
+        _debounceTimer = new DispatcherTimer
         {
-            get => _audioService.TotalDuration.TotalSeconds;
-            private set => SetProperty(ref _maximumSeekValue, value);
-        }
-        
-        public double SeekPosition
-        {
-            get => _seekPosition;
-            set
-            {
-                // clamp between 0 and the current maximum
-                var clamped = Math.Clamp(value, 0, MaximumSeekValue);
-                if (SetProperty(ref _seekPosition, clamped) && !_isUpdatingFromTimer)
-                {
-                    _isUserSeeking = true;
-                    _debounceTimer.Stop();
-                    _debounceTimer.Start();
-                }
-            }
-        }
+            Interval = TimeSpan.FromMilliseconds(175)
+        };
+        _debounceTimer.Tick += OnDebounceElapsed;
+        _audioService.PropertyChanged += OnAudioServicePropertyChanged;
+        _playbackViewModel.PropertyChanged += OnPlaybackViewModelPropertyChanged;
+        _playbackViewModel.SeekPositionReset += OnSeekPositionReset;
+    }
 
-        private bool _canInteractSeekSlider = true;
-        public bool CanInteractSeekSlider
-        {
-            get => _canInteractSeekSlider;
-            set => SetProperty(ref _canInteractSeekSlider, value);
-        }
+    public double MaximumSeekValue => Math.Max(0, _audioService.TotalDuration.TotalSeconds);
 
-        public SeekSliderViewModel(AudioService audioService, PlaybackViewModel playbackViewModel)
+    public double SeekPosition
+    {
+        get => _seekPosition;
+        set
         {
-            _audioService = audioService;
-            _playbackViewModel = playbackViewModel;
-
-            _audioService.PropertyChanged += AudioService_PropertyChanged;
-            _playbackViewModel.PropertyChanged += PlaybackViewModelPropertyChanged;
-            _playbackViewModel.SeekPositionReset += OnSeekPositionReset;
-            InitializeSeekTimer();
-            InitializeDebounceTimer();
-        }
-
-        private void InitializeSeekTimer()
-        {
-            _seekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
-            _seekTimer.Tick += UpdateSeekPosition;
-            _seekTimer.Start();
-        }
-
-        private void InitializeDebounceTimer()
-        {
-            _debounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
-            _debounceTimer.Tick += (s, e) =>
-            {
-                _debounceTimer.Stop();
-                OnSeekPositionChanged(SeekPosition);
-                _isUserSeeking = false;
-            };
-        }
-
-        private void UpdateSeekPosition(object sender, EventArgs e)
-        {
-            if (_playbackViewModel.CurrentSong == null || _isUserSeeking || _playbackViewModel.IsTransitioningTracks)
+            double clamped = Math.Clamp(value, 0, MaximumSeekValue);
+            if (!SetProperty(ref _seekPosition, clamped) || _isUpdatingFromPlayer)
             {
                 return;
             }
 
-            _isUpdatingFromTimer = true;
-            SeekPosition = _audioService.CurrentPosition.TotalSeconds;
-            _isUpdatingFromTimer = false;
-        }
-
-        private void OnSeekPositionChanged(double newPosition)
-        {
-            _audioService.Seek(TimeSpan.FromSeconds(newPosition));
-            if (!_audioService.IsPaused)
+            if (!CanInteractSeekSlider)
             {
-                _seekTimer.Start();
+                return;
             }
-        }
 
-        private void OnSeekPositionReset(object sender, EventArgs e)
-        {
-            SeekPosition = 0;
-        }
-
-        private void PlaybackViewModelPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(PlaybackViewModel.CurrentSong))
-            {
-                OnPropertyChanged(nameof(MaximumSeekValue));
-            }
-        }
-
-        public override void Dispose()
-        {
-            _audioService.PropertyChanged -= AudioService_PropertyChanged;
-            _playbackViewModel.PropertyChanged -= PlaybackViewModelPropertyChanged;
-            _playbackViewModel.SeekPositionReset -= OnSeekPositionReset;
-            _seekTimer.Stop();
-            _seekTimer = null;
+            _isUserSeeking = true;
             _debounceTimer.Stop();
-            _debounceTimer = null;
+            _debounceTimer.Start();
         }
+    }
 
-        private void AudioService_PropertyChanged(object sender, PropertyChangedEventArgs e)
+    public bool CanInteractSeekSlider =>
+        _playbackViewModel.CurrentSong is not null
+        && !_playbackViewModel.IsTransitioningTracks
+        && !_audioService.IsSeekBuffering
+        && MaximumSeekValue > 0;
+
+    public override void Dispose()
+    {
+        _audioService.PropertyChanged -= OnAudioServicePropertyChanged;
+        _playbackViewModel.PropertyChanged -= OnPlaybackViewModelPropertyChanged;
+        _playbackViewModel.SeekPositionReset -= OnSeekPositionReset;
+        _debounceTimer.Stop();
+        _debounceTimer.Tick -= OnDebounceElapsed;
+        _seekCancellation.Cancel();
+        _seekCancellation.Dispose();
+        base.Dispose();
+    }
+
+    private void OnDebounceElapsed(object? sender, EventArgs eventArgs)
+    {
+        _debounceTimer.Stop();
+        _ = CommitSeekAsync();
+    }
+
+    private async Task CommitSeekAsync()
+    {
+        var replacement = new CancellationTokenSource();
+        CancellationTokenSource previous = Interlocked.Exchange(
+            ref _seekCancellation,
+            replacement);
+        previous.Cancel();
+        previous.Dispose();
+
+        try
         {
-            if (e.PropertyName == nameof(AudioService.IsPaused))
+            await _audioService.SeekAsync(
+                TimeSpan.FromSeconds(SeekPosition),
+                replacement.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer slider position superseded this seek.
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError($"Could not seek: {exception.Message}");
+        }
+        finally
+        {
+            if (ReferenceEquals(_seekCancellation, replacement))
             {
-                if (_audioService.IsPaused)
-                {
-                    _seekTimer.Stop();
-                }
-                else
-                {
-                    _seekTimer.Start();
-                }
+                _isUserSeeking = false;
             }
-            else if (e.PropertyName == nameof(AudioService.TotalDuration))
-            {
+        }
+    }
+
+    private void OnSeekPositionReset(object? sender, EventArgs eventArgs)
+    {
+        UpdateFromPlayer(0);
+    }
+
+    private void OnPlaybackViewModelPropertyChanged(
+        object? sender,
+        PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName is nameof(PlaybackViewModel.CurrentSong)
+            or nameof(PlaybackViewModel.IsTransitioningTracks))
+        {
+            OnPropertyChanged(nameof(CanInteractSeekSlider));
+            OnPropertyChanged(nameof(MaximumSeekValue));
+        }
+    }
+
+    private void OnAudioServicePropertyChanged(
+        object? sender,
+        PropertyChangedEventArgs eventArgs)
+    {
+        switch (eventArgs.PropertyName)
+        {
+            case nameof(IAudioService.CurrentPosition):
+                if (!_isUserSeeking && !_playbackViewModel.IsTransitioningTracks)
+                {
+                    UpdateFromPlayer(_audioService.CurrentPosition.TotalSeconds);
+                }
+
+                break;
+            case nameof(IAudioService.TotalDuration):
                 OnPropertyChanged(nameof(MaximumSeekValue));
-            }
+                OnPropertyChanged(nameof(CanInteractSeekSlider));
+                break;
+            case nameof(IAudioService.Status):
+            case nameof(IAudioService.IsSeekBuffering):
+                OnPropertyChanged(nameof(CanInteractSeekSlider));
+                break;
+        }
+    }
+
+    private void UpdateFromPlayer(double position)
+    {
+        _isUpdatingFromPlayer = true;
+        try
+        {
+            SeekPosition = position;
+        }
+        finally
+        {
+            _isUpdatingFromPlayer = false;
         }
     }
 }

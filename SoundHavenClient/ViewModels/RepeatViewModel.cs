@@ -1,6 +1,6 @@
-﻿using SoundHaven.Commands;
 using System;
 using System.Windows.Input;
+using SoundHaven.Commands;
 
 namespace SoundHaven.ViewModels
 {

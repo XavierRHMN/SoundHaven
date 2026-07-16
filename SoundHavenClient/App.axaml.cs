@@ -1,41 +1,148 @@
+using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.Caching.Memory;
+using SoundHaven.Data;
+using SoundHaven.Helpers;
 using SoundHaven.Services;
+using SoundHaven.Stores;
 using SoundHaven.ViewModels;
-using SoundHaven.Views;
 
-namespace SoundHaven
+namespace SoundHaven;
+
+public partial class App : Application, IDisposable
 {
-    public partial class App : Application
+    private MainWindowViewModel? _mainViewModel;
+    private AudioService? _audioService;
+    private YouTubeMediaService? _youTubeMediaService;
+    private LastFmDataService? _lastFmDataService;
+    private MemoryCache? _memoryCache;
+    private HttpClient? _httpClient;
+    private bool _disposed;
+
+    public override void Initialize()
     {
-        private AudioService _audioService;
+        AvaloniaXamlLoader.Load(this);
+    }
 
-        public override void Initialize()
+    public override void OnFrameworkInitializationCompleted()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            AvaloniaXamlLoader.Load(this);
-        }
-
-     public override void OnFrameworkInitializationCompleted()
-        {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            if (BindingPlugins.DataValidators.Count > 0)
             {
-                // Line below is needed to remove Avalonia data validation.
-                // Without this line you will get duplicate validations from both Avalonia and CT
                 BindingPlugins.DataValidators.RemoveAt(0);
-
-                _audioService = new AudioService();
-                var mainViewModel = new MainWindowViewModel(_audioService);
-
-                desktop.MainWindow = new MainWindow
-                {
-                    DataContext = mainViewModel
-                };
             }
 
-            base.OnFrameworkInitializationCompleted();
+            _mainViewModel = BuildCompositionRoot();
+            desktop.MainWindow = new MainWindow
+            {
+                DataContext = _mainViewModel
+            };
+            desktop.Exit += (_, _) => Dispose();
         }
+
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private MainWindowViewModel BuildCompositionRoot()
+    {
+        _httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+        _httpClient.DefaultRequestHeaders.UserAgent.Add(
+            new ProductInfoHeaderValue("SoundHaven", "1.0"));
+
+        var notifications = new NotificationService();
+        var database = new AppDatabase();
+        _memoryCache = new MemoryCache(new MemoryCacheOptions());
+        _lastFmDataService = new LastFmDataService(
+            ApiKeyHelper.GetApiKey(),
+            ApiKeyHelper.GetApiSecret(),
+            _httpClient,
+            _memoryCache);
+        _youTubeMediaService = new YouTubeMediaService(_httpClient);
+        _audioService = new AudioService(_youTubeMediaService);
+
+        var repeatViewModel = new RepeatViewModel();
+        var themesViewModel = new ThemesViewModel(database);
+        var playbackViewModel = new PlaybackViewModel(
+            _audioService,
+            repeatViewModel,
+            _lastFmDataService,
+            themesViewModel,
+            notifications);
+        var shuffleViewModel = new ShuffleViewModel(playbackViewModel);
+        var playlistViewModel = new PlaylistViewModel(
+            playbackViewModel,
+            new OpenFileDialogService(),
+            database,
+            notifications);
+        var playerViewModel = new PlayerViewModel(playbackViewModel, notifications);
+        var homeViewModel = new HomeViewModel(_lastFmDataService);
+        var seekSliderViewModel = new SeekSliderViewModel(
+            _audioService,
+            playbackViewModel,
+            notifications);
+        var searchViewModel = new SearchViewModel(
+            _youTubeMediaService,
+            playbackViewModel,
+            notifications);
+        var volumeViewModel = new VolumeViewModel(_audioService);
+        var songInfoViewModel = new SongInfoViewModel(playbackViewModel, _audioService);
+        var playlistStore = new PlaylistStore(database);
+        var navigation = new NavigationService(homeViewModel);
+        var toolbarViewModel = new ToolbarViewModel(
+            navigation,
+            playlistViewModel,
+            homeViewModel,
+            playerViewModel,
+            playlistStore,
+            searchViewModel,
+            themesViewModel,
+            notifications);
+
+        return new MainWindowViewModel(
+            navigation,
+            playlistViewModel,
+            homeViewModel,
+            toolbarViewModel,
+            playbackViewModel,
+            shuffleViewModel,
+            playerViewModel,
+            seekSliderViewModel,
+            volumeViewModel,
+            songInfoViewModel,
+            themesViewModel,
+            repeatViewModel,
+            searchViewModel,
+            notifications);
+    }
+
+    private void DisposeCompositionRoot()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _mainViewModel?.Dispose();
+        _audioService?.Dispose();
+        _youTubeMediaService?.Dispose();
+        _lastFmDataService?.Dispose();
+        _memoryCache?.Dispose();
+        _httpClient?.Dispose();
+    }
+
+    public void Dispose()
+    {
+        DisposeCompositionRoot();
+        GC.SuppressFinalize(this);
     }
 }

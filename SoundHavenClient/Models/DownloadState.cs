@@ -1,4 +1,4 @@
-﻿namespace SoundHaven.Models
+namespace SoundHaven.Models
 {
     public enum DownloadState
     {

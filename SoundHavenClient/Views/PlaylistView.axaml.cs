@@ -1,12 +1,23 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
+using SoundHaven.Models;
+using SoundHaven.ViewModels;
 
-namespace SoundHaven.Views
+namespace SoundHaven.Views;
+
+public partial class PlaylistView : UserControl
 {
-    public partial class PlaylistView : UserControl
+    public PlaylistView()
     {
-        public PlaylistView()
+        InitializeComponent();
+    }
+
+    private void OnSelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
+    {
+        if (DataContext is PlaylistViewModel { IsEditMode: false } viewModel
+            && sender is DataGrid { SelectedItem: Song song }
+            && viewModel.PlaySongCommand.CanExecute(song))
         {
-            InitializeComponent();
+            viewModel.PlaySongCommand.Execute(song);
         }
     }
 }

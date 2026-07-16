@@ -1,13 +1,13 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Media;
 using SoundHaven.Commands;
 using SoundHaven.Data;
 using SoundHaven.Helpers;
-using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SoundHaven.ViewModels
 {
@@ -15,14 +15,14 @@ namespace SoundHaven.ViewModels
     {
         private readonly AppDatabase _appDatabase;
         public RelayCommand<Color> ChangeThemeCommand { get; }
-        
+
         private bool _isDynamicThemeSelected;
         public bool IsDynamicThemeSelected
         {
             get => _isDynamicThemeSelected;
             set => SetProperty(ref _isDynamicThemeSelected, value);
         }
-        
+
         public List<Color> ThemeColors { get; } = new List<Color>
         {
             // Reds
@@ -90,14 +90,11 @@ namespace SoundHaven.ViewModels
             {
                 Application.Current.Resources["PrimaryColor"] = newColor;
                 Application.Current.Resources["PrimaryHueMidBrush"] = new SolidColorBrush(newColor);
-                
+
                 IsDynamicThemeSelected = newColor == ThemeColors[^1];
-                
+
                 // Save the new theme color to the database
                 _appDatabase.SaveThemeColor(newColor.ToString());
-
-                // Optionally, you can log the change
-                System.Console.WriteLine($"Theme changed to: {newColor}");
             }
         }
 

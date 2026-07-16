@@ -1,54 +1,47 @@
-﻿using System;
-using System.Windows.Input;
-using Avalonia.Threading;
+using System;
+using System.ComponentModel;
 using SoundHaven.Commands;
 
-namespace SoundHaven.ViewModels
+namespace SoundHaven.ViewModels;
+
+public sealed class ShuffleViewModel : ViewModelBase
 {
-    public class ShuffleViewModel : ViewModelBase
+    private readonly PlaybackViewModel _playbackViewModel;
+
+    public bool IsShuffleEnabled
     {
-        private readonly PlaybackViewModel _playbackViewModel;
-        private bool _isUpdating;
-        
-        
-        private bool _isShuffleEnabled;
-        public bool IsShuffleEnabled
+        get => _playbackViewModel.IsShuffleEnabled;
+        set
         {
-            get => _isShuffleEnabled;
-            set
+            if (_playbackViewModel.IsShuffleEnabled != value)
             {
-                if (_isUpdating) return; // Prevent recursive calls
-
-                _isUpdating = true;
-
-                if (SetProperty(ref _isShuffleEnabled, value))
-                {
-                    Console.WriteLine($"Shuffle is now {(_isShuffleEnabled ? "enabled" : "disabled")}");
-
-                    // Update the PlaybackViewModel
-                    _playbackViewModel.IsShuffleEnabled = _isShuffleEnabled;
-
-                    // Ensure UI update on the UI thread
-                    Dispatcher.UIThread.Post(() => OnPropertyChanged());
-                }
-
-                _isUpdating = false;
+                _playbackViewModel.IsShuffleEnabled = value;
+                OnPropertyChanged();
             }
         }
+    }
 
-        public RelayCommand ToggleShuffleCommand { get; }
+    public RelayCommand ToggleShuffleCommand { get; }
 
-        public ShuffleViewModel(PlaybackViewModel playbackViewModel)
+    public ShuffleViewModel(PlaybackViewModel playbackViewModel)
+    {
+        _playbackViewModel = playbackViewModel
+            ?? throw new ArgumentNullException(nameof(playbackViewModel));
+        _playbackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
+        ToggleShuffleCommand = new RelayCommand(() => IsShuffleEnabled = !IsShuffleEnabled);
+    }
+
+    public override void Dispose()
+    {
+        _playbackViewModel.PropertyChanged -= OnPlaybackPropertyChanged;
+        base.Dispose();
+    }
+
+    private void OnPlaybackPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName == nameof(PlaybackViewModel.IsShuffleEnabled))
         {
-            _playbackViewModel = playbackViewModel;
-            ToggleShuffleCommand = new RelayCommand(ToggleShuffle);
-            IsShuffleEnabled = false;
-        }
-        
-        private void ToggleShuffle()
-        {
-            IsShuffleEnabled = !IsShuffleEnabled;
-            Console.WriteLine($"IsShuffleEnabled is now {IsShuffleEnabled}");
+            OnPropertyChanged(nameof(IsShuffleEnabled));
         }
     }
 }
