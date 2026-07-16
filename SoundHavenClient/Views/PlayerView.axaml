@@ -196,7 +196,8 @@
                             <Border Grid.Column="0"
                                     CornerRadius="5"
                                     ClipToBounds="True"
-                                    Margin="0,0,10,0">
+                                    Margin="0,0,10,0"
+                                    Background="#3A3A3A">
                                 <Image Width="50"
                                        Height="50"
                                        Source="{Binding PlayerViewSong.Artwork}"
@@ -211,6 +212,20 @@
                                 <TextBlock Text="{Binding PlayerViewSong.Artist}"
                                            Classes="SongArtistName" />
                             </StackPanel>
+                            <Button Grid.Column="2"
+                                    Width="36"
+                                    Height="36"
+                                    Padding="5"
+                                    CornerRadius="18"
+                                    Background="Transparent"
+                                    VerticalAlignment="Center"
+                                    Click="OnPlayingOverflowButtonClick"
+                                    ToolTip.Tip="More options">
+                                <Svg Path="avares://SoundHavenClient/Assets/Icons/more_vert.svg"
+                                     Stretch="Uniform"
+                                     Width="20"
+                                     Height="20" />
+                            </Button>
                         </Grid>
                     </Border>
                     <TextBlock Text="Nothing playing"
@@ -234,12 +249,12 @@
                              ItemsSource="{Binding UpNextSongs}"
                              Background="Transparent"
                              Theme="{StaticResource MaterialModernListBox}"
-                             SelectedItem="{Binding PlayerViewSong, Mode=OneWay}"
+                             SelectionMode="Single"
                              SelectionChanged="OnSelectionChanged"
                              IsVisible="{Binding HasUpNextSongs}">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:Song">
-                                <Grid ColumnDefinitions="Auto,Auto,*,Auto"
+                                <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto"
                                       Margin="0,2">
                                     <Border Grid.Column="0"
                                             Width="28"
@@ -264,7 +279,8 @@
                                     <Border Grid.Column="1"
                                             CornerRadius="5"
                                             ClipToBounds="True"
-                                            Margin="0,0,10,0">
+                                            Margin="0,0,10,0"
+                                            Background="#3A3A3A">
                                         <Image Width="50"
                                                Height="50"
                                                Source="{Binding Artwork}"
@@ -280,7 +296,23 @@
                                                    Classes="SongArtistName" />
                                     </StackPanel>
 
-                                    <Border Grid.Column="3"
+                                    <Button Grid.Column="3"
+                                            Width="36"
+                                            Height="36"
+                                            Padding="5"
+                                            CornerRadius="18"
+                                            Background="Transparent"
+                                            VerticalAlignment="Center"
+                                            PointerPressed="OnActionsPointerPressed"
+                                            Click="OnUpNextOverflowButtonClick"
+                                            ToolTip.Tip="More options">
+                                        <Svg Path="avares://SoundHavenClient/Assets/Icons/more_vert.svg"
+                                             Stretch="Uniform"
+                                             Width="20"
+                                             Height="20" />
+                                    </Button>
+
+                                    <Border Grid.Column="4"
                                             Width="32"
                                             Height="50"
                                             Background="Transparent"

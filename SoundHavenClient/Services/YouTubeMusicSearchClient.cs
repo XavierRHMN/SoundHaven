@@ -21,8 +21,6 @@ namespace SoundHaven.Services;
 /// </summary>
 internal sealed class YouTubeMusicSearchClient
 {
-    // Public Innertube key used by the YouTube Music web client.
-    private const string InnertubeApiKey = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
     private const string ClientVersion = "1.20250317.01.00";
     // Filter params for songs-only catalogue search (from ytmusicapi).
     private const string SongsFilterParams = "EgWKAQIIAWoMEA4QChADEAQQCRAF";
@@ -46,9 +44,16 @@ internal sealed class YouTubeMusicSearchClient
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
 
+        string apiKey = ApiKeyHelper.GetYouTubeInnertubeApiKey();
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new InvalidOperationException(
+                "YouTube Music search is not configured. Set the YOUTUBE_INNERTUBE_API_KEY environment variable.");
+        }
+
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
-            $"https://music.youtube.com/youtubei/v1/search?key={InnertubeApiKey}&prettyPrint=false");
+            $"https://music.youtube.com/youtubei/v1/search?key={apiKey}&prettyPrint=false");
         request.Headers.TryAddWithoutValidation("Origin", "https://music.youtube.com");
         request.Headers.TryAddWithoutValidation("Referer", "https://music.youtube.com/");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));

@@ -27,23 +27,29 @@
         <StackPanel Orientation="Horizontal"
                     VerticalAlignment="Center"
                     IsVisible="{Binding CurrentSongExists}">
-            <!-- Album Cover Image or Buffering Indicator -->
+            <!-- Album cover: spinner while loading; otherwise artwork or gray placeholder -->
             <Border CornerRadius="5"
                     ClipToBounds="True"
                     Margin="0,0,20,0"
                     Width="50"
                     Height="50">
                 <Panel>
-                    <Image Source="{Binding CurrentSong.Artwork}"
-                           Stretch="UniformToFill"
-                           IsVisible="{Binding !IsSeekBuffering, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                    <!-- Progress Bar: Visible when buffering -->
                     <ProgressBar Classes="circular"
                                  IsIndeterminate="True"
-                                 IsVisible="{Binding IsSeekBuffering, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                 IsVisible="{Binding IsSeekBuffering}"
                                  Width="30"
                                  Height="30"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
                                  Foreground="{DynamicResource PrimaryColor}" />
+
+                    <Panel IsVisible="{Binding !IsSeekBuffering}">
+                        <Border Background="#3A3A3A"
+                                IsVisible="{Binding CurrentSong.Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
+                        <Image Source="{Binding CurrentSong.Artwork}"
+                               Stretch="UniformToFill"
+                               IsVisible="{Binding CurrentSong.Artwork, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    </Panel>
                 </Panel>
             </Border>
 
@@ -86,10 +92,8 @@
                     ClipToBounds="True"
                     Margin="0,0,20,0"
                     Width="50"
-                    Height="50">
-                <Image Source="/Assets/Covers/MissingAlbum.png"
-                       Stretch="UniformToFill" />
-            </Border>
+                    Height="50"
+                    Background="#3A3A3A" />
 
             <!-- Placeholder Song Information -->
             <StackPanel Orientation="Vertical">

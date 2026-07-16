@@ -68,7 +68,19 @@ setx LASTFM_API_SECRET "your-api-secret"
 ```
 
 Restart the app afterward. Passwords are entered in a masked control and are
-never stored. Do not commit API credentials.
+never stored. Do not commit API credentials — use environment variables or a
+local `.env` file (see `.env.example`). Files like `YT_API_KEY.txt` and `.env`
+are gitignored.
+
+YouTube Music song search requires an Innertube API key:
+
+```powershell
+setx YOUTUBE_INNERTUBE_API_KEY "your-innertube-api-key"
+```
+
+If credentials were ever committed to git, rotate them in the provider console
+and treat the old values as compromised (`.gitignore` only prevents future
+commits; it does not remove secrets from history).
 
 ## Develop
 

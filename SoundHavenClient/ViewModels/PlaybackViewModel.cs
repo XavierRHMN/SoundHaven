@@ -213,13 +213,14 @@ public sealed class PlaybackViewModel : ViewModelBase
 
         IsTransitioningTracks = true;
         CanPlaybackControl = false;
+        // Show the track in the playbar immediately (with loading state) while audio resolves.
+        CurrentSong = song;
         SeekPositionReset?.Invoke(this, EventArgs.Empty);
         try
         {
             PlaybackSource source = SelectPlaybackSource(song, File.Exists);
             await _audioService.StartAsync(source, cancellationToken: replacementCancellation.Token);
             await EnsureArtworkForThemeAsync(song, replacementCancellation.Token);
-            CurrentSong = song;
             _ = ScrobbleCurrentSongAsync(song, replacementCancellation.Token);
             ApplyDynamicTheme(song);
         }

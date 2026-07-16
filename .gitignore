@@ -42,3 +42,23 @@ identifier.sqlite
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Secrets and local credentials (never commit)
+.env
+.env.*
+!.env.example
+*.secrets.json
+secrets.json
+local.settings.json
+**/secrets/
+*_API_KEY.txt
+*_API_SECRET.txt
+YT_API_KEY.txt
+YT_API_SECRET.txt
+**/YT_API_KEY.txt
+**/YT_API_SECRET.txt
+*.pem
+*.pfx
+*.p12
+credentials.json
+service-account*.json

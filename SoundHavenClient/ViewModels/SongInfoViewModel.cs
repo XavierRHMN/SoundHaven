@@ -86,6 +86,7 @@ public sealed class SongInfoViewModel : ViewModelBase
         _audioService.PropertyChanged += AudioService_PropertyChanged;
 
         CurrentSong = _playbackViewModel.CurrentSong;
+        UpdateBufferingState();
     }
 
     private void PlaybackViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -93,6 +94,11 @@ public sealed class SongInfoViewModel : ViewModelBase
         if (e.PropertyName == nameof(PlaybackViewModel.CurrentSong))
         {
             CurrentSong = _playbackViewModel.CurrentSong;
+            UpdateBufferingState();
+        }
+        else if (e.PropertyName == nameof(PlaybackViewModel.IsTransitioningTracks))
+        {
+            UpdateBufferingState();
         }
     }
 
@@ -100,8 +106,14 @@ public sealed class SongInfoViewModel : ViewModelBase
     {
         if (e.PropertyName is nameof(IAudioService.IsSeekBuffering) or nameof(IAudioService.Status))
         {
-            IsSeekBuffering = _audioService.IsSeekBuffering && _currentSong?.VideoId is not null;
+            UpdateBufferingState();
         }
+    }
+
+    private void UpdateBufferingState()
+    {
+        IsSeekBuffering = _playbackViewModel.IsTransitioningTracks
+            || (_audioService.IsSeekBuffering && CurrentSong?.VideoId is not null);
     }
 
     private void UpdateScrollingState()

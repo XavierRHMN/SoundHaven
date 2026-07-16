@@ -5,16 +5,21 @@ using System.Threading.Tasks;
 using SoundHaven.Commands;
 using SoundHaven.Models;
 using SoundHaven.Services;
+using SoundHaven.Stores;
 
 namespace SoundHaven.ViewModels;
 
 public sealed class PlayerViewModel : ViewModelBase
 {
     private readonly PlaybackViewModel _playbackViewModel;
+    private readonly PlaylistStore _playlistStore;
     private readonly IUserNotificationService _notifications;
     private ObservableCollection<Song>? _subscribedSongs;
+    private Song? _menuSong;
 
     public ObservableCollection<Song> UpNextSongs { get; } = [];
+
+    public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
 
     public string ActivePlaylistName =>
         _playbackViewModel.CurrentPlaylist?.Name ?? "No Active Playlist";
@@ -27,20 +32,39 @@ public sealed class PlayerViewModel : ViewModelBase
 
     public AsyncRelayCommand<Song> PlaySongCommand { get; }
 
+    public RelayCommand<Playlist> AddToPlaylistCommand { get; }
+
+    public RelayCommand CreatePlaylistAndAddSongCommand { get; }
+
     public PlayerViewModel(
         PlaybackViewModel playbackViewModel,
+        PlaylistStore playlistStore,
         IUserNotificationService notifications)
     {
         _playbackViewModel = playbackViewModel
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
+        _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
         _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
         PlaySongCommand = new AsyncRelayCommand<Song>(
             PlaySongAsync,
             song => song is not null,
             exception => _notifications.ShowError(exception.Message));
+        AddToPlaylistCommand = new RelayCommand<Playlist>(
+            ExecuteAddToPlaylist,
+            playlist => playlist is { Id: > 0 } && _menuSong is not null);
+        CreatePlaylistAndAddSongCommand = new RelayCommand(
+            ExecuteCreatePlaylistAndAddSong,
+            () => _menuSong is not null);
         SubscribeToPlaylistSongs();
         RefreshUpNext();
+    }
+
+    public void SetMenuSong(Song song)
+    {
+        _menuSong = song ?? throw new ArgumentNullException(nameof(song));
+        AddToPlaylistCommand.RaiseCanExecuteChanged();
+        CreatePlaylistAndAddSongCommand.RaiseCanExecuteChanged();
     }
 
     public bool MoveUpNext(int fromIndex, int toIndex)
@@ -136,6 +160,48 @@ public sealed class PlayerViewModel : ViewModelBase
     private Task PlaySongAsync(Song? song)
     {
         return song is null ? Task.CompletedTask : _playbackViewModel.PlayFromBeginning(song);
+    }
+
+    private void ExecuteAddToPlaylist(Playlist? playlist)
+    {
+        if (playlist is null || _menuSong is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _playlistStore.AddSongToPlaylist(playlist, _menuSong);
+            _notifications.ShowInfo($"Added “{_menuSong.Title}” to “{playlist.Name}”.");
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError(exception.Message);
+        }
+    }
+
+    private void ExecuteCreatePlaylistAndAddSong()
+    {
+        if (_menuSong is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var playlist = new Playlist
+            {
+                Name = "New playlist",
+                Songs = []
+            };
+            _playlistStore.AddPlaylist(playlist);
+            _playlistStore.AddSongToPlaylist(playlist, _menuSong);
+            _notifications.ShowInfo($"Created “{playlist.Name}” and added “{_menuSong.Title}”.");
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError(exception.Message);
+        }
     }
 
     private void PlaybackViewModel_PropertyChanged(

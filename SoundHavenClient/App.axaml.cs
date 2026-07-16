@@ -88,13 +88,13 @@ public partial class App : Application, IDisposable
             new OpenFileDialogService(),
             database,
             notifications);
-        var playerViewModel = new PlayerViewModel(playbackViewModel, notifications);
+        var playlistStore = new PlaylistStore(database);
+        var playerViewModel = new PlayerViewModel(playbackViewModel, playlistStore, notifications);
         var homeViewModel = new HomeViewModel(_lastFmDataService);
         var seekSliderViewModel = new SeekSliderViewModel(
             _audioService,
             playbackViewModel,
             notifications);
-        var playlistStore = new PlaylistStore(database);
         var searchViewModel = new SearchViewModel(
             _youTubeMediaService,
             playbackViewModel,

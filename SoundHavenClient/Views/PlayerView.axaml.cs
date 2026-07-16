@@ -2,6 +2,10 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Media;
+using Avalonia.Threading;
+using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.ViewModels;
 
@@ -12,6 +16,7 @@ public partial class PlayerView : UserControl
     private Song? _draggingSong;
     private int _dragFromIndex = -1;
     private bool _isDragging;
+    private bool _suppressUpNextSelection;
 
     public PlayerView()
     {
@@ -20,18 +25,109 @@ public partial class PlayerView : UserControl
 
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
     {
-        if (_isDragging)
+        if (_isDragging || _suppressUpNextSelection)
         {
             return;
         }
 
-        if (DataContext is PlayerViewModel viewModel
-            && sender is ListBox { SelectedItem: Song song }
-            && !ReferenceEquals(song, viewModel.PlayerViewSong)
-            && viewModel.PlaySongCommand.CanExecute(song))
+        if (DataContext is not PlayerViewModel viewModel
+            || sender is not ListBox listBox
+            || listBox.SelectedItem is not Song song
+            || ReferenceEquals(song, viewModel.PlayerViewSong)
+            || !viewModel.PlaySongCommand.CanExecute(song))
         {
-            viewModel.PlaySongCommand.Execute(song);
+            return;
         }
+
+        // Playing this track rebuilds Up Next (the song leaves the list). Clear selection
+        // and defer play so ListBox isn't mutated mid-SelectionChanged.
+        _suppressUpNextSelection = true;
+        try
+        {
+            listBox.SelectedItem = null;
+        }
+        finally
+        {
+            _suppressUpNextSelection = false;
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (viewModel.PlaySongCommand.CanExecute(song))
+            {
+                viewModel.PlaySongCommand.Execute(song);
+            }
+        });
+    }
+
+    private void OnActionsPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Keep overflow clicks from selecting the row (which would auto-play).
+        e.Handled = true;
+    }
+
+    private void OnPlayingOverflowButtonClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button
+            || DataContext is not PlayerViewModel viewModel
+            || viewModel.PlayerViewSong is not { } song)
+        {
+            return;
+        }
+
+        ShowAddToPlaylistMenu(button, viewModel, song);
+        e.Handled = true;
+    }
+
+    private void OnUpNextOverflowButtonClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button
+            || button.DataContext is not Song song
+            || DataContext is not PlayerViewModel viewModel)
+        {
+            return;
+        }
+
+        ShowAddToPlaylistMenu(button, viewModel, song);
+        e.Handled = true;
+    }
+
+    private static void ShowAddToPlaylistMenu(Control anchor, PlayerViewModel viewModel, Song song)
+    {
+        viewModel.SetMenuSong(song);
+
+        var flyout = DarkMenuFlyout.Create(PlacementMode.BottomEdgeAlignedLeft);
+        var addToPlaylist = new MenuItem { Header = "Add to playlist" };
+        foreach (Playlist playlist in viewModel.Playlists)
+        {
+            addToPlaylist.Items.Add(new MenuItem
+            {
+                Header = playlist.Name,
+                Command = viewModel.AddToPlaylistCommand,
+                CommandParameter = playlist
+            });
+        }
+
+        if (viewModel.Playlists.Count > 0)
+        {
+            addToPlaylist.Items.Add(new Separator());
+        }
+
+        addToPlaylist.Items.Add(new MenuItem
+        {
+            Header = "Create one",
+            Command = viewModel.CreatePlaylistAndAddSongCommand,
+            Icon = new PathIcon
+            {
+                Data = StreamGeometry.Parse("M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"),
+                Width = 16,
+                Height = 16,
+                Foreground = Brushes.White
+            }
+        });
+
+        flyout.Items.Add(addToPlaylist);
+        flyout.ShowAt(anchor);
     }
 
     private void OnDragHandlePointerPressed(object? sender, PointerPressedEventArgs e)
