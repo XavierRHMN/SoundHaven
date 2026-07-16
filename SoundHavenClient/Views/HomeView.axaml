@@ -87,6 +87,31 @@
 
         <!-- Main Content Area -->
         <Grid Grid.Row="1">
+            <!-- Last.fm is optional and may be disabled when credentials are absent. -->
+            <Border IsVisible="{Binding IsLastFmUnavailable}"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="16"
+                    Padding="32"
+                    MaxWidth="560"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Last.fm is unavailable"
+                               Classes="Headers"
+                               FontSize="24"
+                               HorizontalAlignment="Center"
+                               Margin="0"/>
+                    <TextBlock Text="{Binding LastFmConfigurationMessage}"
+                               Foreground="#B3B3B3"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="You can continue using SoundHaven without Last.fm."
+                               Foreground="#B3B3B3"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
             <!-- Username Prompt -->
             <StackPanel IsVisible="{Binding IsUsernamePromptVisible}"
                   VerticalAlignment="Center"
@@ -105,21 +130,20 @@
                                  Width="300"
                                  Watermark="Username" 
                                  FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" />
-                        <TextBox Text="{Binding Password}"
+                        <!-- Avalonia's password input is a masked TextBox. Keep it
+                             unbound so the secret is not retained by the view model. -->
+                        <TextBox x:Name="PasswordBox"
                                  Width="300"
                                  Watermark="Password" 
                                  FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Light.otf#Circular" 
                                  Margin="0 0 0 20"
                                  PasswordChar="*"
-                                 Classes="revealPasswordButton">
-                            <TextBox.KeyBindings>
-                                <KeyBinding Gesture="Enter"
-                                            Command="{Binding SubmitDetailsCommand}" />
-                            </TextBox.KeyBindings>
-                        </TextBox>
+                                 Classes="revealPasswordButton"
+                                 KeyDown="PasswordBox_OnKeyDown"/>
                         <Button Content="Enter"
                                 HorizontalAlignment="Center"
-                                Command="{Binding SubmitDetailsCommand}"
+                                Click="SubmitDetails_OnClick"
+                                IsEnabled="{Binding !IsSubmitting}"
                                 Theme="{StaticResource MaterialOutlineButton}"
                                 Foreground="White"
                                 BorderBrush="White"
@@ -138,12 +162,18 @@
             <ScrollViewer VerticalScrollBarVisibility="Hidden"
                           HorizontalScrollBarVisibility="Disabled"
                           Background="Transparent"
-                          IsVisible="{Binding !IsUsernamePromptVisible}">
+                          IsVisible="{Binding IsLastFmContentVisible}">
                 <Grid Margin="32,24,32,24">
                     <!-- Content Area -->
                     <ScrollViewer IsVisible="{Binding !IsLoading}"
                                   VerticalScrollBarVisibility="Hidden">
                         <StackPanel Spacing="32">
+                            <TextBlock Text="{Binding ErrorMessage}"
+                                       Foreground="Red"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"/>
+
                             <!-- Recommended for You Section -->
                             <StackPanel>
                                 <TextBlock Text="Recommended Albums For You" Classes="Headers" HorizontalAlignment="Center" />

@@ -1,0 +1,469 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using SoundHaven.Helpers;
+using SoundHaven.Models;
+using YoutubeExplode;
+using YoutubeExplode.Common;
+using YoutubeExplode.Videos;
+using YoutubeExplode.Videos.Streams;
+
+namespace SoundHaven.Services;
+
+public sealed record YouTubeSearchResult(
+    string VideoId,
+    string Title,
+    string Author,
+    string? Album,
+    TimeSpan? Duration,
+    string? ThumbnailUrl,
+    long ViewCount,
+    int? Year);
+
+public sealed record YouTubeStreamSource(
+    string VideoId,
+    Uri StreamUri,
+    TimeSpan Duration,
+    string Container,
+    long Bitrate,
+    string Title);
+
+public interface IYouTubeMediaService : IDisposable
+{
+    Task<IReadOnlyList<YouTubeSearchResult>> SearchAsync(
+        string query,
+        int limit,
+        bool searchSongs,
+        CancellationToken cancellationToken = default);
+
+    Task<YouTubeStreamSource> ResolveStreamAsync(
+        string videoId,
+        CancellationToken cancellationToken = default);
+
+    Task<Song> DownloadAudioAsync(
+        string videoId,
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default);
+
+    Task<string> CacheAudioAsync(
+        string videoId,
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default);
+
+    string NormalizeVideoId(string value);
+}
+
+public sealed class YouTubeMediaService : IYouTubeMediaService
+{
+    private const int MetadataConcurrency = 4;
+    private readonly YoutubeClient _youtubeClient;
+    private readonly HttpClient _httpClient;
+    private readonly SemaphoreSlim _cacheLock = new(1, 1);
+
+    public YouTubeMediaService(HttpClient httpClient)
+    {
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _youtubeClient = new YoutubeClient();
+    }
+
+    public async Task<IReadOnlyList<YouTubeSearchResult>> SearchAsync(
+        string query,
+        int limit,
+        bool searchSongs,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return Array.Empty<YouTubeSearchResult>();
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
+
+        string effectiveQuery = searchSongs ? $"{query.Trim()} music" : query.Trim();
+        var searchResults = await _youtubeClient.Search
+            .GetVideosAsync(effectiveQuery, cancellationToken)
+            .CollectAsync(limit);
+
+        using var gate = new SemaphoreSlim(MetadataConcurrency, MetadataConcurrency);
+        var tasks = searchResults.Select(async result =>
+        {
+            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                Video? details = null;
+                try
+                {
+                    details = await _youtubeClient.Videos
+                        .GetAsync(result.Id, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch when (!cancellationToken.IsCancellationRequested)
+                {
+                    // Search results are still useful if an enrichment request fails.
+                }
+
+                return new YouTubeSearchResult(
+                    result.Id,
+                    result.Title,
+                    result.Author.ChannelTitle,
+                    null,
+                    result.Duration,
+                    result.Thumbnails.OrderByDescending(thumbnail => thumbnail.Resolution.Area).FirstOrDefault()?.Url,
+                    details?.Engagement.ViewCount ?? 0,
+                    details?.UploadDate.Year);
+            }
+            finally
+            {
+                gate.Release();
+            }
+        });
+
+        return await Task.WhenAll(tasks).ConfigureAwait(false);
+    }
+
+    public async Task<YouTubeStreamSource> ResolveStreamAsync(
+        string videoId,
+        CancellationToken cancellationToken = default)
+    {
+        var media = await ResolveMediaAsync(videoId, cancellationToken).ConfigureAwait(false);
+        return new YouTubeStreamSource(
+            media.Video.Id,
+            new Uri(media.Stream.Url),
+            media.Video.Duration ?? TimeSpan.Zero,
+            media.Stream.Container.Name,
+            media.Stream.Bitrate.BitsPerSecond,
+            media.Video.Title);
+    }
+
+    public async Task<Song> DownloadAudioAsync(
+        string videoId,
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        var media = await ResolveMediaAsync(videoId, cancellationToken).ConfigureAwait(false);
+        string musicDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+        Directory.CreateDirectory(musicDirectory);
+
+        string cleanTitle = Mp3ToSongHelper.CleanSongTitle(
+            media.Video.Title,
+            media.Video.Author.ChannelTitle);
+        string outputPath = GetUniquePath(musicDirectory, SanitizeFileName(cleanTitle), ".m4a");
+        string partialPath = outputPath + ".part";
+
+        try
+        {
+            await _youtubeClient.Videos.Streams
+                .DownloadAsync(media.Stream, partialPath, progress, cancellationToken)
+                .ConfigureAwait(false);
+            File.Move(partialPath, outputPath);
+
+            byte[]? artwork = await TryApplyMetadataAsync(outputPath, media.Video, cancellationToken)
+                .ConfigureAwait(false);
+
+            return new Song
+            {
+                Title = cleanTitle,
+                Artist = media.Video.Author.ChannelTitle,
+                Album = media.Video.Author.ChannelTitle,
+                Duration = media.Video.Duration ?? TimeSpan.Zero,
+                FilePath = outputPath,
+                VideoId = media.Video.Id,
+                ThumbnailUrl = media.Video.Thumbnails
+                    .OrderByDescending(thumbnail => thumbnail.Resolution.Area)
+                    .FirstOrDefault()?.Url,
+                ChannelTitle = media.Video.Author.ChannelTitle,
+                Views = media.Video.Engagement.ViewCount.ToString(CultureInfo.InvariantCulture),
+                Year = media.Video.UploadDate.Year,
+                ArtworkData = artwork ?? Array.Empty<byte>(),
+                CurrentDownloadState = DownloadState.Downloaded
+            };
+        }
+        catch
+        {
+            TryDelete(partialPath);
+            throw;
+        }
+    }
+
+    public async Task<string> CacheAudioAsync(
+        string videoId,
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        string normalizedId = NormalizeVideoId(videoId);
+        string cacheDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "SoundHaven",
+            "Cache",
+            "YouTube");
+        Directory.CreateDirectory(cacheDirectory);
+
+        string outputPath = Path.Combine(cacheDirectory, $"{normalizedId}.m4a");
+        if (IsUsableFile(outputPath))
+        {
+            return outputPath;
+        }
+
+        await _cacheLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (IsUsableFile(outputPath))
+            {
+                return outputPath;
+            }
+
+            string partialPath = outputPath + ".part";
+            TryDelete(partialPath);
+            try
+            {
+                var media = await ResolveMediaAsync(normalizedId, cancellationToken).ConfigureAwait(false);
+                await _youtubeClient.Videos.Streams
+                    .DownloadAsync(media.Stream, partialPath, progress, cancellationToken)
+                    .ConfigureAwait(false);
+                File.Move(partialPath, outputPath, true);
+                return outputPath;
+            }
+            catch
+            {
+                TryDelete(partialPath);
+                throw;
+            }
+        }
+        finally
+        {
+            _cacheLock.Release();
+        }
+    }
+
+    public string NormalizeVideoId(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("A YouTube video ID or URL is required.", nameof(value));
+        }
+
+        string candidate = value.Trim();
+        if (IsVideoId(candidate))
+        {
+            return candidate;
+        }
+
+        if (!Uri.TryCreate(candidate, UriKind.Absolute, out Uri? uri))
+        {
+            throw new FormatException("The value is not a valid YouTube video ID or URL.");
+        }
+
+        string host = uri.Host.ToLowerInvariant();
+        if (host is "youtu.be" or "www.youtu.be")
+        {
+            candidate = uri.AbsolutePath.Trim('/');
+        }
+        else if (host.EndsWith("youtube.com", StringComparison.Ordinal))
+        {
+            candidate = GetQueryValue(uri.Query, "v")
+                ?? GetPathVideoId(uri.AbsolutePath)
+                ?? string.Empty;
+        }
+
+        if (!IsVideoId(candidate))
+        {
+            throw new FormatException("The YouTube URL does not contain a valid video ID.");
+        }
+
+        return candidate;
+    }
+
+    public void Dispose()
+    {
+        _youtubeClient.Dispose();
+        _cacheLock.Dispose();
+    }
+
+    private async Task<ResolvedMedia> ResolveMediaAsync(
+        string videoId,
+        CancellationToken cancellationToken)
+    {
+        string normalizedId = NormalizeVideoId(videoId);
+        ValueTask<Video> videoTask = _youtubeClient.Videos.GetAsync(normalizedId, cancellationToken);
+        ValueTask<StreamManifest> manifestTask = _youtubeClient.Videos.Streams
+            .GetManifestAsync(normalizedId, cancellationToken);
+
+        Video video = await videoTask.ConfigureAwait(false);
+        StreamManifest manifest = await manifestTask.ConfigureAwait(false);
+
+        IStreamInfo stream = SelectCompatibleAudioStream(
+            manifest.GetAudioOnlyStreams(),
+            candidate => candidate.Container == Container.Mp4,
+            candidate => candidate.Bitrate.BitsPerSecond);
+
+        return new ResolvedMedia(video, stream);
+    }
+
+    internal static T SelectCompatibleAudioStream<T>(
+        IEnumerable<T> streams,
+        Func<T, bool> isCompatible,
+        Func<T, long> getBitrate)
+        where T : class
+    {
+        ArgumentNullException.ThrowIfNull(streams);
+        ArgumentNullException.ThrowIfNull(isCompatible);
+        ArgumentNullException.ThrowIfNull(getBitrate);
+
+        return streams
+            .Where(isCompatible)
+            .OrderByDescending(getBitrate)
+            .FirstOrDefault()
+            ?? throw new InvalidOperationException(
+                "YouTube did not provide a Windows-compatible M4A audio stream for this video.");
+    }
+
+    private async Task<byte[]?> TryApplyMetadataAsync(
+        string filePath,
+        Video video,
+        CancellationToken cancellationToken)
+    {
+        byte[]? artwork = null;
+        string? mimeType = null;
+        string? thumbnailUrl = video.Thumbnails
+            .OrderByDescending(thumbnail => thumbnail.Resolution.Area)
+            .FirstOrDefault()?.Url;
+
+        if (!string.IsNullOrWhiteSpace(thumbnailUrl))
+        {
+            try
+            {
+                using HttpResponseMessage response = await _httpClient.GetAsync(
+                    thumbnailUrl,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    cancellationToken).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+                mimeType = response.Content.Headers.ContentType?.MediaType;
+                artwork = await response.Content.ReadAsByteArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch when (!cancellationToken.IsCancellationRequested)
+            {
+                artwork = null;
+            }
+        }
+
+        try
+        {
+            using TagLib.File tagFile = TagLib.File.Create(filePath);
+            tagFile.Tag.Title = Mp3ToSongHelper.CleanSongTitle(
+                video.Title,
+                video.Author.ChannelTitle);
+            tagFile.Tag.Performers = [video.Author.ChannelTitle];
+            tagFile.Tag.Album = video.Author.ChannelTitle;
+            tagFile.Tag.Year = (uint)video.UploadDate.Year;
+
+            if (artwork is { Length: > 0 })
+            {
+                tagFile.Tag.Pictures =
+                [
+                    new TagLib.Picture(new TagLib.ByteVector(artwork))
+                    {
+                        Type = TagLib.PictureType.FrontCover,
+                        Description = "Cover",
+                        MimeType = mimeType ?? "image/jpeg"
+                    }
+                ];
+            }
+
+            tagFile.Save();
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Metadata is best effort; a valid downloaded audio file is still useful.
+        }
+
+        return artwork;
+    }
+
+    private static string? GetQueryValue(string query, string key)
+    {
+        foreach (string part in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string[] pair = part.Split('=', 2);
+            if (pair.Length == 2 && string.Equals(
+                    Uri.UnescapeDataString(pair[0]),
+                    key,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return Uri.UnescapeDataString(pair[1]);
+            }
+        }
+
+        return null;
+    }
+
+    private static string? GetPathVideoId(string path)
+    {
+        string[] segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length >= 2 && segments[0] is "embed" or "shorts" or "live")
+        {
+            return segments[1];
+        }
+
+        return null;
+    }
+
+    private static bool IsVideoId(string value)
+    {
+        return value.Length == 11
+            && value.All(character =>
+                char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
+    }
+
+    private static string SanitizeFileName(string value)
+    {
+        char[] invalidCharacters = Path.GetInvalidFileNameChars();
+        string sanitized = new(value
+            .Where(character => !invalidCharacters.Contains(character))
+            .ToArray());
+        sanitized = sanitized.Trim().TrimEnd('.');
+        return string.IsNullOrWhiteSpace(sanitized) ? "YouTube audio" : sanitized;
+    }
+
+    private static string GetUniquePath(string directory, string baseName, string extension)
+    {
+        string path = Path.Combine(directory, baseName + extension);
+        for (int suffix = 2; File.Exists(path) || File.Exists(path + ".part"); suffix++)
+        {
+            path = Path.Combine(directory, $"{baseName} ({suffix}){extension}");
+        }
+
+        return path;
+    }
+
+    private static bool IsUsableFile(string path)
+    {
+        return File.Exists(path) && new FileInfo(path).Length > 0;
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (IOException)
+        {
+            // Best-effort cleanup; the next operation will replace stale partial files.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Best-effort cleanup; preserve the original operation's exception.
+        }
+    }
+
+    private sealed record ResolvedMedia(Video Video, IStreamInfo Stream);
+}

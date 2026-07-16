@@ -1,6 +1,6 @@
-﻿using Avalonia.Controls;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 
 namespace SoundHaven.Helpers
 {
@@ -14,22 +14,30 @@ namespace SoundHaven.Helpers
     {
         public async Task<string?> ShowOpenFileDialogAsync(Window parent)
         {
-            var dialog = new OpenFileDialog
+            var options = new FilePickerOpenOptions
             {
                 Title = "Select a Song",
                 AllowMultiple = false,
-                Filters = new List<FileDialogFilter>
-                {
-                    new FileDialogFilter
+                FileTypeFilter =
+                [
+                    new FilePickerFileType("Audio files")
                     {
-                        Name = "Audio Files",
-                        Extensions = new List<string> { "mp3", "wav", "flac", "aac", "ogg", "wma" }
+                        Patterns =
+                        [
+                            "*.mp3",
+                            "*.wav",
+                            "*.flac",
+                            "*.m4a",
+                            "*.aac",
+                            "*.ogg",
+                            "*.wma"
+                        ]
                     }
-                }
+                ]
             };
 
-            string[]? result = await dialog.ShowAsync(parent);
-            return result?.Length > 0 ? result[0] : null;
+            var result = await parent.StorageProvider.OpenFilePickerAsync(options);
+            return result.Count > 0 ? result[0].TryGetLocalPath() : null;
         }
     }
 }

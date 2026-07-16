@@ -1,7 +1,7 @@
-﻿using Avalonia;
-using Avalonia.Controls;
 using System.Collections;
 using System.Collections.Specialized;
+using Avalonia;
+using Avalonia.Controls;
 
 namespace SoundHaven.Helpers
 {
@@ -39,12 +39,12 @@ namespace SoundHaven.Helpers
             }
         }
 
-        private static void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private static void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             // Handle changes in the bound collection
         }
 
-        private static void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private static void OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             if (sender is DataGrid dataGrid)
             {

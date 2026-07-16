@@ -1,110 +1,154 @@
-# <img src="SoundHavenClient/Assets/Icons/SoundHavenClient.ico" alt="SoundHaven Icon" width="32" height="32"> SoundHaven
+# SoundHaven
 
-![SoundHaven](https://github.com/user-attachments/assets/b1f430a6-f878-4fa9-bc14-a1163ec1d5dd)
+SoundHaven is a Windows music player for local audio and YouTube audio
+streaming. It supports playlists, seeking, native M4A/AAC downloads, themes,
+and optional Last.fm recommendations and scrobbling.
 
-SoundHaven is a powerful, customizable C# music player application built
-with Avalonia and the MVVM design pattern. It offers streaming YouTube audio directly from source,
-and downloading said audio in the highest quality for offline use, all in one place.
+> SoundHaven is preview software. The current release target is 64-bit
+> Windows 10 and Windows 11.
 
-##  Features
+## Install
 
--  Material UI
--  High-quality audio playback with viewable metadata
--  Last.fm Scrobbling and music recommendation
--  YouTube streaming integration
--  Extract and download YouTube audio
--  Persistent data storage
+### Portable ZIP
 
-##  Technologies
+1. Download `SoundHaven-<version>-win-x64.zip` and its `.sha256` file from
+   [GitHub Releases](https://github.com/XavierRHMN/SoundHaven/releases).
+2. Verify the download:
 
-SoundHaven leverages a powerful stack of technologies:
-
-- **[Avalonia UI](https://avaloniaui.net/)**: Cross-platform .NET framework for building beautiful, native apps
-- **[TagLibSharp](https://github.com/mono/taglib-sharp)**: .NET library for reading and writing audio metadata
-- **[NAudio](https://github.com/naudio/NAudio)**: .NET audio library with a focus on local audio file manipulation
-- **[YoutubeExplode](https://github.com/Tyrrrz/YoutubeExplode)**: Library for downloading YouTube videos and retrieving metadata
-- **[SQLite](https://www.sqlite.org/)**: Lightweight, file-based relational database for persistent data storage
-
-##  Getting Started
-
-### Prerequisites
-
-- .NET 6.0 Runtime or later
-- Last.fm API key
-
-### Installation
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/XavierRHMN/SoundHaven.git
-   ```
-2. Navigate to the cloned repository directory:
-   ```
-   cd SoundHaven
-   ```
-3. Navigate to the project directory:
-   ```
-   cd SoundHavenClient
-   ```
-4. Build the project:
-   ```
-   dotnet build
-   ```
-5. Set up your Last.fm API environment variables:
-
-   #### Windows 
-   ```cmd
-   setx LASTFM_API_KEY "YOUR_LASTFM_API_KEY"
-   setx LASTFM_API_SECRET "YOUR_LASTFM_API_SECRET"
+   ```powershell
+   Get-FileHash .\SoundHaven-<version>-win-x64.zip -Algorithm SHA256
+   Get-Content .\SoundHaven-<version>-win-x64.zip.sha256
    ```
 
-   #### Linux / macOS
-   ```bash
-   echo 'export LASTFM_API_KEY="YOUR_LASTFM_API_KEY"' >> ~/.bashrc
-   echo 'export LASTFM_API_SECRET="YOUR_LASTFM_API_SECRET"' >> ~/.bashrc
-   source ~/.bashrc
-   ```
+3. Extract the ZIP and run `SoundHaven\SoundHavenClient.exe`.
 
-   Replace `YOUR_LASTFM_API_KEY` and `YOUR_LASTFM_API_SECRET` with your actual Last.fm API credentials.
+The package is self-contained; users do not need to install .NET.
 
-**Note:** After setting environment variables, you may need to restart your terminal or IDE for the changes to take effect.
+### User-scope installer
 
-6. Run the application:
-   ```
-   dotnet run
-   ```
+The optional installer downloads a prebuilt GitHub Release, verifies its
+SHA-256 checksum, and installs it without administrator access under
+`%LocalAppData%\Programs\SoundHaven`.
 
-### Windows Install Script
+```powershell
+Invoke-WebRequest `
+  https://raw.githubusercontent.com/XavierRHMN/SoundHaven/master/SoundHaven_Install.ps1 `
+  -OutFile .\SoundHaven_Install.ps1
 
-For a quick installation on Windows:
+# Review the script, then run it:
+powershell -NoProfile -ExecutionPolicy Bypass -File .\SoundHaven_Install.ps1
+```
 
-1. Right-click [SoundHaven_Install.ps1](https://github.com/XavierRHMN/SoundHaven/raw/master/SoundHaven_Install.ps1) and save link as
-2. Right-click the downloaded file and select "Run with PowerShell"
-3. Follow the on-screen prompts to complete the installation
+Pass `-Version 0.1.0` to install a specific release. Safe reruns perform an
+atomic upgrade and restore the prior installation if the upgrade fails.
 
-The script will clone the repository, set up the necessary directories, and guide you through entering your Last.fm API credentials.
+Run `SoundHaven_Uninstall.ps1` from the installation directory or use the
+Start Menu shortcut to uninstall. User data is preserved by default. Use
+`-PurgeUserData` only when you intentionally want to delete it.
 
-##  Screenshots
+### Windows SmartScreen
 
-Here are some screenshots of SoundHaven in action:
+Preview builds are currently unsigned. Windows may display a SmartScreen
+warning. Verify the release checksum and confirm that the download came from
+this repository before choosing **More info → Run anyway**.
 
-![SoundHaven First](SoundHavenClient/Screenshots/soundhaven_1.png)
-![SoundHaven Second](SoundHavenClient/Screenshots/soundhaven_2.png)
-![SoundHaven Third](SoundHavenClient/Screenshots/soundhaven_3.png)
-![SoundHaven Fourth](SoundHavenClient/Screenshots/soundhaven_4.png)
-![SoundHaven Search](SoundHavenClient/Screenshots/Search.png)
-![SoundHaven Themes](SoundHavenClient/Screenshots/Themes.png)
+## Features
 
+- Local audio playback with playlists, metadata, repeat, shuffle, and seeking
+- YouTube search and AAC/M4A streaming through YoutubeExplode
+- Reliable repeated YouTube seeks with stream refresh and a local-cache fallback
+- Native M4A downloads with no FFmpeg dependency or lossy re-encoding
+- Persistent SQLite data under `%LocalAppData%\SoundHaven`
+- Optional Last.fm recommendations, recent tracks, and scrobbling
+- Custom and artwork-derived themes
 
-##  Contributing
+Use YouTube functionality only for media you are permitted to access or save,
+and follow YouTube's terms and applicable law.
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## Optional Last.fm setup
 
-##  License
+SoundHaven works without Last.fm. To enable it, create a Last.fm API
+application and set these user environment variables:
 
-- This project is licensed under the MIT License - see the [MIT License](LICENSE) file for details.
----
+```powershell
+setx LASTFM_API_KEY "your-api-key"
+setx LASTFM_API_SECRET "your-api-secret"
+```
 
-<p align="center">
-  Made with ❤️
-</p>
+Restart SoundHaven after setting them. Account passwords are entered through a
+masked control and are not stored by SoundHaven. API credentials are not part
+of installation and should never be committed to the repository.
+
+## Data locations
+
+- Application files: portable extraction directory or
+  `%LocalAppData%\Programs\SoundHaven`
+- Database and cache: `%LocalAppData%\SoundHaven`
+- YouTube downloads: the current user's Music folder
+
+Upgrading or uninstalling the application does not delete the database.
+
+## Build from source
+
+Contributor requirements:
+
+- Windows 10/11 x64
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- PowerShell 5.1 or PowerShell 7
+
+```powershell
+dotnet restore .\SoundHaven.sln --locked-mode
+dotnet format .\SoundHaven.sln --verify-no-changes --no-restore
+dotnet build .\SoundHaven.sln -c Release --no-restore -warnaserror
+dotnet test .\SoundHaven.sln -c Release --no-build --no-restore --filter "Category!=Live"
+```
+
+The deterministic test suite does not call YouTube. To run the opt-in live
+search/resolve/open/seek/download smoke test:
+
+```powershell
+$env:SOUNDHAVEN_RUN_LIVE_TESTS = "1"
+dotnet test .\SoundHaven.Tests\SoundHaven.Tests.csproj `
+  -c Release `
+  --filter "Category=Live"
+```
+
+The live test searches for and streams YouTube's publicly available
+`jNQXAC9IVRw` ("Me at the zoo"), performs repeated remote seeks, caches its
+native M4A stream, and reopens the cached file.
+
+## Build a release
+
+```powershell
+.\scripts\Build-Release.ps1 -Version 0.1.0
+```
+
+The script runs quality gates, publishes a self-contained `win-x64` folder,
+validates a clean extraction and startup, then writes these files:
+
+- `artifacts\release\SoundHaven-0.1.0-win-x64.zip`
+- `artifacts\release\SoundHaven-0.1.0-win-x64.zip.sha256`
+
+Manual GitHub workflow runs produce downloadable workflow artifacts. Pushing a
+`v*` tag also creates a GitHub Release.
+
+## Release smoke checklist
+
+- Start from a clean ZIP extraction.
+- Play, pause, seek, and restart a local file.
+- Search YouTube, start a result, and perform several seeks.
+- Download a result, replay the local M4A, and open its folder.
+- Create, rename, reload, and delete a playlist.
+- Start offline and confirm API failures appear as non-fatal notifications.
+- Install, upgrade, and uninstall in a non-admin account; confirm user data remains.
+
+## Screenshots
+
+![SoundHaven](SoundHavenClient/Screenshots/soundhaven_1.png)
+![Search](SoundHavenClient/Screenshots/Search.png)
+
+## License
+
+SoundHaven is licensed under the [MIT License](LICENSE). Distributed packages
+also include [third-party notices](THIRD_PARTY_NOTICES.md) and applicable
+dependency license texts.

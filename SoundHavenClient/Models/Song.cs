@@ -1,9 +1,7 @@
-﻿using Avalonia.Media.Imaging;
-using SoundHaven.ViewModels;
 using System;
 using System.IO;
-using System.Threading.Tasks;
-using System.Net.Http;
+using Avalonia.Media.Imaging;
+using SoundHaven.ViewModels;
 
 namespace SoundHaven.Models
 {
@@ -57,7 +55,13 @@ namespace SoundHaven.Models
         public string? FilePath
         {
             get => _filePath;
-            set => SetProperty(ref _filePath, value);
+            set
+            {
+                if (SetProperty(ref _filePath, value))
+                {
+                    OnPropertyChanged(nameof(IsYouTubeVideo));
+                }
+            }
         }
 
         private string? _genre;
@@ -81,7 +85,6 @@ namespace SoundHaven.Models
             set => SetProperty(ref _playCount, value);
         }
 
-        private double _length;
         public double Length
         {
             get => Duration.TotalSeconds;
@@ -90,7 +93,6 @@ namespace SoundHaven.Models
                 if (value != Duration.TotalSeconds)
                 {
                     Duration = TimeSpan.FromSeconds(value);
-                    SetProperty(ref _length, value);
                 }
             }
         }
@@ -113,7 +115,8 @@ namespace SoundHaven.Models
 
         public bool IsYouTubeVideo
         {
-            get => !string.IsNullOrEmpty(VideoId);
+            get => !string.IsNullOrWhiteSpace(VideoId)
+                && string.IsNullOrWhiteSpace(FilePath);
         }
 
         private string? _thumbnailUrl;
@@ -222,31 +225,5 @@ namespace SoundHaven.Models
             }
         }
 
-        // New method for loading YouTube thumbnail
-        public async Task LoadYouTubeThumbnail()
-        {
-            if (!string.IsNullOrEmpty(ThumbnailUrl))
-            {
-                try
-                {
-                    using (var httpClient = new HttpClient())
-                    {
-                        byte[] imageBytes = await httpClient.GetByteArrayAsync(ThumbnailUrl);
-                        using (var memoryStream = new MemoryStream(imageBytes))
-                        {
-                            Artwork = new Bitmap(memoryStream);
-                        }
-                    }
-                }
-                catch
-                {
-                    Artwork = null;
-                }
-            }
-            else
-            {
-                Artwork = null;
-            }
-        }
     }
 }

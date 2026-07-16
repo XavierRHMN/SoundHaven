@@ -1,17 +1,15 @@
-﻿using Avalonia;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Avalonia.Controls;
+using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using SoundHaven.Commands;
 using SoundHaven.Data;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.Services;
-using System.ComponentModel;
 
 namespace SoundHaven.ViewModels
 {
@@ -20,36 +18,45 @@ namespace SoundHaven.ViewModels
         private readonly PlaybackViewModel _playbackViewModel;
         private readonly IOpenFileDialogService _openFileDialogService;
         private readonly AppDatabase _appDatabase;
+        private readonly IUserNotificationService _notifications;
+        private readonly ObservableCollection<Song> _emptySongs = new();
 
-        private Playlist _displayedPlaylist;
-        public Playlist DisplayedPlaylist
+        private Playlist? _displayedPlaylist;
+        public Playlist? DisplayedPlaylist
         {
             get => _displayedPlaylist;
             set
             {
-                if (SetProperty(ref _displayedPlaylist, value))
+                if (ReferenceEquals(_displayedPlaylist, value))
                 {
-                    if (_displayedPlaylist != null)
-                    {
-                        _displayedPlaylist.PropertyChanged -= OnPlaylistPropertyChanged;
-                    }
-
-                    _displayedPlaylist = value;
-
-                    if (_displayedPlaylist != null)
-                    {
-                        _displayedPlaylist.PropertyChanged += OnPlaylistPropertyChanged;
-                    }
-
-                    OnPropertyChanged(nameof(Songs));
+                    return;
                 }
+
+                Playlist? previousPlaylist = _displayedPlaylist;
+                if (previousPlaylist != null)
+                {
+                    previousPlaylist.PropertyChanged -= OnPlaylistPropertyChanged;
+                    foreach (Song song in previousPlaylist.Songs)
+                    {
+                        song.IsSelected = false;
+                    }
+                }
+
+                SetProperty(ref _displayedPlaylist, value);
+
+                if (_displayedPlaylist != null)
+                {
+                    _displayedPlaylist.PropertyChanged += OnPlaylistPropertyChanged;
+                }
+
+                SelectedItems.Clear();
+                SelectedSong = null;
+                IsEditMode = false;
+                OnPropertyChanged(nameof(Songs));
             }
         }
 
-        public ObservableCollection<Song> Songs
-        {
-            get => DisplayedPlaylist?.Songs ?? new ObservableCollection<Song>();
-        }
+        public ObservableCollection<Song> Songs => DisplayedPlaylist?.Songs ?? _emptySongs;
 
         private bool _isEditMode;
         public bool IsEditMode
@@ -69,95 +76,96 @@ namespace SoundHaven.ViewModels
             get => IsEditMode ? "Done" : "Edit";
         }
 
-        private ObservableCollection<object> _selectedItems;
+        private ObservableCollection<object> _selectedItems = new();
         public ObservableCollection<object> SelectedItems
         {
             get => _selectedItems;
             set
             {
-                SetProperty(ref _selectedItems, value);
-                UpdateSelectedSongs();
-            }
-        }
-
-        private Song _selectedSong;
-        public Song SelectedSong
-        {
-            get
-            {
-                return _selectedSong;
-            }
-            set
-            {
-                if (SetProperty(ref _selectedSong, value))
+                if (SetProperty(ref _selectedItems, value ?? new ObservableCollection<object>()))
                 {
-                    if (_selectedSong != null && !IsEditMode)
-                    {
-                        SetCurrentSong(_selectedSong);
-                    }
+                    UpdateSelectedSongs();
                 }
             }
         }
 
+        private Song? _selectedSong;
+        public Song? SelectedSong
+        {
+            get => _selectedSong;
+            set => SetProperty(ref _selectedSong, value);
+        }
+
         public AsyncRelayCommand AddSongCommand { get; }
+        public AsyncRelayCommand<Song> PlaySongCommand { get; }
         public RelayCommand ToggleEditModeCommand { get; }
         public RelayCommand DeleteSelectedSongsCommand { get; }
 
-        public PlaylistViewModel(PlaybackViewModel playbackViewModel, IOpenFileDialogService openFileDialogService, AppDatabase appDatabase)
+        public PlaylistViewModel(
+            PlaybackViewModel playbackViewModel,
+            IOpenFileDialogService openFileDialogService,
+            AppDatabase appDatabase,
+            IUserNotificationService notifications)
         {
-            _playbackViewModel = playbackViewModel;
-            _openFileDialogService = openFileDialogService;
-            _appDatabase = appDatabase;
+            _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
+            _openFileDialogService = openFileDialogService ?? throw new ArgumentNullException(nameof(openFileDialogService));
+            _appDatabase = appDatabase ?? throw new ArgumentNullException(nameof(appDatabase));
+            _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
-            AddSongCommand = new AsyncRelayCommand(AddSongAsync);
+            AddSongCommand = new AsyncRelayCommand(
+                AddSongAsync,
+                onException: exception => _notifications.ShowError(exception.Message));
+            PlaySongCommand = new AsyncRelayCommand<Song>(
+                PlaySongAsync,
+                song => song is not null && !IsEditMode,
+                exception => _notifications.ShowError(exception.Message));
             ToggleEditModeCommand = new RelayCommand(ToggleEditMode);
             DeleteSelectedSongsCommand = new RelayCommand(DeleteSelectedSongs);
-            SelectedItems = new ObservableCollection<object>();
-
-            // Initialize with an empty playlist if needed
-            if (DisplayedPlaylist == null)
-            {
-                DisplayedPlaylist = new Playlist { Name = "New Playlist", Songs = new ObservableCollection<Song>() };
-            }
         }
 
         private async Task AddSongAsync()
         {
-            try
+            Playlist? playlist = DisplayedPlaylist;
+            if (playlist == null || playlist.Id <= 0)
             {
-                if (DisplayedPlaylist != null)
-                {
-                    var applicationLifetime = (IClassicDesktopStyleApplicationLifetime)Application.Current.ApplicationLifetime;
-                    var parentWindow = applicationLifetime.MainWindow;
-                    if (parentWindow == null)
-                    {
-                        Console.WriteLine("Parent window is not available.");
-                        return;
-                    }
-
-                    string? filePath = await _openFileDialogService.ShowOpenFileDialogAsync(parentWindow);
-                    if (!string.IsNullOrEmpty(filePath))
-                    {
-                        var newSong = Mp3ToSongHelper.GetSongFromMp3(filePath);
-                        DisplayedPlaylist.Songs.Add(newSong);
-                        newSong.SetArtworkData(newSong.Artwork);
-                        _appDatabase.AddSongToPlaylist(DisplayedPlaylist.Id, newSong);
-                        Console.WriteLine($"Added song: {newSong.Title} to playlist: {DisplayedPlaylist.Name}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("No playlist is currently displayed.");
-                }
+                throw new InvalidOperationException("Select a saved playlist before adding a song.");
             }
-            catch (Exception ex)
+
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime applicationLifetime)
             {
-                Console.WriteLine($"An error occurred while adding a song: {ex.Message}");
+                throw new InvalidOperationException("The desktop application window is unavailable.");
+            }
+
+            var parentWindow = applicationLifetime.MainWindow
+                ?? throw new InvalidOperationException("The desktop application window is unavailable.");
+
+            string? filePath = await _openFileDialogService.ShowOpenFileDialogAsync(parentWindow);
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                var newSong = Mp3ToSongHelper.GetSongFromMp3(filePath);
+                if (newSong.Artwork is { } artwork)
+                {
+                    newSong.SetArtworkData(artwork);
+                }
+
+                _appDatabase.AddSongToPlaylist(playlist.Id, newSong);
+                if (!playlist.Songs.Any(existing => existing.Id == newSong.Id))
+                {
+                    playlist.Songs.Add(newSong);
+                }
+
+                _notifications.ShowInfo($"Added “{newSong.Title}” to {playlist.Name}.");
             }
         }
 
         private void ToggleEditMode()
         {
+            if (DisplayedPlaylist is not { Id: > 0 })
+            {
+                IsEditMode = false;
+                return;
+            }
+
             IsEditMode = !IsEditMode;
             if (!IsEditMode)
             {
@@ -172,46 +180,75 @@ namespace SoundHaven.ViewModels
 
         private void DeleteSelectedSongs()
         {
-            if (DisplayedPlaylist != null)
+            try
             {
-                var songsToRemove = Songs.Where(s => s.IsSelected).ToList();
-                foreach (var song in songsToRemove)
+                Playlist? playlist = DisplayedPlaylist;
+                if (playlist is not { Id: > 0 })
                 {
-                    DisplayedPlaylist.Songs.Remove(song);
-                    _appDatabase.RemoveSongFromPlaylist(DisplayedPlaylist.Id, song.Id);
-                    Console.WriteLine($"Deleted song: {song.Title} from playlist: {DisplayedPlaylist.Name}");
+                    return;
                 }
+
+                var songsToRemove = playlist.Songs.Where(song => song.IsSelected).Distinct().ToList();
+                _appDatabase.RemoveSongsFromPlaylist(playlist.Id, songsToRemove.Select(song => (long)song.Id));
+
+                foreach (Song song in songsToRemove)
+                {
+                    song.IsSelected = false;
+                    playlist.Songs.Remove(song);
+                }
+
                 SelectedItems.Clear();
                 IsEditMode = false;
+            }
+            catch (Exception exception)
+            {
+                _notifications.ShowError(exception.Message);
             }
         }
 
         private void UpdateSelectedSongs()
         {
-            if (Songs != null)
+            foreach (Song song in Songs)
             {
-                foreach (var song in Songs)
+                song.IsSelected = SelectedItems.Contains(song);
+            }
+        }
+
+        private async Task PlaySongAsync(Song? song)
+        {
+            if (song is not null && DisplayedPlaylist is { } playlist)
+            {
+                _playbackViewModel.CurrentPlaylist = playlist;
+                await _playbackViewModel.PlayFromBeginning(song);
+            }
+        }
+
+        private void OnPlaylistPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Playlist.Name) &&
+                sender is Playlist { Id: > 0 } playlist &&
+                ReferenceEquals(playlist, DisplayedPlaylist))
+            {
+                try
                 {
-                    song.IsSelected = SelectedItems.Contains(song);
+                    _appDatabase.UpdatePlaylistName(playlist.Id, playlist.Name);
+                }
+                catch (Exception exception)
+                {
+                    _notifications.ShowError(exception.Message);
                 }
             }
         }
 
-        private void SetCurrentSong(Song song)
+        public override void Dispose()
         {
-            if (_playbackViewModel != null)
+            if (_displayedPlaylist != null)
             {
-                _playbackViewModel.CurrentPlaylist = DisplayedPlaylist;
-                _playbackViewModel.CurrentSong = song;
+                _displayedPlaylist.PropertyChanged -= OnPlaylistPropertyChanged;
             }
-        }
 
-        private void OnPlaylistPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(Playlist.Name))
-            {
-                _appDatabase.UpdatePlaylistName(DisplayedPlaylist.Id, DisplayedPlaylist.Name);
-            }
+            base.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -25,6 +25,8 @@ namespace SoundHaven.ViewModels
         }
 
         public virtual void Dispose()
-        { }
+        {
+            GC.SuppressFinalize(this);
+        }
     }
 }

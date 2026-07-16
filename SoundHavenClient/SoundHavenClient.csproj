@@ -7,39 +7,36 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <RootNamespace>SoundHaven</RootNamespace>
-        <ApplicationIcon>Assets\Icons\SoundHavenCLient.ico</ApplicationIcon>
-    </PropertyGroup>
-    
-    <PropertyGroup>
-        <PublishSingleFile>true</PublishSingleFile>
-        <SelfContained>true</SelfContained>
-        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <ApplicationIcon>Assets\Icons\SoundHavenClient.ico</ApplicationIcon>
+        <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+        <VersionPrefix>0.1.0</VersionPrefix>
+        <Authors>SoundHaven contributors</Authors>
+        <Description>Windows desktop music player with local and YouTube audio playback.</Description>
+        <RepositoryUrl>https://github.com/XavierRHMN/SoundHaven</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
     <ItemGroup>
-        <AvaloniaResource Include="Assets\**"/>
+        <AvaloniaResource Include="Assets\**" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.3.0" />
-        <PackageReference Include="Avalonia.Controls.ItemsRepeater" Version="11.1.5" />
-        <PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
-        <PackageReference Include="Avalonia.Svg" Version="11.3.0" />
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.0" />
-        <PackageReference Include="ColorMine" Version="1.1.3" />
-        <PackageReference Include="FFMpegCore" Version="5.2.0" />
-        <PackageReference Include="Inflatable.Lastfm" Version="1.2.0" />
-        <PackageReference Include="Material.Avalonia" Version="3.12.0" />
-        <PackageReference Include="Material.Avalonia.DataGrid" Version="3.12.0" />
-        <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.5" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.5" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.5" />
-        <PackageReference Include="NAudio" Version="2.2.1"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="SharpCompress" Version="0.39.0" />
-        <PackageReference Include="TagLibSharp" Version="2.3.0"/>
-        <PackageReference Include="YoutubeExplode" Version="6.5.4" />
-        <PackageReference Include="YouTubeMusicAPI" Version="2.2.8" />
+        <InternalsVisibleTo Include="SoundHaven.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="11.3.18" />
+        <PackageReference Include="Avalonia.Desktop" Version="11.3.18" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.18" />
+        <PackageReference Include="Material.Avalonia" Version="3.14.2" />
+        <PackageReference Include="Material.Avalonia.DataGrid" Version="3.14.2" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.18" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.18" />
+        <PackageReference Include="NAudio" Version="2.3.0" />
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+        <PackageReference Include="Svg.Controls.Avalonia" Version="11.3.9.5" />
+        <PackageReference Include="TagLibSharp" Version="2.3.0" />
+        <PackageReference Include="YoutubeExplode" Version="6.6.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -47,7 +44,7 @@
             <DependentUpon>MainWindow.axaml</DependentUpon>
         </Compile>
         <Compile Update="Views\PlayerView.axaml.cs">
-            <DependentUpon>PlaylistCardView.axaml</DependentUpon>
+            <DependentUpon>PlayerView.axaml</DependentUpon>
         </Compile>
     </ItemGroup>
 </Project>

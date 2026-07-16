@@ -118,6 +118,7 @@
         <DataGrid Grid.Row="2"
                   ItemsSource="{Binding Songs}"
                   SelectedItem="{Binding SelectedSong}"
+                  SelectionChanged="OnSelectionChanged"
                   AutoGenerateColumns="False"
                   CanUserReorderColumns="True"
                   CanUserResizeColumns="True"

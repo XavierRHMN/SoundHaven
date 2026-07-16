@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
-using Avalonia.Media.Imaging;
-using Avalonia.Media;
-using Avalonia;
-using SoundHaven.Models;
 using System.Text.RegularExpressions;
+using Avalonia;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using SoundHaven.Models;
 using TagLib;
 
 namespace SoundHaven.Helpers
@@ -15,7 +15,8 @@ namespace SoundHaven.Helpers
         // Extracts the album cover and saves it to the Song object
         public static void SaveAlbumCover(Song song)
         {
-            if (song == null || string.IsNullOrWhiteSpace(song.FilePath))
+            ArgumentNullException.ThrowIfNull(song);
+            if (string.IsNullOrWhiteSpace(song.FilePath))
                 throw new ArgumentException("Invalid song or file path.");
 
             if (!System.IO.File.Exists(song.FilePath))
@@ -23,7 +24,7 @@ namespace SoundHaven.Helpers
 
             using (var file = TagLib.File.Create(song.FilePath))
             {
-                Bitmap bitmap = null;
+                Bitmap? bitmap = null;
 
                 if (file.Tag.Pictures.Length > 0)
                 {
@@ -96,7 +97,7 @@ namespace SoundHaven.Helpers
             }
         }
 
-        private static Bitmap AddBlackBarsToMake16by9(Bitmap originalBitmap)
+        private static RenderTargetBitmap AddBlackBarsToMake16by9(Bitmap originalBitmap)
         {
             // Get original dimensions
             int originalWidth = originalBitmap.PixelSize.Width;
@@ -158,7 +159,7 @@ namespace SoundHaven.Helpers
 
             var song = new Song();
             // Use TagLib.File to read the MP3 metadata
-            var file = TagLib.File.Create(filePath);
+            using var file = TagLib.File.Create(filePath);
 
             // Extract basic metadata
             song.Title = CleanSongTitle(file.Tag.Title, string.Join(", ", file.Tag.Performers));
@@ -175,10 +176,10 @@ namespace SoundHaven.Helpers
         }
 
         // Method to clean the song title
-        public static string CleanSongTitle(string title, string artist)
+        public static string CleanSongTitle(string? title, string? artist)
         {
             if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(artist))
-                return title;
+                return title ?? string.Empty;
 
             // Regular expression to match patterns like "Artist - Title" or "Title by Artist"
             string pattern = $@"\b{Regex.Escape(artist)}\b\s*[-|by]*\s*|\s*[-|by]*\s*\b{Regex.Escape(artist)}\b";

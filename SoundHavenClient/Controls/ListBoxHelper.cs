@@ -1,6 +1,6 @@
-﻿using Avalonia;
-using Avalonia.Controls;
 using System.Windows.Input;
+using Avalonia;
+using Avalonia.Controls;
 
 namespace SoundHaven.Controls
 {

@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:SoundHaven.ViewModels"
              xmlns:models="clr-namespace:SoundHaven.Models"
+             xmlns:controls="clr-namespace:SoundHaven.Controls"
              xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
              xmlns:assists="clr-namespace:Material.Styles.Assists;assembly=Material.Styles"
              mc:Ignorable="d" 
@@ -120,16 +121,18 @@
                               IsHitTestVisible="{Binding IsScrollViewerHittestable}">
                     <ListBox ItemsSource="{Binding SearchResults}"
                              SelectedItem="{Binding SelectedSong}"
+                             SelectionChanged="OnSelectionChanged"
                              Background="Transparent">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,3">
                                     <!-- Artwork Image -->
-                                    <Image Grid.Column="0" 
-                                           Source="{Binding Artwork}" 
-                                           Width="60" 
-                                           Height="60"
-                                           Margin="0,0,10,0" />
+                                    <controls:AsyncImageControl Grid.Column="0"
+                                                                SourceUrl="{Binding ThumbnailUrl}"
+                                                                Width="60"
+                                                                Height="60"
+                                                                Stretch="UniformToFill"
+                                                                Margin="0,0,10,0" />
                                     
                                     <!-- Song Details -->
                                     <Grid Grid.Column="1" 

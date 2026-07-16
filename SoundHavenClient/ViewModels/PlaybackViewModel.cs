@@ -1,310 +1,454 @@
-﻿using SoundHaven.Commands;
+using System;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Avalonia.Threading;
+using SoundHaven.Commands;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.Services;
-using System;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace SoundHaven.ViewModels
+namespace SoundHaven.ViewModels;
+
+public sealed class PlaybackViewModel : ViewModelBase
 {
-    public class PlaybackViewModel : ViewModelBase
+    public enum Direction
     {
-        private readonly ThemesViewModel _themesViewModel;
-        private readonly ILastFmDataService _lastFmDataService;
-        private RepeatViewModel _repeatViewModel;
-        private readonly IYouTubeDownloadService _youTubeDownloadService;
-        public event EventHandler SeekPositionReset;
-        
-        public enum Direction
-        {
-            Previous = -1,
-            Next = 1
-        }
+        Previous = -1,
+        Next = 1
+    }
 
-        private AudioService _audioService;
+    private readonly IAudioService _audioService;
+    private readonly ILastFmDataService _lastFmDataService;
+    private readonly RepeatViewModel _repeatViewModel;
+    private readonly ThemesViewModel _themesViewModel;
+    private readonly IUserNotificationService _notifications;
+    private CancellationTokenSource _trackCancellation = new();
+    private Song? _currentSong;
+    private Playlist? _currentPlaylist;
+    private bool _isShuffleEnabled;
+    private bool _canPlaybackControl = true;
+    private bool _isTransitioningTracks;
 
-        private bool _isShuffleEnabled;
-        public bool IsShuffleEnabled
-        {
-            get => _isShuffleEnabled;
-            set => SetProperty(ref _isShuffleEnabled, value);
-        }
+    public PlaybackViewModel(
+        IAudioService audioService,
+        RepeatViewModel repeatViewModel,
+        ILastFmDataService lastFmDataService,
+        ThemesViewModel themesViewModel,
+        IUserNotificationService notifications)
+    {
+        _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
+        _repeatViewModel = repeatViewModel ?? throw new ArgumentNullException(nameof(repeatViewModel));
+        _lastFmDataService = lastFmDataService ?? throw new ArgumentNullException(nameof(lastFmDataService));
+        _themesViewModel = themesViewModel ?? throw new ArgumentNullException(nameof(themesViewModel));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
-        public bool IsPlaying
-        {
-            get => _audioService.IsPlaying;
-        }
+        _audioService.PlaybackStateChanged += OnPlaybackStateChanged;
+        _audioService.PlaybackFailed += OnPlaybackFailed;
+        _audioService.TrackEnded += OnTrackEnded;
 
-        private Song _currentSong;
-        public Song CurrentSong
+        PlayCommand = new AsyncRelayCommand(Play, CanPlay, ShowCommandFailure);
+        PauseCommand = new AsyncRelayCommand(Pause, CanPause, ShowCommandFailure);
+        NextCommand = new AsyncRelayCommand(NextTrack, CanChangeTrack, ShowCommandFailure);
+        PreviousCommand = new AsyncRelayCommand(PreviousTrack, CanChangeTrack, ShowCommandFailure);
+    }
+
+    public event EventHandler? SeekPositionReset;
+
+    public bool IsShuffleEnabled
+    {
+        get => _isShuffleEnabled;
+        set => SetProperty(ref _isShuffleEnabled, value);
+    }
+
+    public bool IsPlaying => _audioService.IsPlaying;
+
+    public Song? CurrentSong
+    {
+        get => _currentSong;
+        set
         {
-            get => _currentSong;
-            set
+            if (SetProperty(ref _currentSong, value))
             {
-                if (SetProperty(ref _currentSong, value))
-                {
-                    OnPropertyChanged(nameof(CurrentSongExists));
-                    PlayCommand.RaiseCanExecuteChanged();
-                    PauseCommand.RaiseCanExecuteChanged();
-
-                    Console.WriteLine("Started playing: " + _currentSong.Title + " - " + _currentSong.Artist + " - " + _currentSong.Year);
-
-                    SeekPositionReset?.Invoke(this, EventArgs.Empty);
-                    
-                    if (!_currentSong.IsYouTubeVideo) PlayFromBeginning(value);
-
-                    Task.Run(ScrobbleCurrentSongAsync);
-                    // Only run SetDynamicTheme if the dynamic theme is selected
-                    if (_themesViewModel.IsDynamicThemeSelected) Task.Run(SetDynamicTheme);
-                }
+                OnPropertyChanged(nameof(CurrentSongExists));
+                RaiseCommandStates();
             }
         }
-        
-        private void SetDynamicTheme()
+    }
+
+    public bool CurrentSongExists => CurrentSong is not null;
+
+    public Playlist? CurrentPlaylist
+    {
+        get => _currentPlaylist;
+        set => SetProperty(ref _currentPlaylist, value);
+    }
+
+    public bool CanPlaybackControl
+    {
+        get => _canPlaybackControl;
+        set
         {
-            // Add a dynamic theme color based on the current dominant color of the album artwork
-            if (CurrentSong != null)
+            if (SetProperty(ref _canPlaybackControl, value))
             {
-                var dominantColor = DominantColorFinder.GetDominantColor(CurrentSong.Artwork);
-                _themesViewModel.ThemeColors[^1] = dominantColor;
-                _themesViewModel.ChangeTheme(dominantColor);
+                RaiseCommandStates();
             }
         }
+    }
 
-        public bool CurrentSongExists
+    public bool IsTransitioningTracks
+    {
+        get => _isTransitioningTracks;
+        private set
         {
-            get => CurrentSong != null;
-        }
-
-        private Playlist _currentPlaylist;
-        public Playlist CurrentPlaylist
-        {
-            get => _currentPlaylist;
-            set => SetProperty(ref _currentPlaylist, value);
-        }
-        
-        private bool _canPlaybackControl = true;
-        public bool CanPlaybackControl
-        {
-            get => _canPlaybackControl;
-            set => SetProperty(ref _canPlaybackControl, value);
-        }
-
-        public AsyncRelayCommand PlayCommand { get; set; }
-        public AsyncRelayCommand PauseCommand { get; set; }
-        public AsyncRelayCommand NextCommand { get; set; }
-        public AsyncRelayCommand PreviousCommand { get; set; }
-
-        public PlaybackViewModel(AudioService audioService, IYouTubeDownloadService youTubeDownloadService,
-                                 RepeatViewModel repeatViewModel, LastFmLastFmDataService lastFmDataService, ThemesViewModel themesViewModel)
-        {
-            _themesViewModel = themesViewModel;
-            _lastFmDataService = lastFmDataService;
-            _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
-            _youTubeDownloadService = youTubeDownloadService ?? throw new ArgumentNullException(nameof(youTubeDownloadService));
-            _audioService.PlaybackStateChanged += OnPlaybackStateChanged;
-            _audioService.TrackEnded += OnTrackEndedRobust;
-            _repeatViewModel = repeatViewModel;
-
-            InitializeCommands();
-        }
-
-        private void InitializeCommands()
-        {
-            PlayCommand = new AsyncRelayCommand(Play, CanPlay);
-            PauseCommand = new AsyncRelayCommand(Pause, CanPause);
-            NextCommand = new AsyncRelayCommand(NextTrack, CanNext);
-            PreviousCommand = new AsyncRelayCommand(PreviousTrack, CanPrevious);
-        }
-
-        private bool CanPlay() => CurrentSongExists && !IsPlaying && CanPlaybackControl;
-
-        private bool CanPause() => CurrentSongExists && IsPlaying;
-
-        private bool CanNext() => CurrentSongExists && CanPlaybackControl;
-
-        private bool CanPrevious() => CurrentSongExists && CanPlaybackControl;
-        
-        private async void ScrobbleCurrentSongAsync()
-        {
-            try
-            { 
-                await _lastFmDataService.ScrobbleTrackAsync(CurrentSong.Title!, CurrentSong.Artist!, CurrentSong.Album!);
-            }
-            catch (Exception ex)
+            if (SetProperty(ref _isTransitioningTracks, value))
             {
-                Console.WriteLine($"Error scrobbling track: {ex}");
+                RaiseCommandStates();
             }
         }
-        
-        public async Task Play()
+    }
+
+    public AsyncRelayCommand PlayCommand { get; }
+
+    public AsyncRelayCommand PauseCommand { get; }
+
+    public AsyncRelayCommand NextCommand { get; }
+
+    public AsyncRelayCommand PreviousCommand { get; }
+
+    public async Task Play()
+    {
+        if (CurrentSong is null)
         {
-            if (CurrentSong != null)
+            if (CurrentPlaylist?.Songs.Count > 0)
             {
-                if (_audioService.IsStopped)
-                {
-                    await PlayFromBeginning(CurrentSong);
-                }
-                else
-                {
-                    await _audioService.Resume();
-                }
+                await PlayFromBeginning(CurrentPlaylist.Songs[0]);
             }
-            else if (CurrentPlaylist?.Songs.Count > 0)
-            {
-                CurrentSong = CurrentPlaylist.Songs[0];
-                await PlayFromBeginning(CurrentSong);
-            }
+
+            return;
         }
 
-        public async Task Pause()
+        if (_audioService.IsPaused)
         {
-            if (_audioService.IsPlaying)
-            {
-                await _audioService.Pause();
-            }
+            await _audioService.ResumeAsync();
+        }
+        else if (_audioService.IsStopped)
+        {
+            await PlayFromBeginning(CurrentSong);
+        }
+    }
+
+    public async Task Pause()
+    {
+        if (_audioService.IsPlaying)
+        {
+            await _audioService.PauseAsync();
+        }
+    }
+
+    public async Task NextTrack()
+    {
+        Song? nextSong = GetNextSong(wrap: true);
+        if (nextSong is not null)
+        {
+            await PlayFromBeginning(nextSong);
+        }
+    }
+
+    public async Task PreviousTrack()
+    {
+        if (CurrentSong is null)
+        {
+            return;
         }
 
-        public bool IsTransitioningTracks { get; set; }
-
-        public async Task NextTrack()
+        if (_audioService.CurrentPosition >= TimeSpan.FromSeconds(5))
         {
-            if (CurrentPlaylist == null || CurrentPlaylist.Songs.Count is 0 or 1)
-            {
-                Console.WriteLine("The playlist is empty or there's no next song");
-                return;
-            }
-
-            Song? nextSong;
-
+            await _audioService.RestartAsync();
             SeekPositionReset?.Invoke(this, EventArgs.Empty);
-
-            if (IsShuffleEnabled)
-            {
-                int index = Random.Shared.Next(CurrentPlaylist.Songs.Count);
-                var songs = CurrentPlaylist.Songs;
-
-                if (index == songs.IndexOf(CurrentSong))
-                {
-                    index = (index + 1) % songs.Count;
-                }
-                nextSong = CurrentPlaylist.Songs[index];
-            }
-            else
-            {
-                nextSong = CurrentPlaylist.GetPreviousNextSong(CurrentSong, Direction.Next);
-            }
-
-            if (nextSong != null)
-            {
-                await PlayFromBeginning(nextSong);
-            }
-            else
-            {
-                Console.WriteLine("No next song available.");
-            }
+            return;
         }
 
-        public async Task PreviousTrack()
+        Song? previous = CurrentPlaylist?.GetPreviousNextSong(CurrentSong, Direction.Previous);
+        if (previous is not null && !ReferenceEquals(previous, CurrentSong))
         {
-            if (CurrentSong == null)
-            {
-                Console.WriteLine("No current song to restart or go back from.");
-                return;
-            }
-
-            if (CurrentSong.IsYouTubeVideo)
-            {
-                _audioService.Restart();
-            }
-            else
-            {
-                // For local files, if we're before 5 seconds, try to go to the previous song
-                if (_audioService.CurrentPosition.TotalSeconds < 5)
-                {
-                    var previousSong = CurrentPlaylist?.GetPreviousNextSong(CurrentSong, Direction.Previous);
-                 
-                    if (previousSong != null)
-                    {
-                        await PlayFromBeginning(previousSong);
-                    }
-                }
-                else
-                {
-                    // If there's no previous song, restart the current one
-                    _audioService.Restart();
-                }   
-            }
+            await PlayFromBeginning(previous);
         }
-
-        public async Task PlayFromBeginning(Song song)
+        else
         {
-            try
-            {
-                bool isYouTubeVideo = song.IsYouTubeVideo;
-                string? source = isYouTubeVideo ? song.VideoId : song.FilePath;
-
-                CurrentSong = song;
-                await _audioService.StartAsync(source, isYouTubeVideo);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Error playing from beginning: " + ex);
-            }
+            await _audioService.RestartAsync();
+            SeekPositionReset?.Invoke(this, EventArgs.Empty);
         }
+    }
 
-        public async Task AddToUpNext(Song song)
+    public async Task PlayFromBeginning(Song song)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+
+        var replacementCancellation = new CancellationTokenSource();
+        CancellationTokenSource previousCancellation = Interlocked.Exchange(
+            ref _trackCancellation,
+            replacementCancellation);
+        previousCancellation.Cancel();
+        previousCancellation.Dispose();
+
+        IsTransitioningTracks = true;
+        CanPlaybackControl = false;
+        SeekPositionReset?.Invoke(this, EventArgs.Empty);
+        try
         {
-            if (CurrentPlaylist == null)
-            {
-                CurrentPlaylist = new Playlist { Name = "Streaming from YouTube", Songs = new ObservableCollection<Song>() };
-            }
-            
-            if (!CurrentPlaylist.Songs.Contains(song))
-            {
-                CurrentPlaylist.Songs.Add(song);
-                OnPropertyChanged(nameof(CurrentPlaylist));
-            }
+            PlaybackSource source = SelectPlaybackSource(song, File.Exists);
+            await _audioService.StartAsync(source, cancellationToken: replacementCancellation.Token);
+            CurrentSong = song;
+            _ = ScrobbleCurrentSongAsync(song, replacementCancellation.Token);
+            ApplyDynamicTheme(song);
+        }
+        finally
+        {
+            IsTransitioningTracks = false;
+            CanPlaybackControl = true;
+        }
+    }
+
+    public Task AddToUpNext(Song song)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+        CurrentPlaylist ??= new Playlist
+        {
+            Name = "Streaming from YouTube",
+            Songs = new ObservableCollection<Song>()
+        };
+
+        if (!CurrentPlaylist.Songs.Contains(song))
+        {
+            CurrentPlaylist.Songs.Add(song);
+            OnPropertyChanged(nameof(CurrentPlaylist));
         }
 
-        private async void OnTrackEndedRobust(object sender, EventArgs e)
+        return Task.CompletedTask;
+    }
+
+    public static PlaybackSource SelectPlaybackSource(
+        Song song,
+        Func<string, bool>? fileExists = null)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+        fileExists ??= File.Exists;
+
+        if (!string.IsNullOrWhiteSpace(song.FilePath) && fileExists(song.FilePath))
+        {
+            return new PlaybackSource.LocalFile(song.FilePath);
+        }
+
+        if (!string.IsNullOrWhiteSpace(song.VideoId))
+        {
+            return new PlaybackSource.YouTube(song.VideoId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(song.FilePath))
+        {
+            return new PlaybackSource.LocalFile(song.FilePath);
+        }
+
+        throw new InvalidOperationException("This track has no playable file or YouTube source.");
+    }
+
+    public override void Dispose()
+    {
+        _trackCancellation.Cancel();
+        _trackCancellation.Dispose();
+        _audioService.PlaybackStateChanged -= OnPlaybackStateChanged;
+        _audioService.PlaybackFailed -= OnPlaybackFailed;
+        _audioService.TrackEnded -= OnTrackEnded;
+        base.Dispose();
+    }
+
+    private bool CanPlay()
+    {
+        return CurrentSongExists
+            && !_audioService.IsPlaying
+            && CanPlaybackControl
+            && !IsTransitioningTracks;
+    }
+
+    private bool CanPause()
+    {
+        return CurrentSongExists
+            && _audioService.IsPlaying
+            && !IsTransitioningTracks;
+    }
+
+    private bool CanChangeTrack()
+    {
+        return CurrentSongExists && CanPlaybackControl && !IsTransitioningTracks;
+    }
+
+    private Song? GetNextSong(bool wrap)
+    {
+        if (CurrentSong is null || CurrentPlaylist?.Songs.Count is null or 0)
+        {
+            return null;
+        }
+
+        ObservableCollection<Song> songs = CurrentPlaylist.Songs;
+        if (IsShuffleEnabled)
+        {
+            if (songs.Count == 1)
+            {
+                return wrap ? songs[0] : null;
+            }
+
+            int currentIndex = songs.IndexOf(CurrentSong);
+            int nextIndex;
+            do
+            {
+                nextIndex = Random.Shared.Next(songs.Count);
+            }
+            while (nextIndex == currentIndex);
+
+            return songs[nextIndex];
+        }
+
+        int index = songs.IndexOf(CurrentSong);
+        if (index < 0)
+        {
+            return songs[0];
+        }
+
+        int next = index + 1;
+        if (next < songs.Count)
+        {
+            return songs[next];
+        }
+
+        return wrap ? songs[0] : null;
+    }
+
+    private async Task HandleTrackEndedAsync()
+    {
+        try
         {
             switch (_repeatViewModel.RepeatMode)
             {
-                case RepeatMode.One:
+                case RepeatMode.One when CurrentSong is not null:
                     await PlayFromBeginning(CurrentSong);
-                    _repeatViewModel.SetRepeatModeOff();
                     break;
                 case RepeatMode.All:
-                    await PlayFromBeginning(CurrentSong);
-                    break;
+                    {
+                        Song? next = GetNextSong(wrap: true);
+                        if (next is not null)
+                        {
+                            await PlayFromBeginning(next);
+                        }
+
+                        break;
+                    }
                 case RepeatMode.Off:
-                    await NextTrack();
-                    break;
+                    {
+                        Song? next = GetNextSong(wrap: false);
+                        if (next is not null)
+                        {
+                            await PlayFromBeginning(next);
+                        }
+
+                        break;
+                    }
             }
         }
-
-        private void OnPlaybackStateChanged(object sender, EventArgs e)
+        catch (OperationCanceledException)
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                OnPropertyChanged(nameof(IsPlaying));
-                PlayCommand.RaiseCanExecuteChanged();
-                PauseCommand.RaiseCanExecuteChanged();
-                NextCommand.RaiseCanExecuteChanged();
-                PreviousCommand.RaiseCanExecuteChanged();
-            });
+            // A manual track change superseded automatic progression.
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError($"Could not continue playback: {exception.Message}");
+        }
+    }
+
+    private async Task ScrobbleCurrentSongAsync(Song song, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(song.Title) || string.IsNullOrWhiteSpace(song.Artist))
+        {
+            return;
         }
 
-        public override void Dispose()
+        try
         {
-            _audioService.TrackEnded -= OnTrackEndedRobust;
-            _audioService.PlaybackStateChanged -= OnPlaybackStateChanged;
+            cancellationToken.ThrowIfCancellationRequested();
+            await _lastFmDataService.ScrobbleTrackAsync(
+                song.Title,
+                song.Artist,
+                song.Album ?? string.Empty,
+                cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+            // The track changed before scrobbling completed.
+        }
+        catch
+        {
+            // Last.fm is optional and should never interrupt playback.
+        }
+    }
+
+    private void ApplyDynamicTheme(Song song)
+    {
+        if (!_themesViewModel.IsDynamicThemeSelected || song.Artwork is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var dominantColor = DominantColorFinder.GetDominantColor(song.Artwork);
+            _themesViewModel.ThemeColors[^1] = dominantColor;
+            _themesViewModel.ChangeTheme(dominantColor);
+        }
+        catch
+        {
+            // Dynamic theming is decorative and must not interrupt playback.
+        }
+    }
+
+    private void OnTrackEnded(object? sender, EventArgs eventArgs)
+    {
+        _ = HandleTrackEndedAsync();
+    }
+
+    private void OnPlaybackStateChanged(object? sender, EventArgs eventArgs)
+    {
+        void Update()
+        {
+            OnPropertyChanged(nameof(IsPlaying));
+            RaiseCommandStates();
+        }
+
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            Update();
+        }
+        else
+        {
+            Dispatcher.UIThread.Post(Update);
+        }
+    }
+
+    private void OnPlaybackFailed(object? sender, PlaybackFailedEventArgs eventArgs)
+    {
+        _notifications.ShowError($"{eventArgs.UserMessage} {eventArgs.Exception.Message}");
+    }
+
+    private void RaiseCommandStates()
+    {
+        PlayCommand.RaiseCanExecuteChanged();
+        PauseCommand.RaiseCanExecuteChanged();
+        NextCommand.RaiseCanExecuteChanged();
+        PreviousCommand.RaiseCanExecuteChanged();
+    }
+
+    private void ShowCommandFailure(Exception exception)
+    {
+        _notifications.ShowError(exception.Message);
     }
 }
