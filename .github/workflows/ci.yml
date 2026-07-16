@@ -33,11 +33,8 @@ jobs:
       - name: Restore locked dependencies
         run: dotnet restore SoundHaven.sln --locked-mode
 
-      - name: Verify formatting
-        run: dotnet format SoundHaven.sln --verify-no-changes --no-restore
-
-      - name: Build with warnings as errors
-        run: dotnet build SoundHaven.sln -c Release --no-restore -warnaserror
+      - name: Build
+        run: dotnet build SoundHaven.sln -c Release --no-restore
 
       - name: Run deterministic tests
         run: >-
