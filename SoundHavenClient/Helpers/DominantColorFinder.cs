@@ -96,27 +96,65 @@ public static class DominantColorFinder
             return FallbackColor;
         }
 
+        // Prefer lighter accents so theme text/icons stay readable on the dark UI.
+        const double minReadableBrightness = 0.48;
+        const double maxReadableBrightness = 0.88;
+
         var candidates = buckets.Values
             .Where(bucket => bucket.Weight / totalWeight >= 0.01)
-            .Select(bucket => new
+            .Select(bucket =>
             {
-                Bucket = bucket,
-                Score = (bucket.Weight / totalWeight * 0.55)
-                    + (bucket.AverageSaturation * 0.45)
+                double brightness = bucket.AverageBrightness;
+                // Reward mid-bright / light colours; soft-penalize near-black buckets.
+                double brightnessScore = brightness < minReadableBrightness
+                    ? brightness / minReadableBrightness * 0.35
+                    : 0.35 + ((brightness - minReadableBrightness)
+                        / (maxReadableBrightness - minReadableBrightness) * 0.65);
+                brightnessScore = Math.Clamp(brightnessScore, 0, 1);
+
+                return new
+                {
+                    Bucket = bucket,
+                    Score = (bucket.Weight / totalWeight * 0.35)
+                        + (bucket.AverageSaturation * 0.25)
+                        + (brightnessScore * 0.40)
+                };
             })
             .OrderByDescending(candidate => candidate.Score)
             .ToArray();
 
         ColorBucket selected = candidates
-            .FirstOrDefault(candidate => candidate.Bucket.AverageBrightness is >= 0.18 and <= 0.85)
+            .FirstOrDefault(candidate =>
+                candidate.Bucket.AverageBrightness is >= minReadableBrightness and <= maxReadableBrightness)
             ?.Bucket
-            ?? candidates.First().Bucket;
+            ?? candidates
+                .OrderByDescending(candidate => candidate.Bucket.AverageBrightness)
+                .First()
+                .Bucket;
 
+        byte red = (byte)Math.Clamp(Math.Round(selected.Red / selected.Weight), 0, 255);
+        byte green = (byte)Math.Clamp(Math.Round(selected.Green / selected.Weight), 0, 255);
+        byte blue = (byte)Math.Clamp(Math.Round(selected.Blue / selected.Weight), 0, 255);
+        return EnsureReadableAccent(new Color(255, red, green, blue), minReadableBrightness);
+    }
+
+    /// <summary>
+    /// Lifts a dark accent toward a readable brightness while keeping its hue.
+    /// </summary>
+    private static Color EnsureReadableAccent(Color color, double minBrightness)
+    {
+        double maxChannel = Math.Max(color.R, Math.Max(color.G, color.B)) / 255d;
+        if (maxChannel >= minBrightness || maxChannel <= 0)
+        {
+            return color;
+        }
+
+        double scale = minBrightness / maxChannel;
         return new Color(
             255,
-            (byte)Math.Clamp(Math.Round(selected.Red / selected.Weight), 0, 255),
-            (byte)Math.Clamp(Math.Round(selected.Green / selected.Weight), 0, 255),
-            (byte)Math.Clamp(Math.Round(selected.Blue / selected.Weight), 0, 255));
+            (byte)Math.Clamp(Math.Round(color.R * scale), 0, 255),
+            (byte)Math.Clamp(Math.Round(color.G * scale), 0, 255),
+            (byte)Math.Clamp(Math.Round(color.B * scale), 0, 255));
     }
 
     // YouTube Music thumbs often use circular (-rj) art on white/black padding.

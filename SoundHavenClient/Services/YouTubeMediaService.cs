@@ -10,6 +10,7 @@ using SoundHaven.Helpers;
 using SoundHaven.Models;
 using YoutubeExplode;
 using YoutubeExplode.Common;
+using YoutubeExplode.Exceptions;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 
@@ -239,12 +240,12 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
     {
         var media = await ResolveMediaAsync(videoId, cancellationToken).ConfigureAwait(false);
         return new YouTubeStreamSource(
-            media.Video.Id,
+            media.VideoId,
             new Uri(media.Stream.Url),
-            media.Video.Duration ?? TimeSpan.Zero,
+            media.Duration,
             media.Stream.Container.Name,
             media.Stream.Bitrate.BitsPerSecond,
-            media.Video.Title);
+            media.Title);
     }
 
     public async Task<Song> DownloadAudioAsync(
@@ -256,9 +257,8 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
         string musicDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
         Directory.CreateDirectory(musicDirectory);
 
-        string cleanTitle = Mp3ToSongHelper.CleanSongTitle(
-            media.Video.Title,
-            media.Video.Author.ChannelTitle);
+        string artist = media.Author ?? string.Empty;
+        string cleanTitle = Mp3ToSongHelper.CleanSongTitle(media.Title, artist);
         string outputPath = GetUniquePath(musicDirectory, SanitizeFileName(cleanTitle), ".m4a");
         string partialPath = outputPath + ".part";
 
@@ -269,21 +269,25 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
                 .ConfigureAwait(false);
             File.Move(partialPath, outputPath);
 
-            byte[]? artwork = await TryApplyMetadataAsync(outputPath, media.Video, cancellationToken)
-                .ConfigureAwait(false);
+            byte[]? artwork = media.Video is not null
+                ? await TryApplyMetadataAsync(outputPath, media.Video, cancellationToken)
+                    .ConfigureAwait(false)
+                : null;
 
             return new Song
             {
                 Title = cleanTitle,
-                Artist = media.Video.Author.ChannelTitle,
-                Album = media.Video.Author.ChannelTitle,
-                Duration = media.Video.Duration ?? TimeSpan.Zero,
+                Artist = artist,
+                Album = artist,
+                Duration = media.Duration,
                 FilePath = outputPath,
-                VideoId = media.Video.Id,
-                ThumbnailUrl = GetStableThumbnailUrl(media.Video.Id, media.Video.Thumbnails),
-                ChannelTitle = media.Video.Author.ChannelTitle,
-                Views = media.Video.Engagement.ViewCount.ToString(CultureInfo.InvariantCulture),
-                Year = media.Video.UploadDate.Year,
+                VideoId = media.VideoId,
+                ThumbnailUrl = media.Video is not null
+                    ? GetStableThumbnailUrl(media.Video.Id, media.Video.Thumbnails)
+                    : YouTubeThumbnailHelper.GetVideoThumbnailUrl(media.VideoId),
+                ChannelTitle = artist,
+                Views = media.Video?.Engagement.ViewCount.ToString(CultureInfo.InvariantCulture),
+                Year = media.Video?.UploadDate.Year ?? 0,
                 ArtworkData = artwork ?? Array.Empty<byte>(),
                 CurrentDownloadState = DownloadState.Downloaded
             };
@@ -394,19 +398,60 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
         CancellationToken cancellationToken)
     {
         string normalizedId = NormalizeVideoId(videoId);
-        ValueTask<Video> videoTask = _youtubeClient.Videos.GetAsync(normalizedId, cancellationToken);
-        ValueTask<StreamManifest> manifestTask = _youtubeClient.Videos.Streams
-            .GetManifestAsync(normalizedId, cancellationToken);
 
-        Video video = await videoTask.ConfigureAwait(false);
-        StreamManifest manifest = await manifestTask.ConfigureAwait(false);
+        // Stream manifest is required for playback. Watch-page metadata often fails for
+        // Music catalogue / region / age-gated IDs even when audio streams are available.
+        Task<StreamManifest> manifestTask = _youtubeClient.Videos.Streams
+            .GetManifestAsync(normalizedId, cancellationToken)
+            .AsTask();
+        Task<Video?> videoTask = TryGetVideoAsync(normalizedId, cancellationToken);
+
+        StreamManifest manifest;
+        try
+        {
+            manifest = await manifestTask.ConfigureAwait(false);
+        }
+        catch (VideoUnavailableException exception)
+        {
+            throw new InvalidOperationException(
+                $"This YouTube track isn’t available to stream right now ({normalizedId}). "
+                + "It may be region-locked, age-restricted, or blocked for anonymous clients.",
+                exception);
+        }
+        catch (VideoUnplayableException exception)
+        {
+            throw new InvalidOperationException(
+                $"This YouTube track can’t be played ({normalizedId}): {exception.Message}",
+                exception);
+        }
+
+        Video? video = await videoTask.ConfigureAwait(false);
 
         IStreamInfo stream = SelectCompatibleAudioStream(
             manifest.GetAudioOnlyStreams(),
             candidate => candidate.Container == Container.Mp4,
             candidate => candidate.Bitrate.BitsPerSecond);
 
-        return new ResolvedMedia(video, stream);
+        return new ResolvedMedia(
+            normalizedId,
+            video?.Title ?? normalizedId,
+            video?.Author.ChannelTitle,
+            video?.Duration ?? TimeSpan.Zero,
+            stream,
+            video);
+    }
+
+    private async Task<Video?> TryGetVideoAsync(string videoId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _youtubeClient.Videos.GetAsync(videoId, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            return null;
+        }
     }
 
     internal static T SelectCompatibleAudioStream<T>(
@@ -580,5 +625,11 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
         }
     }
 
-    private sealed record ResolvedMedia(Video Video, IStreamInfo Stream);
+    private sealed record ResolvedMedia(
+        string VideoId,
+        string Title,
+        string? Author,
+        TimeSpan Duration,
+        IStreamInfo Stream,
+        Video? Video);
 }
