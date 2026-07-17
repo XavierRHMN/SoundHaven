@@ -204,6 +204,11 @@ namespace SoundHaven.Models
             }
         }
 
+        // Largest size any view renders artwork at (PlayerView cover, 520px).
+        // Decoding to this width instead of full size keeps per-cover memory and
+        // GPU upload small, which keeps view switches with many covers snappy.
+        private const int MaxDecodedArtworkWidth = 600;
+
         private Bitmap? _artwork;
         public Bitmap? Artwork
         {
@@ -211,10 +216,10 @@ namespace SoundHaven.Models
             {
                 if (_artwork == null && _artworkData != null && _artworkData.Length > 0)
                 {
-                    // Lazy load the bitmap
+                    // Lazy load the bitmap, downscaled at decode time
                     using (var memoryStream = new MemoryStream(_artworkData))
                     {
-                        _artwork = new Bitmap(memoryStream);
+                        _artwork = Bitmap.DecodeToWidth(memoryStream, MaxDecodedArtworkWidth);
                     }
                 }
                 return _artwork;

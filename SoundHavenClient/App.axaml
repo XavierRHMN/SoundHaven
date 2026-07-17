@@ -2,35 +2,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SoundHaven.App"
              xmlns:themes="clr-namespace:Material.Styles.Themes;assembly=Material.Styles"
-             xmlns:views="clr-namespace:SoundHaven.Views"
-             xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
+             xmlns:helpers="clr-namespace:SoundHaven.Helpers"
              RequestedThemeVariant="Default">
 
     <Application.DataTemplates>
-        <!-- DataTemplate for PlayerViewModel -->
-        <DataTemplate DataType="viewModels:PlayerViewModel">
-            <views:PlayerView />
-        </DataTemplate>
-
-        <!-- DataTemplate for PlaylistViewModel -->
-        <DataTemplate DataType="viewModels:PlaylistViewModel">
-            <views:PlaylistView />
-        </DataTemplate>
-
-        <!-- DataTemplate for HomeViewModel -->
-        <DataTemplate DataType="viewModels:HomeViewModel">
-            <views:HomeView />
-        </DataTemplate>
-
-        <DataTemplate DataType="viewModels:LastFmViewModel">
-            <views:LastFmView />
-        </DataTemplate>
-
-        <DataTemplate DataType="viewModels:ThemesViewModel">
-            <views:ThemesView />
-        </DataTemplate>
-
-        <!-- Add more DataTemplates as needed -->
+        <!-- Caches one view per view model so tab switches don't rebuild views -->
+        <helpers:ViewLocator />
     </Application.DataTemplates>
 
     <Application.Styles>
