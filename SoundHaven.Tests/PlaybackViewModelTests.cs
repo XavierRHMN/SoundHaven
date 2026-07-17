@@ -137,6 +137,28 @@ public sealed class PlaybackViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task NextTrack_AtEndOfQueue_OnlyWrapsOnRepeatAll()
+    {
+        var repeat = new RepeatViewModel { RepeatMode = RepeatMode.Off };
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+        Song first = CreateYouTubeSong("First", "jNQXAC9IVRw");
+        Song last = CreateYouTubeSong("Last", "dQw4w9WgXcQ");
+        viewModel.CurrentPlaylist = CreatePlaylist(first, last);
+        viewModel.CurrentSong = last;
+
+        await viewModel.NextTrack();
+
+        Assert.Same(last, viewModel.CurrentSong);
+        Assert.Empty(audio.StartedSources);
+
+        repeat.RepeatMode = RepeatMode.All;
+        await viewModel.NextTrack();
+
+        Assert.Same(first, viewModel.CurrentSong);
+    }
+
+    [Fact]
     public async Task ShuffleNavigation_NeverReplaysCurrentTrackWhenAlternativesExist()
     {
         var repeat = new RepeatViewModel();
@@ -311,6 +333,79 @@ public sealed class PlaybackViewModelTests : IDisposable
     }
 
     [Fact]
+    public void CurrentPlaylist_AssignmentSnapshotsSourcePlaylist()
+    {
+        var repeat = new RepeatViewModel();
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+
+        Song current = CreateYouTubeSong("Current", "jNQXAC9IVRw");
+        Song first = CreateYouTubeSong("First", "aaaaaaaaaaa");
+        Playlist source = CreatePlaylist(current, first);
+        viewModel.CurrentPlaylist = source;
+        viewModel.CurrentSong = current;
+
+        Assert.NotSame(source, viewModel.CurrentPlaylist);
+        Assert.NotSame(source.Songs, viewModel.CurrentPlaylist!.Songs);
+
+        // Queue edits must never touch the stored playlist's collection.
+        Assert.True(viewModel.RemoveFromUpNext(first));
+        Assert.Empty(viewModel.GetUpcomingSongs());
+        Assert.Equal(2, source.Songs.Count);
+        Assert.Same(first, source.Songs[1]);
+    }
+
+    [Fact]
+    public async Task PlayFromBeginning_DetachedSongLeavesUpNextUntouched()
+    {
+        var repeat = new RepeatViewModel();
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+
+        Song current = CreateYouTubeSong("Current", "jNQXAC9IVRw");
+        Song first = CreateYouTubeSong("First", "aaaaaaaaaaa");
+        Song second = CreateYouTubeSong("Second", "bbbbbbbbbbb");
+        viewModel.CurrentPlaylist = CreatePlaylist(current, first, second);
+        viewModel.CurrentSong = current;
+
+        // e.g. a history entry: a clone that is not part of the queue.
+        Song detached = CreateYouTubeSong("Detached", "ccccccccccc");
+        await viewModel.PlayFromBeginning(detached);
+
+        Assert.Same(detached, viewModel.CurrentSong);
+        IReadOnlyList<Song> upcoming = viewModel.GetUpcomingSongs();
+        Assert.Equal(2, upcoming.Count);
+        Assert.Equal("First", upcoming[0].Title);
+        Assert.Equal("Second", upcoming[1].Title);
+
+        // The detached track must never be added to the queue itself.
+        Assert.Equal(3, viewModel.CurrentPlaylist!.Songs.Count);
+        Assert.DoesNotContain(detached, viewModel.CurrentPlaylist.Songs);
+    }
+
+    [Fact]
+    public async Task DetachedSong_TrackEnd_ResumesQueueWhereItLeftOff()
+    {
+        var repeat = new RepeatViewModel { RepeatMode = RepeatMode.Off };
+        var audio = new FakeAudioService();
+        using PlaybackViewModel viewModel = CreateViewModel(audio, repeat);
+
+        Song current = CreateYouTubeSong("Current", "jNQXAC9IVRw");
+        Song first = CreateYouTubeSong("First", "aaaaaaaaaaa");
+        viewModel.CurrentPlaylist = CreatePlaylist(current, first);
+        viewModel.CurrentSong = current;
+
+        Song detached = CreateYouTubeSong("Detached", "ccccccccccc");
+        await viewModel.PlayFromBeginning(detached);
+        Assert.Single(audio.StartedSources);
+
+        audio.RaiseTrackEnded();
+        await WaitUntilAsync(() => audio.StartedSources.Count == 2);
+
+        Assert.Same(first, viewModel.CurrentSong);
+    }
+
+    [Fact]
     public void RemoveFromUpNext_RemovesQueuedSongOnly()
     {
         var repeat = new RepeatViewModel();
@@ -464,6 +559,16 @@ public sealed class PlaybackViewModelTests : IDisposable
             return Task.CompletedTask;
         }
 
+        public IReadOnlyList<AudioOutputDevice> GetOutputDevices() =>
+            new[] { new AudioOutputDevice("", "System default") };
+
+        public string CurrentOutputDeviceId => "";
+
+        public Task SetOutputDeviceAsync(
+            string deviceId,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public void RaiseTrackEnded() => TrackEnded?.Invoke(this, EventArgs.Empty);
 
         public void SetDuration(TimeSpan duration)
@@ -529,6 +634,13 @@ public sealed class PlaybackViewModelTests : IDisposable
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Enumerable.Empty<Song>());
 
+        public Task<IEnumerable<Song>> GetSimilarTracksAsync(
+            string artist,
+            string title,
+            int limit,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(Enumerable.Empty<Song>());
+
         public Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Enumerable.Empty<Song>());
@@ -552,5 +664,17 @@ public sealed class PlaybackViewModelTests : IDisposable
             string password,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(false);
+
+        public Task<LastFmWebAuth> StartWebAuthAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(new LastFmWebAuth("token", "https://www.last.fm/api/auth/"));
+
+        public Task<bool> WaitForWebAuthAsync(
+            LastFmWebAuth auth,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
+        public void SignOut()
+        {
+        }
     }
 }

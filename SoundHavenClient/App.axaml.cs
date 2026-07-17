@@ -70,7 +70,11 @@ public partial class App : Application, IDisposable
             ApiKeyHelper.GetApiKey(),
             ApiKeyHelper.GetApiSecret(),
             _httpClient,
-            _memoryCache);
+            _memoryCache,
+            System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "SoundHaven",
+                "lastfm-session.bin"));
         _youTubeMediaService = new YouTubeMediaService(_httpClient);
         _audioService = new AudioService(_youTubeMediaService);
         var albumArtService = new AlbumArtService(_httpClient, _memoryCache);
@@ -96,9 +100,7 @@ public partial class App : Application, IDisposable
         var playerViewModel = new PlayerViewModel(
             playbackViewModel,
             playlistStore,
-            recentPlaybackStore,
             notifications);
-        var lastFmViewModel = new LastFmViewModel(_lastFmDataService);
         var seekSliderViewModel = new SeekSliderViewModel(
             _audioService,
             playbackViewModel,
@@ -109,7 +111,7 @@ public partial class App : Application, IDisposable
             playlistStore,
             notifications);
         var volumeViewModel = new VolumeViewModel(_audioService);
-        var songInfoViewModel = new SongInfoViewModel(playbackViewModel, _audioService);
+        var songInfoViewModel = new SongInfoViewModel(playbackViewModel, _audioService, albumArtService);
         var navigation = new NavigationService(new ViewModelBase());
         var homeViewModel = new HomeViewModel(
             playlistStore,
@@ -121,24 +123,22 @@ public partial class App : Application, IDisposable
             _lastFmDataService,
             _youTubeMediaService,
             albumArtService,
-            searchViewModel);
+            searchViewModel,
+            new DislikedSongsStore(database));
         navigation.NavigateTo(homeViewModel);
         var toolbarViewModel = new ToolbarViewModel(
             navigation,
             playlistViewModel,
             playbackViewModel,
             homeViewModel,
-            lastFmViewModel,
             playerViewModel,
             playlistStore,
-            themesViewModel,
             notifications);
 
         return new MainWindowViewModel(
             navigation,
             playlistViewModel,
             homeViewModel,
-            lastFmViewModel,
             toolbarViewModel,
             playbackViewModel,
             shuffleViewModel,
@@ -146,9 +146,9 @@ public partial class App : Application, IDisposable
             seekSliderViewModel,
             volumeViewModel,
             songInfoViewModel,
-            themesViewModel,
             repeatViewModel,
             searchViewModel,
+            _audioService,
             notifications);
     }
 

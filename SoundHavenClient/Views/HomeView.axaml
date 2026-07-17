@@ -257,6 +257,26 @@
             <Setter Property="Background" Value="#2E2E2E" />
         </Style>
 
+        <!-- "New playlist" call-to-action card: fills empty grid cells and
+             reads as an action rather than a playlist. -->
+        <Style Selector="Border.NewPlaylistCard">
+            <Setter Property="Background" Value="#141414" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="BorderBrush" Value="#30FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border.NewPlaylistCard:pointerover">
+            <Setter Property="Background" Value="#242424" />
+        </Style>
+
         <!-- Media card: hover is the app-wide barely-visible translucent white,
              applied instantly so adjacent cards never show mixed fade states. -->
         <Style Selector="Border.SongCard">
@@ -421,7 +441,7 @@
         </Grid.RowDefinitions>
 
         <!-- Top bar: pills left, TIDAL-style search right -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,20">
             <!-- Browse pills (hidden while searching) -->
             <StackPanel Orientation="Horizontal"
                         Spacing="10"
@@ -452,8 +472,36 @@
                         Command="{Binding Search.SelectVideosCommand}" />
             </StackPanel>
 
+            <!-- Account chips: sign in for personalized recommendations -->
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="10"
+                        VerticalAlignment="Center"
+                        Margin="0,0,10,0">
+                <Button Classes="HomePill"
+                        Click="OnConnectLastFmClick"
+                        IsVisible="{Binding IsLastFmConnectVisible}"
+                        ToolTip.Tip="Sign in to scrobble and mix in your taste">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Svg Path="avares://SoundHavenClient/Assets/Icons/lastfm.svg"
+                             Width="15" Height="15" VerticalAlignment="Center" />
+                        <TextBlock Text="Connect Last.fm" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Classes="HomePill"
+                        Click="OnLastFmAccountClick"
+                        IsVisible="{Binding IsLastFmConnected}"
+                        ToolTip.Tip="Last.fm account connected">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Svg Path="avares://SoundHavenClient/Assets/Icons/lastfm.svg"
+                             Width="15" Height="15" VerticalAlignment="Center" />
+                        <TextBlock Text="Last.fm ✓" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
             <!-- Search bar -->
-            <Border Grid.Column="1"
+            <Border Grid.Column="2"
                     Background="#2A2A2A"
                     CornerRadius="20"
                     Height="40"
@@ -511,15 +559,17 @@
                     <StackPanel Spacing="24">
                         <TextBlock Text="{Binding Greeting}" Classes="Greeting CardAligned" />
 
-                        <!-- Hero playlist grid 2x3 -->
-                        <ItemsControl ItemsSource="{Binding FeaturedPlaylists}"
-                                      IsVisible="{Binding HasFeaturedPlaylists}">
+                        <!-- Hero playlist grid: up to 3 per row, height fits the
+                             number of items (no reserved empty rows). A trailing
+                             "New playlist" card fills the shelf for small libraries. -->
+                        <ItemsControl ItemsSource="{Binding FeaturedItems}"
+                                      IsVisible="{Binding HasFeaturedItems}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <UniformGrid Columns="3" Rows="2" />
+                                    <UniformGrid Columns="3" />
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
+                            <ItemsControl.DataTemplates>
                                 <DataTemplate x:DataType="models:Playlist">
                                     <Border Classes="HeroCard"
                                             Margin="0,0,12,12"
@@ -555,7 +605,34 @@
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
+
+                                <DataTemplate x:DataType="models:NewPlaylistCard">
+                                    <Border Classes="NewPlaylistCard"
+                                            Margin="0,0,12,12"
+                                            PointerPressed="OnNewPlaylistCardPressed"
+                                            ToolTip.Tip="Create a new playlist">
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    MinHeight="56"
+                                                    Spacing="10">
+                                            <Border Width="34"
+                                                    Height="34"
+                                                    CornerRadius="17"
+                                                    Background="#22FFFFFF">
+                                                <TextBlock Text="+"
+                                                           FontSize="22"
+                                                           Foreground="White"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock Text="New playlist"
+                                                       Classes="RowTitle"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.DataTemplates>
                         </ItemsControl>
                     </StackPanel>
 
@@ -563,7 +640,7 @@
                     <StackPanel Spacing="12">
                         <StackPanel Classes="CardAligned">
                             <TextBlock Text="Recommended for you" Classes="SectionTitle" />
-                            <TextBlock Text="Mixed from YouTube Music and your Last.fm taste"
+                            <TextBlock Text="{Binding RecommendationsSubtitle}"
                                        Classes="SectionSubtitle" />
                         </StackPanel>
 
@@ -576,7 +653,7 @@
                                      IsVisible="{Binding IsLoadingRecommendations}"
                                      Foreground="{DynamicResource PrimaryColor}" />
 
-                        <TextBlock Text="Couldn’t load recommendations right now. Check your connection, or sign in on the Last.fm tab to mix in your taste."
+                        <TextBlock Text="Couldn’t load recommendations right now. Check your connection, or connect Last.fm to mix in your taste."
                                    Classes="SectionSubtitle CardAligned"
                                    TextWrapping="Wrap"
                                    IsVisible="{Binding ShowRecommendationsEmpty}" />

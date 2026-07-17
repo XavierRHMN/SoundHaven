@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using SoundHaven.Commands;
 using SoundHaven.Services;
 
@@ -8,13 +10,13 @@ namespace SoundHaven.ViewModels;
 public sealed class MainWindowViewModel : ViewModelBase
 {
     private readonly NavigationService _navigation;
+    private readonly IAudioService _audioService;
     private bool _isQueueVisible;
 
     public MainWindowViewModel(
         NavigationService navigation,
         PlaylistViewModel playlistViewModel,
         HomeViewModel homeViewModel,
-        LastFmViewModel lastFmViewModel,
         ToolbarViewModel toolbarViewModel,
         PlaybackViewModel playbackViewModel,
         ShuffleViewModel shuffleViewModel,
@@ -22,15 +24,15 @@ public sealed class MainWindowViewModel : ViewModelBase
         SeekSliderViewModel seekSliderViewModel,
         VolumeViewModel volumeViewModel,
         SongInfoViewModel songInfoViewModel,
-        ThemesViewModel themesViewModel,
         RepeatViewModel repeatViewModel,
         SearchViewModel searchViewModel,
+        IAudioService audioService,
         NotificationService notifications)
     {
         _navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
+        _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
         PlaylistViewModel = playlistViewModel;
         HomeViewModel = homeViewModel;
-        LastFmViewModel = lastFmViewModel;
         ToolbarViewModel = toolbarViewModel;
         PlaybackViewModel = playbackViewModel;
         ShuffleViewModel = shuffleViewModel;
@@ -38,7 +40,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         SeekSliderViewModel = seekSliderViewModel;
         VolumeViewModel = volumeViewModel;
         SongInfoViewModel = songInfoViewModel;
-        ThemesViewModel = themesViewModel;
         RepeatViewModel = repeatViewModel;
         SearchViewModel = searchViewModel;
         Notifications = notifications;
@@ -56,6 +57,14 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public RelayCommand ToggleQueueCommand { get; }
 
+    /// <summary>Audio output devices for the player-bar sound-output menu.</summary>
+    public IReadOnlyList<AudioOutputDevice> GetOutputDevices() => _audioService.GetOutputDevices();
+
+    public string CurrentOutputDeviceId => _audioService.CurrentOutputDeviceId;
+
+    public Task SetOutputDeviceAsync(string deviceId) =>
+        _audioService.SetOutputDeviceAsync(deviceId);
+
     public ViewModelBase CurrentViewModel => _navigation.CurrentViewModel;
 
     // Views stay attached permanently and toggle visibility (see MainWindow.axaml);
@@ -67,15 +76,9 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public bool IsPlayerVisible => ReferenceEquals(CurrentViewModel, PlayerViewModel);
 
-    public bool IsLastFmVisible => ReferenceEquals(CurrentViewModel, LastFmViewModel);
-
-    public bool IsThemesVisible => ReferenceEquals(CurrentViewModel, ThemesViewModel);
-
     public PlaylistViewModel PlaylistViewModel { get; }
 
     public HomeViewModel HomeViewModel { get; }
-
-    public LastFmViewModel LastFmViewModel { get; }
 
     public ToolbarViewModel ToolbarViewModel { get; }
 
@@ -90,8 +93,6 @@ public sealed class MainWindowViewModel : ViewModelBase
     public VolumeViewModel VolumeViewModel { get; }
 
     public SongInfoViewModel SongInfoViewModel { get; }
-
-    public ThemesViewModel ThemesViewModel { get; }
 
     public RepeatViewModel RepeatViewModel { get; }
 
@@ -109,9 +110,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         SearchViewModel.Dispose();
         PlaybackViewModel.Dispose();
         HomeViewModel.Dispose();
-        LastFmViewModel.Dispose();
         PlaylistViewModel.Dispose();
-        ThemesViewModel.Dispose();
         RepeatViewModel.Dispose();
         VolumeViewModel.Dispose();
         ToolbarViewModel.Dispose();
@@ -129,8 +128,6 @@ public sealed class MainWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsHomeVisible));
             OnPropertyChanged(nameof(IsPlaylistVisible));
             OnPropertyChanged(nameof(IsPlayerVisible));
-            OnPropertyChanged(nameof(IsLastFmVisible));
-            OnPropertyChanged(nameof(IsThemesVisible));
         }
     }
 }

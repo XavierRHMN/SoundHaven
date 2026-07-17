@@ -70,16 +70,10 @@
                     </Canvas>
                 </Border>
 
-                <!-- Artist and Year combined -->
+                <!-- Artist and Year combined (year is resolved online for YouTube tracks) -->
                 <TextBlock HorizontalAlignment="Left"
-                           Classes="ArtistAndYear">
-                    <TextBlock.Text>
-                        <MultiBinding StringFormat="{}{0} - {1}">
-                            <Binding Path="CurrentSong.Artist" />
-                            <Binding Path="CurrentSong.Year" />
-                        </MultiBinding>
-                    </TextBlock.Text>
-                </TextBlock>
+                           Classes="ArtistAndYear"
+                           Text="{Binding ArtistAndYearText}" />
             </StackPanel>
         </StackPanel>
 

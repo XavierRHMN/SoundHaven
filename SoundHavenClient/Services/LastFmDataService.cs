@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -29,6 +30,13 @@ public interface ILastFmDataService
 
     Task<IEnumerable<Song>> GetTopTracksAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Tracks Last.fm considers similar to the given seed track.</summary>
+    Task<IEnumerable<Song>> GetSimilarTracksAsync(
+        string artist,
+        string title,
+        int limit,
+        CancellationToken cancellationToken = default);
+
     Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(CancellationToken cancellationToken = default);
 
     Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(CancellationToken cancellationToken = default);
@@ -45,7 +53,20 @@ public interface ILastFmDataService
         string username,
         string password,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Begins browser-approval auth; returns the approval URL to open.</summary>
+    Task<LastFmWebAuth> StartWebAuthAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Polls until the user approves the token in the browser.</summary>
+    Task<bool> WaitForWebAuthAsync(
+        LastFmWebAuth auth,
+        CancellationToken cancellationToken = default);
+
+    void SignOut();
 }
+
+/// <summary>One pending Last.fm browser approval.</summary>
+public sealed record LastFmWebAuth(string Token, string ApprovalUrl);
 
 public sealed class LastFmDataService : ILastFmDataService, IDisposable
 {
@@ -61,6 +82,7 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
     private readonly SemaphoreSlim _authenticationGate = new(1, 1);
+    private readonly string? _sessionFilePath;
     private string? _sessionKey;
     private int _disposeState;
 
@@ -68,7 +90,8 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
         string apiKey,
         string apiSecret,
         HttpClient httpClient,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        string? sessionFilePath = null)
     {
         _apiKey = apiKey?.Trim() ?? string.Empty;
         _apiSecret = apiSecret?.Trim() ?? string.Empty;
@@ -76,12 +99,20 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _cacheOptions = new MemoryCacheEntryOptions()
             .SetSlidingExpiration(TimeSpan.FromMinutes(30));
+        _sessionFilePath = sessionFilePath;
 
         if (!IsConfigured)
         {
             LastError = ConfigurationError;
         }
+        else
+        {
+            TryLoadSession();
+        }
     }
+
+    // Poll cadence for WaitForWebAuthAsync; tests shrink it.
+    internal TimeSpan WebAuthPollInterval { get; set; } = TimeSpan.FromSeconds(4);
 
     public event EventHandler? AuthenticationStateChanged;
 
@@ -198,6 +229,7 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
                 ? nameElement.GetString() ?? normalizedUsername
                 : normalizedUsername;
             LastError = null;
+            TrySaveSession();
             AuthenticationStateChanged?.Invoke(this, EventArgs.Empty);
             return true;
         }
@@ -221,6 +253,177 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
         }
     }
 
+    public async Task<LastFmWebAuth> StartWebAuthAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured)
+        {
+            throw new InvalidOperationException(ConfigurationError);
+        }
+
+        var parameters = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["method"] = "auth.getToken"
+        };
+
+        using JsonDocument response = await PostSignedAsync(parameters, cancellationToken);
+        string? token = response.RootElement.TryGetProperty("token", out JsonElement tokenElement)
+            ? tokenElement.GetString()
+            : null;
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new InvalidOperationException("Last.fm did not provide an auth token.");
+        }
+
+        return new LastFmWebAuth(
+            token,
+            $"https://www.last.fm/api/auth/?api_key={_apiKey}&token={token}");
+    }
+
+    // No ConfigureAwait(false) here: AuthenticationStateChanged must be raised
+    // on the caller's (UI) context.
+    public async Task<bool> WaitForWebAuthAsync(
+        LastFmWebAuth auth,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(auth);
+        if (!IsConfigured)
+        {
+            LastError = ConfigurationError;
+            return false;
+        }
+
+        // Tokens are valid for ~60 minutes; the sign-in dialog cancels on close.
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(WebAuthPollInterval, cancellationToken);
+            try
+            {
+                var parameters = new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["method"] = "auth.getSession",
+                    ["token"] = auth.Token
+                };
+
+                using JsonDocument response = await PostSignedAsync(parameters, cancellationToken);
+                if (!response.RootElement.TryGetProperty("session", out JsonElement session)
+                    || !session.TryGetProperty("key", out JsonElement keyElement)
+                    || keyElement.GetString() is not { Length: > 0 } sessionKey)
+                {
+                    continue;
+                }
+
+                _sessionKey = sessionKey;
+                Username = session.TryGetProperty("name", out JsonElement nameElement)
+                    ? nameElement.GetString() ?? string.Empty
+                    : string.Empty;
+                LastError = null;
+                TrySaveSession();
+                AuthenticationStateChanged?.Invoke(this, EventArgs.Empty);
+                return true;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch
+            {
+                // Not approved yet (or a transient failure) — keep polling.
+            }
+        }
+
+        return false;
+    }
+
+    public void SignOut()
+    {
+        bool wasAuthenticated = IsAuthenticated;
+        _sessionKey = null;
+        Username = string.Empty;
+        TryDeleteSessionFile();
+        if (wasAuthenticated)
+        {
+            AuthenticationStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void TryLoadSession()
+    {
+        try
+        {
+            if (_sessionFilePath is null || !File.Exists(_sessionFilePath))
+            {
+                return;
+            }
+
+            byte[] payload = Unprotect(File.ReadAllBytes(_sessionFilePath));
+            StoredLastFmSession? stored = JsonSerializer.Deserialize<StoredLastFmSession>(payload);
+            if (stored is null || string.IsNullOrWhiteSpace(stored.SessionKey))
+            {
+                return;
+            }
+
+            _sessionKey = stored.SessionKey;
+            Username = stored.Username;
+            LastError = null;
+        }
+        catch
+        {
+            // A corrupt or foreign-machine file just means signed out.
+        }
+    }
+
+    private void TrySaveSession()
+    {
+        try
+        {
+            if (_sessionFilePath is null || _sessionKey is null)
+            {
+                return;
+            }
+
+            string? directory = Path.GetDirectoryName(_sessionFilePath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            byte[] payload = JsonSerializer.SerializeToUtf8Bytes(
+                new StoredLastFmSession(_sessionKey, Username));
+            File.WriteAllBytes(_sessionFilePath, Protect(payload));
+        }
+        catch
+        {
+            // The session still works for this run even if persistence fails.
+        }
+    }
+
+    private void TryDeleteSessionFile()
+    {
+        try
+        {
+            if (_sessionFilePath is not null && File.Exists(_sessionFilePath))
+            {
+                File.Delete(_sessionFilePath);
+            }
+        }
+        catch
+        {
+            // Best effort; the in-memory state is already cleared.
+        }
+    }
+
+    private static byte[] Protect(byte[] payload) =>
+        OperatingSystem.IsWindows()
+            ? ProtectedData.Protect(payload, optionalEntropy: null, DataProtectionScope.CurrentUser)
+            : payload;
+
+    private static byte[] Unprotect(byte[] payload) =>
+        OperatingSystem.IsWindows()
+            ? ProtectedData.Unprotect(payload, optionalEntropy: null, DataProtectionScope.CurrentUser)
+            : payload;
+
+    private sealed record StoredLastFmSession(string SessionKey, string Username);
+
     public Task<IEnumerable<Song>> GetTopTracksAsync(
         CancellationToken cancellationToken = default)
     {
@@ -239,6 +442,75 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
             "recenttracks",
             "Last.fm recently played tracks are currently unavailable.",
             cancellationToken);
+    }
+
+    public async Task<IEnumerable<Song>> GetSimilarTracksAsync(
+        string artist,
+        string title,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        string normalizedArtist = artist?.Trim() ?? string.Empty;
+        string normalizedTitle = title?.Trim() ?? string.Empty;
+        if (!IsConfigured || normalizedArtist.Length == 0 || normalizedTitle.Length == 0)
+        {
+            return Array.Empty<Song>();
+        }
+
+        string cacheKey = FormattableString.Invariant(
+            $"lastfm:similar:{normalizedArtist}|{normalizedTitle}|{limit}").ToLowerInvariant();
+        if (_cache.TryGetValue(cacheKey, out IReadOnlyList<Song>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        try
+        {
+            // track.getsimilar is a public method (api_key only) — no session needed.
+            using JsonDocument response = await GetAsync(
+                "track.getsimilar",
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["artist"] = normalizedArtist,
+                    ["track"] = normalizedTitle,
+                    ["autocorrect"] = "1",
+                    ["limit"] = limit.ToString(CultureInfo.InvariantCulture)
+                },
+                cancellationToken);
+
+            var songs = new List<Song>();
+            if (TryGetArray(response.RootElement, "similartracks", "track", out JsonElement tracks))
+            {
+                foreach (JsonElement track in tracks.EnumerateArray())
+                {
+                    string name = GetString(track, "name");
+                    string trackArtist = GetNestedString(track, "artist", "name");
+                    if (name.Length == 0 || trackArtist.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    songs.Add(new Song
+                    {
+                        Title = name,
+                        Artist = trackArtist,
+                        ArtworkUrl = GetArtworkUrl(track)
+                    });
+                }
+            }
+
+            _cache.Set(cacheKey, songs, _cacheOptions);
+            LastError = null;
+            return songs;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return Array.Empty<Song>();
+        }
     }
 
     public async Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(
@@ -373,8 +645,14 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
         }
     }
 
+    private Task<JsonDocument> GetAsync(string method, CancellationToken cancellationToken)
+    {
+        return GetAsync(method, extraParameters: null, cancellationToken);
+    }
+
     private async Task<JsonDocument> GetAsync(
         string method,
+        IReadOnlyDictionary<string, string>? extraParameters,
         CancellationToken cancellationToken)
     {
         var parameters = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -385,6 +663,14 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
             ["format"] = "json",
             ["limit"] = "20"
         };
+        if (extraParameters is not null)
+        {
+            foreach (KeyValuePair<string, string> parameter in extraParameters)
+            {
+                parameters[parameter.Key] = parameter.Value;
+            }
+        }
+
         string query = string.Join(
             "&",
             parameters.Select(pair =>

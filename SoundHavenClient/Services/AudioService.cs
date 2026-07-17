@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ public sealed class AudioService : ViewModelBase, IAudioService
     private readonly IYouTubeMediaService _youTubeMediaService;
     private readonly SemaphoreSlim _operationLock = new(1, 1);
     private CancellationTokenSource _sessionCancellation = new();
-    private WaveOutEvent? _outputDevice;
+    private DirectSoundOut? _outputDevice;
     private WaveStream? _reader;
     private VolumeSampleProvider? _volumeProvider;
     private Timer? _positionTimer;
@@ -24,7 +25,11 @@ public sealed class AudioService : ViewModelBase, IAudioService
     private TimeSpan _totalDuration;
     private float _audioVolume = 0.25f;
     private long _sessionGeneration;
+    private string _outputDeviceId = string.Empty;
     private bool _disposed;
+
+    // Empty id == the Windows default playback device.
+    private const string DefaultDeviceId = "";
 
     public AudioService(IYouTubeMediaService youTubeMediaService)
     {
@@ -244,6 +249,83 @@ public sealed class AudioService : ViewModelBase, IAudioService
         return SeekAsync(TimeSpan.Zero, cancellationToken);
     }
 
+    public IReadOnlyList<AudioOutputDevice> GetOutputDevices()
+    {
+        var devices = new List<AudioOutputDevice>
+        {
+            new(DefaultDeviceId, "System default")
+        };
+
+        try
+        {
+            foreach (DirectSoundDeviceInfo device in DirectSoundOut.Devices)
+            {
+                // The Guid.Empty "Primary Sound Driver" is our "System default".
+                if (device.Guid == Guid.Empty)
+                {
+                    continue;
+                }
+
+                devices.Add(new AudioOutputDevice(
+                    device.Guid.ToString(),
+                    device.Description));
+            }
+        }
+        catch
+        {
+            // Fall back to just the system default if enumeration fails.
+        }
+
+        return devices;
+    }
+
+    public string CurrentOutputDeviceId => _outputDeviceId;
+
+    public async Task SetOutputDeviceAsync(
+        string deviceId,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        string normalizedId = deviceId ?? DefaultDeviceId;
+
+        await _operationLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (string.Equals(normalizedId, _outputDeviceId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _outputDeviceId = normalizedId;
+
+            // Rebuild only the output stage on the new device, preserving the
+            // reader position and whether we were playing.
+            if (_volumeProvider is null || _reader is null)
+            {
+                return;
+            }
+
+            bool wasPlaying = _outputDevice?.PlaybackState == PlaybackState.Playing;
+            DisposeOutputDevice();
+            try
+            {
+                CreateOutputDevice();
+                if (wasPlaying)
+                {
+                    _outputDevice!.Play();
+                }
+            }
+            catch (Exception exception)
+            {
+                ReportFailure(exception, "SoundHaven could not switch the audio output device.");
+            }
+        }
+        finally
+        {
+            _operationLock.Release();
+        }
+    }
+
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
@@ -392,20 +474,21 @@ public sealed class AudioService : ViewModelBase, IAudioService
             Volume = ToPerceptualVolume(AudioVolume)
         };
 
-        _outputDevice = new WaveOutEvent
-        {
-            DesiredLatency = 150,
-            NumberOfBuffers = 3
-        };
-        _outputDevice.PlaybackStopped += OnPlaybackStopped;
-        _outputDevice.Init(_volumeProvider);
+        CreateOutputDevice();
     }
 
-    private void DisposePlaybackCore()
+    private void CreateOutputDevice()
     {
-        _positionTimer?.Dispose();
-        _positionTimer = null;
+        Guid deviceGuid = Guid.TryParse(_outputDeviceId, out Guid parsed) && parsed != Guid.Empty
+            ? parsed
+            : DirectSoundOut.DSDEVID_DefaultPlayback;
+        _outputDevice = new DirectSoundOut(deviceGuid, 150);
+        _outputDevice.PlaybackStopped += OnPlaybackStopped;
+        _outputDevice.Init(_volumeProvider!);
+    }
 
+    private void DisposeOutputDevice()
+    {
         if (_outputDevice is not null)
         {
             _outputDevice.PlaybackStopped -= OnPlaybackStopped;
@@ -421,6 +504,14 @@ public sealed class AudioService : ViewModelBase, IAudioService
             _outputDevice.Dispose();
             _outputDevice = null;
         }
+    }
+
+    private void DisposePlaybackCore()
+    {
+        _positionTimer?.Dispose();
+        _positionTimer = null;
+
+        DisposeOutputDevice();
 
         _reader?.Dispose();
         _reader = null;

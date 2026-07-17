@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using SoundHaven.Data;
 using SoundHaven.Models;
+using SoundHaven.Stores;
 
 namespace SoundHaven.Tests;
 
@@ -48,6 +49,25 @@ public sealed class AppDatabaseTests : IDisposable
         Assert.Equal("Test track", loadedSong.Title);
         Assert.Equal(song.Duration, loadedSong.Duration);
         Assert.Equal(song.FilePath, loadedSong.FilePath);
+    }
+
+    [Fact]
+    public void DislikedSongs_RoundTripAndFilterMatching()
+    {
+        _database.AddDislikedSong("vid00000001", "Bad Song", "Bad Artist");
+        _database.AddDislikedSong(null, "Local Misfire", "Some Band");
+
+        var store = new DislikedSongsStore(_database);
+
+        // videoId match wins even when the metadata differs.
+        Assert.True(store.IsDisliked("vid00000001", "Retitled", "Whoever"));
+        // title+artist match works without a videoId (case-insensitive).
+        Assert.True(store.IsDisliked(null, "local misfire", "some band"));
+        Assert.False(store.IsDisliked("other000001", "Good Song", "Good Artist"));
+
+        // A fresh store instance reloads the persisted list.
+        var reloaded = new DislikedSongsStore(new AppDatabase(_databasePath));
+        Assert.True(reloaded.IsDisliked(new Song { Title = "Bad Song", Artist = "Bad Artist" }));
     }
 
     [Fact]

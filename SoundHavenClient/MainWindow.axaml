@@ -139,10 +139,6 @@
                                         IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsPlaylistVisible}" />
                     <views:PlayerView DataContext="{Binding PlayerViewModel}"
                                       IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsPlayerVisible}" />
-                    <views:LastFmView DataContext="{Binding LastFmViewModel}"
-                                      IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsLastFmVisible}" />
-                    <views:ThemesView DataContext="{Binding ThemesViewModel}"
-                                      IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsThemesVisible}" />
                 </Panel>
             </Border>
 
@@ -228,7 +224,8 @@
                 </Button>
                 <Button Classes="PlayerBarIcon"
                         VerticalAlignment="Center"
-                        ToolTip.Tip="Sound output (coming soon)">
+                        Click="OnSoundOutputClick"
+                        ToolTip.Tip="Sound output">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/speaker.svg"
                          Width="18" Height="18"
                          Opacity="0.75" />

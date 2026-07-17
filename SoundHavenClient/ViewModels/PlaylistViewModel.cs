@@ -93,6 +93,15 @@ namespace SoundHaven.ViewModels
                 OnPropertyChanged(nameof(PlaylistDescription));
                 OnPropertyChanged(nameof(HasPlaylistDescription));
                 RefreshTracksAndHeader();
+                // These commands' CanExecute reads the displayed playlist, so a
+                // playlist swap must re-query them (navigation swaps the whole
+                // collection without ever raising CollectionChanged).
+                PlayPlaylistCommand?.RaiseCanExecuteChanged();
+                ShufflePlaylistCommand?.RaiseCanExecuteChanged();
+                PlayPlaylistNextCommand?.RaiseCanExecuteChanged();
+                AddSongCommand?.RaiseCanExecuteChanged();
+                EnterRemoveSongsCommand?.RaiseCanExecuteChanged();
+                RemoveSongFromPlaylistCommand?.RaiseCanExecuteChanged();
                 OpenEditPlaylistCommand?.RaiseCanExecuteChanged();
                 _ = EnsureThumbnailsAsync();
             }
@@ -232,6 +241,7 @@ namespace SoundHaven.ViewModels
         public AsyncRelayCommand PlayPlaylistNextCommand { get; }
         public AsyncRelayCommand<Song> PlaySongCommand { get; }
         public AsyncRelayCommand<Song> PlaySongNextCommand { get; }
+        public AsyncRelayCommand<Song> AddToUpNextCommand { get; }
         public RelayCommand<Playlist> AddMenuSongToPlaylistCommand { get; }
         public RelayCommand<Song> RemoveSongFromPlaylistCommand { get; }
         public AsyncRelayCommand OpenEditPlaylistCommand { get; }
@@ -279,6 +289,10 @@ namespace SoundHaven.ViewModels
                 exception => _notifications.ShowError(exception.Message));
             PlaySongNextCommand = new AsyncRelayCommand<Song>(
                 PlaySongNextAsync,
+                song => song is not null && !IsEditMode,
+                exception => _notifications.ShowError(exception.Message));
+            AddToUpNextCommand = new AsyncRelayCommand<Song>(
+                AddToUpNextAsync,
                 song => song is not null && !IsEditMode,
                 exception => _notifications.ShowError(exception.Message));
             AddMenuSongToPlaylistCommand = new RelayCommand<Playlist>(
@@ -530,6 +544,17 @@ namespace SoundHaven.ViewModels
 
             await _playbackViewModel.PlayNext(song);
             _notifications.ShowInfo($"Queued “{song.Title}” to play next.");
+        }
+
+        private async Task AddToUpNextAsync(Song? song)
+        {
+            if (song is null)
+            {
+                return;
+            }
+
+            await _playbackViewModel.AddToUpNext(song);
+            _notifications.ShowInfo($"Added “{song.Title}” to Up Next.");
         }
 
         /// <summary>Remembers the row a context menu was opened for.</summary>

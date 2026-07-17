@@ -27,11 +27,13 @@ public sealed class HomeViewModel : ViewModelBase
     private readonly ILastFmDataService _lastFmDataService;
     private readonly IYouTubeMediaService _youTubeMediaService;
     private readonly IAlbumArtService _albumArtService;
+    private readonly DislikedSongsStore _dislikedSongs;
     private readonly CancellationTokenSource _lifetimeCancellation = new();
     private Song? _menuSong;
     private bool _showForYou = true;
     private bool _showAllRecentlyPlayed;
     private bool _isLoadingRecommendations;
+    private bool _recommendationsFromTaste;
     private int _disposeState;
     private int _uploadArtworkPassRunning;
 
@@ -45,7 +47,8 @@ public sealed class HomeViewModel : ViewModelBase
         ILastFmDataService lastFmDataService,
         IYouTubeMediaService youTubeMediaService,
         IAlbumArtService albumArtService,
-        SearchViewModel searchViewModel)
+        SearchViewModel searchViewModel,
+        DislikedSongsStore dislikedSongsStore)
     {
         Search = searchViewModel ?? throw new ArgumentNullException(nameof(searchViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
@@ -63,8 +66,11 @@ public sealed class HomeViewModel : ViewModelBase
             ?? throw new ArgumentNullException(nameof(youTubeMediaService));
         _albumArtService = albumArtService
             ?? throw new ArgumentNullException(nameof(albumArtService));
+        _dislikedSongs = dislikedSongsStore
+            ?? throw new ArgumentNullException(nameof(dislikedSongsStore));
 
         FeaturedPlaylists = [];
+        FeaturedItems = [];
         UploadSongs = [];
         UploadSongsPreview = [];
         RecentlyPlayedPreview = [];
@@ -76,6 +82,11 @@ public sealed class HomeViewModel : ViewModelBase
         _lastFmDataService.AuthenticationStateChanged += OnLastFmAuthenticationChanged;
 
         OpenPlaylistCommand = new RelayCommand<Playlist>(OpenPlaylist, playlist => playlist is not null);
+        CreatePlaylistCommand = new AsyncRelayCommand(
+            CreatePlaylistAsync,
+            () => true,
+            exception => _notifications.ShowError(exception.Message));
+        DislikeSongCommand = new RelayCommand<Song>(ExecuteDislikeSong, song => song is not null);
         PlaySongCommand = new AsyncRelayCommand<Song>(
             PlaySongAsync,
             song => song is not null,
@@ -103,6 +114,12 @@ public sealed class HomeViewModel : ViewModelBase
     }
 
     public ObservableCollection<Playlist> FeaturedPlaylists { get; }
+
+    /// <summary>
+    /// The featured grid's display items: the playlists plus a trailing
+    /// <see cref="NewPlaylistCard"/> call-to-action while the grid isn't full.
+    /// </summary>
+    public ObservableCollection<object> FeaturedItems { get; }
 
     public ObservableCollection<Song> UploadSongs { get; }
 
@@ -176,11 +193,17 @@ public sealed class HomeViewModel : ViewModelBase
 
     public bool HasFeaturedPlaylists => FeaturedPlaylists.Count > 0;
 
+    public bool HasFeaturedItems => FeaturedItems.Count > 0;
+
     public bool HasUploads => UploadSongs.Count > 0;
 
     public bool HasRecentlyPlayed => RecentlyPlayedSongs.Count > 0;
 
     public bool HasRecommendations => RecommendedSongs.Count > 0;
+
+    public string RecommendationsSubtitle => _recommendationsFromTaste
+        ? "Similar to the music in your Last.fm library"
+        : "Popular on YouTube Music right now";
 
     public bool HasTopAlbums => TopAlbums.Count > 0;
 
@@ -188,6 +211,8 @@ public sealed class HomeViewModel : ViewModelBase
         !IsLoadingRecommendations && !HasRecommendations;
 
     public RelayCommand<Playlist> OpenPlaylistCommand { get; }
+
+    public AsyncRelayCommand CreatePlaylistCommand { get; }
 
     public AsyncRelayCommand<Song> PlaySongCommand { get; }
 
@@ -337,19 +362,25 @@ public sealed class HomeViewModel : ViewModelBase
         IsLoadingRecommendations = true;
         try
         {
-            Task<IReadOnlyList<Song>> ytmTask = LoadYouTubeRecommendationsAsync();
-            Task<IReadOnlyList<Song>> lastFmTask = LoadLastFmRecommendationsAsync();
-            await Task.WhenAll(ytmTask, lastFmTask);
+            // Prefer real discovery seeded from the user's Last.fm taste; the
+            // generic YouTube Music feed is only a signed-out fallback.
+            IReadOnlyList<Song> recommendations = await LoadTasteRecommendationsAsync();
+            bool fromTaste = recommendations.Count > 0;
+            if (!fromTaste)
+            {
+                recommendations = await LoadYouTubeRecommendationsAsync();
+            }
 
-            IReadOnlyList<Song> merged = RecommendationFeed.MergeInterleaved(
-                await ytmTask,
-                await lastFmTask,
-                maxDisplay: 12);
+            var display = recommendations
+                .Where(song => !_dislikedSongs.IsDisliked(song))
+                .Take(12)
+                .ToList();
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
+                _recommendationsFromTaste = fromTaste;
                 RecommendedSongs.Clear();
-                foreach (Song song in merged)
+                foreach (Song song in display)
                 {
                     RecommendedSongs.Add(song);
                     _ = ResolveArtworkAsync(song);
@@ -357,6 +388,7 @@ public sealed class HomeViewModel : ViewModelBase
 
                 OnPropertyChanged(nameof(HasRecommendations));
                 OnPropertyChanged(nameof(ShowRecommendationsEmpty));
+                OnPropertyChanged(nameof(RecommendationsSubtitle));
             });
         }
         catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
@@ -398,18 +430,26 @@ public sealed class HomeViewModel : ViewModelBase
         }
     }
 
-    private async Task<IReadOnlyList<Song>> LoadLastFmRecommendationsAsync()
+    /// <summary>
+    /// Real recommendations: a random handful of the user's Last.fm top tracks
+    /// seed track.getSimilar lookups, so the shelf is "music like what you
+    /// actually listen to" rather than a region-default chart. The user's own
+    /// top tracks are excluded so it surfaces new music. Empty when signed out.
+    /// </summary>
+    private async Task<IReadOnlyList<Song>> LoadTasteRecommendationsAsync()
     {
         if (!_lastFmDataService.IsConfigured || !_lastFmDataService.IsAuthenticated)
         {
             return [];
         }
 
+        List<Song> topTracks;
         try
         {
-            IEnumerable<Song> tracks =
-                await _lastFmDataService.GetTopTracksAsync(_lifetimeCancellation.Token);
-            return tracks.Take(RecommendationFeed.MaxLastFmSeeds).ToList();
+            topTracks = (await _lastFmDataService.GetTopTracksAsync(_lifetimeCancellation.Token))
+                .Where(song => !string.IsNullOrWhiteSpace(song.Artist)
+                    && !string.IsNullOrWhiteSpace(song.Title))
+                .ToList();
         }
         catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
         {
@@ -418,6 +458,63 @@ public sealed class HomeViewModel : ViewModelBase
         catch (Exception exception)
         {
             Debug.WriteLine($"Last.fm top tracks failed: {exception.Message}");
+            return [];
+        }
+
+        // Seed from a random sample of the top tracks so the shelf varies.
+        var seeds = topTracks
+            .Take(15)
+            .OrderBy(_ => Random.Shared.Next())
+            .Take(5)
+            .ToList();
+        if (seeds.Count == 0)
+        {
+            return [];
+        }
+
+        // Recommend new music: exclude anything already in the user's top tracks.
+        var seen = new HashSet<string>(
+            topTracks.Select(RecommendationFeed.BuildDedupeKey),
+            StringComparer.OrdinalIgnoreCase);
+
+        IReadOnlyList<Song>[] similarLists = await Task.WhenAll(
+            seeds.Select(seed => LoadSimilarTracksAsync(seed.Artist!, seed.Title!)));
+
+        var picks = new List<Song>();
+        foreach (IReadOnlyList<Song> list in similarLists)
+        {
+            foreach (Song song in list)
+            {
+                string key = RecommendationFeed.BuildDedupeKey(song);
+                if (!string.IsNullOrWhiteSpace(key) && seen.Add(key))
+                {
+                    picks.Add(song);
+                }
+            }
+        }
+
+        // Interleave so results aren't grouped by seed.
+        return picks.OrderBy(_ => Random.Shared.Next()).ToList();
+    }
+
+    private async Task<IReadOnlyList<Song>> LoadSimilarTracksAsync(string artist, string title)
+    {
+        try
+        {
+            IEnumerable<Song> similar = await _lastFmDataService.GetSimilarTracksAsync(
+                artist,
+                title,
+                limit: 8,
+                _lifetimeCancellation.Token);
+            return similar.ToList();
+        }
+        catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Last.fm similar tracks failed: {exception.Message}");
             return [];
         }
     }
@@ -566,10 +663,62 @@ public sealed class HomeViewModel : ViewModelBase
         }
     }
 
+    /// <summary>The Last.fm service, exposed for the sign-in dialog.</summary>
+    public ILastFmDataService LastFm => _lastFmDataService;
+
+    public bool IsLastFmConnectVisible =>
+        _lastFmDataService.IsConfigured && !_lastFmDataService.IsAuthenticated;
+
+    public bool IsLastFmConnected => _lastFmDataService.IsAuthenticated;
+
     private void OnLastFmAuthenticationChanged(object? sender, EventArgs e)
     {
+        OnPropertyChanged(nameof(IsLastFmConnectVisible));
+        OnPropertyChanged(nameof(IsLastFmConnected));
         _ = LoadRecommendationsAsync();
         _ = LoadTopAlbumsAsync();
+    }
+
+    public RelayCommand<Song> DislikeSongCommand { get; }
+
+    /// <summary>True when the song is currently shown in the Recommended shelf.</summary>
+    public bool IsRecommendedSong(Song song)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+        return RecommendedSongs.Contains(song);
+    }
+
+    /// <summary>
+    /// "Not interested": persist the track locally and keep it out of every
+    /// future Recommended shelf (dislikes on YouTube itself wouldn't help —
+    /// the radio lookups that build the shelf are anonymous).
+    /// </summary>
+    private void ExecuteDislikeSong(Song? song)
+    {
+        if (song is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _dislikedSongs.Dislike(song);
+            for (int i = RecommendedSongs.Count - 1; i >= 0; i--)
+            {
+                if (_dislikedSongs.IsDisliked(RecommendedSongs[i]))
+                {
+                    RecommendedSongs.RemoveAt(i);
+                }
+            }
+
+            OnPropertyChanged(nameof(HasRecommendations));
+            OnPropertyChanged(nameof(ShowRecommendationsEmpty));
+            _notifications.ShowInfo($"Got it — “{song.Title}” won't be recommended again.");
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError(exception.Message);
+        }
     }
 
     private void ExecuteAddToPlaylist(Playlist? playlist)
@@ -654,15 +803,62 @@ public sealed class HomeViewModel : ViewModelBase
     private void OnRecentSongsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         RefreshRecentlyPlayedPreview();
 
+    private const int FeaturedGridCapacity = 6;
+    private const int FeaturedGridColumns = 3;
+
     private void RefreshFeaturedPlaylists()
     {
         FeaturedPlaylists.Clear();
-        foreach (Playlist playlist in _playlistStore.Playlists.Take(6))
+        foreach (Playlist playlist in _playlistStore.Playlists.Take(FeaturedGridCapacity))
         {
             FeaturedPlaylists.Add(playlist);
         }
 
+        FeaturedItems.Clear();
+        foreach (Playlist playlist in FeaturedPlaylists)
+        {
+            FeaturedItems.Add(playlist);
+        }
+
+        // Fill the rest of the current row with "New playlist" prompts so the
+        // shelf never shows empty cells.
+        int newPlaylistCards = NewPlaylistCardCount(FeaturedPlaylists.Count);
+        for (int i = 0; i < newPlaylistCards; i++)
+        {
+            FeaturedItems.Add(new NewPlaylistCard());
+        }
+
         OnPropertyChanged(nameof(HasFeaturedPlaylists));
+        OnPropertyChanged(nameof(HasFeaturedItems));
+    }
+
+    private static int NewPlaylistCardCount(int playlistCount)
+    {
+        if (playlistCount >= FeaturedGridCapacity)
+        {
+            return 0;
+        }
+
+        if (playlistCount == 0)
+        {
+            return 1;
+        }
+
+        // Pad the partial last row up to a full row of three.
+        int usedInLastRow = playlistCount % FeaturedGridColumns;
+        return usedInLastRow == 0 ? 0 : FeaturedGridColumns - usedInLastRow;
+    }
+
+    private async Task CreatePlaylistAsync()
+    {
+        var playlist = new Playlist { Name = "New playlist" };
+        if (!await _playlistViewModel.PromptPlaylistDetailsAsync(playlist, isCreating: true))
+        {
+            return;
+        }
+
+        _playlistStore.AddPlaylist(playlist);
+        OpenPlaylist(playlist);
     }
 
     private void RefreshUploads()

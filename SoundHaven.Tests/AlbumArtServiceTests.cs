@@ -74,6 +74,48 @@ public sealed class AlbumArtServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetTrackYear_ReadsITunesReleaseDate()
+    {
+        var handler = new RoutingHandler
+        {
+            ["itunes.apple.com"] =
+                """{"resultCount":1,"results":[{"releaseDate":"2010-11-22T08:00:00Z"}]}"""
+        };
+        using var httpClient = new HttpClient(handler);
+        var service = new AlbumArtService(httpClient, _cache);
+
+        int? year = await service.GetTrackYearAsync(
+            "Kanye West",
+            "Runaway",
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(2010, year);
+    }
+
+    [Fact]
+    public async Task GetTrackYear_CachesMissesWithoutRequerying()
+    {
+        var handler = new RoutingHandler
+        {
+            ["itunes.apple.com"] = """{"resultCount":0,"results":[]}"""
+        };
+        using var httpClient = new HttpClient(handler);
+        var service = new AlbumArtService(httpClient, _cache);
+
+        Assert.Null(await service.GetTrackYearAsync(
+            "Nobody",
+            "Nothing",
+            TestContext.Current.CancellationToken));
+        int requestsAfterFirstLookup = handler.RequestedHosts.Count;
+        Assert.Null(await service.GetTrackYearAsync(
+            "Nobody",
+            "Nothing",
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(requestsAfterFirstLookup, handler.RequestedHosts.Count);
+    }
+
+    [Fact]
     public async Task GetAlbumArtworkUrl_ReadsAlbumCoverDirectly()
     {
         var handler = new RoutingHandler

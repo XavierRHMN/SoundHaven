@@ -1,0 +1,72 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SoundHaven.Views.LastFmSignInWindow"
+        Title="Connect Last.fm"
+        Icon="/Assets/Icons/SoundHavenClient.ico"
+        Width="440"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="#181818">
+
+    <Window.Styles>
+        <Style Selector="Button.DialogAction">
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Background" Value="#2A2A2A" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="17" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.DialogAction:pointerover">
+            <Setter Property="Background" Value="#3A3A3A" />
+        </Style>
+
+        <Style Selector="Button.DialogAction TextBlock">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+        </Style>
+    </Window.Styles>
+
+    <StackPanel Margin="28,24,28,22" Spacing="14">
+        <TextBlock Text="Connect your Last.fm account"
+                   Foreground="White"
+                   FontSize="18"
+                   FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+
+        <TextBlock Text="Approve SoundHaven in your browser — no password needed here."
+                   Foreground="#C8C8C8"
+                   FontSize="13"
+                   TextWrapping="Wrap"
+                   FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+
+        <Button Classes="DialogAction"
+                HorizontalAlignment="Center"
+                Click="OnOpenBrowserClick">
+            <TextBlock Text="Open last.fm to approve" />
+        </Button>
+
+        <TextBlock x:Name="StatusText"
+                   Text=""
+                   Foreground="Gray"
+                   FontSize="12"
+                   TextWrapping="Wrap"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"
+                   FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+    </StackPanel>
+</Window>

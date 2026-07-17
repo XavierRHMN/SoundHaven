@@ -53,19 +53,49 @@ public partial class PlaylistView : UserControl
         }
 
         e.Handled = true;
-        ShowSongMenu(gridRow, viewModel, row.Song);
+        ShowSongMenu(gridRow, viewModel, row.Song, showAtPointer: true);
     }
 
-    private static void ShowSongMenu(Control anchor, PlaylistViewModel viewModel, Song song)
+    private void OnRowActionsPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Keep ⋯ presses from selecting the row (selection auto-plays).
+        e.Handled = true;
+    }
+
+    private void OnRowMoreButtonClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not PlaylistViewModel { IsEditMode: false } viewModel
+            || sender is not Button { DataContext: PlaylistTrackRow row } button)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        ShowSongMenu(button, viewModel, row.Song, showAtPointer: false);
+    }
+
+    private static void ShowSongMenu(
+        Control anchor,
+        PlaylistViewModel viewModel,
+        Song song,
+        bool showAtPointer)
     {
         viewModel.SetMenuSong(song);
 
-        var flyout = DarkMenuFlyout.Create(PlacementMode.Pointer);
+        var flyout = DarkMenuFlyout.Create(
+            showAtPointer ? PlacementMode.Pointer : PlacementMode.BottomEdgeAlignedLeft);
 
         flyout.Items.Add(new MenuItem
         {
             Header = "Play next",
             Command = viewModel.PlaySongNextCommand,
+            CommandParameter = song
+        });
+
+        flyout.Items.Add(new MenuItem
+        {
+            Header = "Add to Up Next",
+            Command = viewModel.AddToUpNextCommand,
             CommandParameter = song
         });
 
@@ -104,7 +134,7 @@ public partial class PlaylistView : UserControl
             CommandParameter = song
         });
 
-        flyout.ShowAt(anchor, showAtPointer: true);
+        flyout.ShowAt(anchor, showAtPointer);
     }
 
     private void OnMoreButtonClick(object? sender, RoutedEventArgs e)

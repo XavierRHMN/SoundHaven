@@ -11,14 +11,14 @@ namespace SoundHaven.ViewModels;
 
 public sealed class PlayerViewModel : ViewModelBase
 {
-    private const int MaxHistoryItems = 20;
+    private const int MaxHistoryItems = 50;
 
     private readonly PlaybackViewModel _playbackViewModel;
     private readonly PlaylistStore _playlistStore;
-    private readonly RecentPlaybackStore _recentPlaybackStore;
     private readonly IUserNotificationService _notifications;
     private ObservableCollection<Song>? _subscribedSongs;
     private Song? _menuSong;
+    private Song? _lastPlayingSong;
 
     public ObservableCollection<Song> UpNextSongs { get; } = [];
 
@@ -39,6 +39,12 @@ public sealed class PlayerViewModel : ViewModelBase
 
     public AsyncRelayCommand<Song> PlaySongCommand { get; }
 
+    public AsyncRelayCommand<Song> PlayHistorySongCommand { get; }
+
+    public AsyncRelayCommand<Song> PlayNextCommand { get; }
+
+    public AsyncRelayCommand<Song> AddToUpNextCommand { get; }
+
     public RelayCommand<Playlist> AddToPlaylistCommand { get; }
 
     public RelayCommand CreatePlaylistAndAddSongCommand { get; }
@@ -46,19 +52,28 @@ public sealed class PlayerViewModel : ViewModelBase
     public PlayerViewModel(
         PlaybackViewModel playbackViewModel,
         PlaylistStore playlistStore,
-        RecentPlaybackStore recentPlaybackStore,
         IUserNotificationService notifications)
     {
         _playbackViewModel = playbackViewModel
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
-        _recentPlaybackStore = recentPlaybackStore
-            ?? throw new ArgumentNullException(nameof(recentPlaybackStore));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _lastPlayingSong = playbackViewModel.CurrentSong;
         _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
-        _recentPlaybackStore.RecentSongs.CollectionChanged += OnRecentSongsChanged;
         PlaySongCommand = new AsyncRelayCommand<Song>(
             PlaySongAsync,
+            song => song is not null,
+            exception => _notifications.ShowError(exception.Message));
+        PlayHistorySongCommand = new AsyncRelayCommand<Song>(
+            PlayHistorySongAsync,
+            song => song is not null,
+            exception => _notifications.ShowError(exception.Message));
+        PlayNextCommand = new AsyncRelayCommand<Song>(
+            PlayNextAsync,
+            song => song is not null,
+            exception => _notifications.ShowError(exception.Message));
+        AddToUpNextCommand = new AsyncRelayCommand<Song>(
+            AddToUpNextAsync,
             song => song is not null,
             exception => _notifications.ShowError(exception.Message));
         AddToPlaylistCommand = new RelayCommand<Playlist>(
@@ -69,7 +84,6 @@ public sealed class PlayerViewModel : ViewModelBase
             () => _menuSong is not null);
         SubscribeToPlaylistSongs();
         RefreshUpNext();
-        RefreshHistory();
     }
 
     public void SetMenuSong(Song song)
@@ -165,7 +179,6 @@ public sealed class PlayerViewModel : ViewModelBase
     public override void Dispose()
     {
         _playbackViewModel.PropertyChanged -= PlaybackViewModel_PropertyChanged;
-        _recentPlaybackStore.RecentSongs.CollectionChanged -= OnRecentSongsChanged;
         UnsubscribeFromPlaylistSongs();
         base.Dispose();
     }
@@ -173,6 +186,48 @@ public sealed class PlayerViewModel : ViewModelBase
     private Task PlaySongAsync(Song? song)
     {
         return song is null ? Task.CompletedTask : _playbackViewModel.PlayFromBeginning(song);
+    }
+
+    private async Task PlayNextAsync(Song? song)
+    {
+        if (song is null)
+        {
+            return;
+        }
+
+        await _playbackViewModel.PlayNext(song);
+        _notifications.ShowInfo($"Queued “{song.Title}” to play next.");
+    }
+
+    private async Task AddToUpNextAsync(Song? song)
+    {
+        if (song is null)
+        {
+            return;
+        }
+
+        await _playbackViewModel.AddToUpNext(song);
+        _notifications.ShowInfo($"Added “{song.Title}” to Up Next.");
+    }
+
+    /// <summary>
+    /// Picking a history entry consumes it: the row leaves the log and the track
+    /// moves back into Playing. The track it interrupts is appended to the log
+    /// by the normal transition bookkeeping.
+    /// </summary>
+    private Task PlayHistorySongAsync(Song? song)
+    {
+        if (song is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (HistorySongs.Remove(song))
+        {
+            OnPropertyChanged(nameof(HasHistorySongs));
+        }
+
+        return _playbackViewModel.PlayFromBeginning(song);
     }
 
     private void ExecuteAddToPlaylist(Playlist? playlist)
@@ -227,7 +282,7 @@ public sealed class PlayerViewModel : ViewModelBase
                 OnPropertyChanged(nameof(PlayerViewSong));
                 OnPropertyChanged(nameof(HasPlayingSong));
                 RefreshUpNext();
-                RefreshHistory();
+                RecordHistoryTransition();
                 break;
             case nameof(PlaybackViewModel.CurrentPlaylist):
                 OnPropertyChanged(nameof(ActivePlaylistName));
@@ -272,50 +327,28 @@ public sealed class PlayerViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasUpNextSongs));
     }
 
-    private void OnRecentSongsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    /// <summary>
+    /// Up Next -> Playing -> History: the moment a track stops being the current
+    /// one it is appended to the bottom of the history log. Replays append again;
+    /// the log stays chronological, never deduped or reordered.
+    /// </summary>
+    private void RecordHistoryTransition()
     {
-        RefreshHistory();
-    }
-
-    /// <summary>Recently played tracks, excluding whatever is playing right now.</summary>
-    private void RefreshHistory()
-    {
-        HistorySongs.Clear();
         Song? current = _playbackViewModel.CurrentSong;
-        foreach (Song song in _recentPlaybackStore.RecentSongs)
+        Song? previous = _lastPlayingSong;
+        _lastPlayingSong = current;
+        if (previous is null || ReferenceEquals(previous, current))
         {
-            if (current is not null && IsSameTrack(current, song))
-            {
-                continue;
-            }
+            return;
+        }
 
-            HistorySongs.Add(song);
-            if (HistorySongs.Count >= MaxHistoryItems)
-            {
-                break;
-            }
+        // Clone so a replayed track yields distinct ListBox items.
+        HistorySongs.Add(previous.CloneForQueue());
+        while (HistorySongs.Count > MaxHistoryItems)
+        {
+            HistorySongs.RemoveAt(0);
         }
 
         OnPropertyChanged(nameof(HasHistorySongs));
-    }
-
-    // History entries are clones (RecentPlaybackStore.RecordPlay), so match by
-    // identity fields rather than reference.
-    private static bool IsSameTrack(Song left, Song right)
-    {
-        if (!string.IsNullOrWhiteSpace(left.VideoId)
-            && string.Equals(left.VideoId, right.VideoId, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        if (!string.IsNullOrWhiteSpace(left.FilePath)
-            && string.Equals(left.FilePath, right.FilePath, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return string.Equals(left.Title, right.Title, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(left.Artist, right.Artist, StringComparison.OrdinalIgnoreCase);
     }
 }

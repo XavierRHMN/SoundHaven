@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -19,6 +20,12 @@ public interface IAlbumArtService
     Task<string?> GetAlbumArtworkUrlAsync(
         string? artist,
         string? album,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Resolve a track's release year, or null when unavailable.</summary>
+    Task<int?> GetTrackYearAsync(
+        string? artist,
+        string? title,
         CancellationToken cancellationToken = default);
 }
 
@@ -110,6 +117,81 @@ public sealed class AlbumArtService : IAlbumArtService
         // Cache misses too (as empty string) so we don't re-query hopeless songs.
         _cache.Set(cacheKey, resolved ?? string.Empty, CacheDuration);
         return resolved;
+    }
+
+    public async Task<int?> GetTrackYearAsync(
+        string? artist,
+        string? title,
+        CancellationToken cancellationToken = default)
+    {
+        string normalizedArtist = artist?.Trim() ?? string.Empty;
+        string normalizedTitle = title?.Trim() ?? string.Empty;
+        if (normalizedTitle.Length == 0)
+        {
+            return null;
+        }
+
+        string cacheKey = FormattableString.Invariant(
+            $"trackyear:{normalizedArtist}|{normalizedTitle}")
+            .ToLowerInvariant();
+        if (_cache.TryGetValue(cacheKey, out int cachedYear))
+        {
+            return cachedYear > 0 ? cachedYear : null;
+        }
+
+        int? year = await QueryITunesReleaseYearAsync(
+                normalizedArtist,
+                normalizedTitle,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        // Cache misses too (as 0) so we don't re-query hopeless songs.
+        _cache.Set(cacheKey, year ?? 0, CacheDuration);
+        return year;
+    }
+
+    private async Task<int?> QueryITunesReleaseYearAsync(
+        string artist,
+        string title,
+        CancellationToken cancellationToken)
+    {
+        string term = artist.Length > 0 ? $"{artist} {title}" : title;
+        string url =
+            $"{ITunesEndpoint}?term={Uri.EscapeDataString(term)}&media=music&entity=song&limit=1";
+
+        try
+        {
+            using JsonDocument? document = await FetchJsonAsync(url, cancellationToken)
+                .ConfigureAwait(false);
+            if (document is null
+                || !document.RootElement.TryGetProperty("results", out JsonElement results)
+                || results.ValueKind != JsonValueKind.Array
+                || results.GetArrayLength() == 0)
+            {
+                return null;
+            }
+
+            string? releaseDate = GetFirstString(results[0], "releaseDate");
+            if (releaseDate is not null
+                && DateTimeOffset.TryParse(
+                    releaseDate,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                    out DateTimeOffset parsed))
+            {
+                return parsed.Year;
+            }
+
+            return null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private async Task<string?> QueryDeezerAsync(
