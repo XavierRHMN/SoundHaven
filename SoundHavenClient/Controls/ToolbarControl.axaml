@@ -247,19 +247,23 @@
                                             <Image Source="{Binding SidebarSlot3}" Stretch="UniformToFill" />
                                         </UniformGrid>
 
-                                        <!-- Liked Songs uses a fixed note tile (thick
-                                             white outline, black fill), covering artwork. -->
+                                        <!-- Liked Songs note tile: black field with a
+                                             thin, inset, rounded white outline and note.
+                                             The black backing hides the container corners. -->
                                         <Border IsVisible="{Binding IsLikedSongs}"
                                                 HorizontalAlignment="Stretch"
                                                 VerticalAlignment="Stretch"
-                                                Background="Black"
-                                                BorderBrush="White"
-                                                BorderThickness="3"
-                                                CornerRadius="7">
-                                            <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
-                                                 Width="22" Height="22"
-                                                 HorizontalAlignment="Center"
-                                                 VerticalAlignment="Center" />
+                                                Background="Black">
+                                            <Border Margin="4"
+                                                    Background="Black"
+                                                    BorderBrush="White"
+                                                    BorderThickness="1.5"
+                                                    CornerRadius="7">
+                                                <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
+                                                     Width="20" Height="20"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center" />
+                                            </Border>
                                         </Border>
 
                                         <Border Classes="PlayingBadge"

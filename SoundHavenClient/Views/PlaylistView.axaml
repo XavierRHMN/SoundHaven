@@ -252,19 +252,23 @@
                             <Image Source="{Binding CoverSlot3}" Stretch="UniformToFill" />
                         </UniformGrid>
 
-                        <!-- Liked Songs always shows the note tile: thick white
-                             outline, black fill, white eighth note. -->
+                        <!-- Liked Songs note tile: black field with a thin, inset,
+                             rounded white outline and note. The black backing hides
+                             the container corners so no gray shows through. -->
                         <Border IsVisible="{Binding IsLikedSongsPlaylist}"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
-                                Background="Black"
-                                BorderBrush="White"
-                                BorderThickness="14"
-                                CornerRadius="22">
-                            <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
-                                 Width="150" Height="150"
-                                 HorizontalAlignment="Center"
-                                 VerticalAlignment="Center" />
+                                Background="Black">
+                            <Border Margin="20"
+                                    Background="Black"
+                                    BorderBrush="White"
+                                    BorderThickness="4"
+                                    CornerRadius="28">
+                                <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
+                                     Width="150" Height="150"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center" />
+                            </Border>
                         </Border>
                     </Panel>
                 </Border>
