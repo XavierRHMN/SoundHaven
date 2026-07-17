@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Globalization;
+using System.Threading.Tasks;
 using Avalonia.Media;
 using Avalonia.Threading;
 using SoundHaven.Models;
@@ -12,6 +13,7 @@ public sealed class SongInfoViewModel : ViewModelBase
 {
     private readonly PlaybackViewModel _playbackViewModel;
     private readonly IAudioService _audioService;
+    private readonly IAlbumArtService _albumArtService;
     private readonly DispatcherTimer _scrollTimer;
     private readonly DispatcherTimer _pauseTimer;
     private bool _isScrollingNeeded;
@@ -24,17 +26,52 @@ public sealed class SongInfoViewModel : ViewModelBase
         get => _currentSong;
         private set
         {
+            Song? previous = _currentSong;
             if (SetProperty(ref _currentSong, value))
             {
+                if (previous is not null)
+                {
+                    previous.PropertyChanged -= OnCurrentSongPropertyChanged;
+                }
+
+                if (_currentSong is not null)
+                {
+                    _currentSong.PropertyChanged += OnCurrentSongPropertyChanged;
+                }
+
                 OnPropertyChanged(nameof(CurrentSongExists));
+                OnPropertyChanged(nameof(ArtistAndYearText));
                 _hasPausedThisCycle = false;
                 TextWidth = ExtractTextWidth(CurrentSong?.Title, "Circular", 19);
                 UpdateScrollingState();
+                TryResolveYear(_currentSong);
             }
         }
     }
 
     public bool CurrentSongExists => CurrentSong is not null;
+
+    /// <summary>"Artist - Year", degrading to just the artist while the year is unknown.</summary>
+    public string ArtistAndYearText
+    {
+        get
+        {
+            if (CurrentSong is null)
+            {
+                return string.Empty;
+            }
+
+            string artist = CurrentSong.Artist?.Trim() ?? string.Empty;
+            if (CurrentSong.Year is not int year || year <= 0)
+            {
+                return artist;
+            }
+
+            return artist.Length > 0
+                ? FormattableString.Invariant($"{artist} - {year}")
+                : year.ToString(CultureInfo.InvariantCulture);
+        }
+    }
 
     private bool _isSeekBuffering;
     public bool IsSeekBuffering
@@ -70,10 +107,14 @@ public sealed class SongInfoViewModel : ViewModelBase
 
     public double ControlWidth { get; set; } = 220; // Width of the Song Info Control
 
-    public SongInfoViewModel(PlaybackViewModel playbackViewModel, IAudioService audioService)
+    public SongInfoViewModel(
+        PlaybackViewModel playbackViewModel,
+        IAudioService audioService,
+        IAlbumArtService albumArtService)
     {
         _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
+        _albumArtService = albumArtService ?? throw new ArgumentNullException(nameof(albumArtService));
         _pauseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
         _pauseTimer.Tick += (_, _) =>
         {
@@ -114,6 +155,52 @@ public sealed class SongInfoViewModel : ViewModelBase
     {
         IsSeekBuffering = _playbackViewModel.IsTransitioningTracks
             || (_audioService.IsSeekBuffering && CurrentSong?.VideoId is not null);
+    }
+
+    private void OnCurrentSongPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(Song.Artist) or nameof(Song.Year))
+        {
+            OnPropertyChanged(nameof(ArtistAndYearText));
+        }
+    }
+
+    /// <summary>
+    /// YouTube tracks carry no release year, so resolve it online (local files
+    /// already get theirs from tags).
+    /// </summary>
+    private void TryResolveYear(Song? song)
+    {
+        if (song is null
+            || song.Year is not null
+            || string.IsNullOrWhiteSpace(song.VideoId)
+            || string.IsNullOrWhiteSpace(song.Title))
+        {
+            return;
+        }
+
+        _ = ResolveYearAsync(song);
+    }
+
+    private async Task ResolveYearAsync(Song song)
+    {
+        try
+        {
+            int? year = await _albumArtService
+                .GetTrackYearAsync(song.Artist, song.Title)
+                .ConfigureAwait(false);
+            if (year is null)
+            {
+                return;
+            }
+
+            // Avalonia doesn't marshal INPC off-thread; assign on the UI thread.
+            await Dispatcher.UIThread.InvokeAsync(() => song.Year ??= year);
+        }
+        catch
+        {
+            // The year is decorative; lookups must never disturb the player bar.
+        }
     }
 
     private void UpdateScrollingState()
@@ -208,6 +295,11 @@ public sealed class SongInfoViewModel : ViewModelBase
     {
         _playbackViewModel.PropertyChanged -= PlaybackViewModel_PropertyChanged;
         _audioService.PropertyChanged -= AudioService_PropertyChanged;
+        if (_currentSong is not null)
+        {
+            _currentSong.PropertyChanged -= OnCurrentSongPropertyChanged;
+        }
+
         _pauseTimer.Stop();
         _scrollTimer.Stop();
         base.Dispose();

@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using SoundHaven.Commands;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.ViewModels;
@@ -45,7 +46,7 @@ public partial class PlayQueueControl : UserControl
 
         // Playing this track rebuilds Up Next (the song leaves the list). Clear selection
         // and defer play so ListBox isn't mutated mid-SelectionChanged.
-        DeferPlay(listBox, viewModel, song);
+        DeferPlay(listBox, viewModel.PlaySongCommand, song);
     }
 
     private void OnHistorySelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
@@ -58,15 +59,16 @@ public partial class PlayQueueControl : UserControl
         if (DataContext is not PlayerViewModel viewModel
             || sender is not ListBox listBox
             || listBox.SelectedItem is not Song song
-            || !viewModel.PlaySongCommand.CanExecute(song))
+            || !viewModel.PlayHistorySongCommand.CanExecute(song))
         {
             return;
         }
 
-        DeferPlay(listBox, viewModel, song);
+        // Picking a history entry removes it from the log and plays it.
+        DeferPlay(listBox, viewModel.PlayHistorySongCommand, song);
     }
 
-    private void DeferPlay(ListBox listBox, PlayerViewModel viewModel, Song song)
+    private void DeferPlay(ListBox listBox, AsyncRelayCommand<Song> playCommand, Song song)
     {
         _suppressSelection = true;
         try
@@ -80,9 +82,9 @@ public partial class PlayQueueControl : UserControl
 
         Dispatcher.UIThread.Post(() =>
         {
-            if (viewModel.PlaySongCommand.CanExecute(song))
+            if (playCommand.CanExecute(song))
             {
-                viewModel.PlaySongCommand.Execute(song);
+                playCommand.Execute(song);
             }
         });
     }
@@ -102,7 +104,7 @@ public partial class PlayQueueControl : UserControl
             return;
         }
 
-        ShowAddToPlaylistMenu(button, viewModel, song);
+        ShowSongMenu(button, viewModel, song, showAtPointer: false);
         e.Handled = true;
     }
 
@@ -115,15 +117,70 @@ public partial class PlayQueueControl : UserControl
             return;
         }
 
-        ShowAddToPlaylistMenu(button, viewModel, song);
+        ShowSongMenu(button, viewModel, song, showAtPointer: false);
         e.Handled = true;
     }
 
-    private static void ShowAddToPlaylistMenu(Control anchor, PlayerViewModel viewModel, Song song)
+    private void OnRowRightClickPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsRightButtonPressed)
+        {
+            return;
+        }
+
+        if (sender is not Control control
+            || control.DataContext is not Song song
+            || DataContext is not PlayerViewModel viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        ShowSongMenu(control, viewModel, song, showAtPointer: true);
+    }
+
+    private void OnPlayingCardPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsRightButtonPressed)
+        {
+            return;
+        }
+
+        if (sender is not Control control
+            || DataContext is not PlayerViewModel { PlayerViewSong: { } song } viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        ShowSongMenu(control, viewModel, song, showAtPointer: true);
+    }
+
+    private static void ShowSongMenu(
+        Control anchor,
+        PlayerViewModel viewModel,
+        Song song,
+        bool showAtPointer)
     {
         viewModel.SetMenuSong(song);
 
-        var flyout = DarkMenuFlyout.Create(PlacementMode.BottomEdgeAlignedLeft);
+        var flyout = DarkMenuFlyout.Create(
+            showAtPointer ? PlacementMode.Pointer : PlacementMode.BottomEdgeAlignedLeft);
+
+        flyout.Items.Add(new MenuItem
+        {
+            Header = "Play next",
+            Command = viewModel.PlayNextCommand,
+            CommandParameter = song
+        });
+
+        flyout.Items.Add(new MenuItem
+        {
+            Header = "Add to Up Next",
+            Command = viewModel.AddToUpNextCommand,
+            CommandParameter = song
+        });
+
         var addToPlaylist = new MenuItem { Header = "Add to playlist" };
         foreach (Playlist playlist in viewModel.Playlists)
         {
@@ -154,7 +211,7 @@ public partial class PlayQueueControl : UserControl
         });
 
         flyout.Items.Add(addToPlaylist);
-        flyout.ShowAt(anchor);
+        flyout.ShowAt(anchor, showAtPointer);
     }
 
     private void OnDragHandlePointerPressed(object? sender, PointerPressedEventArgs e)

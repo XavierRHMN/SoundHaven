@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using SoundHaven.Commands;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.ViewModels;
@@ -120,6 +121,18 @@ public partial class HomeView : UserControl
         });
 
         flyout.Items.Add(addToPlaylist);
+
+        // Only recommendation cards offer "Not interested".
+        if (viewModel.IsRecommendedSong(song))
+        {
+            flyout.Items.Add(new MenuItem
+            {
+                Header = "Not interested",
+                Command = viewModel.DislikeSongCommand,
+                CommandParameter = song
+            });
+        }
+
         flyout.ShowAt(anchor, showAtPointer);
     }
 
@@ -203,6 +216,36 @@ public partial class HomeView : UserControl
         flyout.Items.Add(addToPlaylist);
         flyout.ShowAt(button);
         e.Handled = true;
+    }
+
+    private async void OnConnectLastFmClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not HomeViewModel viewModel
+            || TopLevel.GetTopLevel(this) is not Window owner)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        var dialog = new LastFmSignInWindow(viewModel.LastFm);
+        await dialog.ShowDialog(owner);
+    }
+
+    private void OnLastFmAccountClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || DataContext is not HomeViewModel viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        var flyout = DarkMenuFlyout.Create(PlacementMode.BottomEdgeAlignedRight);
+        flyout.Items.Add(new MenuItem
+        {
+            Header = "Disconnect Last.fm",
+            Command = new RelayCommand(viewModel.LastFm.SignOut)
+        });
+        flyout.ShowAt(button);
     }
 
     private void OnPlaylistCardPressed(object? sender, PointerPressedEventArgs e)

@@ -27,6 +27,7 @@ public sealed class HomeViewModel : ViewModelBase
     private readonly ILastFmDataService _lastFmDataService;
     private readonly IYouTubeMediaService _youTubeMediaService;
     private readonly IAlbumArtService _albumArtService;
+    private readonly DislikedSongsStore _dislikedSongs;
     private readonly CancellationTokenSource _lifetimeCancellation = new();
     private Song? _menuSong;
     private bool _showForYou = true;
@@ -45,7 +46,8 @@ public sealed class HomeViewModel : ViewModelBase
         ILastFmDataService lastFmDataService,
         IYouTubeMediaService youTubeMediaService,
         IAlbumArtService albumArtService,
-        SearchViewModel searchViewModel)
+        SearchViewModel searchViewModel,
+        DislikedSongsStore dislikedSongsStore)
     {
         Search = searchViewModel ?? throw new ArgumentNullException(nameof(searchViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
@@ -63,6 +65,8 @@ public sealed class HomeViewModel : ViewModelBase
             ?? throw new ArgumentNullException(nameof(youTubeMediaService));
         _albumArtService = albumArtService
             ?? throw new ArgumentNullException(nameof(albumArtService));
+        _dislikedSongs = dislikedSongsStore
+            ?? throw new ArgumentNullException(nameof(dislikedSongsStore));
 
         FeaturedPlaylists = [];
         UploadSongs = [];
@@ -76,6 +80,7 @@ public sealed class HomeViewModel : ViewModelBase
         _lastFmDataService.AuthenticationStateChanged += OnLastFmAuthenticationChanged;
 
         OpenPlaylistCommand = new RelayCommand<Playlist>(OpenPlaylist, playlist => playlist is not null);
+        DislikeSongCommand = new RelayCommand<Song>(ExecuteDislikeSong, song => song is not null);
         PlaySongCommand = new AsyncRelayCommand<Song>(
             PlaySongAsync,
             song => song is not null,
@@ -342,8 +347,8 @@ public sealed class HomeViewModel : ViewModelBase
             await Task.WhenAll(ytmTask, lastFmTask);
 
             IReadOnlyList<Song> merged = RecommendationFeed.MergeInterleaved(
-                await ytmTask,
-                await lastFmTask,
+                (await ytmTask).Where(song => !_dislikedSongs.IsDisliked(song)),
+                (await lastFmTask).Where(song => !_dislikedSongs.IsDisliked(song)),
                 maxDisplay: 12);
 
             await Dispatcher.UIThread.InvokeAsync(() =>
@@ -566,10 +571,62 @@ public sealed class HomeViewModel : ViewModelBase
         }
     }
 
+    /// <summary>The Last.fm service, exposed for the sign-in dialog.</summary>
+    public ILastFmDataService LastFm => _lastFmDataService;
+
+    public bool IsLastFmConnectVisible =>
+        _lastFmDataService.IsConfigured && !_lastFmDataService.IsAuthenticated;
+
+    public bool IsLastFmConnected => _lastFmDataService.IsAuthenticated;
+
     private void OnLastFmAuthenticationChanged(object? sender, EventArgs e)
     {
+        OnPropertyChanged(nameof(IsLastFmConnectVisible));
+        OnPropertyChanged(nameof(IsLastFmConnected));
         _ = LoadRecommendationsAsync();
         _ = LoadTopAlbumsAsync();
+    }
+
+    public RelayCommand<Song> DislikeSongCommand { get; }
+
+    /// <summary>True when the song is currently shown in the Recommended shelf.</summary>
+    public bool IsRecommendedSong(Song song)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+        return RecommendedSongs.Contains(song);
+    }
+
+    /// <summary>
+    /// "Not interested": persist the track locally and keep it out of every
+    /// future Recommended shelf (dislikes on YouTube itself wouldn't help —
+    /// the radio lookups that build the shelf are anonymous).
+    /// </summary>
+    private void ExecuteDislikeSong(Song? song)
+    {
+        if (song is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _dislikedSongs.Dislike(song);
+            for (int i = RecommendedSongs.Count - 1; i >= 0; i--)
+            {
+                if (_dislikedSongs.IsDisliked(RecommendedSongs[i]))
+                {
+                    RecommendedSongs.RemoveAt(i);
+                }
+            }
+
+            OnPropertyChanged(nameof(HasRecommendations));
+            OnPropertyChanged(nameof(ShowRecommendationsEmpty));
+            _notifications.ShowInfo($"Got it — “{song.Title}” won't be recommended again.");
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError(exception.Message);
+        }
     }
 
     private void ExecuteAddToPlaylist(Playlist? playlist)

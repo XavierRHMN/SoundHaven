@@ -421,7 +421,7 @@
         </Grid.RowDefinitions>
 
         <!-- Top bar: pills left, TIDAL-style search right -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,20">
             <!-- Browse pills (hidden while searching) -->
             <StackPanel Orientation="Horizontal"
                         Spacing="10"
@@ -452,8 +452,26 @@
                         Command="{Binding Search.SelectVideosCommand}" />
             </StackPanel>
 
+            <!-- Account chips: sign in for personalized recommendations -->
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="10"
+                        VerticalAlignment="Center"
+                        Margin="0,0,10,0">
+                <Button Classes="HomePill"
+                        Content="Connect Last.fm"
+                        Click="OnConnectLastFmClick"
+                        IsVisible="{Binding IsLastFmConnectVisible}"
+                        ToolTip.Tip="Sign in to scrobble and mix in your taste" />
+                <Button Classes="HomePill"
+                        Content="Last.fm ✓"
+                        Click="OnLastFmAccountClick"
+                        IsVisible="{Binding IsLastFmConnected}"
+                        ToolTip.Tip="Last.fm account connected" />
+            </StackPanel>
+
             <!-- Search bar -->
-            <Border Grid.Column="1"
+            <Border Grid.Column="2"
                     Background="#2A2A2A"
                     CornerRadius="20"
                     Height="40"

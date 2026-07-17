@@ -32,6 +32,7 @@ public sealed class PlaybackViewModel : ViewModelBase
     private CancellationTokenSource _trackCancellation = new();
     private Song? _currentSong;
     private Playlist? _currentPlaylist;
+    private Song? _queueAnchor;
     private bool _isShuffleEnabled;
     private bool _canPlaybackControl = true;
     private bool _isTransitioningTracks;
@@ -91,6 +92,7 @@ public sealed class PlaybackViewModel : ViewModelBase
                 if (_currentSong is not null)
                 {
                     _currentSong.PropertyChanged += OnCurrentSongPropertyChanged;
+                    UpdateQueueAnchor(_currentSong);
                 }
 
                 OnPropertyChanged(nameof(CurrentSongExists));
@@ -104,7 +106,17 @@ public sealed class PlaybackViewModel : ViewModelBase
     public Playlist? CurrentPlaylist
     {
         get => _currentPlaylist;
-        set => SetProperty(ref _currentPlaylist, value);
+        // The queue is always a detached copy of whatever playlist was handed in:
+        // queue edits (reorder, remove, play-next inserts) must never mutate a
+        // stored playlist's own song collection.
+        set
+        {
+            if (SetProperty(ref _currentPlaylist, CreateQueueSnapshot(value)))
+            {
+                // New queue context: advancement re-anchors on the next queued play.
+                _queueAnchor = null;
+            }
+        }
     }
 
     public bool CanPlaybackControl
@@ -171,7 +183,8 @@ public sealed class PlaybackViewModel : ViewModelBase
 
     public async Task NextTrack()
     {
-        Song? nextSong = GetNextSong(wrap: true);
+        // Only Repeat All wraps at the end of the queue; otherwise Next is a no-op there.
+        Song? nextSong = GetNextSong(wrap: _repeatViewModel.RepeatMode == RepeatMode.All);
         if (nextSong is not null)
         {
             await PlayFromBeginning(nextSong);
@@ -192,7 +205,7 @@ public sealed class PlaybackViewModel : ViewModelBase
             return;
         }
 
-        Song? previous = CurrentPlaylist?.GetPreviousNextSong(CurrentSong, Direction.Previous);
+        Song? previous = GetPreviousSong();
         if (previous is not null && !ReferenceEquals(previous, CurrentSong))
         {
             await PlayFromBeginning(previous);
@@ -296,10 +309,10 @@ public sealed class PlaybackViewModel : ViewModelBase
         int insertIndex = 0;
         if (CurrentSong is not null)
         {
-            int currentIndex = FindSongIndexByReference(songs, CurrentSong);
-            if (currentIndex >= 0)
+            int referenceIndex = GetQueueReferenceIndex(songs);
+            if (referenceIndex >= 0)
             {
-                insertIndex = currentIndex + 1;
+                insertIndex = referenceIndex + 1;
             }
         }
 
@@ -317,6 +330,80 @@ public sealed class PlaybackViewModel : ViewModelBase
         };
     }
 
+    private static Playlist? CreateQueueSnapshot(Playlist? source)
+    {
+        if (source is null)
+        {
+            return null;
+        }
+
+        return new Playlist
+        {
+            Name = source.Name,
+            Songs = new ObservableCollection<Song>(source.Songs)
+        };
+    }
+
+    /// <summary>
+    /// Remembers the queue position advancement is measured from. Detached
+    /// tracks (history replays, one-off plays) never join the queue, so the
+    /// anchor stays on the last queued track and the queue resumes from there.
+    /// </summary>
+    private void UpdateQueueAnchor(Song song)
+    {
+        if (CurrentPlaylist?.Songs is { } songs
+            && FindSongIndexByReference(songs, song) >= 0)
+        {
+            _queueAnchor = song;
+        }
+    }
+
+    /// <summary>
+    /// Queue index that Up Next, advancement, and queue edits are relative to:
+    /// the current track when it is queued, otherwise the anchor.
+    /// </summary>
+    private int GetQueueReferenceIndex(ObservableCollection<Song> songs)
+    {
+        if (CurrentSong is not null)
+        {
+            int currentIndex = FindSongIndexByReference(songs, CurrentSong);
+            if (currentIndex >= 0)
+            {
+                return currentIndex;
+            }
+        }
+
+        if (_queueAnchor is not null)
+        {
+            int anchorIndex = FindSongIndexByReference(songs, _queueAnchor);
+            if (anchorIndex >= 0)
+            {
+                return anchorIndex;
+            }
+        }
+
+        return -1;
+    }
+
+    private Song? GetPreviousSong()
+    {
+        if (CurrentSong is null || CurrentPlaylist?.Songs is not { Count: > 0 } songs)
+        {
+            return null;
+        }
+
+        // From a detached track, Previous returns to the queue track it interrupted.
+        if (FindSongIndexByReference(songs, CurrentSong) < 0)
+        {
+            return _queueAnchor is not null
+                && FindSongIndexByReference(songs, _queueAnchor) >= 0
+                    ? _queueAnchor
+                    : null;
+        }
+
+        return CurrentPlaylist.GetPreviousNextSong(CurrentSong, Direction.Previous);
+    }
+
     /// <summary>
     /// Songs queued after the currently playing track.
     /// </summary>
@@ -332,19 +419,19 @@ public sealed class PlaybackViewModel : ViewModelBase
             return songs.ToList();
         }
 
-        int currentIndex = FindSongIndexByReference(songs, CurrentSong);
-        if (currentIndex < 0)
+        int referenceIndex = GetQueueReferenceIndex(songs);
+        if (referenceIndex < 0)
         {
             return songs.ToList();
         }
 
-        if (currentIndex >= songs.Count - 1)
+        if (referenceIndex >= songs.Count - 1)
         {
             return Array.Empty<Song>();
         }
 
-        var upcoming = new List<Song>(songs.Count - currentIndex - 1);
-        for (int i = currentIndex + 1; i < songs.Count; i++)
+        var upcoming = new List<Song>(songs.Count - referenceIndex - 1);
+        for (int i = referenceIndex + 1; i < songs.Count; i++)
         {
             upcoming.Add(songs[i]);
         }
@@ -365,13 +452,13 @@ public sealed class PlaybackViewModel : ViewModelBase
         int baseIndex = 0;
         if (CurrentSong is not null)
         {
-            int currentIndex = FindSongIndexByReference(songs, CurrentSong);
-            if (currentIndex < 0)
+            int referenceIndex = GetQueueReferenceIndex(songs);
+            if (referenceIndex < 0)
             {
                 return false;
             }
 
-            baseIndex = currentIndex + 1;
+            baseIndex = referenceIndex + 1;
         }
 
         int from = baseIndex + fromUpNextIndex;
@@ -403,10 +490,10 @@ public sealed class PlaybackViewModel : ViewModelBase
         int baseIndex = 0;
         if (CurrentSong is not null)
         {
-            int currentIndex = FindSongIndexByReference(songs, CurrentSong);
-            if (currentIndex >= 0)
+            int referenceIndex = GetQueueReferenceIndex(songs);
+            if (referenceIndex >= 0)
             {
-                baseIndex = currentIndex + 1;
+                baseIndex = referenceIndex + 1;
             }
         }
 
@@ -442,11 +529,11 @@ public sealed class PlaybackViewModel : ViewModelBase
             return false;
         }
 
-        // Only allow removing songs after the currently playing track when it is in the queue.
+        // Only allow removing songs after the queue's reference position.
         if (CurrentSong is not null)
         {
-            int currentIndex = FindSongIndexByReference(songs, CurrentSong);
-            if (currentIndex >= 0 && index <= currentIndex)
+            int referenceIndex = GetQueueReferenceIndex(songs);
+            if (referenceIndex >= 0 && index <= referenceIndex)
             {
                 return false;
             }
@@ -570,7 +657,7 @@ public sealed class PlaybackViewModel : ViewModelBase
                 return wrap ? songs[0] : null;
             }
 
-            int currentIndex = songs.IndexOf(CurrentSong);
+            int currentIndex = GetQueueReferenceIndex(songs);
             int nextIndex;
             do
             {
@@ -581,7 +668,7 @@ public sealed class PlaybackViewModel : ViewModelBase
             return songs[nextIndex];
         }
 
-        int index = songs.IndexOf(CurrentSong);
+        int index = GetQueueReferenceIndex(songs);
         if (index < 0)
         {
             return songs[0];

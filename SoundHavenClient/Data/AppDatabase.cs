@@ -254,8 +254,50 @@ namespace SoundHaven.Data
                 CREATE TABLE IF NOT EXISTS ThemeSettings (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ColorHex TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS DislikedSongs (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    VideoId TEXT,
+                    Title TEXT NOT NULL,
+                    Artist TEXT,
+                    CreatedAt TEXT
                 );";
             command.ExecuteNonQuery();
+        }
+
+        public void AddDislikedSong(string? videoId, string title, string? artist)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(title);
+
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO DislikedSongs (VideoId, Title, Artist, CreatedAt)
+                VALUES (@videoId, @title, @artist, @createdAt);";
+            command.Parameters.AddWithValue("@videoId", (object?)videoId ?? DBNull.Value);
+            command.Parameters.AddWithValue("@title", title);
+            command.Parameters.AddWithValue("@artist", (object?)artist ?? DBNull.Value);
+            command.Parameters.AddWithValue("@createdAt", UtcNowText());
+            command.ExecuteNonQuery();
+        }
+
+        public List<DislikedSong> GetDislikedSongs()
+        {
+            var results = new List<DislikedSong>();
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT VideoId, Title, Artist FROM DislikedSongs;";
+            using SqliteDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                results.Add(new DislikedSong(
+                    reader.IsDBNull(0) ? null : reader.GetString(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? null : reader.GetString(2)));
+            }
+
+            return results;
         }
 
         private static void MigratePlaylistsToV2(

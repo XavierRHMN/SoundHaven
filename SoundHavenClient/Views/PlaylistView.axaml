@@ -102,6 +102,40 @@
             <Setter Property="Opacity" Value="0.85" />
         </Style>
 
+        <!-- Per-row ⋯ button: hidden until the row is hovered -->
+        <Style Selector="Button.RowMore">
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="DataGridRow:pointerover Button.RowMore">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+
+        <Style Selector="Button.RowMore:pointerover">
+            <Setter Property="Background" Value="#22FFFFFF" />
+        </Style>
+
+        <Style Selector="Button.RowMore:pressed">
+            <Setter Property="Background" Value="#33FFFFFF" />
+        </Style>
+
         <Style Selector="CheckBox">
             <Setter Property="Template">
                 <ControlTemplate>
@@ -508,6 +542,27 @@
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Right"
                                        Margin="0,0,8,0" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header=""
+                                        Width="56"
+                                        IsVisible="{Binding !$parent[UserControl].((viewModels:PlaylistViewModel)DataContext).IsEditMode}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
+                            <Button Classes="RowMore"
+                                    Width="36"
+                                    Height="36"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    PointerPressed="OnRowActionsPointerPressed"
+                                    Click="OnRowMoreButtonClick"
+                                    ToolTip.Tip="More options">
+                                <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
+                                     Width="20" Height="20"
+                                     Opacity="0.9" />
+                            </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

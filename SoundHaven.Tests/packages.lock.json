@@ -528,6 +528,11 @@
           "System.Security.Principal.Windows": "5.0.0"
         }
       },
+      "System.Security.Cryptography.ProtectedData": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "+TUFINV2q2ifyXauQXRwy4CiBhqvDEDZeVJU7qfxya4aRYOKzVBpN+4acx25VcPB9ywUN6C0n8drWl110PhZEg=="
+      },
       "System.Security.Principal.Windows": {
         "type": "Transitive",
         "resolved": "5.0.0",
@@ -635,6 +640,7 @@
           "NAudio": "[2.3.0, )",
           "SQLitePCLRaw.bundle_e_sqlite3": "[3.0.3, )",
           "Svg.Controls.Avalonia": "[11.3.9.5, )",
+          "System.Security.Cryptography.ProtectedData": "[8.0.0, )",
           "TagLibSharp": "[2.3.0, )",
           "YoutubeExplode": "[6.6.0, )"
         }
