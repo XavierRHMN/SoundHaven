@@ -315,9 +315,12 @@
             <Setter Property="Background" Value="#E6121212" />
         </Style>
 
-        <!-- Pull the row left so card padding lines up with section titles -->
-        <Style Selector="ItemsControl.CardRow WrapPanel">
-            <Setter Property="Margin" Value="-10,0,0,0" />
+        <!-- Headers/copy indent 10px to align with card artwork; card rows stay at
+             x=0 so the hover highlight outdents without being clipped by the
+             ScrollViewer. Never pull rows left with negative margins — the first
+             card's padding gets cut off. -->
+        <Style Selector="TextBlock.CardAligned, StackPanel.CardAligned">
+            <Setter Property="Margin" Value="10,0,0,0" />
         </Style>
     </UserControl.Styles>
 
@@ -350,7 +353,7 @@
                 <!-- FOR YOU -->
                 <StackPanel IsVisible="{Binding ShowForYouContent}" Spacing="32">
                     <StackPanel Spacing="24">
-                        <TextBlock Text="{Binding Greeting}" Classes="Greeting" />
+                        <TextBlock Text="{Binding Greeting}" Classes="Greeting CardAligned" />
 
                         <!-- Hero playlist grid 2x3 -->
                         <ItemsControl ItemsSource="{Binding FeaturedPlaylists}"
@@ -402,7 +405,7 @@
 
                     <!-- Recommended for you (Last.fm + YouTube Music) -->
                     <StackPanel Spacing="12">
-                        <StackPanel>
+                        <StackPanel Classes="CardAligned">
                             <TextBlock Text="Recommended for you" Classes="SectionTitle" />
                             <TextBlock Text="Mixed from YouTube Music and your Last.fm taste"
                                        Classes="SectionSubtitle" />
@@ -413,12 +416,12 @@
                                      Height="48"
                                      Width="48"
                                      HorizontalAlignment="Left"
-                                     Margin="0,8,0,0"
+                                     Margin="10,8,0,0"
                                      IsVisible="{Binding IsLoadingRecommendations}"
                                      Foreground="{DynamicResource PrimaryColor}" />
 
                         <TextBlock Text="Couldn’t load recommendations right now. Check your connection, or sign in on the Last.fm tab to mix in your taste."
-                                   Classes="SectionSubtitle"
+                                   Classes="SectionSubtitle CardAligned"
                                    TextWrapping="Wrap"
                                    IsVisible="{Binding ShowRecommendationsEmpty}" />
 
@@ -436,7 +439,7 @@
 
                     <!-- Your top albums (Last.fm) -->
                     <StackPanel Spacing="12" IsVisible="{Binding HasTopAlbums}">
-                        <StackPanel>
+                        <StackPanel Classes="CardAligned">
                             <TextBlock Text="Your top albums" Classes="SectionTitle" />
                             <TextBlock Text="The records you keep coming back to on Last.fm"
                                        Classes="SectionSubtitle" />
@@ -456,7 +459,7 @@
                     <!-- Recently played -->
                     <StackPanel Spacing="12">
                         <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Text="Recently played" Classes="SectionTitle" />
+                            <TextBlock Text="Recently played" Classes="SectionTitle CardAligned" />
                             <Button Grid.Column="1"
                                     Classes="LinkButton"
                                     Content="View all"
@@ -466,7 +469,7 @@
                         </Grid>
 
                         <TextBlock Text="Play something to fill this list."
-                                   Classes="SectionSubtitle"
+                                   Classes="SectionSubtitle CardAligned"
                                    IsVisible="{Binding !HasRecentlyPlayed}" />
 
                         <ItemsControl Classes="CardRow"
@@ -484,7 +487,7 @@
                     <!-- Uploads for you -->
                     <StackPanel Spacing="12">
                         <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel>
+                            <StackPanel Classes="CardAligned">
                                 <TextBlock Text="Uploads for you" Classes="SectionTitle" />
                                 <TextBlock Text="Local and downloaded tracks from your library"
                                            Classes="SectionSubtitle" />
@@ -498,7 +501,7 @@
                         </Grid>
 
                         <TextBlock Text="No local uploads yet — download from Search or add files to a playlist."
-                                   Classes="SectionSubtitle"
+                                   Classes="SectionSubtitle CardAligned"
                                    IsVisible="{Binding !HasUploads}" />
 
                         <ItemsControl Classes="CardRow"
@@ -516,7 +519,7 @@
 
                 <!-- UPLOADS TAB -->
                 <StackPanel IsVisible="{Binding ShowUploadsContent}" Spacing="12">
-                    <StackPanel>
+                    <StackPanel Classes="CardAligned">
                         <TextBlock Text="Uploads for you" Classes="SectionTitle" />
                         <TextBlock Text="Local and downloaded tracks from your library"
                                    Classes="SectionSubtitle"
@@ -524,7 +527,7 @@
                     </StackPanel>
 
                     <TextBlock Text="No local uploads yet — download from Search or add files to a playlist."
-                               Classes="SectionSubtitle"
+                               Classes="SectionSubtitle CardAligned"
                                IsVisible="{Binding !HasUploads}" />
 
                     <ItemsControl Classes="CardRow"
