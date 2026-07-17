@@ -73,6 +73,7 @@ public partial class App : Application, IDisposable
             _memoryCache);
         _youTubeMediaService = new YouTubeMediaService(_httpClient);
         _audioService = new AudioService(_youTubeMediaService);
+        var albumArtService = new AlbumArtService(_httpClient, _memoryCache);
 
         var recentPlaybackStore = new RecentPlaybackStore();
         var repeatViewModel = new RepeatViewModel();
@@ -85,12 +86,13 @@ public partial class App : Application, IDisposable
             notifications,
             recentPlaybackStore);
         var shuffleViewModel = new ShuffleViewModel(playbackViewModel);
+        var playlistStore = new PlaylistStore(database);
         var playlistViewModel = new PlaylistViewModel(
             playbackViewModel,
             new OpenFileDialogService(),
             database,
+            playlistStore,
             notifications);
-        var playlistStore = new PlaylistStore(database);
         var playerViewModel = new PlayerViewModel(playbackViewModel, playlistStore, notifications);
         var lastFmViewModel = new LastFmViewModel(_lastFmDataService);
         var seekSliderViewModel = new SeekSliderViewModel(
@@ -113,7 +115,8 @@ public partial class App : Application, IDisposable
             navigation,
             notifications,
             _lastFmDataService,
-            _youTubeMediaService);
+            _youTubeMediaService,
+            albumArtService);
         navigation.NavigateTo(homeViewModel);
         var toolbarViewModel = new ToolbarViewModel(
             navigation,

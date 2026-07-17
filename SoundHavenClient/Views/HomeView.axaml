@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="SoundHaven.Views.HomeView"
+<UserControl x:Class="SoundHaven.Views.HomeView"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:SoundHaven.ViewModels"
@@ -6,6 +6,104 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              d:DesignWidth="1500" d:DesignHeight="800"
              x:DataType="vm:HomeViewModel">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Square media card: art, hover play, hover overflow, title/artist -->
+            <DataTemplate x:Key="SongCardTemplate" x:DataType="models:Song">
+                <Border Classes="SongCard"
+                        DoubleTapped="OnSongDoubleTapped"
+                        PointerPressed="OnSongCardPointerPressed">
+                    <StackPanel Spacing="10">
+                        <Panel Width="160" Height="160">
+                            <Border CornerRadius="8"
+                                    ClipToBounds="True"
+                                    Background="#2A2A2A"
+                                    BoxShadow="0 6 18 0 #40000000">
+                                <Panel>
+                                    <Image Source="/Assets/Covers/MissingAlbum.png"
+                                           Stretch="UniformToFill"
+                                           IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
+                                    <Image Source="{Binding Artwork}"
+                                           Stretch="UniformToFill"
+                                           IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                </Panel>
+                            </Border>
+
+                            <Button Classes="CardOverflow"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="0,6,6,0"
+                                    PointerPressed="OnActionsPointerPressed"
+                                    Click="OnSongOverflowClick"
+                                    ToolTip.Tip="More options">
+                                <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
+                                     Width="18" Height="18" />
+                            </Button>
+
+                            <Button Classes="CardPlay"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    Margin="0,0,8,8"
+                                    Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).PlaySongCommand}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip.Tip="Play">
+                                <Svg Path="avares://SoundHavenClient/Assets/Icons/play.svg"
+                                     Width="20" Height="20"
+                                     Css="path { fill: #111111; }" />
+                            </Button>
+                        </Panel>
+
+                        <StackPanel Spacing="3" Width="160">
+                            <TextBlock Text="{Binding Title}" Classes="CardTitle" />
+                            <TextBlock Text="{Binding Artist}" Classes="CardSubtitle" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+
+            <!-- Album card: same look, no overflow menu (albums aren't queueable rows) -->
+            <DataTemplate x:Key="AlbumCardTemplate" x:DataType="models:Song">
+                <Border Classes="SongCard"
+                        DoubleTapped="OnSongDoubleTapped">
+                    <StackPanel Spacing="10">
+                        <Panel Width="160" Height="160">
+                            <Border CornerRadius="8"
+                                    ClipToBounds="True"
+                                    Background="#2A2A2A"
+                                    BoxShadow="0 6 18 0 #40000000">
+                                <Panel>
+                                    <Image Source="/Assets/Covers/MissingAlbum.png"
+                                           Stretch="UniformToFill"
+                                           IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
+                                    <Image Source="{Binding Artwork}"
+                                           Stretch="UniformToFill"
+                                           IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                </Panel>
+                            </Border>
+
+                            <Button Classes="CardPlay"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    Margin="0,0,8,8"
+                                    Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).PlaySongCommand}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip.Tip="Play">
+                                <Svg Path="avares://SoundHavenClient/Assets/Icons/play.svg"
+                                     Width="20" Height="20"
+                                     Css="path { fill: #111111; }" />
+                            </Button>
+                        </Panel>
+
+                        <StackPanel Spacing="3" Width="160">
+                            <TextBlock Text="{Binding Title}" Classes="CardTitle" />
+                            <TextBlock Text="{Binding Artist}" Classes="CardSubtitle" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
     <UserControl.Styles>
         <Style Selector="Button.HomePill">
@@ -40,30 +138,6 @@
             <Setter Property="Foreground" Value="White" />
         </Style>
 
-        <Style Selector="Button.IconOnly">
-            <Setter Property="Theme" Value="{x:Null}" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="4" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <ControlTemplate>
-                    <Border Background="{TemplateBinding Background}"
-                            CornerRadius="16"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch">
-                        <ContentPresenter Content="{TemplateBinding Content}"
-                                          HorizontalAlignment="Center"
-                                          VerticalAlignment="Center" />
-                    </Border>
-                </ControlTemplate>
-            </Setter>
-        </Style>
-
-        <Style Selector="Button.IconOnly:pointerover">
-            <Setter Property="Background" Value="#22FFFFFF" />
-        </Style>
-
         <Style Selector="Button.LinkButton">
             <Setter Property="Theme" Value="{x:Null}" />
             <Setter Property="Background" Value="Transparent" />
@@ -80,6 +154,17 @@
                                       Foreground="{TemplateBinding Foreground}" />
                 </ControlTemplate>
             </Setter>
+        </Style>
+
+        <Style Selector="Button.LinkButton:pointerover">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+
+        <Style Selector="TextBlock.Greeting">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="32" />
         </Style>
 
         <Style Selector="TextBlock.SectionTitle">
@@ -113,15 +198,132 @@
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
 
+        <Style Selector="TextBlock.CardTitle">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <Style Selector="TextBlock.CardSubtitle">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="#9A9A9A" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
         <Style Selector="Border.HeroCard">
-            <Setter Property="Background" Value="#1A1A1A" />
+            <Setter Property="Background" Value="#1F1F1F" />
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="Padding" Value="10" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
         </Style>
 
         <Style Selector="Border.HeroCard:pointerover">
-            <Setter Property="Background" Value="#242424" />
+            <Setter Property="Background" Value="#2E2E2E" />
+        </Style>
+
+        <!-- Media card -->
+        <Style Selector="Border.SongCard">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border.SongCard:pointerover">
+            <Setter Property="Background" Value="#1E1E1E" />
+        </Style>
+
+        <Style Selector="Button.CardPlay">
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="44" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="{DynamicResource PrimaryColor}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="RenderTransform" Value="translateY(8px)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.18" />
+                    <TransformOperationsTransition Property="RenderTransform"
+                                                   Duration="0:0:0.18"
+                                                   Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            BoxShadow="0 6 16 0 #80000000">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border.SongCard:pointerover Button.CardPlay">
+            <Setter Property="Opacity" Value="1" />
+            <Setter Property="RenderTransform" Value="translateY(0px)" />
+        </Style>
+
+        <Style Selector="Button.CardPlay:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1.06)" />
+        </Style>
+
+        <Style Selector="Button.CardOverflow">
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="CornerRadius" Value="15" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="#B3121212" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border.SongCard:pointerover Button.CardOverflow">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+
+        <Style Selector="Button.CardOverflow:pointerover">
+            <Setter Property="Background" Value="#E6121212" />
+        </Style>
+
+        <!-- Pull the row left so card padding lines up with section titles -->
+        <Style Selector="ItemsControl.CardRow WrapPanel">
+            <Setter Property="Margin" Value="-10,0,0,0" />
         </Style>
     </UserControl.Styles>
 
@@ -150,61 +352,67 @@
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Theme="{StaticResource MaterialModernScrollViewer}">
-            <StackPanel Spacing="28">
+            <StackPanel Spacing="32">
                 <!-- FOR YOU -->
-                <StackPanel IsVisible="{Binding ShowForYouContent}" Spacing="28">
-                    <!-- Hero playlist grid 2x3 -->
-                    <ItemsControl ItemsSource="{Binding FeaturedPlaylists}"
-                                  IsVisible="{Binding HasFeaturedPlaylists}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="3" Rows="2" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="models:Playlist">
-                                <Border Classes="HeroCard"
-                                        Margin="0,0,12,12"
-                                        PointerPressed="OnPlaylistCardPressed">
-                                    <Grid ColumnDefinitions="Auto,*">
-                                        <Border Grid.Column="0"
-                                                Width="56"
-                                                Height="56"
-                                                CornerRadius="6"
-                                                ClipToBounds="True"
-                                                Background="#3A3A3A"
-                                                Margin="0,0,12,0">
-                                            <Panel>
-                                                <Border Background="#3A3A3A"
-                                                        IsVisible="{Binding !HasSidebarCover}" />
-                                                <Image Source="{Binding SidebarSlot0}"
-                                                       Stretch="UniformToFill"
-                                                       IsVisible="{Binding HasSidebarSingleCover}" />
-                                                <UniformGrid Rows="2" Columns="2"
-                                                             IsVisible="{Binding HasSidebarMosaic}">
-                                                    <Image Source="{Binding SidebarSlot0}" Stretch="UniformToFill" />
-                                                    <Image Source="{Binding SidebarSlot1}" Stretch="UniformToFill" />
-                                                    <Image Source="{Binding SidebarSlot2}" Stretch="UniformToFill" />
-                                                    <Image Source="{Binding SidebarSlot3}" Stretch="UniformToFill" />
-                                                </UniformGrid>
-                                            </Panel>
-                                        </Border>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock Text="{Binding Name}" Classes="RowTitle" />
-                                            <TextBlock Text="{Binding ItemCountText, StringFormat='{}{0} · Created by you'}"
-                                                       Classes="RowSubtitle" />
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                <StackPanel IsVisible="{Binding ShowForYouContent}" Spacing="32">
+                    <StackPanel Spacing="24">
+                        <TextBlock Text="{Binding Greeting}" Classes="Greeting" />
+
+                        <!-- Hero playlist grid 2x3 -->
+                        <ItemsControl ItemsSource="{Binding FeaturedPlaylists}"
+                                      IsVisible="{Binding HasFeaturedPlaylists}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="3" Rows="2" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:Playlist">
+                                    <Border Classes="HeroCard"
+                                            Margin="0,0,12,12"
+                                            PointerPressed="OnPlaylistCardPressed">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Border Grid.Column="0"
+                                                    Width="56"
+                                                    Height="56"
+                                                    CornerRadius="6"
+                                                    ClipToBounds="True"
+                                                    Background="#3A3A3A"
+                                                    Margin="0,0,12,0">
+                                                <Panel>
+                                                    <Border Background="#3A3A3A"
+                                                            IsVisible="{Binding !HasSidebarCover}" />
+                                                    <Image Source="{Binding SidebarSlot0}"
+                                                           Stretch="UniformToFill"
+                                                           IsVisible="{Binding HasSidebarSingleCover}" />
+                                                    <UniformGrid Rows="2" Columns="2"
+                                                                 IsVisible="{Binding HasSidebarMosaic}">
+                                                        <Image Source="{Binding SidebarSlot0}" Stretch="UniformToFill" />
+                                                        <Image Source="{Binding SidebarSlot1}" Stretch="UniformToFill" />
+                                                        <Image Source="{Binding SidebarSlot2}" Stretch="UniformToFill" />
+                                                        <Image Source="{Binding SidebarSlot3}" Stretch="UniformToFill" />
+                                                    </UniformGrid>
+                                                </Panel>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                <TextBlock Text="{Binding Name}" Classes="RowTitle" />
+                                                <TextBlock Text="{Binding ItemCountText, StringFormat='{}{0} · Created by you'}"
+                                                           Classes="RowSubtitle" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
 
                     <!-- Recommended for you (Last.fm + YouTube Music) -->
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Recommended for you" Classes="SectionTitle" />
-                        <TextBlock Text="Mixed from YouTube Music and your Last.fm taste"
-                                   Classes="SectionSubtitle" />
+                    <StackPanel Spacing="12">
+                        <StackPanel>
+                            <TextBlock Text="Recommended for you" Classes="SectionTitle" />
+                            <TextBlock Text="Mixed from YouTube Music and your Last.fm taste"
+                                       Classes="SectionSubtitle" />
+                        </StackPanel>
 
                         <ProgressBar Classes="circular"
                                      IsIndeterminate="True"
@@ -220,55 +428,67 @@
                                    TextWrapping="Wrap"
                                    IsVisible="{Binding ShowRecommendationsEmpty}" />
 
-                        <ItemsControl ItemsSource="{Binding RecommendedSongs}"
+                        <ItemsControl Classes="CardRow"
+                                      ItemsSource="{Binding RecommendedSongs}"
+                                      ItemTemplate="{StaticResource SongCardTemplate}"
                                       IsVisible="{Binding HasRecommendations}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <UniformGrid Columns="3" />
+                                    <WrapPanel Orientation="Horizontal" />
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="models:Song">
-                                    <Border Margin="0,0,16,12"
-                                            Background="Transparent"
-                                            Cursor="Hand"
-                                            DoubleTapped="OnSongDoubleTapped">
-                                        <Grid ColumnDefinitions="Auto,*,Auto">
-                                            <Border Grid.Column="0"
-                                                    Width="48"
-                                                    Height="48"
-                                                    CornerRadius="6"
-                                                    ClipToBounds="True"
-                                                    Background="#3A3A3A"
-                                                    Margin="0,0,12,0">
-                                                <Image Source="{Binding Artwork}"
-                                                       Stretch="UniformToFill" />
-                                            </Border>
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                                <TextBlock Text="{Binding Title}" Classes="RowTitle" />
-                                                <TextBlock Text="{Binding Artist}" Classes="RowSubtitle" />
-                                            </StackPanel>
-                                            <Button Grid.Column="2"
-                                                    Classes="IconOnly"
-                                                    Width="32"
-                                                    Height="32"
-                                                    VerticalAlignment="Center"
-                                                    PointerPressed="OnActionsPointerPressed"
-                                                    Click="OnSongOverflowClick"
-                                                    ToolTip.Tip="More options">
-                                                <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
-                                                     Width="18" Height="18"
-                                                     Opacity="0.75" />
-                                            </Button>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- Your top albums (Last.fm) -->
+                    <StackPanel Spacing="12" IsVisible="{Binding HasTopAlbums}">
+                        <StackPanel>
+                            <TextBlock Text="Your top albums" Classes="SectionTitle" />
+                            <TextBlock Text="The records you keep coming back to on Last.fm"
+                                       Classes="SectionSubtitle" />
+                        </StackPanel>
+
+                        <ItemsControl Classes="CardRow"
+                                      ItemsSource="{Binding TopAlbums}"
+                                      ItemTemplate="{StaticResource AlbumCardTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- Recently played -->
+                    <StackPanel Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Recently played" Classes="SectionTitle" />
+                            <Button Grid.Column="1"
+                                    Classes="LinkButton"
+                                    Content="View all"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding ViewAllRecentlyPlayedCommand}"
+                                    IsVisible="{Binding HasRecentlyPlayed}" />
+                        </Grid>
+
+                        <TextBlock Text="Play something to fill this list."
+                                   Classes="SectionSubtitle"
+                                   IsVisible="{Binding !HasRecentlyPlayed}" />
+
+                        <ItemsControl Classes="CardRow"
+                                      ItemsSource="{Binding RecentlyPlayedPreview}"
+                                      ItemTemplate="{StaticResource SongCardTemplate}"
+                                      IsVisible="{Binding HasRecentlyPlayed}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                         </ItemsControl>
                     </StackPanel>
 
                     <!-- Uploads for you -->
-                    <StackPanel Spacing="10">
+                    <StackPanel Spacing="12">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel>
                                 <TextBlock Text="Uploads for you" Classes="SectionTitle" />
@@ -287,172 +507,41 @@
                                    Classes="SectionSubtitle"
                                    IsVisible="{Binding !HasUploads}" />
 
-                        <ItemsControl ItemsSource="{Binding UploadSongsPreview}"
+                        <ItemsControl Classes="CardRow"
+                                      ItemsSource="{Binding UploadSongsPreview}"
+                                      ItemTemplate="{StaticResource SongCardTemplate}"
                                       IsVisible="{Binding HasUploads}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <UniformGrid Columns="3" />
+                                    <WrapPanel Orientation="Horizontal" />
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="models:Song">
-                                    <Border Margin="0,0,16,12"
-                                            Background="Transparent"
-                                            Cursor="Hand"
-                                            DoubleTapped="OnSongDoubleTapped">
-                                        <Grid ColumnDefinitions="Auto,*,Auto">
-                                            <Border Grid.Column="0"
-                                                    Width="48"
-                                                    Height="48"
-                                                    CornerRadius="6"
-                                                    ClipToBounds="True"
-                                                    Background="#3A3A3A"
-                                                    Margin="0,0,12,0">
-                                                <Image Source="{Binding Artwork}"
-                                                       Stretch="UniformToFill" />
-                                            </Border>
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                                <TextBlock Text="{Binding Title}" Classes="RowTitle" />
-                                                <TextBlock Text="{Binding Artist}" Classes="RowSubtitle" />
-                                            </StackPanel>
-                                            <Button Grid.Column="2"
-                                                    Classes="IconOnly"
-                                                    Width="32"
-                                                    Height="32"
-                                                    VerticalAlignment="Center"
-                                                    PointerPressed="OnActionsPointerPressed"
-                                                    Click="OnSongOverflowClick"
-                                                    ToolTip.Tip="More options">
-                                                <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
-                                                     Width="18" Height="18"
-                                                     Opacity="0.75" />
-                                            </Button>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-
-                    <!-- Recently played -->
-                    <StackPanel Spacing="10">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Text="Recently played" Classes="SectionTitle" />
-                            <Button Grid.Column="1"
-                                    Classes="LinkButton"
-                                    Content="View all"
-                                    VerticalAlignment="Top"
-                                    Command="{Binding ViewAllRecentlyPlayedCommand}"
-                                    IsVisible="{Binding HasRecentlyPlayed}" />
-                        </Grid>
-
-                        <TextBlock Text="Play something to fill this list."
-                                   Classes="SectionSubtitle"
-                                   IsVisible="{Binding !HasRecentlyPlayed}" />
-
-                        <ItemsControl ItemsSource="{Binding RecentlyPlayedPreview}"
-                                      IsVisible="{Binding HasRecentlyPlayed}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Columns="3" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="models:Song">
-                                    <Border Margin="0,0,16,12"
-                                            Background="Transparent"
-                                            Cursor="Hand"
-                                            DoubleTapped="OnSongDoubleTapped">
-                                        <Grid ColumnDefinitions="Auto,*,Auto">
-                                            <Border Grid.Column="0"
-                                                    Width="48"
-                                                    Height="48"
-                                                    CornerRadius="6"
-                                                    ClipToBounds="True"
-                                                    Background="#3A3A3A"
-                                                    Margin="0,0,12,0">
-                                                <Image Source="{Binding Artwork}"
-                                                       Stretch="UniformToFill" />
-                                            </Border>
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                                <TextBlock Text="{Binding Title}" Classes="RowTitle" />
-                                                <TextBlock Text="{Binding Artist}" Classes="RowSubtitle" />
-                                            </StackPanel>
-                                            <Button Grid.Column="2"
-                                                    Classes="IconOnly"
-                                                    Width="32"
-                                                    Height="32"
-                                                    VerticalAlignment="Center"
-                                                    PointerPressed="OnActionsPointerPressed"
-                                                    Click="OnSongOverflowClick"
-                                                    ToolTip.Tip="More options">
-                                                <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
-                                                     Width="18" Height="18"
-                                                     Opacity="0.75" />
-                                            </Button>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- UPLOADS TAB -->
-                <StackPanel IsVisible="{Binding ShowUploadsContent}" Spacing="10">
-                    <TextBlock Text="Uploads for you" Classes="SectionTitle" />
-                    <TextBlock Text="Local and downloaded tracks from your library"
-                               Classes="SectionSubtitle"
-                               Margin="0,0,0,12" />
+                <StackPanel IsVisible="{Binding ShowUploadsContent}" Spacing="12">
+                    <StackPanel>
+                        <TextBlock Text="Uploads for you" Classes="SectionTitle" />
+                        <TextBlock Text="Local and downloaded tracks from your library"
+                                   Classes="SectionSubtitle"
+                                   Margin="0,4,0,8" />
+                    </StackPanel>
 
                     <TextBlock Text="No local uploads yet — download from Search or add files to a playlist."
                                Classes="SectionSubtitle"
                                IsVisible="{Binding !HasUploads}" />
 
-                    <ItemsControl ItemsSource="{Binding UploadSongs}"
+                    <ItemsControl Classes="CardRow"
+                                  ItemsSource="{Binding UploadSongs}"
+                                  ItemTemplate="{StaticResource SongCardTemplate}"
                                   IsVisible="{Binding HasUploads}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <UniformGrid Columns="3" />
+                                <WrapPanel Orientation="Horizontal" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="models:Song">
-                                <Border Margin="0,0,16,12"
-                                        Background="Transparent"
-                                        Cursor="Hand"
-                                        DoubleTapped="OnSongDoubleTapped">
-                                    <Grid ColumnDefinitions="Auto,*,Auto">
-                                        <Border Grid.Column="0"
-                                                Width="48"
-                                                Height="48"
-                                                CornerRadius="6"
-                                                ClipToBounds="True"
-                                                Background="#3A3A3A"
-                                                Margin="0,0,12,0">
-                                            <Image Source="{Binding Artwork}"
-                                                   Stretch="UniformToFill" />
-                                        </Border>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock Text="{Binding Title}" Classes="RowTitle" />
-                                            <TextBlock Text="{Binding Artist}" Classes="RowSubtitle" />
-                                        </StackPanel>
-                                        <Button Grid.Column="2"
-                                                Classes="IconOnly"
-                                                Width="32"
-                                                Height="32"
-                                                VerticalAlignment="Center"
-                                                PointerPressed="OnActionsPointerPressed"
-                                                Click="OnSongOverflowClick"
-                                                ToolTip.Tip="More options">
-                                            <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
-                                                 Width="18" Height="18"
-                                                 Opacity="0.75" />
-                                        </Button>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>
             </StackPanel>

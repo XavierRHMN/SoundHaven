@@ -26,12 +26,14 @@ public sealed class HomeViewModel : ViewModelBase
     private readonly IUserNotificationService _notifications;
     private readonly ILastFmDataService _lastFmDataService;
     private readonly IYouTubeMediaService _youTubeMediaService;
+    private readonly IAlbumArtService _albumArtService;
     private readonly CancellationTokenSource _lifetimeCancellation = new();
     private Song? _menuSong;
     private bool _showForYou = true;
     private bool _showAllRecentlyPlayed;
     private bool _isLoadingRecommendations;
     private int _disposeState;
+    private int _uploadArtworkPassRunning;
 
     public HomeViewModel(
         PlaylistStore playlistStore,
@@ -41,7 +43,8 @@ public sealed class HomeViewModel : ViewModelBase
         NavigationService navigation,
         IUserNotificationService notifications,
         ILastFmDataService lastFmDataService,
-        IYouTubeMediaService youTubeMediaService)
+        IYouTubeMediaService youTubeMediaService,
+        IAlbumArtService albumArtService)
     {
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
         _recentPlaybackStore = recentPlaybackStore
@@ -56,15 +59,19 @@ public sealed class HomeViewModel : ViewModelBase
             ?? throw new ArgumentNullException(nameof(lastFmDataService));
         _youTubeMediaService = youTubeMediaService
             ?? throw new ArgumentNullException(nameof(youTubeMediaService));
+        _albumArtService = albumArtService
+            ?? throw new ArgumentNullException(nameof(albumArtService));
 
         FeaturedPlaylists = [];
         UploadSongs = [];
         UploadSongsPreview = [];
         RecentlyPlayedPreview = [];
         RecommendedSongs = [];
+        TopAlbums = [];
 
         _playlistStore.Playlists.CollectionChanged += OnPlaylistsChanged;
         _recentPlaybackStore.RecentSongs.CollectionChanged += OnRecentSongsChanged;
+        _lastFmDataService.AuthenticationStateChanged += OnLastFmAuthenticationChanged;
 
         OpenPlaylistCommand = new RelayCommand<Playlist>(OpenPlaylist, playlist => playlist is not null);
         PlaySongCommand = new AsyncRelayCommand<Song>(
@@ -90,6 +97,7 @@ public sealed class HomeViewModel : ViewModelBase
         RefreshUploads();
         RefreshRecentlyPlayedPreview();
         _ = LoadRecommendationsAsync();
+        _ = LoadTopAlbumsAsync();
     }
 
     public ObservableCollection<Playlist> FeaturedPlaylists { get; }
@@ -102,7 +110,16 @@ public sealed class HomeViewModel : ViewModelBase
 
     public ObservableCollection<Song> RecommendedSongs { get; }
 
+    public ObservableCollection<Song> TopAlbums { get; }
+
     public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
+
+    public string Greeting { get; } = DateTime.Now.Hour switch
+    {
+        < 12 => "Good morning",
+        < 18 => "Good afternoon",
+        _ => "Good evening"
+    };
 
     public ObservableCollection<Song> RecentlyPlayedSongs => _recentPlaybackStore.RecentSongs;
 
@@ -160,6 +177,8 @@ public sealed class HomeViewModel : ViewModelBase
 
     public bool HasRecommendations => RecommendedSongs.Count > 0;
 
+    public bool HasTopAlbums => TopAlbums.Count > 0;
+
     public bool ShowRecommendationsEmpty =>
         !IsLoadingRecommendations && !HasRecommendations;
 
@@ -199,6 +218,7 @@ public sealed class HomeViewModel : ViewModelBase
         _lifetimeCancellation.Dispose();
         _playlistStore.Playlists.CollectionChanged -= OnPlaylistsChanged;
         _recentPlaybackStore.RecentSongs.CollectionChanged -= OnRecentSongsChanged;
+        _lastFmDataService.AuthenticationStateChanged -= OnLastFmAuthenticationChanged;
         foreach (Playlist playlist in _playlistStore.Playlists)
         {
             playlist.Songs.CollectionChanged -= OnPlaylistSongsChanged;
@@ -318,7 +338,8 @@ public sealed class HomeViewModel : ViewModelBase
 
             IReadOnlyList<Song> merged = RecommendationFeed.MergeInterleaved(
                 await ytmTask,
-                await lastFmTask);
+                await lastFmTask,
+                maxDisplay: 12);
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -326,7 +347,7 @@ public sealed class HomeViewModel : ViewModelBase
                 foreach (Song song in merged)
                 {
                     RecommendedSongs.Add(song);
-                    _ = PrefetchThumbnailAsync(song);
+                    _ = ResolveArtworkAsync(song);
                 }
 
                 OnPropertyChanged(nameof(HasRecommendations));
@@ -410,14 +431,79 @@ public sealed class HomeViewModel : ViewModelBase
         };
     }
 
-    private async Task PrefetchThumbnailAsync(Song song)
+    private async Task LoadTopAlbumsAsync()
+    {
+        if (!_lastFmDataService.IsConfigured || !_lastFmDataService.IsAuthenticated)
+        {
+            return;
+        }
+
+        try
+        {
+            IEnumerable<Song> albums =
+                await _lastFmDataService.GetRecommendedAlbumsAsync(_lifetimeCancellation.Token);
+            var top = albums.Take(6).ToList();
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                TopAlbums.Clear();
+                foreach (Song album in top)
+                {
+                    TopAlbums.Add(album);
+                    _ = ResolveArtworkAsync(album, isAlbum: true);
+                }
+
+                OnPropertyChanged(nameof(HasTopAlbums));
+            });
+        }
+        catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
+        {
+            // Disposing.
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Last.fm top albums failed: {exception.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Best-effort artwork: prefer an existing YouTube thumb, then a trusted
+    /// Last.fm URL, then a keyless Deezer/iTunes lookup for songs with neither.
+    /// </summary>
+    private async Task ResolveArtworkAsync(Song song, bool isAlbum = false)
     {
         try
         {
+            if (!AlbumArtService.IsUsableArtworkUrl(song.ArtworkUrl))
+            {
+                song.ArtworkUrl = null;
+            }
+
             if (string.IsNullOrWhiteSpace(song.ThumbnailUrl)
                 && !string.IsNullOrWhiteSpace(song.ArtworkUrl))
             {
                 song.ThumbnailUrl = song.ArtworkUrl;
+            }
+
+            if (string.IsNullOrWhiteSpace(song.ThumbnailUrl)
+                && string.IsNullOrWhiteSpace(song.VideoId))
+            {
+                string? artworkUrl = isAlbum
+                    ? await _albumArtService.GetAlbumArtworkUrlAsync(
+                        song.Artist,
+                        song.Album ?? song.Title,
+                        _lifetimeCancellation.Token)
+                    : await _albumArtService.GetTrackArtworkUrlAsync(
+                        song.Artist,
+                        song.Title,
+                        _lifetimeCancellation.Token);
+
+                if (string.IsNullOrWhiteSpace(artworkUrl))
+                {
+                    return;
+                }
+
+                song.ThumbnailUrl = artworkUrl;
             }
 
             await song.LoadThumbnailAsync(cancellationToken: _lifetimeCancellation.Token);
@@ -428,8 +514,57 @@ public sealed class HomeViewModel : ViewModelBase
         }
         catch (Exception exception)
         {
-            Debug.WriteLine($"Recommendation thumbnail failed: {exception.Message}");
+            Debug.WriteLine($"Artwork resolution failed: {exception.Message}");
         }
+    }
+
+    private async Task EnsureUploadArtworkAsync()
+    {
+        if (Interlocked.Exchange(ref _uploadArtworkPassRunning, 1) != 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var missing = UploadSongs.Where(song => song.Artwork is null).Take(24).ToList();
+            foreach (Song song in missing)
+            {
+                _lifetimeCancellation.Token.ThrowIfCancellationRequested();
+
+                if (!string.IsNullOrWhiteSpace(song.FilePath))
+                {
+                    byte[]? embedded = await Task.Run(
+                        () => Mp3ToSongHelper.TryReadEmbeddedArtworkBytes(song.FilePath),
+                        _lifetimeCancellation.Token);
+                    if (embedded is { Length: > 0 })
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() => song.ArtworkData = embedded);
+                        continue;
+                    }
+                }
+
+                await ResolveArtworkAsync(song);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Disposing.
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Upload artwork pass failed: {exception.Message}");
+        }
+        finally
+        {
+            Volatile.Write(ref _uploadArtworkPassRunning, 0);
+        }
+    }
+
+    private void OnLastFmAuthenticationChanged(object? sender, EventArgs e)
+    {
+        _ = LoadRecommendationsAsync();
+        _ = LoadTopAlbumsAsync();
     }
 
     private void ExecuteAddToPlaylist(Playlist? playlist)
@@ -553,12 +688,13 @@ public sealed class HomeViewModel : ViewModelBase
         }
 
         UploadSongsPreview.Clear();
-        foreach (Song song in UploadSongs.Take(9))
+        foreach (Song song in UploadSongs.Take(6))
         {
             UploadSongsPreview.Add(song);
         }
 
         OnPropertyChanged(nameof(HasUploads));
+        _ = EnsureUploadArtworkAsync();
     }
 
     private void RefreshRecentlyPlayedPreview()
@@ -566,7 +702,7 @@ public sealed class HomeViewModel : ViewModelBase
         RecentlyPlayedPreview.Clear();
         IEnumerable<Song> source = ShowAllRecentlyPlayed
             ? RecentlyPlayedSongs
-            : RecentlyPlayedSongs.Take(9);
+            : RecentlyPlayedSongs.Take(6);
 
         foreach (Song song in source)
         {

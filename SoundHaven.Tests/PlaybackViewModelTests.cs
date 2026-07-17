@@ -514,6 +514,12 @@ public sealed class PlaybackViewModelTests : IDisposable
 
     private sealed class FakeLastFmDataService : ILastFmDataService
     {
+        public event EventHandler? AuthenticationStateChanged
+        {
+            add { }
+            remove { }
+        }
+
         public bool IsConfigured => false;
         public bool IsAuthenticated => false;
         public string? LastError => null;

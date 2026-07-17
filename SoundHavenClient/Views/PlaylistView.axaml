@@ -404,7 +404,8 @@
         </Border>
 
         <!-- Track list -->
-        <DataGrid Grid.Row="2"
+        <DataGrid x:Name="TrackGrid"
+                  Grid.Row="2"
                   Margin="16,0,16,16"
                   ItemsSource="{Binding TrackRows}"
                   SelectedItem="{Binding SelectedTrackRow}"

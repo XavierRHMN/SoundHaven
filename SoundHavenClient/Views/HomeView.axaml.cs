@@ -46,8 +46,37 @@ public partial class HomeView : UserControl
             return;
         }
 
+        e.Handled = true;
+        ShowSongMenu(button, viewModel, song, showAtPointer: false);
+    }
+
+    private void OnSongCardPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsRightButtonPressed)
+        {
+            return;
+        }
+
+        if (sender is not Control control
+            || control.DataContext is not Song song
+            || DataContext is not HomeViewModel viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        ShowSongMenu(control, viewModel, song, showAtPointer: true);
+    }
+
+    private static void ShowSongMenu(
+        Control anchor,
+        HomeViewModel viewModel,
+        Song song,
+        bool showAtPointer)
+    {
         viewModel.SetMenuSong(song);
-        var flyout = DarkMenuFlyout.Create(PlacementMode.BottomEdgeAlignedLeft);
+        var flyout = DarkMenuFlyout.Create(
+            showAtPointer ? PlacementMode.Pointer : PlacementMode.BottomEdgeAlignedLeft);
         flyout.Items.Add(new MenuItem
         {
             Header = "Play now",
@@ -91,8 +120,7 @@ public partial class HomeView : UserControl
         });
 
         flyout.Items.Add(addToPlaylist);
-        flyout.ShowAt(button);
-        e.Handled = true;
+        flyout.ShowAt(anchor, showAtPointer);
     }
 
     private void OnPlaylistCardPressed(object? sender, PointerPressedEventArgs e)

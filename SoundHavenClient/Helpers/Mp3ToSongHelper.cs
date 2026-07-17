@@ -97,6 +97,34 @@ namespace SoundHaven.Helpers
             }
         }
 
+        /// <summary>
+        /// Reads embedded cover bytes without touching the file or reshaping the image.
+        /// Safe to call from a background thread; returns null when no art is embedded.
+        /// </summary>
+        public static byte[]? TryReadEmbeddedArtworkBytes(string filePath)
+        {
+            try
+            {
+                if (!System.IO.File.Exists(filePath))
+                {
+                    return null;
+                }
+
+                using var file = TagLib.File.Create(filePath);
+                if (file.Tag.Pictures.Length == 0)
+                {
+                    return null;
+                }
+
+                byte[] data = file.Tag.Pictures[0].Data.Data;
+                return data is { Length: > 0 } ? data : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         private static RenderTargetBitmap AddBlackBarsToMake16by9(Bitmap originalBitmap)
         {
             // Get original dimensions

@@ -41,10 +41,12 @@ namespace SoundHaven.ViewModels
         private readonly PlaybackViewModel _playbackViewModel;
         private readonly IOpenFileDialogService _openFileDialogService;
         private readonly AppDatabase _appDatabase;
+        private readonly Stores.PlaylistStore _playlistStore;
         private readonly IUserNotificationService _notifications;
         private readonly ObservableCollection<Song> _emptySongs = new();
         private readonly ObservableCollection<PlaylistTrackRow> _trackRows = new();
         private readonly Bitmap?[] _coverSlots = new Bitmap?[4];
+        private Song? _menuSong;
 
         private Playlist? _displayedPlaylist;
         public Playlist? DisplayedPlaylist
@@ -229,20 +231,28 @@ namespace SoundHaven.ViewModels
         public AsyncRelayCommand ShufflePlaylistCommand { get; }
         public AsyncRelayCommand PlayPlaylistNextCommand { get; }
         public AsyncRelayCommand<Song> PlaySongCommand { get; }
+        public AsyncRelayCommand<Song> PlaySongNextCommand { get; }
+        public RelayCommand<Playlist> AddMenuSongToPlaylistCommand { get; }
+        public RelayCommand<Song> RemoveSongFromPlaylistCommand { get; }
         public AsyncRelayCommand OpenEditPlaylistCommand { get; }
         public RelayCommand EnterRemoveSongsCommand { get; }
         public RelayCommand CancelRemoveSongsCommand { get; }
         public RelayCommand DeleteSelectedSongsCommand { get; }
 
+        /// <summary>Playlists the song context menu can add to (from the shared store).</summary>
+        public ObservableCollection<Playlist> AllPlaylists => _playlistStore.Playlists;
+
         public PlaylistViewModel(
             PlaybackViewModel playbackViewModel,
             IOpenFileDialogService openFileDialogService,
             AppDatabase appDatabase,
+            Stores.PlaylistStore playlistStore,
             IUserNotificationService notifications)
         {
             _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
             _openFileDialogService = openFileDialogService ?? throw new ArgumentNullException(nameof(openFileDialogService));
             _appDatabase = appDatabase ?? throw new ArgumentNullException(nameof(appDatabase));
+            _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
             _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
             _playbackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
@@ -267,6 +277,16 @@ namespace SoundHaven.ViewModels
                 PlaySongAsync,
                 song => song is not null && !IsEditMode,
                 exception => _notifications.ShowError(exception.Message));
+            PlaySongNextCommand = new AsyncRelayCommand<Song>(
+                PlaySongNextAsync,
+                song => song is not null && !IsEditMode,
+                exception => _notifications.ShowError(exception.Message));
+            AddMenuSongToPlaylistCommand = new RelayCommand<Playlist>(
+                AddMenuSongToPlaylist,
+                playlist => playlist is { Id: > 0 } && _menuSong is not null);
+            RemoveSongFromPlaylistCommand = new RelayCommand<Song>(
+                RemoveSongFromPlaylist,
+                song => song is not null && DisplayedPlaylist is { Id: > 0 });
             OpenEditPlaylistCommand = new AsyncRelayCommand(
                 () => EditPlaylistAsync(DisplayedPlaylist),
                 () => DisplayedPlaylist is { Id: > 0 } && !IsEditMode,
@@ -496,6 +516,62 @@ namespace SoundHaven.ViewModels
             {
                 _playbackViewModel.CurrentPlaylist = playlist;
                 await _playbackViewModel.PlayFromBeginning(song);
+            }
+        }
+
+        private async Task PlaySongNextAsync(Song? song)
+        {
+            if (song is null)
+            {
+                return;
+            }
+
+            await _playbackViewModel.PlayNext(song);
+            _notifications.ShowInfo($"Queued “{song.Title}” to play next.");
+        }
+
+        /// <summary>Remembers the row a context menu was opened for.</summary>
+        public void SetMenuSong(Song song)
+        {
+            _menuSong = song ?? throw new ArgumentNullException(nameof(song));
+            AddMenuSongToPlaylistCommand.RaiseCanExecuteChanged();
+        }
+
+        private void AddMenuSongToPlaylist(Playlist? playlist)
+        {
+            if (playlist is null || _menuSong is null)
+            {
+                return;
+            }
+
+            try
+            {
+                _playlistStore.AddSongToPlaylist(playlist, _menuSong);
+                _notifications.ShowInfo($"Added “{_menuSong.Title}” to “{playlist.Name}”.");
+            }
+            catch (Exception exception)
+            {
+                _notifications.ShowError(exception.Message);
+            }
+        }
+
+        private void RemoveSongFromPlaylist(Song? song)
+        {
+            if (song is null || DisplayedPlaylist is not { Id: > 0 } playlist)
+            {
+                return;
+            }
+
+            try
+            {
+                _appDatabase.RemoveSongsFromPlaylist(playlist.Id, [song.Id]);
+                song.IsSelected = false;
+                playlist.Songs.Remove(song);
+                _notifications.ShowInfo($"Removed “{song.Title}” from “{playlist.Name}”.");
+            }
+            catch (Exception exception)
+            {
+                _notifications.ShowError(exception.Message);
             }
         }
 

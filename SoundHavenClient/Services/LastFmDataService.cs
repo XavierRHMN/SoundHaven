@@ -16,6 +16,9 @@ namespace SoundHaven.Services;
 
 public interface ILastFmDataService
 {
+    /// <summary>Raised after a successful sign-in so views can reload account data.</summary>
+    event EventHandler? AuthenticationStateChanged;
+
     bool IsConfigured { get; }
 
     bool IsAuthenticated { get; }
@@ -79,6 +82,8 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
             LastError = ConfigurationError;
         }
     }
+
+    public event EventHandler? AuthenticationStateChanged;
 
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(_apiKey)
@@ -193,6 +198,7 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
                 ? nameElement.GetString() ?? normalizedUsername
                 : normalizedUsername;
             LastError = null;
+            AuthenticationStateChanged?.Invoke(this, EventArgs.Empty);
             return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
