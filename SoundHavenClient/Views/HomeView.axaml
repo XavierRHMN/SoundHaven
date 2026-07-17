@@ -479,15 +479,25 @@
                         VerticalAlignment="Center"
                         Margin="0,0,10,0">
                 <Button Classes="HomePill"
-                        Content="Connect Last.fm"
                         Click="OnConnectLastFmClick"
                         IsVisible="{Binding IsLastFmConnectVisible}"
-                        ToolTip.Tip="Sign in to scrobble and mix in your taste" />
+                        ToolTip.Tip="Sign in to scrobble and mix in your taste">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Svg Path="avares://SoundHavenClient/Assets/Icons/lastfm.svg"
+                             Width="15" Height="15" VerticalAlignment="Center" />
+                        <TextBlock Text="Connect Last.fm" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
                 <Button Classes="HomePill"
-                        Content="Last.fm ✓"
                         Click="OnLastFmAccountClick"
                         IsVisible="{Binding IsLastFmConnected}"
-                        ToolTip.Tip="Last.fm account connected" />
+                        ToolTip.Tip="Last.fm account connected">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Svg Path="avares://SoundHavenClient/Assets/Icons/lastfm.svg"
+                             Width="15" Height="15" VerticalAlignment="Center" />
+                        <TextBlock Text="Last.fm ✓" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
 
             <!-- Search bar -->
@@ -643,7 +653,7 @@
                                      IsVisible="{Binding IsLoadingRecommendations}"
                                      Foreground="{DynamicResource PrimaryColor}" />
 
-                        <TextBlock Text="Couldn’t load recommendations right now. Check your connection, or sign in on the Last.fm tab to mix in your taste."
+                        <TextBlock Text="Couldn’t load recommendations right now. Check your connection, or connect Last.fm to mix in your taste."
                                    Classes="SectionSubtitle CardAligned"
                                    TextWrapping="Wrap"
                                    IsVisible="{Binding ShowRecommendationsEmpty}" />

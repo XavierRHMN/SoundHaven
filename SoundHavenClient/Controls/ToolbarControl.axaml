@@ -175,15 +175,6 @@
             </Button>
 
             <Button Classes="NavItem"
-                    Classes.Selected="{Binding IsLastFmActive}"
-                    Command="{Binding ShowLastFmViewCommand}">
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <Svg Path="avares://SoundHavenClient/Assets/Icons/lastfm.svg" Width="16" Height="16" />
-                    <TextBlock Classes="ToolbarText" Text="Last.fm" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-
-            <Button Classes="NavItem"
                     Classes.Selected="{Binding IsPlayerActive}"
                     Command="{Binding ShowPlayerViewCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="12">
