@@ -15,17 +15,22 @@
         WindowStartupLocation="CenterScreen">
 
     <Window.Styles>
-        <!-- Transport buttons carry no chrome at all in the mini player: no
-             background, border, or hover surface — just the icon. -->
+        <!-- Transport buttons carry no visible chrome in the mini player, but the
+             transparent Border fills the button bounds so the whole area stays
+             clickable — not just the icon glyph. -->
         <Style Selector="Button">
             <Setter Property="Theme" Value="{x:Null}" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <ContentPresenter Content="{TemplateBinding Content}"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Center" />
+                    <Border Background="{TemplateBinding Background}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
                 </ControlTemplate>
             </Setter>
         </Style>

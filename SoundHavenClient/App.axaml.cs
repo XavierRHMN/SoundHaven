@@ -109,6 +109,7 @@ public partial class App : Application, IDisposable
             _youTubeMediaService,
             playbackViewModel,
             playlistStore,
+            albumArtService,
             notifications);
         var volumeViewModel = new VolumeViewModel(_audioService);
         var songInfoViewModel = new SongInfoViewModel(playbackViewModel, _audioService, albumArtService);

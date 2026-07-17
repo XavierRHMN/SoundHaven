@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -6,6 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using SoundHaven.Commands;
 using SoundHaven.Models;
 using SoundHaven.Services;
@@ -40,7 +42,10 @@ public sealed class SearchViewModel : ViewModelBase
     private readonly IYouTubeMediaService _youTubeMediaService;
     private readonly PlaybackViewModel _playbackViewModel;
     private readonly PlaylistStore _playlistStore;
+    private readonly IAlbumArtService _albumArtService;
     private readonly IUserNotificationService _notifications;
+    private List<Song> _songResults = [];
+    private List<Song> _videoResults = [];
     private CancellationTokenSource _searchCancellation = new();
     private CancellationTokenSource _lifetimeCancellation = new();
     private string _searchQuery = string.Empty;
@@ -56,6 +61,7 @@ public sealed class SearchViewModel : ViewModelBase
         IYouTubeMediaService youTubeMediaService,
         PlaybackViewModel playbackViewModel,
         PlaylistStore playlistStore,
+        IAlbumArtService albumArtService,
         IUserNotificationService notifications)
     {
         _youTubeMediaService = youTubeMediaService
@@ -64,6 +70,8 @@ public sealed class SearchViewModel : ViewModelBase
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _playlistStore = playlistStore
             ?? throw new ArgumentNullException(nameof(playlistStore));
+        _albumArtService = albumArtService
+            ?? throw new ArgumentNullException(nameof(albumArtService));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
         SearchResults = [];
@@ -186,10 +194,9 @@ public sealed class SearchViewModel : ViewModelBase
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(SearchQuery) && SearchCommand.CanExecute(null))
-            {
-                _ = SearchCommand.ExecuteAsync();
-            }
+            // Both result sets are fetched together, so switching pills just
+            // re-displays the cached results — no new network request.
+            DisplayCurrentResults();
         }
     }
 
@@ -281,24 +288,55 @@ public sealed class SearchViewModel : ViewModelBase
         previousCancellation.Cancel();
         previousCancellation.Dispose();
 
-        bool searchSongs = SearchSongs;
         ShowResults = true;
         IsLoading = true;
-        LoadingMessage = searchSongs ? "Searching for songs..." : "Searching for videos...";
+        LoadingMessage = "Searching...";
         SelectedSong = null;
+        _songResults = [];
+        _videoResults = [];
         SearchResults.Clear();
         ResultRows.Clear();
         try
         {
-            var results = await _youTubeMediaService.SearchAsync(
-                SearchQuery,
+            // Search songs and videos for the same query at once so switching
+            // pills is instant.
+            Task<List<Song>> songsTask = SafeSearchAsync(SearchQuery, true, nextCancellation.Token);
+            Task<List<Song>> videosTask = SafeSearchAsync(SearchQuery, false, nextCancellation.Token);
+            await Task.WhenAll(songsTask, videosTask);
+            nextCancellation.Token.ThrowIfCancellationRequested();
+
+            _songResults = await songsTask;
+            _videoResults = await videosTask;
+            DisplayCurrentResults();
+        }
+        finally
+        {
+            if (ReferenceEquals(_searchCancellation, nextCancellation))
+            {
+                IsLoading = false;
+                LoadingMessage = string.Empty;
+                OnPropertyChanged(nameof(ShowNoResults));
+            }
+        }
+    }
+
+    private async Task<List<Song>> SafeSearchAsync(
+        string query,
+        bool searchSongs,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            IReadOnlyList<YouTubeSearchResult> results = await _youTubeMediaService.SearchAsync(
+                query,
                 15,
                 searchSongs,
-                nextCancellation.Token);
+                cancellationToken);
 
+            var songs = new List<Song>(results.Count);
             foreach (YouTubeSearchResult result in results)
             {
-                nextCancellation.Token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
                 var song = new Song
                 {
                     Title = result.Title,
@@ -312,21 +350,70 @@ public sealed class SearchViewModel : ViewModelBase
                     Views = result.ViewCount > 0 ? FormatViewCount(result.ViewCount) : null,
                     Year = result.Year
                 };
-                SearchResults.Add(song);
-                ResultRows.Add(new SearchResultRow(ResultRows.Count + 1, song));
-                _ = LoadResultThumbnailAsync(song, nextCancellation.Token);
+                songs.Add(song);
+                _ = LoadResultThumbnailAsync(song, cancellationToken);
+                _ = ResolveYearAsync(song, cancellationToken);
             }
 
-            UpdatePlayingHighlights();
+            return songs;
         }
-        finally
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            if (ReferenceEquals(_searchCancellation, nextCancellation))
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // A mode with no results (or a transient failure) just yields nothing.
+            Debug.WriteLine($"Search ({(searchSongs ? "songs" : "videos")}) failed: {exception.Message}");
+            return [];
+        }
+    }
+
+    private void DisplayCurrentResults()
+    {
+        List<Song> source = SearchSongs ? _songResults : _videoResults;
+        SearchResults.Clear();
+        ResultRows.Clear();
+        int number = 1;
+        foreach (Song song in source)
+        {
+            SearchResults.Add(song);
+            ResultRows.Add(new SearchResultRow(number++, song));
+        }
+
+        UpdatePlayingHighlights();
+        OnPropertyChanged(nameof(ShowNoResults));
+    }
+
+    // YouTube search rarely provides a year; resolve it the same way the player
+    // bar does, then assign on the UI thread (Avalonia doesn't marshal INPC).
+    private async Task ResolveYearAsync(Song song, CancellationToken cancellationToken)
+    {
+        if (song.Year is not null || string.IsNullOrWhiteSpace(song.Title))
+        {
+            return;
+        }
+
+        try
+        {
+            int? year = await _albumArtService.GetTrackYearAsync(
+                song.Artist,
+                song.Title,
+                cancellationToken);
+            if (year is null)
             {
-                IsLoading = false;
-                LoadingMessage = string.Empty;
-                OnPropertyChanged(nameof(ShowNoResults));
+                return;
             }
+
+            await Dispatcher.UIThread.InvokeAsync(() => song.Year ??= year);
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer search.
+        }
+        catch
+        {
+            // The year is decorative; never surface a failure.
         }
     }
 

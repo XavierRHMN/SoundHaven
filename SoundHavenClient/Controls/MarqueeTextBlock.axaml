@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SoundHaven.Controls.MarqueeTextBlock">
+    <Border x:Name="Viewport"
+            ClipToBounds="True"
+            Background="Transparent"
+            HorizontalAlignment="Stretch">
+        <TextBlock x:Name="Label"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Left"
+                   TextWrapping="NoWrap"
+                   Foreground="{Binding $parent[UserControl].Foreground}"
+                   FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular"
+                   FontSize="14" />
+    </Border>
+</UserControl>

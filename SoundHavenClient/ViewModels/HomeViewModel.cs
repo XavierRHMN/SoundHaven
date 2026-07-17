@@ -841,7 +841,8 @@ public sealed class HomeViewModel : ViewModelBase
 
         if (playlistCount == 0)
         {
-            return 1;
+            // An empty library still fills a whole first row of prompts.
+            return FeaturedGridColumns;
         }
 
         // Pad the partial last row up to a full row of three.

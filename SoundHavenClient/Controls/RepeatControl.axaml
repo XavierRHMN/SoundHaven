@@ -8,7 +8,8 @@
             Command="{Binding ToggleRepeatCommand}"
             Background="Transparent"
             Width="44" Height="44"
-            CornerRadius="22">
+            CornerRadius="22"
+            ToolTip.Tip="Toggle Repeat">
 
         <Panel>
             <Svg Path="avares://SoundHavenClient/Assets/Icons/repeat.svg"
