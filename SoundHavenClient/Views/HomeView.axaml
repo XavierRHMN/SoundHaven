@@ -217,16 +217,6 @@
             <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
         </Style>
 
-        <!-- Search-result marquee title: white, accent while playing (the inner
-             text block inherits Foreground). -->
-        <Style Selector="controls|MarqueeTextBlock">
-            <Setter Property="Foreground" Value="White" />
-        </Style>
-
-        <Style Selector="controls|MarqueeTextBlock.Playing">
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
-        </Style>
-
         <Style Selector="TextBlock.RowSubtitle">
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
@@ -792,10 +782,12 @@
               RowDefinitions="Auto,*"
               IsVisible="{Binding Search.ShowResults}">
             <!-- Column headers -->
+            <!-- Right padding matches the rows' scrollbar-clearance margin (16)
+                 plus their 8px cell padding, so header columns line up with cells. -->
             <Border Grid.Row="0"
                     BorderThickness="0,0,0,1"
                     BorderBrush="#22FFFFFF"
-                    Padding="8,0,8,10">
+                    Padding="8,0,24,10">
                 <Grid ColumnDefinitions="48,2.2*,*,*,64,72,96">
                     <TextBlock Text="#" Classes="ColumnHeader" HorizontalAlignment="Center" />
                     <TextBlock Grid.Column="1" Text="TITLE" Classes="ColumnHeader" />
@@ -849,11 +841,12 @@
                                                                             IsVisible="{Binding Song.Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
                                             </Panel>
                                         </Border>
-                                        <controls:MarqueeTextBlock Grid.Column="1"
-                                                                   Text="{Binding Song.Title}"
-                                                                   Classes.Playing="{Binding IsCurrentlyPlaying}"
-                                                                   VerticalAlignment="Center"
-                                                                   Margin="0,0,16,0" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Song.Title}"
+                                                   Classes="RowTitle"
+                                                   Classes.Playing="{Binding IsCurrentlyPlaying}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,16,0" />
                                     </Grid>
 
                                     <TextBlock Grid.Column="2"
@@ -870,8 +863,7 @@
                                                Text="{Binding Song.Year}"
                                                Classes="CellText"
                                                VerticalAlignment="Center"
-                                               HorizontalAlignment="Right"
-                                               Margin="0,0,16,0" />
+                                               HorizontalAlignment="Right" />
                                     <TextBlock Grid.Column="5"
                                                Text="{Binding Song.VideoDuration}"
                                                Classes="CellText"
