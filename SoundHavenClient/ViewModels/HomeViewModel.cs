@@ -69,6 +69,7 @@ public sealed class HomeViewModel : ViewModelBase
             ?? throw new ArgumentNullException(nameof(dislikedSongsStore));
 
         FeaturedPlaylists = [];
+        FeaturedItems = [];
         UploadSongs = [];
         UploadSongsPreview = [];
         RecentlyPlayedPreview = [];
@@ -80,6 +81,10 @@ public sealed class HomeViewModel : ViewModelBase
         _lastFmDataService.AuthenticationStateChanged += OnLastFmAuthenticationChanged;
 
         OpenPlaylistCommand = new RelayCommand<Playlist>(OpenPlaylist, playlist => playlist is not null);
+        CreatePlaylistCommand = new AsyncRelayCommand(
+            CreatePlaylistAsync,
+            () => true,
+            exception => _notifications.ShowError(exception.Message));
         DislikeSongCommand = new RelayCommand<Song>(ExecuteDislikeSong, song => song is not null);
         PlaySongCommand = new AsyncRelayCommand<Song>(
             PlaySongAsync,
@@ -108,6 +113,12 @@ public sealed class HomeViewModel : ViewModelBase
     }
 
     public ObservableCollection<Playlist> FeaturedPlaylists { get; }
+
+    /// <summary>
+    /// The featured grid's display items: the playlists plus a trailing
+    /// <see cref="NewPlaylistCard"/> call-to-action while the grid isn't full.
+    /// </summary>
+    public ObservableCollection<object> FeaturedItems { get; }
 
     public ObservableCollection<Song> UploadSongs { get; }
 
@@ -181,6 +192,8 @@ public sealed class HomeViewModel : ViewModelBase
 
     public bool HasFeaturedPlaylists => FeaturedPlaylists.Count > 0;
 
+    public bool HasFeaturedItems => FeaturedItems.Count > 0;
+
     public bool HasUploads => UploadSongs.Count > 0;
 
     public bool HasRecentlyPlayed => RecentlyPlayedSongs.Count > 0;
@@ -193,6 +206,8 @@ public sealed class HomeViewModel : ViewModelBase
         !IsLoadingRecommendations && !HasRecommendations;
 
     public RelayCommand<Playlist> OpenPlaylistCommand { get; }
+
+    public AsyncRelayCommand CreatePlaylistCommand { get; }
 
     public AsyncRelayCommand<Song> PlaySongCommand { get; }
 
@@ -711,15 +726,43 @@ public sealed class HomeViewModel : ViewModelBase
     private void OnRecentSongsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         RefreshRecentlyPlayedPreview();
 
+    private const int FeaturedGridCapacity = 6;
+
     private void RefreshFeaturedPlaylists()
     {
         FeaturedPlaylists.Clear();
-        foreach (Playlist playlist in _playlistStore.Playlists.Take(6))
+        foreach (Playlist playlist in _playlistStore.Playlists.Take(FeaturedGridCapacity))
         {
             FeaturedPlaylists.Add(playlist);
         }
 
+        FeaturedItems.Clear();
+        foreach (Playlist playlist in FeaturedPlaylists)
+        {
+            FeaturedItems.Add(playlist);
+        }
+
+        // Fill a trailing cell with a "New playlist" prompt while the grid has
+        // room, so a small library never leaves the shelf looking bare.
+        if (FeaturedPlaylists.Count < FeaturedGridCapacity)
+        {
+            FeaturedItems.Add(new NewPlaylistCard());
+        }
+
         OnPropertyChanged(nameof(HasFeaturedPlaylists));
+        OnPropertyChanged(nameof(HasFeaturedItems));
+    }
+
+    private async Task CreatePlaylistAsync()
+    {
+        var playlist = new Playlist { Name = "New playlist" };
+        if (!await _playlistViewModel.PromptPlaylistDetailsAsync(playlist, isCreating: true))
+        {
+            return;
+        }
+
+        _playlistStore.AddPlaylist(playlist);
+        OpenPlaylist(playlist);
     }
 
     private void RefreshUploads()

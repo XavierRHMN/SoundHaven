@@ -248,6 +248,21 @@ public partial class HomeView : UserControl
         flyout.ShowAt(button);
     }
 
+    private void OnNewPlaylistCardPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed
+            || DataContext is not HomeViewModel viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        if (viewModel.CreatePlaylistCommand.CanExecute(null))
+        {
+            viewModel.CreatePlaylistCommand.Execute(null);
+        }
+    }
+
     private void OnPlaylistCardPressed(object? sender, PointerPressedEventArgs e)
     {
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)

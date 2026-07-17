@@ -257,6 +257,26 @@
             <Setter Property="Background" Value="#2E2E2E" />
         </Style>
 
+        <!-- "New playlist" call-to-action card: fills empty grid cells and
+             reads as an action rather than a playlist. -->
+        <Style Selector="Border.NewPlaylistCard">
+            <Setter Property="Background" Value="#141414" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="BorderBrush" Value="#30FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border.NewPlaylistCard:pointerover">
+            <Setter Property="Background" Value="#242424" />
+        </Style>
+
         <!-- Media card: hover is the app-wide barely-visible translucent white,
              applied instantly so adjacent cards never show mixed fade states. -->
         <Style Selector="Border.SongCard">
@@ -530,15 +550,16 @@
                         <TextBlock Text="{Binding Greeting}" Classes="Greeting CardAligned" />
 
                         <!-- Hero playlist grid: up to 3 per row, height fits the
-                             number of playlists (no reserved empty rows). -->
-                        <ItemsControl ItemsSource="{Binding FeaturedPlaylists}"
-                                      IsVisible="{Binding HasFeaturedPlaylists}">
+                             number of items (no reserved empty rows). A trailing
+                             "New playlist" card fills the shelf for small libraries. -->
+                        <ItemsControl ItemsSource="{Binding FeaturedItems}"
+                                      IsVisible="{Binding HasFeaturedItems}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <UniformGrid Columns="3" />
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
+                            <ItemsControl.DataTemplates>
                                 <DataTemplate x:DataType="models:Playlist">
                                     <Border Classes="HeroCard"
                                             Margin="0,0,12,12"
@@ -574,7 +595,34 @@
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
+
+                                <DataTemplate x:DataType="models:NewPlaylistCard">
+                                    <Border Classes="NewPlaylistCard"
+                                            Margin="0,0,12,12"
+                                            PointerPressed="OnNewPlaylistCardPressed"
+                                            ToolTip.Tip="Create a new playlist">
+                                        <StackPanel Orientation="Horizontal"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    MinHeight="56"
+                                                    Spacing="10">
+                                            <Border Width="34"
+                                                    Height="34"
+                                                    CornerRadius="17"
+                                                    Background="#22FFFFFF">
+                                                <TextBlock Text="+"
+                                                           FontSize="22"
+                                                           Foreground="White"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock Text="New playlist"
+                                                       Classes="RowTitle"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.DataTemplates>
                         </ItemsControl>
                     </StackPanel>
 
