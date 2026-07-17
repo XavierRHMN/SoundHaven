@@ -30,6 +30,8 @@ namespace SoundHaven.Stores
             }
 
             _appDatabase.SavePlaylist(playlist);
+            playlist.CreatedAtUtc ??= DateTime.UtcNow;
+            playlist.UpdatedAtUtc = DateTime.UtcNow;
             if (!Playlists.Any(existing => existing.Id == playlist.Id))
             {
                 Playlists.Add(playlist);
@@ -51,6 +53,8 @@ namespace SoundHaven.Stores
             Playlist? stored = Playlists.FirstOrDefault(existing =>
                 ReferenceEquals(existing, playlist)
                 || (playlist.Id > 0 && existing.Id == playlist.Id));
+
+            (stored ?? playlist).UpdatedAtUtc = DateTime.UtcNow;
 
             ObservableCollection<Song> targetSongs = stored?.Songs ?? playlist.Songs;
             if (targetSongs.Any(existing => SongMatches(existing, song)))

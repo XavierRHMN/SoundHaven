@@ -222,7 +222,7 @@
 
                 <Button Grid.Column="2"
                         Classes="SidebarIcon"
-                        Command="{Binding SortPlaylistsCommand}"
+                        Click="OnSortButtonClick"
                         ToolTip.Tip="Sort playlists">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/sort.svg"
                          Width="18" Height="18"

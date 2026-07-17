@@ -100,7 +100,7 @@ public sealed class AppDatabaseTests : IDisposable
         foreignKeysCommand.CommandText = "PRAGMA foreign_keys;";
         long foreignKeys = (long)(foreignKeysCommand.ExecuteScalar() ?? 0L);
 
-        Assert.Equal(2, version);
+        Assert.Equal(3, version);
         Assert.Equal(1, foreignKeys);
     }
 

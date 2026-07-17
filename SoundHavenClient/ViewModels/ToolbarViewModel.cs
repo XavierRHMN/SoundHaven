@@ -10,6 +10,13 @@ using SoundHaven.Stores;
 
 namespace SoundHaven.ViewModels;
 
+public enum PlaylistSortMode
+{
+    CreatedDate,
+    UpdatedDate,
+    Alphabetical
+}
+
 public sealed class ToolbarViewModel : ViewModelBase
 {
     private readonly NavigationService _navigation;
@@ -22,7 +29,8 @@ public sealed class ToolbarViewModel : ViewModelBase
     private readonly ThemesViewModel _themesViewModel;
     private readonly IUserNotificationService _notifications;
     private Playlist? _toolbarSelectedPlaylist;
-    private bool _sortAscending = true;
+    private PlaylistSortMode _playlistSortMode = PlaylistSortMode.CreatedDate;
+    private bool _playlistSortDescending;
 
     public ToolbarViewModel(
         NavigationService navigation,
@@ -58,7 +66,6 @@ public sealed class ToolbarViewModel : ViewModelBase
         CreatePlaylistCommand = new AsyncRelayCommand(
             CreatePlaylistAsync,
             onException: exception => _notifications.ShowError(exception.Message));
-        SortPlaylistsCommand = new RelayCommand(SortPlaylists);
         DeletePlaylistCommand = new RelayCommand<Playlist>(DeletePlaylist);
         PlayNowCommand = new AsyncRelayCommand<Playlist>(
             PlayNowAsync,
@@ -113,7 +120,9 @@ public sealed class ToolbarViewModel : ViewModelBase
 
     public AsyncRelayCommand CreatePlaylistCommand { get; }
 
-    public RelayCommand SortPlaylistsCommand { get; }
+    public PlaylistSortMode PlaylistSortMode => _playlistSortMode;
+
+    public bool PlaylistSortDescending => _playlistSortDescending;
 
     public RelayCommand<Playlist> DeletePlaylistCommand { get; }
 
@@ -144,13 +153,44 @@ public sealed class ToolbarViewModel : ViewModelBase
         _notifications.ShowInfo("Playlist created.");
     }
 
-    private void SortPlaylists()
+    /// <summary>Re-selecting the active mode flips direction; a new mode gets its
+    /// natural default (dates newest-first, alphabetical A→Z).</summary>
+    public void SortPlaylistsBy(PlaylistSortMode mode)
     {
-        var ordered = _sortAscending
-            ? PlaylistCollection.OrderBy(playlist => playlist.Name, StringComparer.OrdinalIgnoreCase).ToList()
-            : PlaylistCollection.OrderByDescending(playlist => playlist.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        if (_playlistSortMode == mode)
+        {
+            _playlistSortDescending = !_playlistSortDescending;
+        }
+        else
+        {
+            _playlistSortMode = mode;
+            _playlistSortDescending = mode != PlaylistSortMode.Alphabetical;
+        }
 
-        _sortAscending = !_sortAscending;
+        ApplyPlaylistSort();
+        OnPropertyChanged(nameof(PlaylistSortMode));
+        OnPropertyChanged(nameof(PlaylistSortDescending));
+    }
+
+    private void ApplyPlaylistSort()
+    {
+        var ordered = (_playlistSortMode switch
+        {
+            PlaylistSortMode.Alphabetical => PlaylistCollection
+                .OrderBy(playlist => playlist.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(playlist => playlist.Id),
+            PlaylistSortMode.UpdatedDate => PlaylistCollection
+                .OrderBy(playlist => playlist.UpdatedAtUtc ?? playlist.CreatedAtUtc ?? DateTime.MinValue)
+                .ThenBy(playlist => playlist.Id),
+            _ => PlaylistCollection
+                .OrderBy(playlist => playlist.CreatedAtUtc ?? DateTime.MinValue)
+                .ThenBy(playlist => playlist.Id)
+        }).ToList();
+
+        if (_playlistSortDescending)
+        {
+            ordered.Reverse();
+        }
 
         PlaylistCollection.Clear();
         foreach (Playlist playlist in ordered)

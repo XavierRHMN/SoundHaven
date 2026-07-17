@@ -40,6 +40,12 @@ namespace SoundHaven.Models
 
         public int Id { get; set; }
 
+        /// <summary>UTC creation/last-modified stamps persisted in SQLite (null for
+        /// playlists created before the v3 schema; sorters fall back to Id order).</summary>
+        public DateTime? CreatedAtUtc { get; set; }
+
+        public DateTime? UpdatedAtUtc { get; set; }
+
         private string _name = string.Empty;
         public string Name
         {

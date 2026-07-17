@@ -93,7 +93,11 @@ public partial class App : Application, IDisposable
             database,
             playlistStore,
             notifications);
-        var playerViewModel = new PlayerViewModel(playbackViewModel, playlistStore, notifications);
+        var playerViewModel = new PlayerViewModel(
+            playbackViewModel,
+            playlistStore,
+            recentPlaybackStore,
+            notifications);
         var lastFmViewModel = new LastFmViewModel(_lastFmDataService);
         var seekSliderViewModel = new SeekSliderViewModel(
             _audioService,

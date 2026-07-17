@@ -11,13 +11,18 @@ namespace SoundHaven.ViewModels;
 
 public sealed class PlayerViewModel : ViewModelBase
 {
+    private const int MaxHistoryItems = 20;
+
     private readonly PlaybackViewModel _playbackViewModel;
     private readonly PlaylistStore _playlistStore;
+    private readonly RecentPlaybackStore _recentPlaybackStore;
     private readonly IUserNotificationService _notifications;
     private ObservableCollection<Song>? _subscribedSongs;
     private Song? _menuSong;
 
     public ObservableCollection<Song> UpNextSongs { get; } = [];
+
+    public ObservableCollection<Song> HistorySongs { get; } = [];
 
     public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
 
@@ -30,6 +35,8 @@ public sealed class PlayerViewModel : ViewModelBase
 
     public bool HasUpNextSongs => UpNextSongs.Count > 0;
 
+    public bool HasHistorySongs => HistorySongs.Count > 0;
+
     public AsyncRelayCommand<Song> PlaySongCommand { get; }
 
     public RelayCommand<Playlist> AddToPlaylistCommand { get; }
@@ -39,13 +46,17 @@ public sealed class PlayerViewModel : ViewModelBase
     public PlayerViewModel(
         PlaybackViewModel playbackViewModel,
         PlaylistStore playlistStore,
+        RecentPlaybackStore recentPlaybackStore,
         IUserNotificationService notifications)
     {
         _playbackViewModel = playbackViewModel
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
+        _recentPlaybackStore = recentPlaybackStore
+            ?? throw new ArgumentNullException(nameof(recentPlaybackStore));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
         _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
+        _recentPlaybackStore.RecentSongs.CollectionChanged += OnRecentSongsChanged;
         PlaySongCommand = new AsyncRelayCommand<Song>(
             PlaySongAsync,
             song => song is not null,
@@ -58,6 +69,7 @@ public sealed class PlayerViewModel : ViewModelBase
             () => _menuSong is not null);
         SubscribeToPlaylistSongs();
         RefreshUpNext();
+        RefreshHistory();
     }
 
     public void SetMenuSong(Song song)
@@ -153,6 +165,7 @@ public sealed class PlayerViewModel : ViewModelBase
     public override void Dispose()
     {
         _playbackViewModel.PropertyChanged -= PlaybackViewModel_PropertyChanged;
+        _recentPlaybackStore.RecentSongs.CollectionChanged -= OnRecentSongsChanged;
         UnsubscribeFromPlaylistSongs();
         base.Dispose();
     }
@@ -214,6 +227,7 @@ public sealed class PlayerViewModel : ViewModelBase
                 OnPropertyChanged(nameof(PlayerViewSong));
                 OnPropertyChanged(nameof(HasPlayingSong));
                 RefreshUpNext();
+                RefreshHistory();
                 break;
             case nameof(PlaybackViewModel.CurrentPlaylist):
                 OnPropertyChanged(nameof(ActivePlaylistName));
@@ -256,5 +270,52 @@ public sealed class PlayerViewModel : ViewModelBase
         }
 
         OnPropertyChanged(nameof(HasUpNextSongs));
+    }
+
+    private void OnRecentSongsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        RefreshHistory();
+    }
+
+    /// <summary>Recently played tracks, excluding whatever is playing right now.</summary>
+    private void RefreshHistory()
+    {
+        HistorySongs.Clear();
+        Song? current = _playbackViewModel.CurrentSong;
+        foreach (Song song in _recentPlaybackStore.RecentSongs)
+        {
+            if (current is not null && IsSameTrack(current, song))
+            {
+                continue;
+            }
+
+            HistorySongs.Add(song);
+            if (HistorySongs.Count >= MaxHistoryItems)
+            {
+                break;
+            }
+        }
+
+        OnPropertyChanged(nameof(HasHistorySongs));
+    }
+
+    // History entries are clones (RecentPlaybackStore.RecordPlay), so match by
+    // identity fields rather than reference.
+    private static bool IsSameTrack(Song left, Song right)
+    {
+        if (!string.IsNullOrWhiteSpace(left.VideoId)
+            && string.Equals(left.VideoId, right.VideoId, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(left.FilePath)
+            && string.Equals(left.FilePath, right.FilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return string.Equals(left.Title, right.Title, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(left.Artist, right.Artist, StringComparison.OrdinalIgnoreCase);
     }
 }

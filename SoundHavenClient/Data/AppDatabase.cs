@@ -11,7 +11,7 @@ namespace SoundHaven.Data
 {
     public class AppDatabase
     {
-        private const int CurrentSchemaVersion = 2;
+        private const int CurrentSchemaVersion = 3;
         private const string DatabaseDirectoryName = "SoundHaven";
         private const string DatabaseFileName = "AppDatabase.db";
         private const string LegacyDatabaseFileName = "AppdataBase.db";
@@ -171,6 +171,11 @@ namespace SoundHaven.Data
                 MigratePlaylistsToV2(connection, transaction);
             }
 
+            if (schemaVersion < 3)
+            {
+                MigratePlaylistsToV3(connection, transaction);
+            }
+
             using (var indexCommand = connection.CreateCommand())
             {
                 indexCommand.Transaction = transaction;
@@ -236,7 +241,9 @@ namespace SoundHaven.Data
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Name TEXT NOT NULL,
                     Description TEXT NOT NULL DEFAULT '',
-                    CoverImageData BLOB
+                    CoverImageData BLOB,
+                    CreatedAt TEXT,
+                    UpdatedAt TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS AppSettings (
@@ -267,6 +274,56 @@ namespace SoundHaven.Data
                 "Playlists",
                 "CoverImageData",
                 "ALTER TABLE Playlists ADD COLUMN CoverImageData BLOB;");
+        }
+
+        private static void MigratePlaylistsToV3(
+            SqliteConnection connection,
+            SqliteTransaction transaction)
+        {
+            EnsureColumnExists(
+                connection,
+                transaction,
+                "Playlists",
+                "CreatedAt",
+                "ALTER TABLE Playlists ADD COLUMN CreatedAt TEXT;");
+            EnsureColumnExists(
+                connection,
+                transaction,
+                "Playlists",
+                "UpdatedAt",
+                "ALTER TABLE Playlists ADD COLUMN UpdatedAt TEXT;");
+        }
+
+        private static string UtcNowText() =>
+            DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+
+        private static DateTime? ParseTimestamp(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            return DateTime.TryParse(
+                value,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
+                out DateTime parsed)
+                ? parsed
+                : null;
+        }
+
+        private static void TouchPlaylist(
+            SqliteConnection connection,
+            SqliteTransaction? transaction,
+            long playlistId)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "UPDATE Playlists SET UpdatedAt = @now WHERE Id = @id;";
+            command.Parameters.AddWithValue("@now", UtcNowText());
+            command.Parameters.AddWithValue("@id", playlistId);
+            command.ExecuteNonQuery();
         }
 
         private static void EnsureColumnExists(
@@ -451,7 +508,8 @@ namespace SoundHaven.Data
                     UPDATE Playlists
                     SET Name = @name,
                         Description = @description,
-                        CoverImageData = @cover
+                        CoverImageData = @cover,
+                        UpdatedAt = @now
                     WHERE Id = @id;";
                 command.Parameters.AddWithValue("@description", description ?? string.Empty);
                 command.Parameters.AddWithValue(
@@ -460,10 +518,12 @@ namespace SoundHaven.Data
             }
             else
             {
-                command.CommandText = "UPDATE Playlists SET Name = @name WHERE Id = @id;";
+                command.CommandText =
+                    "UPDATE Playlists SET Name = @name, UpdatedAt = @now WHERE Id = @id;";
             }
 
             command.Parameters.AddWithValue("@name", name);
+            command.Parameters.AddWithValue("@now", UtcNowText());
             command.Parameters.AddWithValue("@id", playlistId);
             command.ExecuteNonQuery();
         }
@@ -485,7 +545,8 @@ namespace SoundHaven.Data
                     UPDATE Playlists
                     SET Name = @name,
                         Description = @description,
-                        CoverImageData = @cover
+                        CoverImageData = @cover,
+                        UpdatedAt = @now
                     WHERE Id = @id;";
                 updateCommand.Parameters.AddWithValue("@name", playlist.Name);
                 updateCommand.Parameters.AddWithValue("@description", playlist.Description ?? string.Empty);
@@ -494,6 +555,7 @@ namespace SoundHaven.Data
                     playlist.CoverImageData is { Length: > 0 }
                         ? playlist.CoverImageData
                         : DBNull.Value);
+                updateCommand.Parameters.AddWithValue("@now", UtcNowText());
                 updateCommand.Parameters.AddWithValue("@id", playlistId);
                 if (updateCommand.ExecuteNonQuery() == 0)
                 {
@@ -505,8 +567,8 @@ namespace SoundHaven.Data
                 using var insertCommand = connection.CreateCommand();
                 insertCommand.Transaction = transaction;
                 insertCommand.CommandText = @"
-                    INSERT INTO Playlists (Name, Description, CoverImageData)
-                    VALUES (@name, @description, @cover);";
+                    INSERT INTO Playlists (Name, Description, CoverImageData, CreatedAt, UpdatedAt)
+                    VALUES (@name, @description, @cover, @now, @now);";
                 insertCommand.Parameters.AddWithValue("@name", playlist.Name);
                 insertCommand.Parameters.AddWithValue("@description", playlist.Description ?? string.Empty);
                 insertCommand.Parameters.AddWithValue(
@@ -514,6 +576,7 @@ namespace SoundHaven.Data
                     playlist.CoverImageData is { Length: > 0 }
                         ? playlist.CoverImageData
                         : DBNull.Value);
+                insertCommand.Parameters.AddWithValue("@now", UtcNowText());
                 insertCommand.ExecuteNonQuery();
 
                 insertCommand.CommandText = "SELECT last_insert_rowid();";
@@ -593,7 +656,8 @@ namespace SoundHaven.Data
 
             using (var command = connection.CreateCommand())
             {
-                command.CommandText = "SELECT Id, Name, Description, CoverImageData FROM Playlists ORDER BY Id;";
+                command.CommandText =
+                    "SELECT Id, Name, Description, CoverImageData, CreatedAt, UpdatedAt FROM Playlists ORDER BY Id;";
                 using var reader = command.ExecuteReader();
                 while (reader.Read())
                 {
@@ -604,7 +668,9 @@ namespace SoundHaven.Data
                         Description = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
                         CoverImageData = reader.IsDBNull(3)
                             ? []
-                            : reader.GetFieldValue<byte[]>(3)
+                            : reader.GetFieldValue<byte[]>(3),
+                        CreatedAtUtc = ParseTimestamp(reader.IsDBNull(4) ? null : reader.GetString(4)),
+                        UpdatedAtUtc = ParseTimestamp(reader.IsDBNull(5) ? null : reader.GetString(5))
                     });
                 }
             }
@@ -678,6 +744,7 @@ namespace SoundHaven.Data
                 command.ExecuteNonQuery();
             }
 
+            TouchPlaylist(connection, transaction, playlistId);
             transaction.Commit();
             song.Id = checked((int)songId);
             song.Title = title;
@@ -730,6 +797,7 @@ namespace SoundHaven.Data
                 command.ExecuteNonQuery();
             }
 
+            TouchPlaylist(connection, transaction, playlistId);
             transaction.Commit();
         }
 

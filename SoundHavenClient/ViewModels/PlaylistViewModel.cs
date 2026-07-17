@@ -390,6 +390,7 @@ namespace SoundHaven.ViewModels
                 playlist.Name,
                 playlist.Description,
                 playlist.CoverImageData);
+            playlist.UpdatedAtUtc = DateTime.UtcNow;
 
             if (ReferenceEquals(DisplayedPlaylist, playlist))
             {
@@ -481,6 +482,7 @@ namespace SoundHaven.ViewModels
                 }
 
                 _appDatabase.RemoveSongsFromPlaylist(playlist.Id, songsToRemove.Select(song => (long)song.Id));
+                playlist.UpdatedAtUtc = DateTime.UtcNow;
 
                 foreach (Song song in songsToRemove)
                 {
@@ -565,6 +567,7 @@ namespace SoundHaven.ViewModels
             try
             {
                 _appDatabase.RemoveSongsFromPlaylist(playlist.Id, [song.Id]);
+                playlist.UpdatedAtUtc = DateTime.UtcNow;
                 song.IsSelected = false;
                 playlist.Songs.Remove(song);
                 _notifications.ShowInfo($"Removed “{song.Title}” from “{playlist.Name}”.");

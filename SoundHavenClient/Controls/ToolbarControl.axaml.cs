@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using SoundHaven.Commands;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.ViewModels;
@@ -12,6 +13,43 @@ public partial class ToolbarControl : UserControl
     public ToolbarControl()
     {
         InitializeComponent();
+    }
+
+    private void OnSortButtonClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || DataContext is not ToolbarViewModel viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        var flyout = DarkMenuFlyout.Create(PlacementMode.BottomEdgeAlignedRight);
+        flyout.Items.Add(new MenuItem
+        {
+            Header = "Sort",
+            IsEnabled = false
+        });
+        AddSortItem(flyout, viewModel, "Created date", PlaylistSortMode.CreatedDate);
+        AddSortItem(flyout, viewModel, "Updated date", PlaylistSortMode.UpdatedDate);
+        AddSortItem(flyout, viewModel, "Alphabetical", PlaylistSortMode.Alphabetical);
+        flyout.ShowAt(button);
+    }
+
+    private static void AddSortItem(
+        MenuFlyout flyout,
+        ToolbarViewModel viewModel,
+        string label,
+        PlaylistSortMode mode)
+    {
+        bool isActive = viewModel.PlaylistSortMode == mode;
+        string header = isActive
+            ? $"{label}   {(viewModel.PlaylistSortDescending ? "↓" : "↑")}"
+            : label;
+        flyout.Items.Add(new MenuItem
+        {
+            Header = header,
+            Command = new RelayCommand(() => viewModel.SortPlaylistsBy(mode))
+        });
     }
 
     private void OnPlaylistPointerPressed(object? sender, PointerPressedEventArgs e)

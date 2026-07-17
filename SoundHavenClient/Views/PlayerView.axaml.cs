@@ -66,6 +66,42 @@ public partial class PlayerView : UserControl
         e.Handled = true;
     }
 
+    private void OnHistorySelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
+    {
+        if (_suppressUpNextSelection)
+        {
+            return;
+        }
+
+        if (DataContext is not PlayerViewModel viewModel
+            || sender is not ListBox listBox
+            || listBox.SelectedItem is not Song song
+            || !viewModel.PlaySongCommand.CanExecute(song))
+        {
+            return;
+        }
+
+        // Playing rebuilds the history list; clear selection and defer play so the
+        // ListBox isn't mutated mid-SelectionChanged.
+        _suppressUpNextSelection = true;
+        try
+        {
+            listBox.SelectedItem = null;
+        }
+        finally
+        {
+            _suppressUpNextSelection = false;
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (viewModel.PlaySongCommand.CanExecute(song))
+            {
+                viewModel.PlaySongCommand.Execute(song);
+            }
+        });
+    }
+
     private void OnPlayingOverflowButtonClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button button

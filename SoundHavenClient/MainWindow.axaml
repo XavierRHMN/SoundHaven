@@ -154,7 +154,8 @@
                 </Button>
                 <Button Classes="PlayerBarIcon"
                         VerticalAlignment="Center"
-                        ToolTip.Tip="More options (coming soon)">
+                        Click="OnNowPlayingMoreClick"
+                        ToolTip.Tip="More options">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
                          Width="18" Height="18"
                          Opacity="0.75" />
@@ -201,8 +202,6 @@
                          Width="18" Height="18"
                          Opacity="0.75" />
                 </Button>
-                <controls:VolumeControl DataContext="{Binding VolumeViewModel}"
-                                        VerticalAlignment="Center" />
                 <Button Classes="PlayerBarIcon"
                         VerticalAlignment="Center"
                         ToolTip.Tip="Mini player (coming soon)">
@@ -210,12 +209,14 @@
                          Width="18" Height="18"
                          Opacity="0.75" />
                 </Button>
+                <controls:VolumeControl DataContext="{Binding VolumeViewModel}"
+                                        VerticalAlignment="Center" />
                 <Border CornerRadius="15"
                         Background="#14FFFFFF"
                         Padding="12,6"
                         Margin="6,0,0,0"
                         VerticalAlignment="Center"
-                        ToolTip.Tip="Audio quality (coming soon)">
+                        ToolTip.Tip="Audio quality">
                     <TextBlock Text="AAC 128 kbps"
                                FontSize="12"
                                Foreground="{DynamicResource PrimaryColor}"
