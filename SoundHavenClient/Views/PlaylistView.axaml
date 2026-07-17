@@ -252,21 +252,19 @@
                             <Image Source="{Binding CoverSlot3}" Stretch="UniformToFill" />
                         </UniformGrid>
 
-                        <!-- Liked Songs always shows the eighth-note tile. -->
+                        <!-- Liked Songs always shows the note tile: thick white
+                             outline, black fill, white eighth note. -->
                         <Border IsVisible="{Binding IsLikedSongsPlaylist}"
                                 HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                                    <GradientStop Color="#7B2FF7" Offset="0" />
-                                    <GradientStop Color="#4364F7" Offset="1" />
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <PathIcon Width="120" Height="120"
-                                      Foreground="White"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"
-                                      Data="M470.38 1.51L150.41 96A32 32 0 0 0 128 126.51v261.41A139 139 0 0 0 96 384c-53 0-96 28.66-96 64s43 64 96 64 96-28.66 96-64V214.32l256-75v184.61a138.4 138.4 0 0 0-32-3.93c-53 0-96 28.66-96 64s43 64 96 64 96-28.65 96-64V32a32 32 0 0 0-41.62-30.49z" />
+                                VerticalAlignment="Stretch"
+                                Background="Black"
+                                BorderBrush="White"
+                                BorderThickness="14"
+                                CornerRadius="22">
+                            <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
+                                 Width="150" Height="150"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center" />
                         </Border>
                     </Panel>
                 </Border>
