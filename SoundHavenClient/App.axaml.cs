@@ -73,7 +73,9 @@ public partial class App : Application, IDisposable
             _memoryCache);
         _youTubeMediaService = new YouTubeMediaService(_httpClient);
         _audioService = new AudioService(_youTubeMediaService);
+        var albumArtService = new AlbumArtService(_httpClient, _memoryCache);
 
+        var recentPlaybackStore = new RecentPlaybackStore();
         var repeatViewModel = new RepeatViewModel();
         var themesViewModel = new ThemesViewModel(database);
         var playbackViewModel = new PlaybackViewModel(
@@ -81,16 +83,22 @@ public partial class App : Application, IDisposable
             repeatViewModel,
             _lastFmDataService,
             themesViewModel,
-            notifications);
+            notifications,
+            recentPlaybackStore);
         var shuffleViewModel = new ShuffleViewModel(playbackViewModel);
+        var playlistStore = new PlaylistStore(database);
         var playlistViewModel = new PlaylistViewModel(
             playbackViewModel,
             new OpenFileDialogService(),
             database,
+            playlistStore,
             notifications);
-        var playlistStore = new PlaylistStore(database);
-        var playerViewModel = new PlayerViewModel(playbackViewModel, playlistStore, notifications);
-        var homeViewModel = new HomeViewModel(_lastFmDataService);
+        var playerViewModel = new PlayerViewModel(
+            playbackViewModel,
+            playlistStore,
+            recentPlaybackStore,
+            notifications);
+        var lastFmViewModel = new LastFmViewModel(_lastFmDataService);
         var seekSliderViewModel = new SeekSliderViewModel(
             _audioService,
             playbackViewModel,
@@ -102,15 +110,27 @@ public partial class App : Application, IDisposable
             notifications);
         var volumeViewModel = new VolumeViewModel(_audioService);
         var songInfoViewModel = new SongInfoViewModel(playbackViewModel, _audioService);
-        var navigation = new NavigationService(homeViewModel);
+        var navigation = new NavigationService(new ViewModelBase());
+        var homeViewModel = new HomeViewModel(
+            playlistStore,
+            recentPlaybackStore,
+            playbackViewModel,
+            playlistViewModel,
+            navigation,
+            notifications,
+            _lastFmDataService,
+            _youTubeMediaService,
+            albumArtService,
+            searchViewModel);
+        navigation.NavigateTo(homeViewModel);
         var toolbarViewModel = new ToolbarViewModel(
             navigation,
             playlistViewModel,
             playbackViewModel,
             homeViewModel,
+            lastFmViewModel,
             playerViewModel,
             playlistStore,
-            searchViewModel,
             themesViewModel,
             notifications);
 
@@ -118,6 +138,7 @@ public partial class App : Application, IDisposable
             navigation,
             playlistViewModel,
             homeViewModel,
+            lastFmViewModel,
             toolbarViewModel,
             playbackViewModel,
             shuffleViewModel,

@@ -42,6 +42,10 @@ public interface IYouTubeMediaService : IDisposable
         bool searchSongs,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<YouTubeSearchResult>> GetHomeRecommendationsAsync(
+        int limit,
+        CancellationToken cancellationToken = default);
+
     Task<YouTubeStreamSource> ResolveStreamAsync(
         string videoId,
         CancellationToken cancellationToken = default);
@@ -103,6 +107,24 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
 
         return await SearchVideosAsync(query, limit, searchSongs, cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<YouTubeSearchResult>> GetHomeRecommendationsAsync(
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
+
+        try
+        {
+            return await _youTubeMusicSearch
+                .BrowseHomeSongsAsync(limit, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch when (!cancellationToken.IsCancellationRequested)
+        {
+            return Array.Empty<YouTubeSearchResult>();
+        }
     }
 
     private async Task<IReadOnlyList<YouTubeSearchResult>> SearchVideosAsync(

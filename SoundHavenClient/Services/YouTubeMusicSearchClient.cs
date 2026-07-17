@@ -108,8 +108,144 @@ internal sealed class YouTubeMusicSearchClient
         return results;
     }
 
-    private static IEnumerable<JsonElement> EnumerateSongItems(JsonElement root)
+    /// <summary>
+    /// Guest-friendly YouTube Music home feed songs (browseId FEmusic_home).
+    /// Guest home shelves are mostly playlists, so when direct song rows are
+    /// missing we expand featured playlist browseIds into playable tracks.
+    /// Soft-fails to an empty list when the response cannot be parsed.
+    /// </summary>
+    public async Task<IReadOnlyList<YouTubeSearchResult>> BrowseHomeSongsAsync(
+        int limit,
+        CancellationToken cancellationToken = default)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
+
+        try
+        {
+            using JsonDocument? homeDocument = await BrowseAsync("FEmusic_home", cancellationToken)
+                .ConfigureAwait(false);
+            if (homeDocument is null)
+            {
+                return Array.Empty<YouTubeSearchResult>();
+            }
+
+            var results = new List<YouTubeSearchResult>(limit);
+            var seenVideoIds = new HashSet<string>(StringComparer.Ordinal);
+            CollectSongsFromDocument(homeDocument.RootElement, results, seenVideoIds, limit);
+
+            if (results.Count >= limit)
+            {
+                return results;
+            }
+
+            foreach (string playlistBrowseId in EnumerateHomePlaylistBrowseIds(homeDocument.RootElement)
+                         .Take(3))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                using JsonDocument? playlistDocument =
+                    await BrowseAsync(playlistBrowseId, cancellationToken).ConfigureAwait(false);
+                if (playlistDocument is null)
+                {
+                    continue;
+                }
+
+                CollectSongsFromDocument(playlistDocument.RootElement, results, seenVideoIds, limit);
+                if (results.Count >= limit)
+                {
+                    break;
+                }
+            }
+
+            return results;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            return Array.Empty<YouTubeSearchResult>();
+        }
+    }
+
+    private async Task<JsonDocument?> BrowseAsync(
+        string browseId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(browseId))
+        {
+            return null;
+        }
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"https://music.youtube.com/youtubei/v1/browse?key={InnertubeApiKey}&prettyPrint=false");
+        request.Headers.TryAddWithoutValidation("Origin", "https://music.youtube.com");
+        request.Headers.TryAddWithoutValidation("Referer", "https://music.youtube.com/");
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        var payload = new
+        {
+            context = new
+            {
+                client = new
+                {
+                    clientName = "WEB_REMIX",
+                    clientVersion = ClientVersion,
+                    hl = "en",
+                    gl = "US"
+                }
+            },
+            browseId
+        };
+
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json");
+
+        using HttpResponseMessage response = await _httpClient
+            .SendAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        await using Stream stream = await response.Content
+            .ReadAsStreamAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return await JsonDocument
+            .ParseAsync(stream, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private static void CollectSongsFromDocument(
+        JsonElement root,
+        List<YouTubeSearchResult> results,
+        HashSet<string> seenVideoIds,
+        int limit)
+    {
+        foreach (JsonElement item in EnumerateHomeSongItems(root))
+        {
+            if (!TryParseHomeSongItem(item, out YouTubeSearchResult? result)
+                || result is null
+                || !seenVideoIds.Add(result.VideoId))
+            {
+                continue;
+            }
+
+            results.Add(result);
+            if (results.Count >= limit)
+            {
+                return;
+            }
+        }
+    }
+
+    private static IEnumerable<string> EnumerateHomePlaylistBrowseIds(JsonElement root)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         if (!root.TryGetProperty("contents", out JsonElement contents))
         {
             yield break;
@@ -125,12 +261,227 @@ internal sealed class YouTubeMusicSearchClient
 
             foreach (JsonElement entry in shelfContents.EnumerateArray())
             {
-                if (entry.TryGetProperty("musicResponsiveListItemRenderer", out JsonElement item))
+                if (!entry.TryGetProperty("musicTwoRowItemRenderer", out JsonElement twoRow))
                 {
-                    yield return item;
+                    continue;
                 }
+
+                string? browseId = GetTwoRowPlaylistBrowseId(twoRow);
+                if (string.IsNullOrWhiteSpace(browseId) || !seen.Add(browseId))
+                {
+                    continue;
+                }
+
+                yield return browseId;
             }
         }
+    }
+
+    private static string? GetTwoRowPlaylistBrowseId(JsonElement twoRow)
+    {
+        if (TryGetPropertyPath(
+                twoRow,
+                out JsonElement browseEndpoint,
+                "navigationEndpoint",
+                "browseEndpoint")
+            && browseEndpoint.TryGetProperty("browseId", out JsonElement browseIdElement)
+            && browseIdElement.ValueKind == JsonValueKind.String)
+        {
+            string? browseId = browseIdElement.GetString();
+            if (!string.IsNullOrWhiteSpace(browseId)
+                && browseId.StartsWith("VL", StringComparison.Ordinal))
+            {
+                return browseId;
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<JsonElement> EnumerateSongItems(JsonElement root)
+    {
+        if (!root.TryGetProperty("contents", out JsonElement contents))
+        {
+            yield break;
+        }
+
+        foreach (JsonElement shelf in EnumerateMusicShelves(contents))
+        {
+            foreach (JsonElement item in EnumerateShelfSongItems(shelf))
+            {
+                yield return item;
+            }
+        }
+    }
+
+    private static IEnumerable<JsonElement> EnumerateHomeSongItems(JsonElement root)
+    {
+        if (!root.TryGetProperty("contents", out JsonElement contents))
+        {
+            yield break;
+        }
+
+        // Playlist browse pages nest tracks under musicPlaylistShelfRenderer /
+        // singleColumnBrowseResultsRenderer, which EnumerateMusicShelves covers.
+        // Also walk sectionList contents that use musicPlaylistShelfRenderer.
+        foreach (JsonElement shelf in EnumerateMusicShelves(contents))
+        {
+            foreach (JsonElement item in EnumerateShelfSongItems(shelf))
+            {
+                yield return item;
+            }
+        }
+    }
+
+    private static IEnumerable<JsonElement> EnumerateShelfSongItems(JsonElement shelf)
+    {
+        if (!shelf.TryGetProperty("contents", out JsonElement shelfContents)
+            || shelfContents.ValueKind != JsonValueKind.Array)
+        {
+            yield break;
+        }
+
+        foreach (JsonElement entry in shelfContents.EnumerateArray())
+        {
+            if (entry.TryGetProperty("musicResponsiveListItemRenderer", out JsonElement listItem))
+            {
+                yield return listItem;
+            }
+            else if (entry.TryGetProperty("musicTwoRowItemRenderer", out JsonElement twoRow))
+            {
+                yield return twoRow;
+            }
+        }
+    }
+
+    private static bool TryParseHomeSongItem(JsonElement item, out YouTubeSearchResult? result)
+    {
+        if (TryParseSongItem(item, out result))
+        {
+            return true;
+        }
+
+        return TryParseTwoRowSongItem(item, out result);
+    }
+
+    private static bool TryParseTwoRowSongItem(JsonElement item, out YouTubeSearchResult? result)
+    {
+        result = null;
+
+        string? videoId = GetTwoRowVideoId(item);
+        if (string.IsNullOrWhiteSpace(videoId))
+        {
+            return false;
+        }
+
+        string title = GetRunsText(item, "title") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return false;
+        }
+
+        string[] subtitleParts = GetRunsParts(item, "subtitle");
+        string artist = subtitleParts.Length > 0 ? subtitleParts[0] : "Unknown artist";
+        string? thumbnailUrl = YouTubeThumbnailHelper.UpgradeThumbnailUrl(GetTwoRowThumbnailUrl(item))
+            ?? YouTubeThumbnailHelper.GetVideoThumbnailUrl(videoId);
+
+        result = new YouTubeSearchResult(
+            videoId,
+            title,
+            artist,
+            Album: null,
+            Duration: null,
+            thumbnailUrl,
+            ViewCount: 0,
+            Year: null);
+        return true;
+    }
+
+    private static string? GetTwoRowVideoId(JsonElement item)
+    {
+        if (TryGetPropertyPath(
+                item,
+                out JsonElement watchEndpoint,
+                "navigationEndpoint",
+                "watchEndpoint")
+            && watchEndpoint.TryGetProperty("videoId", out JsonElement idElement)
+            && idElement.ValueKind == JsonValueKind.String)
+        {
+            return idElement.GetString();
+        }
+
+        if (TryGetPropertyPath(
+                item,
+                out JsonElement overlayWatch,
+                "thumbnailOverlay",
+                "musicItemThumbnailOverlayRenderer",
+                "content",
+                "musicPlayButtonRenderer",
+                "playNavigationEndpoint",
+                "watchEndpoint")
+            && overlayWatch.TryGetProperty("videoId", out JsonElement overlayId)
+            && overlayId.ValueKind == JsonValueKind.String)
+        {
+            return overlayId.GetString();
+        }
+
+        return GetVideoId(item);
+    }
+
+    private static string? GetTwoRowThumbnailUrl(JsonElement item)
+    {
+        if (TryGetPropertyPath(
+                item,
+                out JsonElement thumbnails,
+                "thumbnailRenderer",
+                "musicThumbnailRenderer",
+                "thumbnail",
+                "thumbnails")
+            && thumbnails.ValueKind == JsonValueKind.Array)
+        {
+            return thumbnails.EnumerateArray()
+                .Select(thumbnail =>
+                {
+                    string? url = thumbnail.TryGetProperty("url", out JsonElement urlElement)
+                        ? urlElement.GetString()
+                        : null;
+                    int width = thumbnail.TryGetProperty("width", out JsonElement widthElement)
+                        ? widthElement.GetInt32()
+                        : 0;
+                    int height = thumbnail.TryGetProperty("height", out JsonElement heightElement)
+                        ? heightElement.GetInt32()
+                        : 0;
+                    return (Url: url, Area: width * height);
+                })
+                .Where(candidate => !string.IsNullOrWhiteSpace(candidate.Url))
+                .OrderByDescending(candidate => candidate.Area)
+                .Select(candidate => candidate.Url)
+                .FirstOrDefault();
+        }
+
+        return GetBestThumbnailUrl(item);
+    }
+
+    private static string? GetRunsText(JsonElement item, string propertyName)
+    {
+        string[] parts = GetRunsParts(item, propertyName);
+        return parts.Length == 0 ? null : string.Join("", parts);
+    }
+
+    private static string[] GetRunsParts(JsonElement item, string propertyName)
+    {
+        if (!item.TryGetProperty(propertyName, out JsonElement node)
+            || !node.TryGetProperty("runs", out JsonElement runs)
+            || runs.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        return runs.EnumerateArray()
+            .Select(run => run.TryGetProperty("text", out JsonElement text) ? text.GetString() : null)
+            .Where(text => !string.IsNullOrWhiteSpace(text) && text != " • ")
+            .Select(text => text!)
+            .ToArray();
     }
 
     private static IEnumerable<JsonElement> EnumerateMusicShelves(JsonElement contents)
@@ -147,6 +498,55 @@ internal sealed class YouTubeMusicSearchClient
                     foreach (JsonElement shelf in EnumerateShelvesFromSectionList(tabContent))
                     {
                         yield return shelf;
+                    }
+                }
+            }
+
+            yield break;
+        }
+
+        if (contents.TryGetProperty("singleColumnBrowseResultsRenderer", out JsonElement browse)
+            && browse.TryGetProperty("tabs", out JsonElement browseTabs)
+            && browseTabs.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement tab in browseTabs.EnumerateArray())
+            {
+                if (tab.TryGetProperty("tabRenderer", out JsonElement tabRenderer)
+                    && tabRenderer.TryGetProperty("content", out JsonElement tabContent))
+                {
+                    foreach (JsonElement shelf in EnumerateShelvesFromSectionList(tabContent))
+                    {
+                        yield return shelf;
+                    }
+                }
+            }
+
+            yield break;
+        }
+
+        if (contents.TryGetProperty("twoColumnBrowseResultsRenderer", out JsonElement twoColumn))
+        {
+            if (twoColumn.TryGetProperty("secondaryContents", out JsonElement secondary)
+                && secondary.TryGetProperty("sectionListRenderer", out _))
+            {
+                foreach (JsonElement shelf in EnumerateShelvesFromSectionList(secondary))
+                {
+                    yield return shelf;
+                }
+            }
+
+            if (twoColumn.TryGetProperty("tabs", out JsonElement twoColumnTabs)
+                && twoColumnTabs.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement tab in twoColumnTabs.EnumerateArray())
+                {
+                    if (tab.TryGetProperty("tabRenderer", out JsonElement tabRenderer)
+                        && tabRenderer.TryGetProperty("content", out JsonElement tabContent))
+                    {
+                        foreach (JsonElement shelf in EnumerateShelvesFromSectionList(tabContent))
+                        {
+                            yield return shelf;
+                        }
                     }
                 }
             }
@@ -173,6 +573,14 @@ internal sealed class YouTubeMusicSearchClient
             if (section.TryGetProperty("musicShelfRenderer", out JsonElement shelf))
             {
                 yield return shelf;
+            }
+            else if (section.TryGetProperty("musicCarouselShelfRenderer", out JsonElement carousel))
+            {
+                yield return carousel;
+            }
+            else if (section.TryGetProperty("musicPlaylistShelfRenderer", out JsonElement playlistShelf))
+            {
+                yield return playlistShelf;
             }
         }
     }

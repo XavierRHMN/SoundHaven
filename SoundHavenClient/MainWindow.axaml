@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
+        xmlns:views="clr-namespace:SoundHaven.Views"
         xmlns:controls="clr-namespace:SoundHaven.Controls"
         mc:Ignorable="d"
         d:DesignWidth="1500" d:DesignHeight="600"
@@ -51,13 +52,42 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="CornerRadius" Value="100" />
         </Style>
+
+        <!-- Small round icon buttons in the bottom player bar -->
+        <Style Selector="Button.PlayerBarIcon">
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.PlayerBarIcon:pointerover">
+            <Setter Property="Background" Value="#22FFFFFF" />
+        </Style>
+
+        <Style Selector="Button.PlayerBarIcon.Selected">
+            <Setter Property="Background" Value="#2A2A2A" />
+        </Style>
     </Window.Styles>
 
     <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="80" />
+            <RowDefinition Height="92" />
         </Grid.RowDefinitions>
 
         <!-- Custom Title Bar -->
@@ -88,6 +118,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="280" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
@@ -98,38 +129,132 @@
                 <controls:ToolbarControl DataContext="{Binding ToolbarViewModel}" />
             </Border>
 
+            <!-- All views stay attached; navigation only toggles visibility so
+                 switches don't pay layout/texture-upload costs every click. -->
             <Border Grid.Column="1" Background="{DynamicResource ToolbarColor}">
-                <ContentControl Content="{Binding CurrentViewModel}" />
+                <Panel>
+                    <views:HomeView DataContext="{Binding HomeViewModel}"
+                                    IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsHomeVisible}" />
+                    <views:PlaylistView DataContext="{Binding PlaylistViewModel}"
+                                        IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsPlaylistVisible}" />
+                    <views:PlayerView DataContext="{Binding PlayerViewModel}"
+                                      IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsPlayerVisible}" />
+                    <views:LastFmView DataContext="{Binding LastFmViewModel}"
+                                      IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsLastFmVisible}" />
+                    <views:ThemesView DataContext="{Binding ThemesViewModel}"
+                                      IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsThemesVisible}" />
+                </Panel>
+            </Border>
+
+            <!-- Dockable play queue: pushes content left when toggled on -->
+            <Border Grid.Column="2"
+                    Width="340"
+                    Background="{DynamicResource ToolbarColor}"
+                    BorderThickness="1,0,0,0"
+                    BorderBrush="#22FFFFFF"
+                    IsVisible="{Binding IsQueueVisible}">
+                <controls:PlayQueueControl DataContext="{Binding PlayerViewModel}" />
             </Border>
         </Grid>
 
-        <!-- Player Controls -->
+        <!-- Player Controls (TIDAL-style: now playing | transport + seek | extras) -->
         <Grid Grid.Row="2" Background="{DynamicResource PlayerBarColor}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <controls:PlaybackControl Grid.Column="0" DataContext="{Binding PlaybackViewModel}" />
-
-            <Grid x:Name="SongInfoSeekbarVolumebar" Grid.Column="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MinWidth="150" MaxWidth="250" />
-                    <ColumnDefinition Width="*" MinWidth="150" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <controls:SongInfoControl Grid.Column="0" DataContext="{Binding SongInfoViewModel}"
+            <!-- Left: now playing + favorite/more placeholders -->
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal"
+                        Spacing="2"
+                        VerticalAlignment="Center"
+                        Margin="16,0,8,0"
+                        ClipToBounds="True">
+                <controls:SongInfoControl DataContext="{Binding SongInfoViewModel}"
                                           VerticalAlignment="Center" />
-                <controls:SeekSliderControl Grid.Column="1" DataContext="{Binding SeekSliderViewModel}" />
-                <controls:RepeatControl Grid.Column="2" DataContext="{Binding RepeatViewModel}" />
-                <controls:ShuffleControl Grid.Column="3" DataContext="{Binding ShuffleViewModel}" />
-                <controls:VolumeControl Grid.Column="4" DataContext="{Binding VolumeViewModel}"
-                                        VerticalAlignment="Center" 
-                                        Margin="-5 0 0 0"/>
-            </Grid>
+                <Button Classes="PlayerBarIcon"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Favorite (coming soon)">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/favorite.svg"
+                         Width="18" Height="18"
+                         Opacity="0.75" />
+                </Button>
+                <Button Classes="PlayerBarIcon"
+                        VerticalAlignment="Center"
+                        Click="OnNowPlayingMoreClick"
+                        ToolTip.Tip="More options">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
+                         Width="18" Height="18"
+                         Opacity="0.75" />
+                </Button>
+            </StackPanel>
+
+            <!-- Center: transport row over the seek bar -->
+            <StackPanel Grid.Column="1"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="4">
+                    <controls:ShuffleControl DataContext="{Binding ShuffleViewModel}"
+                                             VerticalAlignment="Center" />
+                    <controls:PlaybackControl DataContext="{Binding PlaybackViewModel}"
+                                              VerticalAlignment="Center" />
+                    <controls:RepeatControl DataContext="{Binding RepeatViewModel}"
+                                            VerticalAlignment="Center" />
+                </StackPanel>
+                <controls:SeekSliderControl Width="520"
+                                            DataContext="{Binding SeekSliderViewModel}"
+                                            Margin="0,-4,0,0" />
+            </StackPanel>
+
+            <!-- Right: queue/EQ placeholders, volume, mini player, quality badge -->
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="2"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Margin="8,0,16,0">
+                <Button Classes="PlayerBarIcon"
+                        Classes.Selected="{Binding IsQueueVisible}"
+                        VerticalAlignment="Center"
+                        Command="{Binding ToggleQueueCommand}"
+                        ToolTip.Tip="Play queue">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/queue_music.svg"
+                         Width="18" Height="18"
+                         Opacity="0.75" />
+                </Button>
+                <Button Classes="PlayerBarIcon"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Sound output (coming soon)">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/speaker.svg"
+                         Width="18" Height="18"
+                         Opacity="0.75" />
+                </Button>
+                <Button Classes="PlayerBarIcon"
+                        VerticalAlignment="Center"
+                        Click="OnMiniPlayerClick"
+                        ToolTip.Tip="Mini player">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/miniplayer.svg"
+                         Width="18" Height="18"
+                         Opacity="0.75" />
+                </Button>
+                <controls:VolumeControl DataContext="{Binding VolumeViewModel}"
+                                        VerticalAlignment="Center" />
+                <Border CornerRadius="15"
+                        Background="#14FFFFFF"
+                        Padding="12,6"
+                        Margin="6,0,0,0"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Audio quality">
+                    <TextBlock Text="AAC 128 kbps"
+                               FontSize="12"
+                               Foreground="{DynamicResource PrimaryColor}"
+                               FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                </Border>
+            </StackPanel>
         </Grid>
 
         <Border Grid.RowSpan="3"

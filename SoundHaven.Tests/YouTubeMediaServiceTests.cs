@@ -154,14 +154,44 @@ public sealed class YouTubeMediaServiceTests
         }
     }
 
+    [Fact]
+    public async Task GetHomeRecommendationsAsync_ReturnsPlayableSongsFromHomePlaylists()
+    {
+        using var service = CreateService();
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+
+        IReadOnlyList<YouTubeSearchResult> results;
+        try
+        {
+            results = await service.GetHomeRecommendationsAsync(
+                limit: 8,
+                cancellationToken: cancellation.Token);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        {
+            // Offline / blocked CI — skip without failing the suite.
+            return;
+        }
+
+        Assert.NotEmpty(results);
+        Assert.All(results, result =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(result.VideoId));
+            Assert.False(string.IsNullOrWhiteSpace(result.Title));
+        });
+    }
+
     private static YouTubeMediaService CreateService()
     {
         var httpClient = new HttpClient
         {
-            Timeout = TimeSpan.FromSeconds(15)
+            Timeout = TimeSpan.FromSeconds(45)
         };
-        httpClient.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("SoundHaven.Tests", "1.0"));
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            + "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+        httpClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
         return new YouTubeMediaService(httpClient);
     }
 

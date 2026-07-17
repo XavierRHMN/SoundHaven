@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -11,6 +12,28 @@ using SoundHaven.Services;
 using SoundHaven.Stores;
 
 namespace SoundHaven.ViewModels;
+
+/// <summary>Numbered search result row for the TIDAL-style results table.</summary>
+public sealed class SearchResultRow : ViewModelBase
+{
+    private bool _isCurrentlyPlaying;
+
+    public SearchResultRow(int number, Song song)
+    {
+        Number = number;
+        Song = song ?? throw new ArgumentNullException(nameof(song));
+    }
+
+    public int Number { get; }
+
+    public Song Song { get; }
+
+    public bool IsCurrentlyPlaying
+    {
+        get => _isCurrentlyPlaying;
+        set => SetProperty(ref _isCurrentlyPlaying, value);
+    }
+}
 
 public sealed class SearchViewModel : ViewModelBase
 {
@@ -27,6 +50,7 @@ public sealed class SearchViewModel : ViewModelBase
     private Song? _menuSong;
     private bool _isScrollViewerHittestable = true;
     private bool _searchSongs = true;
+    private bool _showResults;
 
     public SearchViewModel(
         IYouTubeMediaService youTubeMediaService,
@@ -70,22 +94,65 @@ public sealed class SearchViewModel : ViewModelBase
             ExecuteOpenFolderAsync,
             song => !string.IsNullOrWhiteSpace(song?.FilePath),
             ShowFailure);
+        ClearSearchCommand = new RelayCommand(() => SearchQuery = string.Empty);
+        SelectSongsCommand = new RelayCommand(() => SearchSongs = true);
+        SelectVideosCommand = new RelayCommand(() => SearchSongs = false);
+
+        _playbackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
     }
 
     public string SearchQuery
     {
         get => _searchQuery;
-        set => SetProperty(ref _searchQuery, value);
+        set
+        {
+            if (!SetProperty(ref _searchQuery, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(HasQuery));
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                // Emptying the box returns to the regular Home content.
+                ShowResults = false;
+            }
+        }
     }
 
+    public bool HasQuery => !string.IsNullOrWhiteSpace(_searchQuery);
+
+    /// <summary>True while the Home view should show search results instead of shelves.</summary>
+    public bool ShowResults
+    {
+        get => _showResults;
+        private set
+        {
+            if (SetProperty(ref _showResults, value))
+            {
+                OnPropertyChanged(nameof(ShowNoResults));
+            }
+        }
+    }
+
+    public bool ShowNoResults => ShowResults && !IsLoading && ResultRows.Count == 0;
+
     public ObservableCollection<Song> SearchResults { get; }
+
+    public ObservableCollection<SearchResultRow> ResultRows { get; } = [];
 
     public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
 
     public bool IsLoading
     {
         get => _isLoading;
-        private set => SetProperty(ref _isLoading, value);
+        private set
+        {
+            if (SetProperty(ref _isLoading, value))
+            {
+                OnPropertyChanged(nameof(ShowNoResults));
+            }
+        }
     }
 
     public string LoadingMessage
@@ -119,9 +186,6 @@ public sealed class SearchViewModel : ViewModelBase
                 return;
             }
 
-            OnPropertyChanged(nameof(SearchButtonText));
-            OnPropertyChanged(nameof(SearchModeDescription));
-
             if (!string.IsNullOrWhiteSpace(SearchQuery) && SearchCommand.CanExecute(null))
             {
                 _ = SearchCommand.ExecuteAsync();
@@ -129,19 +193,13 @@ public sealed class SearchViewModel : ViewModelBase
         }
     }
 
-    // Kept for existing SearchView bindings.
-    public bool ToggleSearchResults
-    {
-        get => SearchSongs;
-        set => SearchSongs = value;
-    }
-
-    public string SearchButtonText => SearchSongs ? "Search Songs" : "Search Videos";
-
-    public string SearchModeDescription =>
-        SearchSongs ? "Mode: YouTube Music songs" : "Mode: YouTube videos";
-
     public AsyncRelayCommand SearchCommand { get; }
+
+    public RelayCommand ClearSearchCommand { get; }
+
+    public RelayCommand SelectSongsCommand { get; }
+
+    public RelayCommand SelectVideosCommand { get; }
 
     public AsyncRelayCommand<Song> PlaySongCommand { get; }
 
@@ -166,11 +224,46 @@ public sealed class SearchViewModel : ViewModelBase
 
     public override void Dispose()
     {
+        _playbackViewModel.PropertyChanged -= OnPlaybackPropertyChanged;
         _searchCancellation.Cancel();
         _searchCancellation.Dispose();
         _lifetimeCancellation.Cancel();
         _lifetimeCancellation.Dispose();
         base.Dispose();
+    }
+
+    private void OnPlaybackPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(PlaybackViewModel.CurrentSong))
+        {
+            UpdatePlayingHighlights();
+        }
+    }
+
+    private void UpdatePlayingHighlights()
+    {
+        Song? current = _playbackViewModel.CurrentSong;
+        foreach (SearchResultRow row in ResultRows)
+        {
+            row.IsCurrentlyPlaying = IsSameTrack(current, row.Song);
+        }
+    }
+
+    // Queue playback clones songs, so reference equality alone is not enough.
+    private static bool IsSameTrack(Song? current, Song song)
+    {
+        if (current is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(current, song))
+        {
+            return true;
+        }
+
+        return !string.IsNullOrWhiteSpace(song.VideoId)
+            && string.Equals(current.VideoId, song.VideoId, StringComparison.Ordinal);
     }
 
     private async Task ExecuteSearchAsync()
@@ -189,10 +282,12 @@ public sealed class SearchViewModel : ViewModelBase
         previousCancellation.Dispose();
 
         bool searchSongs = SearchSongs;
+        ShowResults = true;
         IsLoading = true;
         LoadingMessage = searchSongs ? "Searching for songs..." : "Searching for videos...";
         SelectedSong = null;
         SearchResults.Clear();
+        ResultRows.Clear();
         try
         {
             var results = await _youTubeMediaService.SearchAsync(
@@ -218,8 +313,11 @@ public sealed class SearchViewModel : ViewModelBase
                     Year = result.Year
                 };
                 SearchResults.Add(song);
+                ResultRows.Add(new SearchResultRow(ResultRows.Count + 1, song));
                 _ = LoadResultThumbnailAsync(song, nextCancellation.Token);
             }
+
+            UpdatePlayingHighlights();
         }
         finally
         {
@@ -227,6 +325,7 @@ public sealed class SearchViewModel : ViewModelBase
             {
                 IsLoading = false;
                 LoadingMessage = string.Empty;
+                OnPropertyChanged(nameof(ShowNoResults));
             }
         }
     }

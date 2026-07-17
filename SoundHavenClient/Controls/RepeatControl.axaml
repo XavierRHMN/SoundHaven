@@ -7,11 +7,12 @@
     <Button x:Name="RepeatButton"
             Command="{Binding ToggleRepeatCommand}"
             Background="Transparent"
-            Width="60" Height="60"
-            CornerRadius="30">
+            Width="44" Height="44"
+            CornerRadius="22">
 
         <Panel>
             <Svg Path="avares://SoundHavenClient/Assets/Icons/repeat.svg"
+                 Width="22" Height="22"
                  IsVisible="{Binding RepeatMode, Converter={StaticResource RepeatModeToVisibilityConverter}, ConverterParameter=General}"
                  Opacity="{Binding RepeatMode, Converter={StaticResource RepeatModeToOpacityConverter}}">
                 <Svg.Transitions>
@@ -21,6 +22,7 @@
                 </Svg.Transitions>
             </Svg>
             <Svg Path="avares://SoundHavenClient/Assets/Icons/repeat_one.svg"
+                 Width="22" Height="22"
                  IsVisible="{Binding RepeatMode, Converter={StaticResource RepeatModeToVisibilityConverter}, ConverterParameter=One}">
                 <Svg.Transitions>
                     <Transitions>

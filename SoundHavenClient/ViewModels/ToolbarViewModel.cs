@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using SoundHaven.Commands;
@@ -9,28 +10,36 @@ using SoundHaven.Stores;
 
 namespace SoundHaven.ViewModels;
 
+public enum PlaylistSortMode
+{
+    CreatedDate,
+    UpdatedDate,
+    Alphabetical
+}
+
 public sealed class ToolbarViewModel : ViewModelBase
 {
     private readonly NavigationService _navigation;
     private readonly PlaylistViewModel _playlistViewModel;
     private readonly PlaybackViewModel _playbackViewModel;
     private readonly HomeViewModel _homeViewModel;
+    private readonly LastFmViewModel _lastFmViewModel;
     private readonly PlayerViewModel _playerViewModel;
     private readonly PlaylistStore _playlistStore;
-    private readonly SearchViewModel _searchViewModel;
     private readonly ThemesViewModel _themesViewModel;
     private readonly IUserNotificationService _notifications;
     private Playlist? _toolbarSelectedPlaylist;
-    private bool _sortAscending = true;
+    private PlaylistSortMode _playlistSortMode = PlaylistSortMode.CreatedDate;
+    private bool _playlistSortDescending;
 
     public ToolbarViewModel(
         NavigationService navigation,
         PlaylistViewModel playlistViewModel,
         PlaybackViewModel playbackViewModel,
         HomeViewModel homeViewModel,
+        LastFmViewModel lastFmViewModel,
         PlayerViewModel playerViewModel,
         PlaylistStore playlistStore,
-        SearchViewModel searchViewModel,
         ThemesViewModel themesViewModel,
         IUserNotificationService notifications)
     {
@@ -40,24 +49,23 @@ public sealed class ToolbarViewModel : ViewModelBase
         _playbackViewModel = playbackViewModel
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _homeViewModel = homeViewModel ?? throw new ArgumentNullException(nameof(homeViewModel));
+        _lastFmViewModel = lastFmViewModel
+            ?? throw new ArgumentNullException(nameof(lastFmViewModel));
         _playerViewModel = playerViewModel
             ?? throw new ArgumentNullException(nameof(playerViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
-        _searchViewModel = searchViewModel
-            ?? throw new ArgumentNullException(nameof(searchViewModel));
         _themesViewModel = themesViewModel
             ?? throw new ArgumentNullException(nameof(themesViewModel));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
         ShowHomeViewCommand = new RelayCommand(() => ShowView(_homeViewModel));
-        ShowSearchViewCommand = new RelayCommand(() => ShowView(_searchViewModel));
+        ShowLastFmViewCommand = new RelayCommand(() => ShowView(_lastFmViewModel));
         ShowPlaylistViewCommand = new RelayCommand(() => ShowView(_playlistViewModel));
         ShowPlayerViewCommand = new RelayCommand(() => ShowView(_playerViewModel));
         ShowThemesViewCommand = new RelayCommand(() => ShowView(_themesViewModel));
         CreatePlaylistCommand = new AsyncRelayCommand(
             CreatePlaylistAsync,
             onException: exception => _notifications.ShowError(exception.Message));
-        SortPlaylistsCommand = new RelayCommand(SortPlaylists);
         DeletePlaylistCommand = new RelayCommand<Playlist>(DeletePlaylist);
         PlayNowCommand = new AsyncRelayCommand<Playlist>(
             PlayNowAsync,
@@ -75,7 +83,17 @@ public sealed class ToolbarViewModel : ViewModelBase
             EditPlaylistAsync,
             playlist => playlist is { Id: > 0 },
             exception => _notifications.ShowError(exception.Message));
+
+        _navigation.PropertyChanged += OnNavigationPropertyChanged;
     }
+
+    public bool IsHomeActive => ReferenceEquals(_navigation.CurrentViewModel, _homeViewModel);
+
+    public bool IsLastFmActive => ReferenceEquals(_navigation.CurrentViewModel, _lastFmViewModel);
+
+    public bool IsPlayerActive => ReferenceEquals(_navigation.CurrentViewModel, _playerViewModel);
+
+    public bool IsThemesActive => ReferenceEquals(_navigation.CurrentViewModel, _themesViewModel);
 
     public Playlist? ToolbarSelectedPlaylist
     {
@@ -94,7 +112,7 @@ public sealed class ToolbarViewModel : ViewModelBase
 
     public RelayCommand ShowHomeViewCommand { get; }
 
-    public RelayCommand ShowSearchViewCommand { get; }
+    public RelayCommand ShowLastFmViewCommand { get; }
 
     public RelayCommand ShowPlaylistViewCommand { get; }
 
@@ -102,7 +120,9 @@ public sealed class ToolbarViewModel : ViewModelBase
 
     public AsyncRelayCommand CreatePlaylistCommand { get; }
 
-    public RelayCommand SortPlaylistsCommand { get; }
+    public PlaylistSortMode PlaylistSortMode => _playlistSortMode;
+
+    public bool PlaylistSortDescending => _playlistSortDescending;
 
     public RelayCommand<Playlist> DeletePlaylistCommand { get; }
 
@@ -133,13 +153,44 @@ public sealed class ToolbarViewModel : ViewModelBase
         _notifications.ShowInfo("Playlist created.");
     }
 
-    private void SortPlaylists()
+    /// <summary>Re-selecting the active mode flips direction; a new mode gets its
+    /// natural default (dates newest-first, alphabetical A→Z).</summary>
+    public void SortPlaylistsBy(PlaylistSortMode mode)
     {
-        var ordered = _sortAscending
-            ? PlaylistCollection.OrderBy(playlist => playlist.Name, StringComparer.OrdinalIgnoreCase).ToList()
-            : PlaylistCollection.OrderByDescending(playlist => playlist.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        if (_playlistSortMode == mode)
+        {
+            _playlistSortDescending = !_playlistSortDescending;
+        }
+        else
+        {
+            _playlistSortMode = mode;
+            _playlistSortDescending = mode != PlaylistSortMode.Alphabetical;
+        }
 
-        _sortAscending = !_sortAscending;
+        ApplyPlaylistSort();
+        OnPropertyChanged(nameof(PlaylistSortMode));
+        OnPropertyChanged(nameof(PlaylistSortDescending));
+    }
+
+    private void ApplyPlaylistSort()
+    {
+        var ordered = (_playlistSortMode switch
+        {
+            PlaylistSortMode.Alphabetical => PlaylistCollection
+                .OrderBy(playlist => playlist.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(playlist => playlist.Id),
+            PlaylistSortMode.UpdatedDate => PlaylistCollection
+                .OrderBy(playlist => playlist.UpdatedAtUtc ?? playlist.CreatedAtUtc ?? DateTime.MinValue)
+                .ThenBy(playlist => playlist.Id),
+            _ => PlaylistCollection
+                .OrderBy(playlist => playlist.CreatedAtUtc ?? DateTime.MinValue)
+                .ThenBy(playlist => playlist.Id)
+        }).ToList();
+
+        if (_playlistSortDescending)
+        {
+            ordered.Reverse();
+        }
 
         PlaylistCollection.Clear();
         foreach (Playlist playlist in ordered)
@@ -216,7 +267,25 @@ public sealed class ToolbarViewModel : ViewModelBase
     private void ShowView(ViewModelBase viewModel)
     {
         ToolbarSelectedPlaylist = null;
-        _searchViewModel.SelectedSong = null;
         _navigation.NavigateTo(viewModel);
+    }
+
+    private void OnNavigationPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(NavigationService.CurrentViewModel))
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(IsHomeActive));
+        OnPropertyChanged(nameof(IsLastFmActive));
+        OnPropertyChanged(nameof(IsPlayerActive));
+        OnPropertyChanged(nameof(IsThemesActive));
+    }
+
+    public override void Dispose()
+    {
+        _navigation.PropertyChanged -= OnNavigationPropertyChanged;
+        base.Dispose();
     }
 }

@@ -13,9 +13,51 @@
     <UserControl.Styles>
         <Style Selector="TextBlock.ToolbarText">
             <Setter Property="FontSize" Value="14" />
-            <Setter Property="FontWeight" Value="Light" />
+            <Setter Property="Foreground" Value="White" />
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+        </Style>
+
+        <!-- Nav rows share the playlist-row look: rounded 14, translucent hover,
+             #2A2A2A + accent text when active. -->
+        <Style Selector="Button.NavItem">
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Margin" Value="0,3" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="PART_Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}"
+                            ClipToBounds="True">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalContentAlignment="Left"
+                                          VerticalContentAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.NavItem:pointerover /template/ Border#PART_Root">
+            <Setter Property="Background" Value="#14FFFFFF" />
+        </Style>
+
+        <Style Selector="Button.NavItem:pressed /template/ Border#PART_Root">
+            <Setter Property="Background" Value="#1FFFFFFF" />
+        </Style>
+
+        <Style Selector="Button.NavItem.Selected /template/ Border#PART_Root">
+            <Setter Property="Background" Value="#2A2A2A" />
+        </Style>
+
+        <Style Selector="Button.NavItem.Selected TextBlock.ToolbarText">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
         </Style>
 
         <Style Selector="TextBlock.PlaylistsHeader">
@@ -47,16 +89,27 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Theme" Value="{x:Null}" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <ContentPresenter Content="{TemplateBinding Content}"
-                                      Background="Transparent"
-                                      Padding="{TemplateBinding Padding}"
-                                      HorizontalContentAlignment="Center"
-                                      VerticalContentAlignment="Center" />
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalContentAlignment="Center"
+                                          VerticalContentAlignment="Center" />
+                    </Border>
                 </ControlTemplate>
             </Setter>
+        </Style>
+
+        <Style Selector="Button.SidebarIcon:pointerover">
+            <Setter Property="Background" Value="#22FFFFFF" />
+        </Style>
+
+        <Style Selector="Button.SidebarIcon:pressed">
+            <Setter Property="Background" Value="#33FFFFFF" />
         </Style>
 
         <Style Selector="ListBox.PlaylistSidebar">
@@ -111,40 +164,44 @@
 
     <Grid RowDefinitions="Auto,*,Auto" Background="{StaticResource ToolbarColor}">
         <!-- Nav -->
-        <StackPanel Grid.Row="0">
-            <Button Background="Transparent" Foreground="White" Command="{Binding ShowHomeViewCommand}"
-                    HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
-                <StackPanel Orientation="Horizontal" Margin="12,10">
+        <StackPanel Grid.Row="0" Margin="8,4,8,0">
+            <Button Classes="NavItem"
+                    Classes.Selected="{Binding IsHomeActive}"
+                    Command="{Binding ShowHomeViewCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="12">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/home.svg" Width="16" Height="16" />
-                    <TextBlock Classes="ToolbarText" Text="Home" VerticalAlignment="Center" Margin="12,0,0,0" />
+                    <TextBlock Classes="ToolbarText" Text="Home" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
 
-            <Button Background="Transparent" Foreground="White" Command="{Binding ShowSearchViewCommand}"
-                    HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
-                <StackPanel Orientation="Horizontal" Margin="12,10">
-                    <Svg Path="avares://SoundHavenClient/Assets/Icons/search.svg" Width="16" Height="16" />
-                    <TextBlock Classes="ToolbarText" Text="Search" VerticalAlignment="Center" Margin="12,0,0,0" />
+            <Button Classes="NavItem"
+                    Classes.Selected="{Binding IsLastFmActive}"
+                    Command="{Binding ShowLastFmViewCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/lastfm.svg" Width="16" Height="16" />
+                    <TextBlock Classes="ToolbarText" Text="Last.fm" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
 
-            <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlayerViewCommand}"
-                    HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
-                <StackPanel Orientation="Horizontal" Margin="12,10">
+            <Button Classes="NavItem"
+                    Classes.Selected="{Binding IsPlayerActive}"
+                    Command="{Binding ShowPlayerViewCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="12">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/player.svg" Width="16" Height="16" />
-                    <TextBlock Classes="ToolbarText" Text="Player" VerticalAlignment="Center" Margin="12,0,0,0" />
+                    <TextBlock Classes="ToolbarText" Text="Player" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
 
-            <Button Background="Transparent" Foreground="White" Command="{Binding ShowThemesViewCommand}"
-                    HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
-                <StackPanel Orientation="Horizontal" Margin="12,10">
+            <Button Classes="NavItem"
+                    Classes.Selected="{Binding IsThemesActive}"
+                    Command="{Binding ShowThemesViewCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="12">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/palette.svg" Width="16" Height="16" />
-                    <TextBlock Classes="ToolbarText" Text="Themes" VerticalAlignment="Center" Margin="12,0,0,0" />
+                    <TextBlock Classes="ToolbarText" Text="Themes" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
 
-            <Separator Background="White" Opacity="0.08" Margin="12,8" />
+            <Separator Background="White" Opacity="0.08" Margin="4,8" />
         </StackPanel>
 
         <!-- All playlists -->
@@ -165,7 +222,7 @@
 
                 <Button Grid.Column="2"
                         Classes="SidebarIcon"
-                        Command="{Binding SortPlaylistsCommand}"
+                        Click="OnSortButtonClick"
                         ToolTip.Tip="Sort playlists">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/sort.svg"
                          Width="18" Height="18"
@@ -182,7 +239,7 @@
                          SelectedItem="{Binding ToolbarSelectedPlaylist, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:Playlist">
-                            <Grid ColumnDefinitions="Auto,*"
+                            <Grid ColumnDefinitions="Auto,*,Auto"
                                   HorizontalAlignment="Stretch"
                                   Background="Transparent"
                                   PointerPressed="OnPlaylistPointerPressed">
@@ -228,6 +285,19 @@
                                     <TextBlock Text="{Binding Name}" Classes="PlaylistName" />
                                     <TextBlock Text="{Binding ItemCountText}" Classes="PlaylistCount" />
                                 </StackPanel>
+
+                                <Button Grid.Column="2"
+                                        Classes="SidebarIcon"
+                                        Width="36"
+                                        Height="36"
+                                        VerticalAlignment="Center"
+                                        PointerPressed="OnOverflowPointerPressed"
+                                        Click="OnPlaylistOverflowClick"
+                                        ToolTip.Tip="More options">
+                                    <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
+                                         Width="20" Height="20"
+                                         Opacity="0.75" />
+                                </Button>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

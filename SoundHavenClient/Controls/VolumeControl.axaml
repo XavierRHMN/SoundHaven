@@ -9,28 +9,31 @@
 
     <UserControl.Styles>
         <Style Selector="Button">
-            <Setter Property="Width" Value="60" />
-            <Setter Property="Height" Value="60" />
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="CornerRadius" Value="20" />
         </Style>
     </UserControl.Styles>
 
     <StackPanel Orientation="Horizontal">
-        <Button Command="{Binding MuteCommand}" Margin="10 0"
+        <Button Command="{Binding MuteCommand}" Margin="4 0"
                 Background="Transparent"
                 IsVisible="{Binding !IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Svg Path="avares://SoundHavenClient/Assets/Icons/volumehigh.svg" />
+            <Svg Path="avares://SoundHavenClient/Assets/Icons/volumehigh.svg"
+                 Width="22" Height="22" />
         </Button>
 
-        <Button Command="{Binding MuteCommand}" Margin="10 0"
+        <Button Command="{Binding MuteCommand}" Margin="4 0"
                 Background="Transparent"
                 IsVisible="{Binding IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Svg Path="avares://SoundHavenClient/Assets/Icons/volumemute.svg"
+                 Width="22" Height="22"
                  Opacity="{Binding !IsMuted, Converter={StaticResource BooleanToOpacityConverter}, ConverterParameter='1,0.5'}">
             </Svg>
         </Button>
 
         <Slider Minimum="0" Maximum="1" IsEnabled="{Binding !IsMuted}" Value="{Binding Volume, Mode=TwoWay}"
-                Width="150" Margin="0 0 20 0" />
+                Width="110" Margin="0 0 4 0" />
     </StackPanel>
 
 </UserControl>
