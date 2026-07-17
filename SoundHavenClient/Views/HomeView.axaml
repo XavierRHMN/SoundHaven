@@ -640,7 +640,7 @@
                     <StackPanel Spacing="12">
                         <StackPanel Classes="CardAligned">
                             <TextBlock Text="Recommended for you" Classes="SectionTitle" />
-                            <TextBlock Text="Mixed from YouTube Music and your Last.fm taste"
+                            <TextBlock Text="{Binding RecommendationsSubtitle}"
                                        Classes="SectionSubtitle" />
                         </StackPanel>
 

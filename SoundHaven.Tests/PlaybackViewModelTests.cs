@@ -624,6 +624,13 @@ public sealed class PlaybackViewModelTests : IDisposable
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Enumerable.Empty<Song>());
 
+        public Task<IEnumerable<Song>> GetSimilarTracksAsync(
+            string artist,
+            string title,
+            int limit,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(Enumerable.Empty<Song>());
+
         public Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Enumerable.Empty<Song>());

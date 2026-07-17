@@ -33,6 +33,7 @@ public sealed class HomeViewModel : ViewModelBase
     private bool _showForYou = true;
     private bool _showAllRecentlyPlayed;
     private bool _isLoadingRecommendations;
+    private bool _recommendationsFromTaste;
     private int _disposeState;
     private int _uploadArtworkPassRunning;
 
@@ -200,6 +201,10 @@ public sealed class HomeViewModel : ViewModelBase
 
     public bool HasRecommendations => RecommendedSongs.Count > 0;
 
+    public string RecommendationsSubtitle => _recommendationsFromTaste
+        ? "Similar to the music in your Last.fm library"
+        : "Popular on YouTube Music right now";
+
     public bool HasTopAlbums => TopAlbums.Count > 0;
 
     public bool ShowRecommendationsEmpty =>
@@ -357,19 +362,25 @@ public sealed class HomeViewModel : ViewModelBase
         IsLoadingRecommendations = true;
         try
         {
-            Task<IReadOnlyList<Song>> ytmTask = LoadYouTubeRecommendationsAsync();
-            Task<IReadOnlyList<Song>> lastFmTask = LoadLastFmRecommendationsAsync();
-            await Task.WhenAll(ytmTask, lastFmTask);
+            // Prefer real discovery seeded from the user's Last.fm taste; the
+            // generic YouTube Music feed is only a signed-out fallback.
+            IReadOnlyList<Song> recommendations = await LoadTasteRecommendationsAsync();
+            bool fromTaste = recommendations.Count > 0;
+            if (!fromTaste)
+            {
+                recommendations = await LoadYouTubeRecommendationsAsync();
+            }
 
-            IReadOnlyList<Song> merged = RecommendationFeed.MergeInterleaved(
-                (await ytmTask).Where(song => !_dislikedSongs.IsDisliked(song)),
-                (await lastFmTask).Where(song => !_dislikedSongs.IsDisliked(song)),
-                maxDisplay: 12);
+            var display = recommendations
+                .Where(song => !_dislikedSongs.IsDisliked(song))
+                .Take(12)
+                .ToList();
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
+                _recommendationsFromTaste = fromTaste;
                 RecommendedSongs.Clear();
-                foreach (Song song in merged)
+                foreach (Song song in display)
                 {
                     RecommendedSongs.Add(song);
                     _ = ResolveArtworkAsync(song);
@@ -377,6 +388,7 @@ public sealed class HomeViewModel : ViewModelBase
 
                 OnPropertyChanged(nameof(HasRecommendations));
                 OnPropertyChanged(nameof(ShowRecommendationsEmpty));
+                OnPropertyChanged(nameof(RecommendationsSubtitle));
             });
         }
         catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
@@ -418,18 +430,26 @@ public sealed class HomeViewModel : ViewModelBase
         }
     }
 
-    private async Task<IReadOnlyList<Song>> LoadLastFmRecommendationsAsync()
+    /// <summary>
+    /// Real recommendations: a random handful of the user's Last.fm top tracks
+    /// seed track.getSimilar lookups, so the shelf is "music like what you
+    /// actually listen to" rather than a region-default chart. The user's own
+    /// top tracks are excluded so it surfaces new music. Empty when signed out.
+    /// </summary>
+    private async Task<IReadOnlyList<Song>> LoadTasteRecommendationsAsync()
     {
         if (!_lastFmDataService.IsConfigured || !_lastFmDataService.IsAuthenticated)
         {
             return [];
         }
 
+        List<Song> topTracks;
         try
         {
-            IEnumerable<Song> tracks =
-                await _lastFmDataService.GetTopTracksAsync(_lifetimeCancellation.Token);
-            return tracks.Take(RecommendationFeed.MaxLastFmSeeds).ToList();
+            topTracks = (await _lastFmDataService.GetTopTracksAsync(_lifetimeCancellation.Token))
+                .Where(song => !string.IsNullOrWhiteSpace(song.Artist)
+                    && !string.IsNullOrWhiteSpace(song.Title))
+                .ToList();
         }
         catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
         {
@@ -438,6 +458,63 @@ public sealed class HomeViewModel : ViewModelBase
         catch (Exception exception)
         {
             Debug.WriteLine($"Last.fm top tracks failed: {exception.Message}");
+            return [];
+        }
+
+        // Seed from a random sample of the top tracks so the shelf varies.
+        var seeds = topTracks
+            .Take(15)
+            .OrderBy(_ => Random.Shared.Next())
+            .Take(5)
+            .ToList();
+        if (seeds.Count == 0)
+        {
+            return [];
+        }
+
+        // Recommend new music: exclude anything already in the user's top tracks.
+        var seen = new HashSet<string>(
+            topTracks.Select(RecommendationFeed.BuildDedupeKey),
+            StringComparer.OrdinalIgnoreCase);
+
+        IReadOnlyList<Song>[] similarLists = await Task.WhenAll(
+            seeds.Select(seed => LoadSimilarTracksAsync(seed.Artist!, seed.Title!)));
+
+        var picks = new List<Song>();
+        foreach (IReadOnlyList<Song> list in similarLists)
+        {
+            foreach (Song song in list)
+            {
+                string key = RecommendationFeed.BuildDedupeKey(song);
+                if (!string.IsNullOrWhiteSpace(key) && seen.Add(key))
+                {
+                    picks.Add(song);
+                }
+            }
+        }
+
+        // Interleave so results aren't grouped by seed.
+        return picks.OrderBy(_ => Random.Shared.Next()).ToList();
+    }
+
+    private async Task<IReadOnlyList<Song>> LoadSimilarTracksAsync(string artist, string title)
+    {
+        try
+        {
+            IEnumerable<Song> similar = await _lastFmDataService.GetSimilarTracksAsync(
+                artist,
+                title,
+                limit: 8,
+                _lifetimeCancellation.Token);
+            return similar.ToList();
+        }
+        catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Last.fm similar tracks failed: {exception.Message}");
             return [];
         }
     }

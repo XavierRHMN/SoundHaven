@@ -30,6 +30,13 @@ public interface ILastFmDataService
 
     Task<IEnumerable<Song>> GetTopTracksAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Tracks Last.fm considers similar to the given seed track.</summary>
+    Task<IEnumerable<Song>> GetSimilarTracksAsync(
+        string artist,
+        string title,
+        int limit,
+        CancellationToken cancellationToken = default);
+
     Task<IEnumerable<Song>> GetRecentlyPlayedTracksAsync(CancellationToken cancellationToken = default);
 
     Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(CancellationToken cancellationToken = default);
@@ -437,6 +444,75 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
             cancellationToken);
     }
 
+    public async Task<IEnumerable<Song>> GetSimilarTracksAsync(
+        string artist,
+        string title,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        string normalizedArtist = artist?.Trim() ?? string.Empty;
+        string normalizedTitle = title?.Trim() ?? string.Empty;
+        if (!IsConfigured || normalizedArtist.Length == 0 || normalizedTitle.Length == 0)
+        {
+            return Array.Empty<Song>();
+        }
+
+        string cacheKey = FormattableString.Invariant(
+            $"lastfm:similar:{normalizedArtist}|{normalizedTitle}|{limit}").ToLowerInvariant();
+        if (_cache.TryGetValue(cacheKey, out IReadOnlyList<Song>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        try
+        {
+            // track.getsimilar is a public method (api_key only) — no session needed.
+            using JsonDocument response = await GetAsync(
+                "track.getsimilar",
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["artist"] = normalizedArtist,
+                    ["track"] = normalizedTitle,
+                    ["autocorrect"] = "1",
+                    ["limit"] = limit.ToString(CultureInfo.InvariantCulture)
+                },
+                cancellationToken);
+
+            var songs = new List<Song>();
+            if (TryGetArray(response.RootElement, "similartracks", "track", out JsonElement tracks))
+            {
+                foreach (JsonElement track in tracks.EnumerateArray())
+                {
+                    string name = GetString(track, "name");
+                    string trackArtist = GetNestedString(track, "artist", "name");
+                    if (name.Length == 0 || trackArtist.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    songs.Add(new Song
+                    {
+                        Title = name,
+                        Artist = trackArtist,
+                        ArtworkUrl = GetArtworkUrl(track)
+                    });
+                }
+            }
+
+            _cache.Set(cacheKey, songs, _cacheOptions);
+            LastError = null;
+            return songs;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return Array.Empty<Song>();
+        }
+    }
+
     public async Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(
         CancellationToken cancellationToken = default)
     {
@@ -569,8 +645,14 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
         }
     }
 
+    private Task<JsonDocument> GetAsync(string method, CancellationToken cancellationToken)
+    {
+        return GetAsync(method, extraParameters: null, cancellationToken);
+    }
+
     private async Task<JsonDocument> GetAsync(
         string method,
+        IReadOnlyDictionary<string, string>? extraParameters,
         CancellationToken cancellationToken)
     {
         var parameters = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -581,6 +663,14 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
             ["format"] = "json",
             ["limit"] = "20"
         };
+        if (extraParameters is not null)
+        {
+            foreach (KeyValuePair<string, string> parameter in extraParameters)
+            {
+                parameters[parameter.Key] = parameter.Value;
+            }
+        }
+
         string query = string.Join(
             "&",
             parameters.Select(pair =>
