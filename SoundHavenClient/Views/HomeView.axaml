@@ -137,6 +137,30 @@
             <Setter Property="Foreground" Value="White" />
         </Style>
 
+        <Style Selector="Button.IconOnly">
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="16"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.IconOnly:pointerover">
+            <Setter Property="Background" Value="#22FFFFFF" />
+        </Style>
+
         <Style Selector="Button.LinkButton">
             <Setter Property="Theme" Value="{x:Null}" />
             <Setter Property="Background" Value="Transparent" />
@@ -187,6 +211,10 @@
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <Style Selector="TextBlock.RowTitle.Playing">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
         </Style>
 
         <Style Selector="TextBlock.RowSubtitle">
@@ -702,10 +730,15 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="vm:SearchResultRow">
                                 <Grid ColumnDefinitions="48,2.2*,*,*,72,96">
-                                    <TextBlock Text="{Binding Number}"
-                                               Classes="CellText"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center" />
+                                    <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Number}"
+                                                   Classes="CellText"
+                                                   HorizontalAlignment="Center"
+                                                   IsVisible="{Binding !IsCurrentlyPlaying}" />
+                                        <Svg Path="avares://SoundHavenClient/Assets/Icons/sound.svg"
+                                             Width="14" Height="14"
+                                             IsVisible="{Binding IsCurrentlyPlaying}" />
+                                    </Panel>
 
                                     <Grid Grid.Column="1" ColumnDefinitions="Auto,*">
                                         <Border Width="40"
@@ -726,6 +759,7 @@
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding Song.Title}"
                                                    Classes="RowTitle"
+                                                   Classes.Playing="{Binding IsCurrentlyPlaying}"
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,16,0" />
                                     </Grid>

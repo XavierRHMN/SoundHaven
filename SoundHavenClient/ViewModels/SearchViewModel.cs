@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -13,7 +14,26 @@ using SoundHaven.Stores;
 namespace SoundHaven.ViewModels;
 
 /// <summary>Numbered search result row for the TIDAL-style results table.</summary>
-public sealed record SearchResultRow(int Number, Song Song);
+public sealed class SearchResultRow : ViewModelBase
+{
+    private bool _isCurrentlyPlaying;
+
+    public SearchResultRow(int number, Song song)
+    {
+        Number = number;
+        Song = song ?? throw new ArgumentNullException(nameof(song));
+    }
+
+    public int Number { get; }
+
+    public Song Song { get; }
+
+    public bool IsCurrentlyPlaying
+    {
+        get => _isCurrentlyPlaying;
+        set => SetProperty(ref _isCurrentlyPlaying, value);
+    }
+}
 
 public sealed class SearchViewModel : ViewModelBase
 {
@@ -77,6 +97,8 @@ public sealed class SearchViewModel : ViewModelBase
         ClearSearchCommand = new RelayCommand(() => SearchQuery = string.Empty);
         SelectSongsCommand = new RelayCommand(() => SearchSongs = true);
         SelectVideosCommand = new RelayCommand(() => SearchSongs = false);
+
+        _playbackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
     }
 
     public string SearchQuery
@@ -202,11 +224,46 @@ public sealed class SearchViewModel : ViewModelBase
 
     public override void Dispose()
     {
+        _playbackViewModel.PropertyChanged -= OnPlaybackPropertyChanged;
         _searchCancellation.Cancel();
         _searchCancellation.Dispose();
         _lifetimeCancellation.Cancel();
         _lifetimeCancellation.Dispose();
         base.Dispose();
+    }
+
+    private void OnPlaybackPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(PlaybackViewModel.CurrentSong))
+        {
+            UpdatePlayingHighlights();
+        }
+    }
+
+    private void UpdatePlayingHighlights()
+    {
+        Song? current = _playbackViewModel.CurrentSong;
+        foreach (SearchResultRow row in ResultRows)
+        {
+            row.IsCurrentlyPlaying = IsSameTrack(current, row.Song);
+        }
+    }
+
+    // Queue playback clones songs, so reference equality alone is not enough.
+    private static bool IsSameTrack(Song? current, Song song)
+    {
+        if (current is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(current, song))
+        {
+            return true;
+        }
+
+        return !string.IsNullOrWhiteSpace(song.VideoId)
+            && string.Equals(current.VideoId, song.VideoId, StringComparison.Ordinal);
     }
 
     private async Task ExecuteSearchAsync()
@@ -259,6 +316,8 @@ public sealed class SearchViewModel : ViewModelBase
                 ResultRows.Add(new SearchResultRow(ResultRows.Count + 1, song));
                 _ = LoadResultThumbnailAsync(song, nextCancellation.Token);
             }
+
+            UpdatePlayingHighlights();
         }
         finally
         {
