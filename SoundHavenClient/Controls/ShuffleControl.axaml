@@ -7,8 +7,8 @@
     <Button x:Name="ShuffleButton"
             Command="{Binding ToggleShuffleCommand}"
             Background="Transparent"
-            Width="60" Height="60"
-            CornerRadius="30"
+            Width="44" Height="44"
+            CornerRadius="22"
             ToolTip.Tip="Toggle Shuffle">
 
         <Svg Path="avares://SoundHavenClient/Assets/Icons/shuffle.svg"

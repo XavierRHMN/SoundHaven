@@ -7,8 +7,8 @@
     <Button x:Name="RepeatButton"
             Command="{Binding ToggleRepeatCommand}"
             Background="Transparent"
-            Width="60" Height="60"
-            CornerRadius="30">
+            Width="44" Height="44"
+            CornerRadius="22">
 
         <Panel>
             <Svg Path="avares://SoundHavenClient/Assets/Icons/repeat.svg"

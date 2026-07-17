@@ -68,7 +68,7 @@ public sealed class SongInfoViewModel : ViewModelBase
         }
     }
 
-    public double ControlWidth { get; set; } = 200 * 2; // Width of the Song Info Control
+    public double ControlWidth { get; set; } = 220; // Width of the Song Info Control
 
     public SongInfoViewModel(PlaybackViewModel playbackViewModel, IAudioService audioService)
     {
