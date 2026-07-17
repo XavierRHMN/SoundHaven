@@ -68,7 +68,7 @@ public partial class ToolbarControl : UserControl
 
         // Stop ListBox from selecting (which navigates and feels laggy).
         e.Handled = true;
-        ShowPlaylistMenu(control, viewModel, playlist);
+        ShowPlaylistMenu(control, viewModel, playlist, showAtPointer: true);
     }
 
     private void OnOverflowPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -87,13 +87,21 @@ public partial class ToolbarControl : UserControl
         }
 
         e.Handled = true;
-        ShowPlaylistMenu(button, viewModel, playlist);
+        ShowPlaylistMenu(button, viewModel, playlist, showAtPointer: false);
     }
 
-    private static void ShowPlaylistMenu(Control anchor, ToolbarViewModel viewModel, Playlist playlist)
+    private static void ShowPlaylistMenu(
+        Control anchor,
+        ToolbarViewModel viewModel,
+        Playlist playlist,
+        bool showAtPointer)
     {
-        var flyout = DarkMenuFlyout.Create(PlacementMode.Right);
-        flyout.HorizontalOffset = 8;
+        var flyout = DarkMenuFlyout.Create(
+            showAtPointer ? PlacementMode.Pointer : PlacementMode.Right);
+        if (!showAtPointer)
+        {
+            flyout.HorizontalOffset = 8;
+        }
         flyout.Items.Add(new MenuItem
         {
             Header = "Play now",
@@ -126,6 +134,6 @@ public partial class ToolbarControl : UserControl
             CommandParameter = playlist
         });
 
-        flyout.ShowAt(anchor);
+        flyout.ShowAt(anchor, showAtPointer);
     }
 }
