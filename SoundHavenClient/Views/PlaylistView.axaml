@@ -500,9 +500,8 @@
                                         <Image Source="{Binding Song.Artwork}"
                                                Stretch="UniformToFill"
                                                IsVisible="{Binding Song.Artwork, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                                        <Image Source="/Assets/Covers/MissingAlbum.png"
-                                               Stretch="UniformToFill"
-                                               IsVisible="{Binding Song.Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
+                                        <Border Background="#3A3A3A"
+                                                IsVisible="{Binding Song.Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
                                     </Panel>
                                 </Border>
                                 <TextBlock Grid.Column="1"

@@ -29,6 +29,7 @@ public sealed class PlaybackViewModel : ViewModelBase
     private readonly ThemesViewModel _themesViewModel;
     private readonly IUserNotificationService _notifications;
     private readonly RecentPlaybackStore? _recentPlaybackStore;
+    private readonly IYouTubeMediaService? _youTubeMediaService;
     private CancellationTokenSource _trackCancellation = new();
     private Song? _currentSong;
     private Playlist? _currentPlaylist;
@@ -43,7 +44,8 @@ public sealed class PlaybackViewModel : ViewModelBase
         ILastFmDataService lastFmDataService,
         ThemesViewModel themesViewModel,
         IUserNotificationService notifications,
-        RecentPlaybackStore? recentPlaybackStore = null)
+        RecentPlaybackStore? recentPlaybackStore = null,
+        IYouTubeMediaService? youTubeMediaService = null)
     {
         _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
         _repeatViewModel = repeatViewModel ?? throw new ArgumentNullException(nameof(repeatViewModel));
@@ -51,6 +53,7 @@ public sealed class PlaybackViewModel : ViewModelBase
         _themesViewModel = themesViewModel ?? throw new ArgumentNullException(nameof(themesViewModel));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
         _recentPlaybackStore = recentPlaybackStore;
+        _youTubeMediaService = youTubeMediaService;
 
         _audioService.PlaybackStateChanged += OnPlaybackStateChanged;
         _audioService.PlaybackFailed += OnPlaybackFailed;
@@ -235,6 +238,9 @@ public sealed class PlaybackViewModel : ViewModelBase
         SeekPositionReset?.Invoke(this, EventArgs.Empty);
         try
         {
+            // Anything without a local file resolves to a YouTube stream first,
+            // so Last.fm-sourced recommendations always end up playable.
+            await EnsurePlayableAsync(song, replacementCancellation.Token);
             PlaybackSource source = SelectPlaybackSource(song, File.Exists);
             await _audioService.StartAsync(source, cancellationToken: replacementCancellation.Token);
             _recentPlaybackStore?.RecordPlay(song);
@@ -247,6 +253,52 @@ public sealed class PlaybackViewModel : ViewModelBase
         {
             IsTransitioningTracks = false;
             CanPlaybackControl = true;
+        }
+    }
+
+    /// <summary>
+    /// Ensures a track has a playable source. Local files and songs that already
+    /// carry a YouTube id pass straight through; anything else (e.g. a Last.fm
+    /// recommendation) is matched to a YouTube video by an artist/title search.
+    /// </summary>
+    private async Task EnsurePlayableAsync(Song song, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(song.FilePath) && File.Exists(song.FilePath))
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(song.VideoId) || _youTubeMediaService is null)
+        {
+            return;
+        }
+
+        string query = $"{song.Artist} {song.Title}".Trim();
+        if (query.Length == 0)
+        {
+            return;
+        }
+
+        IReadOnlyList<YouTubeSearchResult> results = await _youTubeMediaService.SearchAsync(
+            query,
+            1,
+            searchSongs: true,
+            cancellationToken);
+        if (results.Count == 0)
+        {
+            return;
+        }
+
+        YouTubeSearchResult match = results[0];
+        song.VideoId = match.VideoId;
+        if (!string.IsNullOrWhiteSpace(match.ThumbnailUrl))
+        {
+            song.ThumbnailUrl = match.ThumbnailUrl;
+        }
+
+        if (match.Duration is { } duration && duration > TimeSpan.Zero)
+        {
+            song.Duration = duration;
         }
     }
 

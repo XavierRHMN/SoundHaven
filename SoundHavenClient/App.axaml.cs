@@ -88,7 +88,8 @@ public partial class App : Application, IDisposable
             _lastFmDataService,
             themesViewModel,
             notifications,
-            recentPlaybackStore);
+            recentPlaybackStore,
+            _youTubeMediaService);
         var shuffleViewModel = new ShuffleViewModel(playbackViewModel);
         var playlistStore = new PlaylistStore(database);
         var playlistViewModel = new PlaylistViewModel(

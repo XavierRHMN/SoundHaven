@@ -244,9 +244,47 @@ public sealed class AudioService : ViewModelBase, IAudioService
         }
     }
 
-    public Task RestartAsync(CancellationToken cancellationToken = default)
+    public async Task RestartAsync(CancellationToken cancellationToken = default)
     {
-        return SeekAsync(TimeSpan.Zero, cancellationToken);
+        ThrowIfDisposed();
+        await _operationLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_reader is null || _volumeProvider is null)
+            {
+                return;
+            }
+
+            // Seek the already-open reader back to the start and rebuild only the
+            // output stage — no stream re-resolve, so there is no loading delay.
+            bool wasPlaying = _outputDevice?.PlaybackState == PlaybackState.Playing;
+            DisposeOutputDevice();
+            try
+            {
+                _reader.CurrentTime = TimeSpan.Zero;
+            }
+            catch
+            {
+                // Some readers can't seek precisely; playback still restarts.
+            }
+
+            CreateOutputDevice();
+            CurrentPosition = TimeSpan.Zero;
+            StartPositionTimer();
+            if (wasPlaying)
+            {
+                _outputDevice!.Play();
+                SetStatus(PlaybackStatus.Playing);
+            }
+            else
+            {
+                SetStatus(PlaybackStatus.Paused);
+            }
+        }
+        finally
+        {
+            _operationLock.Release();
+        }
     }
 
     public IReadOnlyList<AudioOutputDevice> GetOutputDevices()

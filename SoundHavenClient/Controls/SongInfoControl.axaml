@@ -20,6 +20,20 @@
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Margin" Value="0 5 0 0" />
         </Style>
+
+        <!-- Now-playing cover darkens on hover to signal it opens the Player. -->
+        <Style Selector="Border.ThumbHover">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border.NowPlayingThumb:pointerover Border.ThumbHover">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
     </UserControl.Styles>
 
     <Grid>
@@ -27,12 +41,18 @@
         <StackPanel Orientation="Horizontal"
                     VerticalAlignment="Center"
                     IsVisible="{Binding CurrentSongExists}">
-            <!-- Album cover: spinner while loading; otherwise artwork or gray placeholder -->
-            <Border CornerRadius="5"
+            <!-- Album cover: spinner while loading; otherwise artwork or gray
+                 placeholder. Clicking it opens the Player. -->
+            <Border Classes="NowPlayingThumb"
+                    CornerRadius="5"
                     ClipToBounds="True"
                     Margin="0,0,20,0"
                     Width="50"
-                    Height="50">
+                    Height="50"
+                    Cursor="Hand"
+                    Background="Transparent"
+                    PointerPressed="OnThumbnailPressed"
+                    ToolTip.Tip="Open player">
                 <Panel>
                     <ProgressBar Classes="circular"
                                  IsIndeterminate="True"
@@ -50,6 +70,8 @@
                                Stretch="UniformToFill"
                                IsVisible="{Binding CurrentSong.Artwork, Converter={x:Static ObjectConverters.IsNotNull}}" />
                     </Panel>
+
+                    <Border Classes="ThumbHover" Background="#66000000" />
                 </Panel>
             </Border>
 

@@ -21,9 +21,8 @@
                                     ClipToBounds="True"
                                     Background="#2A2A2A">
                                 <Panel>
-                                    <Image Source="/Assets/Covers/MissingAlbum.png"
-                                           Stretch="UniformToFill"
-                                           IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
+                                    <Border Background="#3A3A3A"
+                                            IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
                                     <Image Source="{Binding Artwork}"
                                            Stretch="UniformToFill"
                                            IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNotNull}}" />
@@ -72,9 +71,8 @@
                                     ClipToBounds="True"
                                     Background="#2A2A2A">
                                 <Panel>
-                                    <Image Source="/Assets/Covers/MissingAlbum.png"
-                                           Stretch="UniformToFill"
-                                           IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
+                                    <Border Background="#3A3A3A"
+                                            IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
                                     <Image Source="{Binding Artwork}"
                                            Stretch="UniformToFill"
                                            IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNotNull}}" />
