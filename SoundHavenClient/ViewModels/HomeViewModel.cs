@@ -44,8 +44,10 @@ public sealed class HomeViewModel : ViewModelBase
         IUserNotificationService notifications,
         ILastFmDataService lastFmDataService,
         IYouTubeMediaService youTubeMediaService,
-        IAlbumArtService albumArtService)
+        IAlbumArtService albumArtService,
+        SearchViewModel searchViewModel)
     {
+        Search = searchViewModel ?? throw new ArgumentNullException(nameof(searchViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
         _recentPlaybackStore = recentPlaybackStore
             ?? throw new ArgumentNullException(nameof(recentPlaybackStore));
@@ -111,6 +113,9 @@ public sealed class HomeViewModel : ViewModelBase
     public ObservableCollection<Song> RecommendedSongs { get; }
 
     public ObservableCollection<Song> TopAlbums { get; }
+
+    /// <summary>Embedded TIDAL-style search shown from the Home top bar.</summary>
+    public SearchViewModel Search { get; }
 
     public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
 

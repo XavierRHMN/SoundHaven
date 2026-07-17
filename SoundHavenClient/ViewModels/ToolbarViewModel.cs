@@ -18,7 +18,6 @@ public sealed class ToolbarViewModel : ViewModelBase
     private readonly LastFmViewModel _lastFmViewModel;
     private readonly PlayerViewModel _playerViewModel;
     private readonly PlaylistStore _playlistStore;
-    private readonly SearchViewModel _searchViewModel;
     private readonly ThemesViewModel _themesViewModel;
     private readonly IUserNotificationService _notifications;
     private Playlist? _toolbarSelectedPlaylist;
@@ -32,7 +31,6 @@ public sealed class ToolbarViewModel : ViewModelBase
         LastFmViewModel lastFmViewModel,
         PlayerViewModel playerViewModel,
         PlaylistStore playlistStore,
-        SearchViewModel searchViewModel,
         ThemesViewModel themesViewModel,
         IUserNotificationService notifications)
     {
@@ -47,14 +45,11 @@ public sealed class ToolbarViewModel : ViewModelBase
         _playerViewModel = playerViewModel
             ?? throw new ArgumentNullException(nameof(playerViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
-        _searchViewModel = searchViewModel
-            ?? throw new ArgumentNullException(nameof(searchViewModel));
         _themesViewModel = themesViewModel
             ?? throw new ArgumentNullException(nameof(themesViewModel));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
         ShowHomeViewCommand = new RelayCommand(() => ShowView(_homeViewModel));
-        ShowSearchViewCommand = new RelayCommand(() => ShowView(_searchViewModel));
         ShowLastFmViewCommand = new RelayCommand(() => ShowView(_lastFmViewModel));
         ShowPlaylistViewCommand = new RelayCommand(() => ShowView(_playlistViewModel));
         ShowPlayerViewCommand = new RelayCommand(() => ShowView(_playerViewModel));
@@ -98,8 +93,6 @@ public sealed class ToolbarViewModel : ViewModelBase
     public ObservableCollection<Playlist> PlaylistCollection => _playlistStore.Playlists;
 
     public RelayCommand ShowHomeViewCommand { get; }
-
-    public RelayCommand ShowSearchViewCommand { get; }
 
     public RelayCommand ShowLastFmViewCommand { get; }
 
@@ -223,7 +216,6 @@ public sealed class ToolbarViewModel : ViewModelBase
     private void ShowView(ViewModelBase viewModel)
     {
         ToolbarSelectedPlaylist = null;
-        _searchViewModel.SelectedSong = null;
         _navigation.NavigateTo(viewModel);
     }
 }

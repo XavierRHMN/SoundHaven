@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:SoundHaven.ViewModels"
              xmlns:models="clr-namespace:SoundHaven.Models"
+             xmlns:controls="clr-namespace:SoundHaven.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              d:DesignWidth="1500" d:DesignHeight="800"
              x:DataType="vm:HomeViewModel">
@@ -322,6 +323,67 @@
         <Style Selector="TextBlock.CardAligned, StackPanel.CardAligned">
             <Setter Property="Margin" Value="10,0,0,0" />
         </Style>
+
+        <!-- Search results table -->
+        <Style Selector="TextBlock.ColumnHeader">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="#8A8A8A" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="LetterSpacing" Value="0.8" />
+        </Style>
+
+        <Style Selector="TextBlock.CellText">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="#C8C8C8" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <Style Selector="ListBox.SearchResults">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+
+        <Style Selector="ListBox.SearchResults ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="PART_Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="8,6"
+                            ClipToBounds="True">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="ListBox.SearchResults ListBoxItem:pointerover /template/ Border#PART_Root">
+            <Setter Property="Background" Value="#14FFFFFF" />
+        </Style>
+
+        <Style Selector="ListBox.SearchResults ListBoxItem:selected /template/ Border#PART_Root">
+            <Setter Property="Background" Value="#1FFFFFFF" />
+        </Style>
+
+        <Style Selector="ListBox.SearchResults ListBoxItem Button.RowAction">
+            <Setter Property="Opacity" Value="0" />
+        </Style>
+
+        <Style Selector="ListBox.SearchResults ListBoxItem:pointerover Button.RowAction">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
     </UserControl.Styles>
 
     <Grid Background="{DynamicResource ToolbarColor}" Margin="28,20,28,20">
@@ -330,25 +392,90 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Pills: For you | Uploads -->
-        <StackPanel Grid.Row="0"
-                    Orientation="Horizontal"
-                    Spacing="10"
-                    Margin="0,0,0,20">
-            <Button Classes="HomePill"
-                    Classes.Selected="{Binding IsForYouSelected}"
-                    Content="For you"
-                    Command="{Binding ShowForYouCommand}" />
-            <Button Classes="HomePill"
-                    Classes.Selected="{Binding IsUploadsSelected}"
-                    Content="Uploads"
-                    Command="{Binding ShowUploadsCommand}" />
-        </StackPanel>
+        <!-- Top bar: pills left, TIDAL-style search right -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+            <!-- Browse pills (hidden while searching) -->
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding !Search.ShowResults}">
+                <Button Classes="HomePill"
+                        Classes.Selected="{Binding IsForYouSelected}"
+                        Content="For you"
+                        Command="{Binding ShowForYouCommand}" />
+                <Button Classes="HomePill"
+                        Classes.Selected="{Binding IsUploadsSelected}"
+                        Content="Uploads"
+                        Command="{Binding ShowUploadsCommand}" />
+            </StackPanel>
+
+            <!-- Search mode pills (shown while searching) -->
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding Search.ShowResults}">
+                <Button Classes="HomePill"
+                        Classes.Selected="{Binding Search.SearchSongs}"
+                        Content="Songs"
+                        Command="{Binding Search.SelectSongsCommand}" />
+                <Button Classes="HomePill"
+                        Classes.Selected="{Binding !Search.SearchSongs}"
+                        Content="Videos"
+                        Command="{Binding Search.SelectVideosCommand}" />
+            </StackPanel>
+
+            <!-- Search bar -->
+            <Border Grid.Column="1"
+                    Background="#2A2A2A"
+                    CornerRadius="20"
+                    Height="40"
+                    Width="320"
+                    Padding="14,0"
+                    VerticalAlignment="Center">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Svg Grid.Column="0"
+                         Path="avares://SoundHavenClient/Assets/Icons/search.svg"
+                         Width="16" Height="16"
+                         VerticalAlignment="Center"
+                         Margin="0,0,10,0"
+                         Opacity="0.55" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding Search.SearchQuery, Mode=TwoWay}"
+                             Watermark="Search"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             VerticalAlignment="Center"
+                             FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular"
+                             FontSize="14"
+                             Foreground="White">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter"
+                                        Command="{Binding Search.SearchCommand}" />
+                            <KeyBinding Gesture="Escape"
+                                        Command="{Binding Search.ClearSearchCommand}" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button Grid.Column="2"
+                            Classes="IconOnly"
+                            Width="28"
+                            Height="28"
+                            VerticalAlignment="Center"
+                            Command="{Binding Search.ClearSearchCommand}"
+                            IsVisible="{Binding Search.HasQuery}"
+                            ToolTip.Tip="Clear search">
+                        <Svg Path="avares://SoundHavenClient/Assets/Icons/close.svg"
+                             Width="14" Height="14"
+                             Opacity="0.75" />
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
 
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
-                      Theme="{StaticResource MaterialModernScrollViewer}">
+                      Theme="{StaticResource MaterialModernScrollViewer}"
+                      IsVisible="{Binding !Search.ShowResults}">
             <StackPanel Spacing="32">
                 <!-- FOR YOU -->
                 <StackPanel IsVisible="{Binding ShowForYouContent}" Spacing="32">
@@ -543,5 +670,157 @@
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
+
+        <!-- SEARCH RESULTS (replaces shelves while a search is active) -->
+        <Grid Grid.Row="1"
+              RowDefinitions="Auto,*"
+              IsVisible="{Binding Search.ShowResults}">
+            <!-- Column headers -->
+            <Border Grid.Row="0"
+                    BorderThickness="0,0,0,1"
+                    BorderBrush="#22FFFFFF"
+                    Padding="8,0,8,10">
+                <Grid ColumnDefinitions="48,2.2*,*,*,72,96">
+                    <TextBlock Text="#" Classes="ColumnHeader" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="TITLE" Classes="ColumnHeader" />
+                    <TextBlock Grid.Column="2" Text="ARTIST" Classes="ColumnHeader" />
+                    <TextBlock Grid.Column="3" Text="ALBUM" Classes="ColumnHeader" />
+                    <TextBlock Grid.Column="4" Text="TIME" Classes="ColumnHeader"
+                               HorizontalAlignment="Right" />
+                </Grid>
+            </Border>
+
+            <Panel Grid.Row="1" Margin="0,8,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Theme="{StaticResource MaterialModernScrollViewer}"
+                              IsVisible="{Binding !Search.IsLoading}"
+                              IsHitTestVisible="{Binding Search.IsScrollViewerHittestable}">
+                    <ListBox Classes="SearchResults"
+                             ItemsSource="{Binding Search.ResultRows}"
+                             SelectionChanged="OnSearchRowSelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SearchResultRow">
+                                <Grid ColumnDefinitions="48,2.2*,*,*,72,96">
+                                    <TextBlock Text="{Binding Number}"
+                                               Classes="CellText"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+
+                                    <Grid Grid.Column="1" ColumnDefinitions="Auto,*">
+                                        <Border Width="40"
+                                                Height="40"
+                                                CornerRadius="4"
+                                                ClipToBounds="True"
+                                                Background="#22FFFFFF"
+                                                Margin="0,0,12,0">
+                                            <Panel>
+                                                <Image Source="{Binding Song.Artwork}"
+                                                       Stretch="UniformToFill"
+                                                       IsVisible="{Binding Song.Artwork, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                                <controls:AsyncImageControl SourceUrl="{Binding Song.ThumbnailUrl}"
+                                                                            Stretch="UniformToFill"
+                                                                            IsVisible="{Binding Song.Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
+                                            </Panel>
+                                        </Border>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Song.Title}"
+                                                   Classes="RowTitle"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,16,0" />
+                                    </Grid>
+
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding Song.Artist}"
+                                               Classes="CellText"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,16,0" />
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding Song.Album}"
+                                               Classes="CellText"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,16,0" />
+                                    <TextBlock Grid.Column="4"
+                                               Text="{Binding Song.VideoDuration}"
+                                               Classes="CellText"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Right" />
+
+                                    <StackPanel Grid.Column="5"
+                                                Orientation="Horizontal"
+                                                Spacing="2"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                PointerPressed="OnSearchActionsPointerPressed">
+                                        <Button Classes="IconOnly RowAction"
+                                                Width="32"
+                                                Height="32"
+                                                Click="OnSearchOverflowClick"
+                                                ToolTip.Tip="More options">
+                                            <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
+                                                 Width="18" Height="18"
+                                                 Opacity="0.75" />
+                                        </Button>
+
+                                        <Grid Width="32" Height="32">
+                                            <Button Classes="IconOnly RowAction"
+                                                    Width="32"
+                                                    Height="32"
+                                                    Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).Search.DownloadSongCommand}"
+                                                    CommandParameter="{Binding Song}"
+                                                    IsVisible="{Binding Song.CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.NotDownloaded}}"
+                                                    ToolTip.Tip="Download">
+                                                <Svg Path="avares://SoundHavenClient/Assets/Icons/download.svg"
+                                                     Width="18" Height="18"
+                                                     Opacity="0.75" />
+                                            </Button>
+
+                                            <ProgressBar Classes="circular"
+                                                         IsVisible="{Binding Song.CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloading}}"
+                                                         Value="{Binding Song.DownloadProgress}"
+                                                         Foreground="{DynamicResource PrimaryColor}"
+                                                         Width="24"
+                                                         Height="24" />
+
+                                            <Button Classes="IconOnly"
+                                                    Width="32"
+                                                    Height="32"
+                                                    IsVisible="{Binding Song.CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
+                                                    Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).Search.OpenFolderCommand}"
+                                                    CommandParameter="{Binding Song}"
+                                                    ToolTip.Tip="Open folder">
+                                                <Svg Path="avares://SoundHavenClient/Assets/Icons/folder.svg"
+                                                     Width="18" Height="18"
+                                                     Opacity="0.75" />
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </ScrollViewer>
+
+                <TextBlock Text="No results found — try a different search."
+                           Classes="SectionSubtitle"
+                           HorizontalAlignment="Center"
+                           Margin="0,32,0,0"
+                           IsVisible="{Binding Search.ShowNoResults}" />
+
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="16"
+                            IsVisible="{Binding Search.IsLoading}">
+                    <ProgressBar Classes="circular"
+                                 IsIndeterminate="True"
+                                 Height="56"
+                                 Width="56"
+                                 Foreground="{DynamicResource PrimaryColor}" />
+                    <TextBlock Text="{Binding Search.LoadingMessage}"
+                               Classes="SectionSubtitle"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+            </Panel>
+        </Grid>
     </Grid>
 </UserControl>

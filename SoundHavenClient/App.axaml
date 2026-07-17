@@ -26,10 +26,6 @@
             <views:LastFmView />
         </DataTemplate>
 
-        <DataTemplate DataType="viewModels:SearchViewModel">
-            <views:SearchView />
-        </DataTemplate>
-
         <DataTemplate DataType="viewModels:ThemesViewModel">
             <views:ThemesView />
         </DataTemplate>

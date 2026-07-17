@@ -131,14 +131,6 @@
                 </StackPanel>
             </Button>
 
-            <Button Background="Transparent" Foreground="White" Command="{Binding ShowSearchViewCommand}"
-                    HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
-                <StackPanel Orientation="Horizontal" Margin="12,10">
-                    <Svg Path="avares://SoundHavenClient/Assets/Icons/search.svg" Width="16" Height="16" />
-                    <TextBlock Classes="ToolbarText" Text="Search" VerticalAlignment="Center" Margin="12,0,0,0" />
-                </StackPanel>
-            </Button>
-
             <Button Background="Transparent" Foreground="White" Command="{Binding ShowLastFmViewCommand}"
                     HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
                 <StackPanel Orientation="Horizontal" Margin="12,10">

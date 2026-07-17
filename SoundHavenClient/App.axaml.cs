@@ -116,7 +116,8 @@ public partial class App : Application, IDisposable
             notifications,
             _lastFmDataService,
             _youTubeMediaService,
-            albumArtService);
+            albumArtService,
+            searchViewModel);
         navigation.NavigateTo(homeViewModel);
         var toolbarViewModel = new ToolbarViewModel(
             navigation,
@@ -126,7 +127,6 @@ public partial class App : Application, IDisposable
             lastFmViewModel,
             playerViewModel,
             playlistStore,
-            searchViewModel,
             themesViewModel,
             notifications);
 

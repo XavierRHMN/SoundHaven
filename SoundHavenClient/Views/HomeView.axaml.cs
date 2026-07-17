@@ -123,6 +123,88 @@ public partial class HomeView : UserControl
         flyout.ShowAt(anchor, showAtPointer);
     }
 
+    private void OnSearchRowSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (DataContext is HomeViewModel { Search: { } search }
+            && sender is ListBox { SelectedItem: SearchResultRow row }
+            && search.PlaySongCommand.CanExecute(row.Song))
+        {
+            search.PlaySongCommand.Execute(row.Song);
+        }
+    }
+
+    private void OnSearchActionsPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Keep row action clicks from selecting the row (which auto-plays).
+        e.Handled = true;
+    }
+
+    private void OnSearchOverflowClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button
+            || button.DataContext is not SearchResultRow row
+            || DataContext is not HomeViewModel { Search: { } search })
+        {
+            return;
+        }
+
+        Song song = row.Song;
+        search.SetMenuSong(song);
+
+        var flyout = DarkMenuFlyout.Create(PlacementMode.BottomEdgeAlignedLeft);
+        flyout.Items.Add(new MenuItem
+        {
+            Header = "Play now",
+            Command = search.PlaySongCommand,
+            CommandParameter = song
+        });
+        flyout.Items.Add(new MenuItem
+        {
+            Header = "Play next",
+            Command = search.PlayNextCommand,
+            CommandParameter = song
+        });
+        flyout.Items.Add(new MenuItem
+        {
+            Header = "Add to Up Next",
+            Command = search.AddToUpNextCommand,
+            CommandParameter = song
+        });
+
+        var addToPlaylist = new MenuItem { Header = "Add to playlist" };
+        foreach (Playlist playlist in search.Playlists)
+        {
+            addToPlaylist.Items.Add(new MenuItem
+            {
+                Header = playlist.Name,
+                Command = search.AddToPlaylistCommand,
+                CommandParameter = playlist
+            });
+        }
+
+        if (search.Playlists.Count > 0)
+        {
+            addToPlaylist.Items.Add(new Separator());
+        }
+
+        addToPlaylist.Items.Add(new MenuItem
+        {
+            Header = "Create one",
+            Command = search.CreatePlaylistAndAddSongCommand,
+            Icon = new PathIcon
+            {
+                Data = StreamGeometry.Parse("M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"),
+                Width = 16,
+                Height = 16,
+                Foreground = Brushes.White
+            }
+        });
+
+        flyout.Items.Add(addToPlaylist);
+        flyout.ShowAt(button);
+        e.Handled = true;
+    }
+
     private void OnPlaylistCardPressed(object? sender, PointerPressedEventArgs e)
     {
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
