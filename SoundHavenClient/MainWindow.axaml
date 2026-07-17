@@ -235,7 +235,8 @@
                 </Button>
                 <Button Classes="PlayerBarIcon"
                         VerticalAlignment="Center"
-                        ToolTip.Tip="Mini player (coming soon)">
+                        Click="OnMiniPlayerClick"
+                        ToolTip.Tip="Mini player">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/miniplayer.svg"
                          Width="18" Height="18"
                          Opacity="0.75" />

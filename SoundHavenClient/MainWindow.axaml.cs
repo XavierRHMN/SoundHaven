@@ -5,14 +5,39 @@ using Avalonia.Media;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.ViewModels;
+using SoundHaven.Views;
 
 namespace SoundHaven
 {
     public partial class MainWindow : Window
     {
+        private MiniPlayerWindow? _miniPlayer;
+
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void OnMiniPlayerClick(object? sender, RoutedEventArgs e)
+        {
+            if (_miniPlayer is not null)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            _miniPlayer = new MiniPlayerWindow
+            {
+                DataContext = DataContext
+            };
+            _miniPlayer.Closed += (_, _) =>
+            {
+                _miniPlayer = null;
+                Show();
+                Activate();
+            };
+            _miniPlayer.Show();
+            Hide();
         }
 
         private void OnNowPlayingMoreClick(object? sender, RoutedEventArgs e)

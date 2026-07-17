@@ -1,0 +1,116 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
+        xmlns:controls="clr-namespace:SoundHaven.Controls"
+        x:Class="SoundHaven.Views.MiniPlayerWindow"
+        x:DataType="viewModels:MainWindowViewModel"
+        Title="SoundHaven Mini Player"
+        Icon="/Assets/Icons/SoundHavenClient.ico"
+        Width="300" Height="470"
+        CanResize="False"
+        Topmost="True"
+        SystemDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        WindowStartupLocation="Manual">
+
+    <Window.Styles>
+        <Style Selector="Button.IconOnly">
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="16"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.IconOnly:pointerover">
+            <Setter Property="Background" Value="#33FFFFFF" />
+        </Style>
+
+        <Style Selector="TextBlock.MiniTitle">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <Style Selector="TextBlock.MiniArtist">
+            <Setter Property="FontFamily"
+                    Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+            <Setter Property="Foreground" Value="#9A9A9A" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+    </Window.Styles>
+
+    <!-- Root border: rounded card; empty areas drag the window -->
+    <Border CornerRadius="12"
+            Background="#181818"
+            BorderBrush="#2A2A2A"
+            BorderThickness="1"
+            ClipToBounds="True"
+            PointerPressed="OnRootPointerPressed">
+        <Grid RowDefinitions="300,Auto,Auto,*">
+            <!-- Album art with close button overlay -->
+            <Panel Grid.Row="0">
+                <Border Background="#242424" />
+                <Image Source="{Binding PlaybackViewModel.CurrentSong.Artwork}"
+                       Stretch="UniformToFill" />
+                <Button Classes="IconOnly"
+                        Width="34"
+                        Height="34"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Margin="12,12,0,0"
+                        Background="#66121212"
+                        Click="OnCloseClick"
+                        ToolTip.Tip="Back to full player">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/close.svg"
+                         Width="16" Height="16"
+                         Opacity="0.9" />
+                </Button>
+            </Panel>
+
+            <!-- Track info -->
+            <StackPanel Grid.Row="1" Margin="18,14,18,0" Spacing="3">
+                <TextBlock Classes="MiniTitle"
+                           Text="{Binding PlaybackViewModel.CurrentSong.Title, FallbackValue='Play a song!'}" />
+                <TextBlock Classes="MiniArtist"
+                           Text="{Binding PlaybackViewModel.CurrentSong.Artist, FallbackValue='Artist - 20XX'}" />
+            </StackPanel>
+
+            <!-- Seek -->
+            <controls:SeekSliderControl Grid.Row="2"
+                                        Margin="6,2,6,0"
+                                        DataContext="{Binding SeekSliderViewModel}" />
+
+            <!-- Transport -->
+            <StackPanel Grid.Row="3"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="2"
+                        Margin="0,0,0,8">
+                <controls:ShuffleControl DataContext="{Binding ShuffleViewModel}"
+                                         VerticalAlignment="Center" />
+                <controls:PlaybackControl DataContext="{Binding PlaybackViewModel}"
+                                          VerticalAlignment="Center" />
+                <controls:RepeatControl DataContext="{Binding RepeatViewModel}"
+                                        VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
