@@ -18,8 +18,7 @@
                         <Panel Width="160" Height="160">
                             <Border CornerRadius="8"
                                     ClipToBounds="True"
-                                    Background="#2A2A2A"
-                                    BoxShadow="0 6 18 0 #40000000">
+                                    Background="#2A2A2A">
                                 <Panel>
                                     <Image Source="/Assets/Covers/MissingAlbum.png"
                                            Stretch="UniformToFill"
@@ -70,8 +69,7 @@
                         <Panel Width="160" Height="160">
                             <Border CornerRadius="8"
                                     ClipToBounds="True"
-                                    Background="#2A2A2A"
-                                    BoxShadow="0 6 18 0 #40000000">
+                                    Background="#2A2A2A">
                                 <Panel>
                                     <Image Source="/Assets/Covers/MissingAlbum.png"
                                            Stretch="UniformToFill"
@@ -230,21 +228,17 @@
             <Setter Property="Background" Value="#2E2E2E" />
         </Style>
 
-        <!-- Media card -->
+        <!-- Media card: hover is the app-wide barely-visible translucent white,
+             applied instantly so adjacent cards never show mixed fade states. -->
         <Style Selector="Border.SongCard">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="10" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Transitions">
-                <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.15" />
-                </Transitions>
-            </Setter>
         </Style>
 
         <Style Selector="Border.SongCard:pointerover">
-            <Setter Property="Background" Value="#1E1E1E" />
+            <Setter Property="Background" Value="#14FFFFFF" />
         </Style>
 
         <Style Selector="Button.CardPlay">
