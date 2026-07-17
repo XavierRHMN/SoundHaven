@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using SoundHaven.Commands;
 using SoundHaven.Data;
 using SoundHaven.Helpers;
@@ -43,6 +44,7 @@ namespace SoundHaven.ViewModels
         private readonly AppDatabase _appDatabase;
         private readonly Stores.PlaylistStore _playlistStore;
         private readonly IUserNotificationService _notifications;
+        private readonly IAlbumArtService _albumArtService;
         private readonly ObservableCollection<Song> _emptySongs = new();
         private readonly ObservableCollection<PlaylistTrackRow> _trackRows = new();
         private readonly Bitmap?[] _coverSlots = new Bitmap?[4];
@@ -92,6 +94,7 @@ namespace SoundHaven.ViewModels
                 OnPropertyChanged(nameof(PlaylistName));
                 OnPropertyChanged(nameof(PlaylistDescription));
                 OnPropertyChanged(nameof(HasPlaylistDescription));
+                OnPropertyChanged(nameof(IsLikedSongsPlaylist));
                 RefreshTracksAndHeader();
                 // These commands' CanExecute reads the displayed playlist, so a
                 // playlist swap must re-query them (navigation swaps the whole
@@ -104,10 +107,15 @@ namespace SoundHaven.ViewModels
                 RemoveSongFromPlaylistCommand?.RaiseCanExecuteChanged();
                 OpenEditPlaylistCommand?.RaiseCanExecuteChanged();
                 _ = EnsureThumbnailsAsync();
+                _ = ResolveMissingYearsAsync();
             }
         }
 
         public bool HasPlaylist => DisplayedPlaylist is not null;
+
+        /// <summary>True when the shown playlist is the system Liked Songs, which
+        /// displays the eighth-note thumbnail instead of song artwork.</summary>
+        public bool IsLikedSongsPlaylist => DisplayedPlaylist?.IsLikedSongs == true;
 
         public string PlaylistName
         {
@@ -257,13 +265,15 @@ namespace SoundHaven.ViewModels
             IOpenFileDialogService openFileDialogService,
             AppDatabase appDatabase,
             Stores.PlaylistStore playlistStore,
-            IUserNotificationService notifications)
+            IUserNotificationService notifications,
+            IAlbumArtService albumArtService)
         {
             _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
             _openFileDialogService = openFileDialogService ?? throw new ArgumentNullException(nameof(openFileDialogService));
             _appDatabase = appDatabase ?? throw new ArgumentNullException(nameof(appDatabase));
             _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
             _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+            _albumArtService = albumArtService ?? throw new ArgumentNullException(nameof(albumArtService));
 
             _playbackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
 
@@ -750,6 +760,34 @@ namespace SoundHaven.ViewModels
                 catch
                 {
                     // Thumbnail load is best-effort for playlist cover/list art.
+                }
+            }
+        }
+
+        // Fill in release years the same way the player bar/search do, so the
+        // playlist's YEAR column isn't blank for YouTube-sourced tracks.
+        private async Task ResolveMissingYearsAsync()
+        {
+            var songs = Songs
+                .Where(song => song.Year is null
+                    && !string.IsNullOrWhiteSpace(song.Title)
+                    && !string.IsNullOrWhiteSpace(song.Artist))
+                .Take(60)
+                .ToList();
+
+            foreach (Song song in songs)
+            {
+                try
+                {
+                    int? year = await _albumArtService.GetTrackYearAsync(song.Artist, song.Title);
+                    if (year is not null)
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() => song.Year ??= year);
+                    }
+                }
+                catch
+                {
+                    // The year is decorative and must never disrupt the playlist.
                 }
             }
         }

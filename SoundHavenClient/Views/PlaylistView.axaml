@@ -251,6 +251,23 @@
                             <Image Source="{Binding CoverSlot2}" Stretch="UniformToFill" />
                             <Image Source="{Binding CoverSlot3}" Stretch="UniformToFill" />
                         </UniformGrid>
+
+                        <!-- Liked Songs always shows the eighth-note tile. -->
+                        <Border IsVisible="{Binding IsLikedSongsPlaylist}"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                    <GradientStop Color="#7B2FF7" Offset="0" />
+                                    <GradientStop Color="#4364F7" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <PathIcon Width="128" Height="128"
+                                      Foreground="White"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      Data="M12,3v10.55c-0.59-0.34-1.27-0.55-2-0.55c-2.21,0-4,1.79-4,4s1.79,4,4,4s4-1.79,4-4V7h4V3H12z" />
+                        </Border>
                     </Panel>
                 </Border>
 
@@ -370,6 +387,7 @@
                             ToolTip.Tip="Edit playlist"
                             Width="56"
                             Height="56"
+                            IsVisible="{Binding !IsLikedSongsPlaylist}"
                             IsEnabled="{Binding !IsEditMode}">
                         <StackPanel Spacing="4" HorizontalAlignment="Center">
                             <Svg Path="avares://SoundHavenClient/Assets/Icons/edit.svg"
@@ -533,6 +551,18 @@
                                        Classes="TrackMeta"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="YEAR" Width="64">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
+                            <TextBlock Text="{Binding Song.Year}"
+                                       Classes="TrackMeta"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       Margin="0,0,8,0" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

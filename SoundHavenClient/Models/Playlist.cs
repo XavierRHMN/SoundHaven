@@ -40,6 +40,11 @@ namespace SoundHaven.Models
 
         public int Id { get; set; }
 
+        /// <summary>True for the single system "Liked Songs" playlist, which is
+        /// auto-created, pinned first, cannot be deleted, and shows the eighth-note
+        /// thumbnail instead of a cover mosaic.</summary>
+        public bool IsLikedSongs { get; set; }
+
         /// <summary>UTC creation/last-modified stamps persisted in SQLite (null for
         /// playlists created before the v3 schema; sorters fall back to Id order).</summary>
         public DateTime? CreatedAtUtc { get; set; }

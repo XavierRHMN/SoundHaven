@@ -97,7 +97,8 @@ public partial class App : Application, IDisposable
             new OpenFileDialogService(),
             database,
             playlistStore,
-            notifications);
+            notifications,
+            albumArtService);
         var playerViewModel = new PlayerViewModel(
             playbackViewModel,
             playlistStore,
@@ -150,6 +151,7 @@ public partial class App : Application, IDisposable
             songInfoViewModel,
             repeatViewModel,
             searchViewModel,
+            playlistStore,
             _audioService,
             notifications);
     }

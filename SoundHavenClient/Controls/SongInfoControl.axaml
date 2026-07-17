@@ -77,9 +77,11 @@
 
             <!-- Song Information -->
             <StackPanel Orientation="Vertical">
-                <!-- Title with continuous scrolling effect -->
-                <Border ClipToBounds="True" Width="{Binding ControlWidth}" Height="25" Background="Transparent">
-                    <Canvas Width="{Binding ControlWidth}" Height="25">
+                <!-- Title with continuous scrolling effect. The reserved width
+                     hugs short titles and caps at ControlWidth for long ones. -->
+                <Border ClipToBounds="True" Width="{Binding TitleWidth}" Height="25"
+                        HorizontalAlignment="Left" Background="Transparent">
+                    <Canvas Width="{Binding TitleWidth}" Height="25">
                         <!-- First TextBlock -->
                         <TextBlock Text="{Binding CurrentSong.Title}"
                                    Classes="Title"

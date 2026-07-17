@@ -42,7 +42,7 @@ public sealed class SongInfoViewModel : ViewModelBase
                 OnPropertyChanged(nameof(CurrentSongExists));
                 OnPropertyChanged(nameof(ArtistAndYearText));
                 _hasPausedThisCycle = false;
-                TextWidth = ExtractTextWidth(CurrentSong?.Title, "Circular", 19);
+                TextWidth = ExtractTextWidth(CurrentSong?.Title, "Circular", TitleFontSize);
                 UpdateScrollingState();
                 TryResolveYear(_currentSong);
             }
@@ -101,11 +101,28 @@ public sealed class SongInfoViewModel : ViewModelBase
         set
         {
             SetProperty(ref _textWidth, value);
+            OnPropertyChanged(nameof(TitleWidth));
             UpdateScrollingState();
         }
     }
 
-    public double ControlWidth { get; set; } = 220; // Width of the Song Info Control
+    /// <summary>
+    /// The title font size used both for on-screen rendering and width
+    /// measurement, so the reserved title area matches the glyphs exactly.
+    /// </summary>
+    private const double TitleFontSize = 16;
+
+    /// <summary>A few pixels of slack so the final glyph never clips.</summary>
+    private const double TitlePadding = 6;
+
+    /// <summary>
+    /// Width actually reserved for the title: it hugs short titles (so the
+    /// heart/menu sit right beside them) and caps at <see cref="ControlWidth"/>
+    /// for long titles, which then scroll within that fixed viewport.
+    /// </summary>
+    public double TitleWidth => Math.Min(TextWidth + TitlePadding, ControlWidth);
+
+    public double ControlWidth { get; set; } = 220; // Max width of the title before it scrolls
 
     public SongInfoViewModel(
         PlaybackViewModel playbackViewModel,
@@ -205,7 +222,9 @@ public sealed class SongInfoViewModel : ViewModelBase
 
     private void UpdateScrollingState()
     {
-        _isScrollingNeeded = TextWidth > ControlWidth / 2;
+        // Only scroll when the title genuinely overflows the fixed viewport;
+        // shorter titles hug their text (see TitleWidth) and stay static.
+        _isScrollingNeeded = TextWidth > ControlWidth;
 
         if (_isScrollingNeeded)
         {

@@ -120,19 +120,24 @@ public partial class ToolbarControl : UserControl
             Command = viewModel.PlayNextCommand,
             CommandParameter = playlist
         });
-        flyout.Items.Add(new Separator());
-        flyout.Items.Add(new MenuItem
+
+        // The Liked Songs system playlist can't be edited or deleted.
+        if (!playlist.IsLikedSongs)
         {
-            Header = "Edit playlist",
-            Command = viewModel.EditPlaylistCommand,
-            CommandParameter = playlist
-        });
-        flyout.Items.Add(new MenuItem
-        {
-            Header = "Delete playlist",
-            Command = viewModel.DeletePlaylistCommand,
-            CommandParameter = playlist
-        });
+            flyout.Items.Add(new Separator());
+            flyout.Items.Add(new MenuItem
+            {
+                Header = "Edit playlist",
+                Command = viewModel.EditPlaylistCommand,
+                CommandParameter = playlist
+            });
+            flyout.Items.Add(new MenuItem
+            {
+                Header = "Delete playlist",
+                Command = viewModel.DeletePlaylistCommand,
+                CommandParameter = playlist
+            });
+        }
 
         flyout.ShowAt(anchor, showAtPointer);
     }

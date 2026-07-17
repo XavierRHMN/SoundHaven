@@ -174,6 +174,14 @@ public sealed class ToolbarViewModel : ViewModelBase
             ordered.Reverse();
         }
 
+        // The Liked Songs system playlist stays pinned to the top regardless of sort.
+        Playlist? liked = ordered.FirstOrDefault(playlist => playlist.IsLikedSongs);
+        if (liked is not null)
+        {
+            ordered.Remove(liked);
+            ordered.Insert(0, liked);
+        }
+
         PlaylistCollection.Clear();
         foreach (Playlist playlist in ordered)
         {
@@ -233,7 +241,7 @@ public sealed class ToolbarViewModel : ViewModelBase
 
     private void DeletePlaylist(Playlist? playlist)
     {
-        if (playlist is null)
+        if (playlist is null || playlist.IsLikedSongs)
         {
             return;
         }

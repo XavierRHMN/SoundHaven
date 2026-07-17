@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using SoundHaven.Commands;
 using SoundHaven.Services;
+using SoundHaven.Stores;
 
 namespace SoundHaven.ViewModels;
 
@@ -11,7 +13,9 @@ public sealed class MainWindowViewModel : ViewModelBase
 {
     private readonly NavigationService _navigation;
     private readonly IAudioService _audioService;
+    private readonly PlaylistStore _playlistStore;
     private bool _isQueueVisible;
+    private bool _isCurrentSongFavorite;
 
     public MainWindowViewModel(
         NavigationService navigation,
@@ -26,11 +30,13 @@ public sealed class MainWindowViewModel : ViewModelBase
         SongInfoViewModel songInfoViewModel,
         RepeatViewModel repeatViewModel,
         SearchViewModel searchViewModel,
+        PlaylistStore playlistStore,
         IAudioService audioService,
         NotificationService notifications)
     {
         _navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
         _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
+        _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
         PlaylistViewModel = playlistViewModel;
         HomeViewModel = homeViewModel;
         ToolbarViewModel = toolbarViewModel;
@@ -45,8 +51,24 @@ public sealed class MainWindowViewModel : ViewModelBase
         Notifications = notifications;
 
         ToggleQueueCommand = new RelayCommand(() => IsQueueVisible = !IsQueueVisible);
+        ToggleFavoriteCommand = new RelayCommand(
+            ToggleFavorite,
+            () => PlaybackViewModel.CurrentSong is not null);
         _navigation.PropertyChanged += OnNavigationPropertyChanged;
+        PlaybackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
+        _playlistStore.LikedSongsPlaylist.Songs.CollectionChanged += OnLikedSongsChanged;
+        RefreshFavoriteState();
     }
+
+    /// <summary>Whether the currently playing song is in Liked Songs; drives the
+    /// player-bar heart's filled/outline state.</summary>
+    public bool IsCurrentSongFavorite
+    {
+        get => _isCurrentSongFavorite;
+        private set => SetProperty(ref _isCurrentSongFavorite, value);
+    }
+
+    public RelayCommand ToggleFavoriteCommand { get; }
 
     /// <summary>Docked play-queue panel on the right of the content area.</summary>
     public bool IsQueueVisible
@@ -100,9 +122,38 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public NotificationService Notifications { get; }
 
+    private void OnPlaybackPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName == nameof(PlaybackViewModel.CurrentSong))
+        {
+            RefreshFavoriteState();
+            ToggleFavoriteCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    private void OnLikedSongsChanged(object? sender, NotifyCollectionChangedEventArgs eventArgs)
+        => RefreshFavoriteState();
+
+    private void RefreshFavoriteState()
+        => IsCurrentSongFavorite = _playlistStore.IsFavorite(PlaybackViewModel.CurrentSong);
+
+    private void ToggleFavorite()
+    {
+        if (PlaybackViewModel.CurrentSong is not { } song)
+        {
+            return;
+        }
+
+        bool nowFavorite = _playlistStore.ToggleFavorite(song);
+        IsCurrentSongFavorite = nowFavorite;
+        Notifications.ShowInfo(nowFavorite ? "Added to Liked Songs." : "Removed from Liked Songs.");
+    }
+
     public override void Dispose()
     {
         _navigation.PropertyChanged -= OnNavigationPropertyChanged;
+        PlaybackViewModel.PropertyChanged -= OnPlaybackPropertyChanged;
+        _playlistStore.LikedSongsPlaylist.Songs.CollectionChanged -= OnLikedSongsChanged;
         SongInfoViewModel.Dispose();
         SeekSliderViewModel.Dispose();
         PlayerViewModel.Dispose();

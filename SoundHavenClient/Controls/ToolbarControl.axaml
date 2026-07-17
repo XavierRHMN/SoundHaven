@@ -247,6 +247,24 @@
                                             <Image Source="{Binding SidebarSlot3}" Stretch="UniformToFill" />
                                         </UniformGrid>
 
+                                        <!-- Liked Songs uses a fixed eighth-note tile,
+                                             covering any song artwork underneath. -->
+                                        <Border IsVisible="{Binding IsLikedSongs}"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                                    <GradientStop Color="#7B2FF7" Offset="0" />
+                                                    <GradientStop Color="#4364F7" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <PathIcon Width="22" Height="22"
+                                                      Foreground="White"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Data="M12,3v10.55c-0.59-0.34-1.27-0.55-2-0.55c-2.21,0-4,1.79-4,4s1.79,4,4,4s4-1.79,4-4V7h4V3H12z" />
+                                        </Border>
+
                                         <Border Classes="PlayingBadge"
                                                 IsVisible="False"
                                                 Background="#66000000"
