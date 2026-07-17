@@ -16,6 +16,19 @@
         <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
     </PropertyGroup>
 
+    <!-- Publishing bundles everything (managed + Avalonia/SQLite native libs) into a
+         single self-contained, compressed .exe. `_IsPublishing` is set only by
+         `dotnet publish`, so plain `dotnet build`/`dotnet test` stay framework-dependent
+         and fast. Just run: dotnet publish SoundHavenClient -c Release -->
+    <PropertyGroup Condition="'$(_IsPublishing)' == 'true'">
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <SelfContained>true</SelfContained>
+        <PublishSingleFile>true</PublishSingleFile>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+        <DebugType>embedded</DebugType>
+    </PropertyGroup>
+
     <ItemGroup>
         <AvaloniaResource Include="Assets\**" />
     </ItemGroup>
