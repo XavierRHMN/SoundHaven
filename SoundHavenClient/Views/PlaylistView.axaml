@@ -233,7 +233,7 @@
                 <Border Grid.Column="0"
                         Width="288"
                         Height="288"
-                        CornerRadius="4"
+                        CornerRadius="16"
                         ClipToBounds="True"
                         Margin="0,0,48,0"
                         Background="#1A1A1A"
@@ -252,18 +252,17 @@
                             <Image Source="{Binding CoverSlot3}" Stretch="UniformToFill" />
                         </UniformGrid>
 
-                        <!-- Liked Songs note tile: black field with a thin, inset,
-                             rounded white outline and note. The black backing hides
-                             the container corners so no gray shows through. -->
+                        <!-- Liked Songs note tile: black backing (hides the container
+                             corners so no gray shows) plus a thin white outline flush
+                             to the outer edge, rounded to match the container. -->
                         <Border IsVisible="{Binding IsLikedSongsPlaylist}"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
                                 Background="Black">
-                            <Border Margin="20"
-                                    Background="Black"
+                            <Border Background="Black"
                                     BorderBrush="White"
                                     BorderThickness="4"
-                                    CornerRadius="28">
+                                    CornerRadius="16">
                                 <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
                                      Width="150" Height="150"
                                      HorizontalAlignment="Center"

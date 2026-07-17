@@ -247,20 +247,19 @@
                                             <Image Source="{Binding SidebarSlot3}" Stretch="UniformToFill" />
                                         </UniformGrid>
 
-                                        <!-- Liked Songs note tile: black field with a
-                                             thin, inset, rounded white outline and note.
-                                             The black backing hides the container corners. -->
+                                        <!-- Liked Songs note tile: black backing (hides
+                                             the container corners so no gray shows) plus a
+                                             thin white outline flush to the outer edge. -->
                                         <Border IsVisible="{Binding IsLikedSongs}"
                                                 HorizontalAlignment="Stretch"
                                                 VerticalAlignment="Stretch"
                                                 Background="Black">
-                                            <Border Margin="4"
-                                                    Background="Black"
+                                            <Border Background="Black"
                                                     BorderBrush="White"
                                                     BorderThickness="1.5"
-                                                    CornerRadius="7">
+                                                    CornerRadius="6">
                                                 <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
-                                                     Width="20" Height="20"
+                                                     Width="22" Height="22"
                                                      HorizontalAlignment="Center"
                                                      VerticalAlignment="Center" />
                                             </Border>

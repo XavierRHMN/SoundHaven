@@ -599,13 +599,12 @@
                                                             HorizontalAlignment="Stretch"
                                                             VerticalAlignment="Stretch"
                                                             Background="Black">
-                                                        <Border Margin="5"
-                                                                Background="Black"
+                                                        <Border Background="Black"
                                                                 BorderBrush="White"
                                                                 BorderThickness="1.5"
-                                                                CornerRadius="8">
+                                                                CornerRadius="6">
                                                             <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
-                                                                 Width="24" Height="24"
+                                                                 Width="26" Height="26"
                                                                  HorizontalAlignment="Center"
                                                                  VerticalAlignment="Center" />
                                                         </Border>
