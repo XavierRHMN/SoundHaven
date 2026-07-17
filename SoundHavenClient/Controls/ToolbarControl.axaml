@@ -261,7 +261,8 @@
                                                 <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
                                                      Width="22" Height="22"
                                                      HorizontalAlignment="Center"
-                                                     VerticalAlignment="Center" />
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,1.5,0" />
                                             </Border>
                                         </Border>
 

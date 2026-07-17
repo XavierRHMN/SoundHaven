@@ -261,12 +261,13 @@
                                 Background="Black">
                             <Border Background="Black"
                                     BorderBrush="White"
-                                    BorderThickness="4"
+                                    BorderThickness="3"
                                     CornerRadius="16">
                                 <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
                                      Width="150" Height="150"
                                      HorizontalAlignment="Center"
-                                     VerticalAlignment="Center" />
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,10,0"/>
                             </Border>
                         </Border>
                     </Panel>
@@ -561,9 +562,7 @@
                         <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
                             <TextBlock Text="{Binding Song.Year}"
                                        Classes="TrackMeta"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Right"
-                                       Margin="0,0,8,0" />
+                                       VerticalAlignment="Center" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -573,9 +572,7 @@
                         <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
                             <TextBlock Text="{Binding Song.Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}"
                                        Classes="TrackMeta"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Right"
-                                       Margin="0,0,8,0" />
+                                       VerticalAlignment="Center" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
