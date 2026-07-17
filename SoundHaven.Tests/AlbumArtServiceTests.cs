@@ -20,7 +20,10 @@ public sealed class AlbumArtServiceTests : IDisposable
         using var httpClient = new HttpClient(handler);
         var service = new AlbumArtService(httpClient, _cache);
 
-        string? url = await service.GetTrackArtworkUrlAsync("Dasha", "Austin");
+        string? url = await service.GetTrackArtworkUrlAsync(
+            "Dasha",
+            "Austin",
+            TestContext.Current.CancellationToken);
 
         Assert.Equal("https://cdn.deezer.example/xl.jpg", url);
         Assert.DoesNotContain(handler.RequestedHosts, host => host.Contains("itunes"));
@@ -38,7 +41,10 @@ public sealed class AlbumArtServiceTests : IDisposable
         using var httpClient = new HttpClient(handler);
         var service = new AlbumArtService(httpClient, _cache);
 
-        string? url = await service.GetTrackArtworkUrlAsync("Dasha", "Austin");
+        string? url = await service.GetTrackArtworkUrlAsync(
+            "Dasha",
+            "Austin",
+            TestContext.Current.CancellationToken);
 
         Assert.Equal("https://is1.mzstatic.example/img/600x600bb.jpg", url);
     }
@@ -54,9 +60,15 @@ public sealed class AlbumArtServiceTests : IDisposable
         using var httpClient = new HttpClient(handler);
         var service = new AlbumArtService(httpClient, _cache);
 
-        Assert.Null(await service.GetTrackArtworkUrlAsync("Nobody", "Nothing"));
+        Assert.Null(await service.GetTrackArtworkUrlAsync(
+            "Nobody",
+            "Nothing",
+            TestContext.Current.CancellationToken));
         int requestsAfterFirstLookup = handler.RequestedHosts.Count;
-        Assert.Null(await service.GetTrackArtworkUrlAsync("Nobody", "Nothing"));
+        Assert.Null(await service.GetTrackArtworkUrlAsync(
+            "Nobody",
+            "Nothing",
+            TestContext.Current.CancellationToken));
 
         Assert.Equal(requestsAfterFirstLookup, handler.RequestedHosts.Count);
     }
@@ -72,7 +84,10 @@ public sealed class AlbumArtServiceTests : IDisposable
         using var httpClient = new HttpClient(handler);
         var service = new AlbumArtService(httpClient, _cache);
 
-        string? url = await service.GetAlbumArtworkUrlAsync("Kenny Chesney", "American Kids");
+        string? url = await service.GetAlbumArtworkUrlAsync(
+            "Kenny Chesney",
+            "American Kids",
+            TestContext.Current.CancellationToken);
 
         Assert.Equal("https://cdn.deezer.example/album-xl.jpg", url);
     }
@@ -87,7 +102,10 @@ public sealed class AlbumArtServiceTests : IDisposable
         using var httpClient = new HttpClient(handler);
         var service = new AlbumArtService(httpClient, _cache);
 
-        Assert.Null(await service.GetTrackArtworkUrlAsync("Any", "Song"));
+        Assert.Null(await service.GetTrackArtworkUrlAsync(
+            "Any",
+            "Song",
+            TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -97,7 +115,10 @@ public sealed class AlbumArtServiceTests : IDisposable
         using var httpClient = new HttpClient(handler);
         var service = new AlbumArtService(httpClient, _cache);
 
-        Assert.Null(await service.GetTrackArtworkUrlAsync("Artist", "   "));
+        Assert.Null(await service.GetTrackArtworkUrlAsync(
+            "Artist",
+            "   ",
+            TestContext.Current.CancellationToken));
         Assert.Empty(handler.RequestedHosts);
     }
 
