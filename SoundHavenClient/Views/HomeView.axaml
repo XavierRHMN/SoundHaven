@@ -504,7 +504,8 @@
                       HorizontalScrollBarVisibility="Disabled"
                       Theme="{StaticResource MaterialModernScrollViewer}"
                       IsVisible="{Binding !Search.ShowResults}">
-            <StackPanel Spacing="32">
+            <!-- Right margin keeps right-aligned content clear of the scrollbar -->
+            <StackPanel Spacing="32" Margin="0,0,16,0">
                 <!-- FOR YOU -->
                 <StackPanel IsVisible="{Binding ShowForYouContent}" Spacing="32">
                     <StackPanel Spacing="24">
@@ -725,6 +726,7 @@
                               IsVisible="{Binding !Search.IsLoading}"
                               IsHitTestVisible="{Binding Search.IsScrollViewerHittestable}">
                     <ListBox Classes="SearchResults"
+                             Margin="0,0,16,0"
                              ItemsSource="{Binding Search.ResultRows}"
                              SelectionChanged="OnSearchRowSelectionChanged">
                         <ListBox.ItemTemplate>
