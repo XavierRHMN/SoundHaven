@@ -14,7 +14,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         NavigationService navigation,
         PlaylistViewModel playlistViewModel,
         HomeViewModel homeViewModel,
-        LastFmViewModel lastFmViewModel,
         ToolbarViewModel toolbarViewModel,
         PlaybackViewModel playbackViewModel,
         ShuffleViewModel shuffleViewModel,
@@ -22,7 +21,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         SeekSliderViewModel seekSliderViewModel,
         VolumeViewModel volumeViewModel,
         SongInfoViewModel songInfoViewModel,
-        ThemesViewModel themesViewModel,
         RepeatViewModel repeatViewModel,
         SearchViewModel searchViewModel,
         NotificationService notifications)
@@ -30,7 +28,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         _navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
         PlaylistViewModel = playlistViewModel;
         HomeViewModel = homeViewModel;
-        LastFmViewModel = lastFmViewModel;
         ToolbarViewModel = toolbarViewModel;
         PlaybackViewModel = playbackViewModel;
         ShuffleViewModel = shuffleViewModel;
@@ -38,7 +35,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         SeekSliderViewModel = seekSliderViewModel;
         VolumeViewModel = volumeViewModel;
         SongInfoViewModel = songInfoViewModel;
-        ThemesViewModel = themesViewModel;
         RepeatViewModel = repeatViewModel;
         SearchViewModel = searchViewModel;
         Notifications = notifications;
@@ -67,15 +63,9 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public bool IsPlayerVisible => ReferenceEquals(CurrentViewModel, PlayerViewModel);
 
-    public bool IsLastFmVisible => ReferenceEquals(CurrentViewModel, LastFmViewModel);
-
-    public bool IsThemesVisible => ReferenceEquals(CurrentViewModel, ThemesViewModel);
-
     public PlaylistViewModel PlaylistViewModel { get; }
 
     public HomeViewModel HomeViewModel { get; }
-
-    public LastFmViewModel LastFmViewModel { get; }
 
     public ToolbarViewModel ToolbarViewModel { get; }
 
@@ -90,8 +80,6 @@ public sealed class MainWindowViewModel : ViewModelBase
     public VolumeViewModel VolumeViewModel { get; }
 
     public SongInfoViewModel SongInfoViewModel { get; }
-
-    public ThemesViewModel ThemesViewModel { get; }
 
     public RepeatViewModel RepeatViewModel { get; }
 
@@ -109,9 +97,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         SearchViewModel.Dispose();
         PlaybackViewModel.Dispose();
         HomeViewModel.Dispose();
-        LastFmViewModel.Dispose();
         PlaylistViewModel.Dispose();
-        ThemesViewModel.Dispose();
         RepeatViewModel.Dispose();
         VolumeViewModel.Dispose();
         ToolbarViewModel.Dispose();
@@ -129,8 +115,6 @@ public sealed class MainWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsHomeVisible));
             OnPropertyChanged(nameof(IsPlaylistVisible));
             OnPropertyChanged(nameof(IsPlayerVisible));
-            OnPropertyChanged(nameof(IsLastFmVisible));
-            OnPropertyChanged(nameof(IsThemesVisible));
         }
     }
 }

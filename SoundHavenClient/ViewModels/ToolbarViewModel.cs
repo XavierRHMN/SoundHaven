@@ -23,10 +23,8 @@ public sealed class ToolbarViewModel : ViewModelBase
     private readonly PlaylistViewModel _playlistViewModel;
     private readonly PlaybackViewModel _playbackViewModel;
     private readonly HomeViewModel _homeViewModel;
-    private readonly LastFmViewModel _lastFmViewModel;
     private readonly PlayerViewModel _playerViewModel;
     private readonly PlaylistStore _playlistStore;
-    private readonly ThemesViewModel _themesViewModel;
     private readonly IUserNotificationService _notifications;
     private Playlist? _toolbarSelectedPlaylist;
     private PlaylistSortMode _playlistSortMode = PlaylistSortMode.CreatedDate;
@@ -37,10 +35,8 @@ public sealed class ToolbarViewModel : ViewModelBase
         PlaylistViewModel playlistViewModel,
         PlaybackViewModel playbackViewModel,
         HomeViewModel homeViewModel,
-        LastFmViewModel lastFmViewModel,
         PlayerViewModel playerViewModel,
         PlaylistStore playlistStore,
-        ThemesViewModel themesViewModel,
         IUserNotificationService notifications)
     {
         _navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
@@ -49,20 +45,14 @@ public sealed class ToolbarViewModel : ViewModelBase
         _playbackViewModel = playbackViewModel
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _homeViewModel = homeViewModel ?? throw new ArgumentNullException(nameof(homeViewModel));
-        _lastFmViewModel = lastFmViewModel
-            ?? throw new ArgumentNullException(nameof(lastFmViewModel));
         _playerViewModel = playerViewModel
             ?? throw new ArgumentNullException(nameof(playerViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
-        _themesViewModel = themesViewModel
-            ?? throw new ArgumentNullException(nameof(themesViewModel));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
         ShowHomeViewCommand = new RelayCommand(() => ShowView(_homeViewModel));
-        ShowLastFmViewCommand = new RelayCommand(() => ShowView(_lastFmViewModel));
         ShowPlaylistViewCommand = new RelayCommand(() => ShowView(_playlistViewModel));
         ShowPlayerViewCommand = new RelayCommand(() => ShowView(_playerViewModel));
-        ShowThemesViewCommand = new RelayCommand(() => ShowView(_themesViewModel));
         CreatePlaylistCommand = new AsyncRelayCommand(
             CreatePlaylistAsync,
             onException: exception => _notifications.ShowError(exception.Message));
@@ -89,11 +79,7 @@ public sealed class ToolbarViewModel : ViewModelBase
 
     public bool IsHomeActive => ReferenceEquals(_navigation.CurrentViewModel, _homeViewModel);
 
-    public bool IsLastFmActive => ReferenceEquals(_navigation.CurrentViewModel, _lastFmViewModel);
-
     public bool IsPlayerActive => ReferenceEquals(_navigation.CurrentViewModel, _playerViewModel);
-
-    public bool IsThemesActive => ReferenceEquals(_navigation.CurrentViewModel, _themesViewModel);
 
     public Playlist? ToolbarSelectedPlaylist
     {
@@ -111,8 +97,6 @@ public sealed class ToolbarViewModel : ViewModelBase
     public ObservableCollection<Playlist> PlaylistCollection => _playlistStore.Playlists;
 
     public RelayCommand ShowHomeViewCommand { get; }
-
-    public RelayCommand ShowLastFmViewCommand { get; }
 
     public RelayCommand ShowPlaylistViewCommand { get; }
 
@@ -133,8 +117,6 @@ public sealed class ToolbarViewModel : ViewModelBase
     public AsyncRelayCommand<Playlist> PlayNextCommand { get; }
 
     public AsyncRelayCommand<Playlist> EditPlaylistCommand { get; }
-
-    public RelayCommand ShowThemesViewCommand { get; }
 
     private async Task CreatePlaylistAsync()
     {
@@ -278,9 +260,7 @@ public sealed class ToolbarViewModel : ViewModelBase
         }
 
         OnPropertyChanged(nameof(IsHomeActive));
-        OnPropertyChanged(nameof(IsLastFmActive));
         OnPropertyChanged(nameof(IsPlayerActive));
-        OnPropertyChanged(nameof(IsThemesActive));
     }
 
     public override void Dispose()

@@ -101,7 +101,6 @@ public partial class App : Application, IDisposable
             playbackViewModel,
             playlistStore,
             notifications);
-        var lastFmViewModel = new LastFmViewModel(_lastFmDataService);
         var seekSliderViewModel = new SeekSliderViewModel(
             _audioService,
             playbackViewModel,
@@ -132,17 +131,14 @@ public partial class App : Application, IDisposable
             playlistViewModel,
             playbackViewModel,
             homeViewModel,
-            lastFmViewModel,
             playerViewModel,
             playlistStore,
-            themesViewModel,
             notifications);
 
         return new MainWindowViewModel(
             navigation,
             playlistViewModel,
             homeViewModel,
-            lastFmViewModel,
             toolbarViewModel,
             playbackViewModel,
             shuffleViewModel,
@@ -150,7 +146,6 @@ public partial class App : Application, IDisposable
             seekSliderViewModel,
             volumeViewModel,
             songInfoViewModel,
-            themesViewModel,
             repeatViewModel,
             searchViewModel,
             notifications);

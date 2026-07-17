@@ -139,10 +139,6 @@
                                         IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsPlaylistVisible}" />
                     <views:PlayerView DataContext="{Binding PlayerViewModel}"
                                       IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsPlayerVisible}" />
-                    <views:LastFmView DataContext="{Binding LastFmViewModel}"
-                                      IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsLastFmVisible}" />
-                    <views:ThemesView DataContext="{Binding ThemesViewModel}"
-                                      IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsThemesVisible}" />
                 </Panel>
             </Border>
 

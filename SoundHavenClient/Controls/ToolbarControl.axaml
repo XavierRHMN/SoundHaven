@@ -183,15 +183,6 @@
                 </StackPanel>
             </Button>
 
-            <Button Classes="NavItem"
-                    Classes.Selected="{Binding IsThemesActive}"
-                    Command="{Binding ShowThemesViewCommand}">
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <Svg Path="avares://SoundHavenClient/Assets/Icons/palette.svg" Width="16" Height="16" />
-                    <TextBlock Classes="ToolbarText" Text="Themes" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-
             <Separator Background="White" Opacity="0.08" Margin="4,8" />
         </StackPanel>
 

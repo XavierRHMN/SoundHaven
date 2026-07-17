@@ -237,10 +237,11 @@ public sealed class PlaybackViewModel : ViewModelBase
         {
             PlaybackSource source = SelectPlaybackSource(song, File.Exists);
             await _audioService.StartAsync(source, cancellationToken: replacementCancellation.Token);
-            await EnsureArtworkForThemeAsync(song, replacementCancellation.Token);
             _recentPlaybackStore?.RecordPlay(song);
             _ = ScrobbleCurrentSongAsync(song, replacementCancellation.Token);
-            ApplyDynamicTheme(song);
+            // Dynamic theming must not delay playback start: fetch artwork and
+            // recolour in the background.
+            _ = ApplyThemeFromArtworkAsync(song, replacementCancellation.Token);
         }
         finally
         {
@@ -750,13 +751,34 @@ public sealed class PlaybackViewModel : ViewModelBase
         }
     }
 
-    private async Task EnsureArtworkForThemeAsync(Song song, CancellationToken cancellationToken)
+    private async Task ApplyThemeFromArtworkAsync(Song song, CancellationToken cancellationToken)
     {
-        if (!_themesViewModel.IsDynamicThemeSelected)
+        try
+        {
+            await EnsureArtworkForThemeAsync(song, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
         {
             return;
         }
 
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            ApplyDynamicTheme(song);
+        }
+        else
+        {
+            Dispatcher.UIThread.Post(() => ApplyDynamicTheme(song));
+        }
+    }
+
+    private static async Task EnsureArtworkForThemeAsync(Song song, CancellationToken cancellationToken)
+    {
         if (!song.NeedsHigherQualityArtwork()
             && song.ArtworkData is { Length: > 0 })
         {
@@ -806,11 +828,6 @@ public sealed class PlaybackViewModel : ViewModelBase
 
     private void ApplyDynamicTheme(Song song)
     {
-        if (!_themesViewModel.IsDynamicThemeSelected)
-        {
-            return;
-        }
-
         try
         {
             Color dominantColor;
