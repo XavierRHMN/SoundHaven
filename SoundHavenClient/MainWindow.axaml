@@ -224,7 +224,8 @@
                 </Button>
                 <Button Classes="PlayerBarIcon"
                         VerticalAlignment="Center"
-                        ToolTip.Tip="Sound output (coming soon)">
+                        Click="OnSoundOutputClick"
+                        ToolTip.Tip="Sound output">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/speaker.svg"
                          Width="18" Height="18"
                          Opacity="0.75" />

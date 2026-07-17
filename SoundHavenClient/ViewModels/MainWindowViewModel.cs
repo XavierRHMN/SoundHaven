@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using SoundHaven.Commands;
 using SoundHaven.Services;
 
@@ -8,6 +10,7 @@ namespace SoundHaven.ViewModels;
 public sealed class MainWindowViewModel : ViewModelBase
 {
     private readonly NavigationService _navigation;
+    private readonly IAudioService _audioService;
     private bool _isQueueVisible;
 
     public MainWindowViewModel(
@@ -23,9 +26,11 @@ public sealed class MainWindowViewModel : ViewModelBase
         SongInfoViewModel songInfoViewModel,
         RepeatViewModel repeatViewModel,
         SearchViewModel searchViewModel,
+        IAudioService audioService,
         NotificationService notifications)
     {
         _navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
+        _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
         PlaylistViewModel = playlistViewModel;
         HomeViewModel = homeViewModel;
         ToolbarViewModel = toolbarViewModel;
@@ -51,6 +56,14 @@ public sealed class MainWindowViewModel : ViewModelBase
     }
 
     public RelayCommand ToggleQueueCommand { get; }
+
+    /// <summary>Audio output devices for the player-bar sound-output menu.</summary>
+    public IReadOnlyList<AudioOutputDevice> GetOutputDevices() => _audioService.GetOutputDevices();
+
+    public string CurrentOutputDeviceId => _audioService.CurrentOutputDeviceId;
+
+    public Task SetOutputDeviceAsync(string deviceId) =>
+        _audioService.SetOutputDeviceAsync(deviceId);
 
     public ViewModelBase CurrentViewModel => _navigation.CurrentViewModel;
 

@@ -804,6 +804,7 @@ public sealed class HomeViewModel : ViewModelBase
         RefreshRecentlyPlayedPreview();
 
     private const int FeaturedGridCapacity = 6;
+    private const int FeaturedGridColumns = 3;
 
     private void RefreshFeaturedPlaylists()
     {
@@ -819,15 +820,33 @@ public sealed class HomeViewModel : ViewModelBase
             FeaturedItems.Add(playlist);
         }
 
-        // Fill a trailing cell with a "New playlist" prompt while the grid has
-        // room, so a small library never leaves the shelf looking bare.
-        if (FeaturedPlaylists.Count < FeaturedGridCapacity)
+        // Fill the rest of the current row with "New playlist" prompts so the
+        // shelf never shows empty cells.
+        int newPlaylistCards = NewPlaylistCardCount(FeaturedPlaylists.Count);
+        for (int i = 0; i < newPlaylistCards; i++)
         {
             FeaturedItems.Add(new NewPlaylistCard());
         }
 
         OnPropertyChanged(nameof(HasFeaturedPlaylists));
         OnPropertyChanged(nameof(HasFeaturedItems));
+    }
+
+    private static int NewPlaylistCardCount(int playlistCount)
+    {
+        if (playlistCount >= FeaturedGridCapacity)
+        {
+            return 0;
+        }
+
+        if (playlistCount == 0)
+        {
+            return 1;
+        }
+
+        // Pad the partial last row up to a full row of three.
+        int usedInLastRow = playlistCount % FeaturedGridColumns;
+        return usedInLastRow == 0 ? 0 : FeaturedGridColumns - usedInLastRow;
     }
 
     private async Task CreatePlaylistAsync()

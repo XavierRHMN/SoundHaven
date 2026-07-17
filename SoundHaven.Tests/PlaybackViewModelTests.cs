@@ -559,6 +559,16 @@ public sealed class PlaybackViewModelTests : IDisposable
             return Task.CompletedTask;
         }
 
+        public IReadOnlyList<AudioOutputDevice> GetOutputDevices() =>
+            new[] { new AudioOutputDevice("", "System default") };
+
+        public string CurrentOutputDeviceId => "";
+
+        public Task SetOutputDeviceAsync(
+            string deviceId,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public void RaiseTrackEnded() => TrackEnded?.Invoke(this, EventArgs.Empty);
 
         public void SetDuration(TimeSpan duration)

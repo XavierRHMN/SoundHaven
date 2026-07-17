@@ -2,8 +2,10 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using SoundHaven.Commands;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
+using SoundHaven.Services;
 using SoundHaven.ViewModels;
 using SoundHaven.Views;
 
@@ -38,6 +40,52 @@ namespace SoundHaven
             };
             _miniPlayer.Show();
             Hide();
+        }
+
+        private void OnSoundOutputClick(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || DataContext is not MainWindowViewModel viewModel)
+            {
+                return;
+            }
+
+            e.Handled = true;
+
+            var flyout = DarkMenuFlyout.Create(PlacementMode.TopEdgeAlignedLeft);
+            flyout.Items.Add(new MenuItem { Header = "Sound output", IsEnabled = false });
+
+            string currentId = viewModel.CurrentOutputDeviceId;
+            foreach (AudioOutputDevice device in viewModel.GetOutputDevices())
+            {
+                bool isCurrent = string.Equals(device.Id, currentId, System.StringComparison.Ordinal);
+                string deviceId = device.Id;
+                flyout.Items.Add(new MenuItem
+                {
+                    Header = device.Name,
+                    Icon = CreateSoundOutputIcon(isCurrent),
+                    Command = new RelayCommand(() => _ = viewModel.SetOutputDeviceAsync(deviceId))
+                });
+            }
+
+            flyout.ShowAt(button);
+        }
+
+        // Selected device shows a check; the rest show a speaker, mirroring TIDAL.
+        private static PathIcon CreateSoundOutputIcon(bool isCurrent)
+        {
+            const string checkGeometry =
+                "M9,16.17L4.83,12l-1.42,1.41L9,19L21,7l-1.41-1.41L9,16.17z";
+            const string speakerGeometry = "M3,9v6h4l5,5V4L7,9H3z";
+
+            return new PathIcon
+            {
+                Data = StreamGeometry.Parse(isCurrent ? checkGeometry : speakerGeometry),
+                Width = 15,
+                Height = 15,
+                Foreground = isCurrent
+                    ? Brushes.White
+                    : new SolidColorBrush(Color.Parse("#B3B3B3"))
+            };
         }
 
         private void OnNowPlayingMoreClick(object? sender, RoutedEventArgs e)

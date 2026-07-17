@@ -148,6 +148,7 @@ public partial class App : Application, IDisposable
             songInfoViewModel,
             repeatViewModel,
             searchViewModel,
+            _audioService,
             notifications);
     }
 

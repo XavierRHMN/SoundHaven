@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SoundHaven.Services;
+
+/// <summary>An audio output device; <c>Id</c> "-1" is the Windows system default.</summary>
+public sealed record AudioOutputDevice(string Id, string Name);
 
 public enum PlaybackStatus
 {
@@ -71,4 +75,13 @@ public interface IAudioService : INotifyPropertyChanged, IDisposable
     Task RestartAsync(CancellationToken cancellationToken = default);
 
     Task StopAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Available audio output devices, "System default" first.</summary>
+    IReadOnlyList<AudioOutputDevice> GetOutputDevices();
+
+    /// <summary>Id of the device audio currently routes to ("-1" = system default).</summary>
+    string CurrentOutputDeviceId { get; }
+
+    /// <summary>Routes playback to the given device, keeping position and play state.</summary>
+    Task SetOutputDeviceAsync(string deviceId, CancellationToken cancellationToken = default);
 }
