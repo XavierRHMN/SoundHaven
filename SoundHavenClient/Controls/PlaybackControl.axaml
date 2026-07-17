@@ -24,24 +24,30 @@
 
         <Button Command="{Binding PreviousCommand}"
                 Background="{StaticResource PlayerBarColor}">
-            <Svg Path="avares://SoundHavenClient/Assets/Icons/previous.svg" />
+            <Svg Path="avares://SoundHavenClient/Assets/Icons/previous.svg"
+                 Width="24" Height="24" />
         </Button>
 
         <Button Command="{Binding PauseCommand}"
                 Background="{StaticResource PlayerBarColor}"
+                Width="54" Height="54" CornerRadius="27"
                 IsVisible="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Svg Path="avares://SoundHavenClient/Assets/Icons/pause.svg" />
+            <Svg Path="avares://SoundHavenClient/Assets/Icons/pause.svg"
+                 Width="32" Height="32" />
         </Button>
 
         <Button Command="{Binding PlayCommand}"
                 Background="{StaticResource PlayerBarColor}"
+                Width="54" Height="54" CornerRadius="27"
                 IsVisible="{Binding !IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Svg Path="avares://SoundHavenClient/Assets/Icons/play.svg" />
+            <Svg Path="avares://SoundHavenClient/Assets/Icons/play.svg"
+                 Width="32" Height="32" />
         </Button>
 
         <Button Command="{Binding NextCommand}"
                 Background="{StaticResource PlayerBarColor}">
-            <Svg Path="avares://SoundHavenClient/Assets/Icons/next.svg" />
+            <Svg Path="avares://SoundHavenClient/Assets/Icons/next.svg"
+                 Width="24" Height="24" />
         </Button>
 
     </StackPanel>

@@ -12,6 +12,7 @@
             ToolTip.Tip="Toggle Shuffle">
 
         <Svg Path="avares://SoundHavenClient/Assets/Icons/shuffle.svg"
+             Width="22" Height="22"
              Opacity="{Binding IsShuffleEnabled, Converter={StaticResource BooleanToOpacityConverter}, ConverterParameter='1,0.5'}">
             <Svg.Transitions>
                 <Transitions>

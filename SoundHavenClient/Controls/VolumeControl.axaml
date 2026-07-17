@@ -19,13 +19,15 @@
         <Button Command="{Binding MuteCommand}" Margin="4 0"
                 Background="Transparent"
                 IsVisible="{Binding !IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Svg Path="avares://SoundHavenClient/Assets/Icons/volumehigh.svg" />
+            <Svg Path="avares://SoundHavenClient/Assets/Icons/volumehigh.svg"
+                 Width="22" Height="22" />
         </Button>
 
         <Button Command="{Binding MuteCommand}" Margin="4 0"
                 Background="Transparent"
                 IsVisible="{Binding IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Svg Path="avares://SoundHavenClient/Assets/Icons/volumemute.svg"
+                 Width="22" Height="22"
                  Opacity="{Binding !IsMuted, Converter={StaticResource BooleanToOpacityConverter}, ConverterParameter='1,0.5'}">
             </Svg>
         </Button>

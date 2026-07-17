@@ -196,8 +196,8 @@
                 </Button>
                 <Button Classes="PlayerBarIcon"
                         VerticalAlignment="Center"
-                        ToolTip.Tip="Equalizer (coming soon)">
-                    <Svg Path="avares://SoundHavenClient/Assets/Icons/equalizer.svg"
+                        ToolTip.Tip="Sound output (coming soon)">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/speaker.svg"
                          Width="18" Height="18"
                          Opacity="0.75" />
                 </Button>
@@ -216,7 +216,7 @@
                         Margin="6,0,0,0"
                         VerticalAlignment="Center"
                         ToolTip.Tip="Audio quality (coming soon)">
-                    <TextBlock Text="16-bit 44.1kHz"
+                    <TextBlock Text="AAC 128 kbps"
                                FontSize="12"
                                Foreground="{DynamicResource PrimaryColor}"
                                FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
