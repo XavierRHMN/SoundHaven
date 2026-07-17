@@ -77,6 +77,10 @@
         <Style Selector="Button.PlayerBarIcon:pointerover">
             <Setter Property="Background" Value="#22FFFFFF" />
         </Style>
+
+        <Style Selector="Button.PlayerBarIcon.Selected">
+            <Setter Property="Background" Value="#2A2A2A" />
+        </Style>
     </Window.Styles>
 
     <Grid Margin="8">
@@ -114,6 +118,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="280" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
@@ -139,6 +144,16 @@
                     <views:ThemesView DataContext="{Binding ThemesViewModel}"
                                       IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsThemesVisible}" />
                 </Panel>
+            </Border>
+
+            <!-- Dockable play queue: pushes content left when toggled on -->
+            <Border Grid.Column="2"
+                    Width="340"
+                    Background="{DynamicResource ToolbarColor}"
+                    BorderThickness="1,0,0,0"
+                    BorderBrush="#22FFFFFF"
+                    IsVisible="{Binding IsQueueVisible}">
+                <controls:PlayQueueControl DataContext="{Binding PlayerViewModel}" />
             </Border>
         </Grid>
 
@@ -203,8 +218,10 @@
                         VerticalAlignment="Center"
                         Margin="8,0,16,0">
                 <Button Classes="PlayerBarIcon"
+                        Classes.Selected="{Binding IsQueueVisible}"
                         VerticalAlignment="Center"
-                        ToolTip.Tip="Queue (coming soon)">
+                        Command="{Binding ToggleQueueCommand}"
+                        ToolTip.Tip="Play queue">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/queue_music.svg"
                          Width="18" Height="18"
                          Opacity="0.75" />

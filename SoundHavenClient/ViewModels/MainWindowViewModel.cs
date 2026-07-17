@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using SoundHaven.Commands;
 using SoundHaven.Services;
 
 namespace SoundHaven.ViewModels;
@@ -7,6 +8,7 @@ namespace SoundHaven.ViewModels;
 public sealed class MainWindowViewModel : ViewModelBase
 {
     private readonly NavigationService _navigation;
+    private bool _isQueueVisible;
 
     public MainWindowViewModel(
         NavigationService navigation,
@@ -41,8 +43,18 @@ public sealed class MainWindowViewModel : ViewModelBase
         SearchViewModel = searchViewModel;
         Notifications = notifications;
 
+        ToggleQueueCommand = new RelayCommand(() => IsQueueVisible = !IsQueueVisible);
         _navigation.PropertyChanged += OnNavigationPropertyChanged;
     }
+
+    /// <summary>Docked play-queue panel on the right of the content area.</summary>
+    public bool IsQueueVisible
+    {
+        get => _isQueueVisible;
+        set => SetProperty(ref _isQueueVisible, value);
+    }
+
+    public RelayCommand ToggleQueueCommand { get; }
 
     public ViewModelBase CurrentViewModel => _navigation.CurrentViewModel;
 
