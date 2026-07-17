@@ -2,13 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SoundHaven.App"
              xmlns:themes="clr-namespace:Material.Styles.Themes;assembly=Material.Styles"
-             xmlns:helpers="clr-namespace:SoundHaven.Helpers"
              RequestedThemeVariant="Default">
-
-    <Application.DataTemplates>
-        <!-- Caches one view per view model so tab switches don't rebuild views -->
-        <helpers:ViewLocator />
-    </Application.DataTemplates>
 
     <Application.Styles>
         <themes:MaterialTheme BaseTheme="Dark" PrimaryColor="Grey" />

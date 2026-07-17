@@ -46,6 +46,19 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public ViewModelBase CurrentViewModel => _navigation.CurrentViewModel;
 
+    // Views stay attached permanently and toggle visibility (see MainWindow.axaml);
+    // swapping ContentControl content forced a full re-layout and texture re-upload
+    // of the incoming view on every navigation, which made tab switches lag.
+    public bool IsHomeVisible => ReferenceEquals(CurrentViewModel, HomeViewModel);
+
+    public bool IsPlaylistVisible => ReferenceEquals(CurrentViewModel, PlaylistViewModel);
+
+    public bool IsPlayerVisible => ReferenceEquals(CurrentViewModel, PlayerViewModel);
+
+    public bool IsLastFmVisible => ReferenceEquals(CurrentViewModel, LastFmViewModel);
+
+    public bool IsThemesVisible => ReferenceEquals(CurrentViewModel, ThemesViewModel);
+
     public PlaylistViewModel PlaylistViewModel { get; }
 
     public HomeViewModel HomeViewModel { get; }
@@ -101,6 +114,11 @@ public sealed class MainWindowViewModel : ViewModelBase
         if (eventArgs.PropertyName == nameof(NavigationService.CurrentViewModel))
         {
             OnPropertyChanged(nameof(CurrentViewModel));
+            OnPropertyChanged(nameof(IsHomeVisible));
+            OnPropertyChanged(nameof(IsPlaylistVisible));
+            OnPropertyChanged(nameof(IsPlayerVisible));
+            OnPropertyChanged(nameof(IsLastFmVisible));
+            OnPropertyChanged(nameof(IsThemesVisible));
         }
     }
 }
