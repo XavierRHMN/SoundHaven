@@ -529,12 +529,13 @@
                     <StackPanel Spacing="24">
                         <TextBlock Text="{Binding Greeting}" Classes="Greeting CardAligned" />
 
-                        <!-- Hero playlist grid 2x3 -->
+                        <!-- Hero playlist grid: up to 3 per row, height fits the
+                             number of playlists (no reserved empty rows). -->
                         <ItemsControl ItemsSource="{Binding FeaturedPlaylists}"
                                       IsVisible="{Binding HasFeaturedPlaylists}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <UniformGrid Columns="3" Rows="2" />
+                                    <UniformGrid Columns="3" />
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
