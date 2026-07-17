@@ -6,7 +6,7 @@
         x:DataType="viewModels:MainWindowViewModel"
         Title="SoundHaven Mini Player"
         Icon="/Assets/Icons/SoundHavenClient.ico"
-        Width="300" Height="470"
+        Width="320" Height="320"
         CanResize="False"
         Topmost="True"
         SystemDecorations="None"
@@ -50,67 +50,78 @@
         <Style Selector="TextBlock.MiniArtist">
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
-            <Setter Property="Foreground" Value="#9A9A9A" />
+            <Setter Property="Foreground" Value="#C8C8C8" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
+
+        <!-- Overlay hides until the card is hovered, then fades in over darkened art -->
+        <Style Selector="Grid.MiniOverlay">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border.MiniRoot:pointerover Grid.MiniOverlay">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
     </Window.Styles>
 
-    <!-- Root border: rounded card; empty areas drag the window -->
-    <Border CornerRadius="12"
+    <!-- The card IS the artwork; controls live inside it, revealed on hover -->
+    <Border Classes="MiniRoot"
+            CornerRadius="12"
             Background="#181818"
-            BorderBrush="#2A2A2A"
-            BorderThickness="1"
             ClipToBounds="True"
             PointerPressed="OnRootPointerPressed">
-        <Grid RowDefinitions="300,Auto,Auto,*">
-            <!-- Album art with close button overlay -->
-            <Panel Grid.Row="0">
-                <Border Background="#242424" />
-                <Image Source="{Binding PlaybackViewModel.CurrentSong.Artwork}"
-                       Stretch="UniformToFill" />
-                <Button Classes="IconOnly"
+        <Panel>
+            <Border Background="#242424" />
+            <Image Source="{Binding PlaybackViewModel.CurrentSong.Artwork}"
+                   Stretch="UniformToFill" />
+
+            <Grid Classes="MiniOverlay"
+                  Background="#99000000"
+                  RowDefinitions="Auto,*,Auto">
+                <Button Grid.Row="0"
+                        Classes="IconOnly"
                         Width="34"
                         Height="34"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Top"
-                        Margin="12,12,0,0"
-                        Background="#66121212"
+                        Margin="10,10,0,0"
                         Click="OnCloseClick"
                         ToolTip.Tip="Back to full player">
                     <Svg Path="avares://SoundHavenClient/Assets/Icons/close.svg"
                          Width="16" Height="16"
                          Opacity="0.9" />
                 </Button>
-            </Panel>
 
-            <!-- Track info -->
-            <StackPanel Grid.Row="1" Margin="18,14,18,0" Spacing="3">
-                <TextBlock Classes="MiniTitle"
-                           Text="{Binding PlaybackViewModel.CurrentSong.Title, FallbackValue='Play a song!'}" />
-                <TextBlock Classes="MiniArtist"
-                           Text="{Binding PlaybackViewModel.CurrentSong.Artist, FallbackValue='Artist - 20XX'}" />
-            </StackPanel>
+                <StackPanel Grid.Row="2" Margin="14,0,14,8">
+                    <StackPanel Margin="6,0" Spacing="2">
+                        <TextBlock Classes="MiniTitle"
+                                   Text="{Binding PlaybackViewModel.CurrentSong.Title, FallbackValue='Play a song!'}" />
+                        <TextBlock Classes="MiniArtist"
+                                   Text="{Binding PlaybackViewModel.CurrentSong.Artist, FallbackValue='Artist - 20XX'}" />
+                    </StackPanel>
 
-            <!-- Seek -->
-            <controls:SeekSliderControl Grid.Row="2"
-                                        Margin="6,2,6,0"
-                                        DataContext="{Binding SeekSliderViewModel}" />
+                    <controls:SeekSliderControl Margin="-8,2,-8,0"
+                                                DataContext="{Binding SeekSliderViewModel}" />
 
-            <!-- Transport -->
-            <StackPanel Grid.Row="3"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Spacing="2"
-                        Margin="0,0,0,8">
-                <controls:ShuffleControl DataContext="{Binding ShuffleViewModel}"
-                                         VerticalAlignment="Center" />
-                <controls:PlaybackControl DataContext="{Binding PlaybackViewModel}"
-                                          VerticalAlignment="Center" />
-                <controls:RepeatControl DataContext="{Binding RepeatViewModel}"
-                                        VerticalAlignment="Center" />
-            </StackPanel>
-        </Grid>
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                Spacing="2"
+                                Margin="0,-4,0,0">
+                        <controls:ShuffleControl DataContext="{Binding ShuffleViewModel}"
+                                                 VerticalAlignment="Center" />
+                        <controls:PlaybackControl DataContext="{Binding PlaybackViewModel}"
+                                                  VerticalAlignment="Center" />
+                        <controls:RepeatControl DataContext="{Binding RepeatViewModel}"
+                                                VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Panel>
     </Border>
 </Window>

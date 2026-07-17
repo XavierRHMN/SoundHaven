@@ -17,19 +17,19 @@
         </Style>
     </UserControl.Styles>
 
-    <!-- Playback Controls -->
+    <!-- Playback Controls (transparent; the hosting surface paints the background) -->
     <StackPanel Orientation="Horizontal"
                 HorizontalAlignment="Center"
-                Background="{StaticResource PlayerBarColor}">
+                Background="Transparent">
 
         <Button Command="{Binding PreviousCommand}"
-                Background="{StaticResource PlayerBarColor}">
+                Background="Transparent">
             <Svg Path="avares://SoundHavenClient/Assets/Icons/previous.svg"
                  Width="24" Height="24" />
         </Button>
 
         <Button Command="{Binding PauseCommand}"
-                Background="{StaticResource PlayerBarColor}"
+                Background="Transparent"
                 Width="54" Height="54" CornerRadius="27"
                 IsVisible="{Binding IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Svg Path="avares://SoundHavenClient/Assets/Icons/pause.svg"
@@ -37,7 +37,7 @@
         </Button>
 
         <Button Command="{Binding PlayCommand}"
-                Background="{StaticResource PlayerBarColor}"
+                Background="Transparent"
                 Width="54" Height="54" CornerRadius="27"
                 IsVisible="{Binding !IsPlaying, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Svg Path="avares://SoundHavenClient/Assets/Icons/play.svg"
@@ -45,7 +45,7 @@
         </Button>
 
         <Button Command="{Binding NextCommand}"
-                Background="{StaticResource PlayerBarColor}">
+                Background="Transparent">
             <Svg Path="avares://SoundHavenClient/Assets/Icons/next.svg"
                  Width="24" Height="24" />
         </Button>
