@@ -15,6 +15,7 @@ public sealed class ToolbarViewModel : ViewModelBase
     private readonly PlaylistViewModel _playlistViewModel;
     private readonly PlaybackViewModel _playbackViewModel;
     private readonly HomeViewModel _homeViewModel;
+    private readonly LastFmViewModel _lastFmViewModel;
     private readonly PlayerViewModel _playerViewModel;
     private readonly PlaylistStore _playlistStore;
     private readonly SearchViewModel _searchViewModel;
@@ -28,6 +29,7 @@ public sealed class ToolbarViewModel : ViewModelBase
         PlaylistViewModel playlistViewModel,
         PlaybackViewModel playbackViewModel,
         HomeViewModel homeViewModel,
+        LastFmViewModel lastFmViewModel,
         PlayerViewModel playerViewModel,
         PlaylistStore playlistStore,
         SearchViewModel searchViewModel,
@@ -40,6 +42,8 @@ public sealed class ToolbarViewModel : ViewModelBase
         _playbackViewModel = playbackViewModel
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _homeViewModel = homeViewModel ?? throw new ArgumentNullException(nameof(homeViewModel));
+        _lastFmViewModel = lastFmViewModel
+            ?? throw new ArgumentNullException(nameof(lastFmViewModel));
         _playerViewModel = playerViewModel
             ?? throw new ArgumentNullException(nameof(playerViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
@@ -51,6 +55,7 @@ public sealed class ToolbarViewModel : ViewModelBase
 
         ShowHomeViewCommand = new RelayCommand(() => ShowView(_homeViewModel));
         ShowSearchViewCommand = new RelayCommand(() => ShowView(_searchViewModel));
+        ShowLastFmViewCommand = new RelayCommand(() => ShowView(_lastFmViewModel));
         ShowPlaylistViewCommand = new RelayCommand(() => ShowView(_playlistViewModel));
         ShowPlayerViewCommand = new RelayCommand(() => ShowView(_playerViewModel));
         ShowThemesViewCommand = new RelayCommand(() => ShowView(_themesViewModel));
@@ -95,6 +100,8 @@ public sealed class ToolbarViewModel : ViewModelBase
     public RelayCommand ShowHomeViewCommand { get; }
 
     public RelayCommand ShowSearchViewCommand { get; }
+
+    public RelayCommand ShowLastFmViewCommand { get; }
 
     public RelayCommand ShowPlaylistViewCommand { get; }
 

@@ -11,6 +11,7 @@ using SoundHaven.Commands;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.Services;
+using SoundHaven.Stores;
 
 namespace SoundHaven.ViewModels;
 
@@ -27,6 +28,7 @@ public sealed class PlaybackViewModel : ViewModelBase
     private readonly RepeatViewModel _repeatViewModel;
     private readonly ThemesViewModel _themesViewModel;
     private readonly IUserNotificationService _notifications;
+    private readonly RecentPlaybackStore? _recentPlaybackStore;
     private CancellationTokenSource _trackCancellation = new();
     private Song? _currentSong;
     private Playlist? _currentPlaylist;
@@ -39,13 +41,15 @@ public sealed class PlaybackViewModel : ViewModelBase
         RepeatViewModel repeatViewModel,
         ILastFmDataService lastFmDataService,
         ThemesViewModel themesViewModel,
-        IUserNotificationService notifications)
+        IUserNotificationService notifications,
+        RecentPlaybackStore? recentPlaybackStore = null)
     {
         _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
         _repeatViewModel = repeatViewModel ?? throw new ArgumentNullException(nameof(repeatViewModel));
         _lastFmDataService = lastFmDataService ?? throw new ArgumentNullException(nameof(lastFmDataService));
         _themesViewModel = themesViewModel ?? throw new ArgumentNullException(nameof(themesViewModel));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _recentPlaybackStore = recentPlaybackStore;
 
         _audioService.PlaybackStateChanged += OnPlaybackStateChanged;
         _audioService.PlaybackFailed += OnPlaybackFailed;
@@ -221,6 +225,7 @@ public sealed class PlaybackViewModel : ViewModelBase
             PlaybackSource source = SelectPlaybackSource(song, File.Exists);
             await _audioService.StartAsync(source, cancellationToken: replacementCancellation.Token);
             await EnsureArtworkForThemeAsync(song, replacementCancellation.Token);
+            _recentPlaybackStore?.RecordPlay(song);
             _ = ScrobbleCurrentSongAsync(song, replacementCancellation.Token);
             ApplyDynamicTheme(song);
         }

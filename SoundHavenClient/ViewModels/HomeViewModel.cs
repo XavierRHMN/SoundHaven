@@ -1,205 +1,578 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Threading;
+using SoundHaven.Commands;
+using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.Services;
+using SoundHaven.Stores;
 
-namespace SoundHaven.ViewModels
+namespace SoundHaven.ViewModels;
+
+public sealed class HomeViewModel : ViewModelBase
 {
-    public class HomeViewModel : ViewModelBase
+    private readonly PlaylistStore _playlistStore;
+    private readonly RecentPlaybackStore _recentPlaybackStore;
+    private readonly PlaybackViewModel _playbackViewModel;
+    private readonly PlaylistViewModel _playlistViewModel;
+    private readonly NavigationService _navigation;
+    private readonly IUserNotificationService _notifications;
+    private readonly ILastFmDataService _lastFmDataService;
+    private readonly IYouTubeMediaService _youTubeMediaService;
+    private readonly CancellationTokenSource _lifetimeCancellation = new();
+    private Song? _menuSong;
+    private bool _showForYou = true;
+    private bool _showAllRecentlyPlayed;
+    private bool _isLoadingRecommendations;
+    private int _disposeState;
+
+    public HomeViewModel(
+        PlaylistStore playlistStore,
+        RecentPlaybackStore recentPlaybackStore,
+        PlaybackViewModel playbackViewModel,
+        PlaylistViewModel playlistViewModel,
+        NavigationService navigation,
+        IUserNotificationService notifications,
+        ILastFmDataService lastFmDataService,
+        IYouTubeMediaService youTubeMediaService)
     {
-        private readonly ILastFmDataService _lastFmDataService;
-        private readonly CancellationTokenSource _lifetimeCancellationTokenSource = new();
-        private int _disposeState;
+        _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
+        _recentPlaybackStore = recentPlaybackStore
+            ?? throw new ArgumentNullException(nameof(recentPlaybackStore));
+        _playbackViewModel = playbackViewModel
+            ?? throw new ArgumentNullException(nameof(playbackViewModel));
+        _playlistViewModel = playlistViewModel
+            ?? throw new ArgumentNullException(nameof(playlistViewModel));
+        _navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _lastFmDataService = lastFmDataService
+            ?? throw new ArgumentNullException(nameof(lastFmDataService));
+        _youTubeMediaService = youTubeMediaService
+            ?? throw new ArgumentNullException(nameof(youTubeMediaService));
 
-        public ObservableCollection<Song> RecentlyPlayedTracks { get; }
-        public ObservableCollection<Song> RecommendedAlbums { get; }
-        public bool IsLastFmConfigured => _lastFmDataService.IsConfigured;
-        public bool IsLastFmUnavailable => !IsLastFmConfigured;
-        public bool IsLastFmContentVisible =>
-            IsLastFmConfigured && !IsUsernamePromptVisible;
-        public string LastFmConfigurationMessage =>
-            _lastFmDataService.LastError
-            ?? "Last.fm is not configured. Set LASTFM_API_KEY and LASTFM_API_SECRET to enable it.";
+        FeaturedPlaylists = [];
+        UploadSongs = [];
+        UploadSongsPreview = [];
+        RecentlyPlayedPreview = [];
+        RecommendedSongs = [];
 
-        private bool _isLoading;
-        public bool IsLoading
+        _playlistStore.Playlists.CollectionChanged += OnPlaylistsChanged;
+        _recentPlaybackStore.RecentSongs.CollectionChanged += OnRecentSongsChanged;
+
+        OpenPlaylistCommand = new RelayCommand<Playlist>(OpenPlaylist, playlist => playlist is not null);
+        PlaySongCommand = new AsyncRelayCommand<Song>(
+            PlaySongAsync,
+            song => song is not null,
+            exception => _notifications.ShowError(exception.Message));
+        PlayNextCommand = new AsyncRelayCommand<Song>(
+            PlayNextAsync,
+            song => song is not null,
+            exception => _notifications.ShowError(exception.Message));
+        AddToPlaylistCommand = new RelayCommand<Playlist>(
+            ExecuteAddToPlaylist,
+            playlist => playlist is { Id: > 0 } && _menuSong is not null);
+        CreatePlaylistAndAddSongCommand = new RelayCommand(
+            ExecuteCreatePlaylistAndAddSong,
+            () => _menuSong is not null);
+        ShowForYouCommand = new RelayCommand(() => IsForYouSelected = true);
+        ShowUploadsCommand = new RelayCommand(() => IsForYouSelected = false);
+        ViewAllUploadsCommand = new RelayCommand(() => IsForYouSelected = false);
+        ViewAllRecentlyPlayedCommand = new RelayCommand(() => ShowAllRecentlyPlayed = true);
+
+        RefreshFeaturedPlaylists();
+        RefreshUploads();
+        RefreshRecentlyPlayedPreview();
+        _ = LoadRecommendationsAsync();
+    }
+
+    public ObservableCollection<Playlist> FeaturedPlaylists { get; }
+
+    public ObservableCollection<Song> UploadSongs { get; }
+
+    public ObservableCollection<Song> UploadSongsPreview { get; }
+
+    public ObservableCollection<Song> RecentlyPlayedPreview { get; }
+
+    public ObservableCollection<Song> RecommendedSongs { get; }
+
+    public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
+
+    public ObservableCollection<Song> RecentlyPlayedSongs => _recentPlaybackStore.RecentSongs;
+
+    public bool IsForYouSelected
+    {
+        get => _showForYou;
+        set
         {
-            get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
-        }
-
-        private bool _isSubmitting;
-        public bool IsSubmitting
-        {
-            get => _isSubmitting;
-            private set => SetProperty(ref _isSubmitting, value);
-        }
-
-        private bool _isUsernamePromptVisible;
-        public bool IsUsernamePromptVisible
-        {
-            get => _isUsernamePromptVisible;
-            set
+            if (!SetProperty(ref _showForYou, value))
             {
-                if (SetProperty(ref _isUsernamePromptVisible, value))
+                return;
+            }
+
+            OnPropertyChanged(nameof(IsUploadsSelected));
+            OnPropertyChanged(nameof(ShowForYouContent));
+            OnPropertyChanged(nameof(ShowUploadsContent));
+        }
+    }
+
+    public bool IsUploadsSelected => !IsForYouSelected;
+
+    public bool ShowForYouContent => IsForYouSelected;
+
+    public bool ShowUploadsContent => IsUploadsSelected;
+
+    public bool ShowAllRecentlyPlayed
+    {
+        get => _showAllRecentlyPlayed;
+        set
+        {
+            if (SetProperty(ref _showAllRecentlyPlayed, value))
+            {
+                RefreshRecentlyPlayedPreview();
+            }
+        }
+    }
+
+    public bool IsLoadingRecommendations
+    {
+        get => _isLoadingRecommendations;
+        private set
+        {
+            if (SetProperty(ref _isLoadingRecommendations, value))
+            {
+                OnPropertyChanged(nameof(ShowRecommendationsEmpty));
+            }
+        }
+    }
+
+    public bool HasFeaturedPlaylists => FeaturedPlaylists.Count > 0;
+
+    public bool HasUploads => UploadSongs.Count > 0;
+
+    public bool HasRecentlyPlayed => RecentlyPlayedSongs.Count > 0;
+
+    public bool HasRecommendations => RecommendedSongs.Count > 0;
+
+    public bool ShowRecommendationsEmpty =>
+        !IsLoadingRecommendations && !HasRecommendations;
+
+    public RelayCommand<Playlist> OpenPlaylistCommand { get; }
+
+    public AsyncRelayCommand<Song> PlaySongCommand { get; }
+
+    public AsyncRelayCommand<Song> PlayNextCommand { get; }
+
+    public RelayCommand<Playlist> AddToPlaylistCommand { get; }
+
+    public RelayCommand CreatePlaylistAndAddSongCommand { get; }
+
+    public RelayCommand ShowForYouCommand { get; }
+
+    public RelayCommand ShowUploadsCommand { get; }
+
+    public RelayCommand ViewAllUploadsCommand { get; }
+
+    public RelayCommand ViewAllRecentlyPlayedCommand { get; }
+
+    public void SetMenuSong(Song song)
+    {
+        _menuSong = song ?? throw new ArgumentNullException(nameof(song));
+        AddToPlaylistCommand.RaiseCanExecuteChanged();
+        CreatePlaylistAndAddSongCommand.RaiseCanExecuteChanged();
+    }
+
+    public override void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposeState, 1) != 0)
+        {
+            return;
+        }
+
+        _lifetimeCancellation.Cancel();
+        _lifetimeCancellation.Dispose();
+        _playlistStore.Playlists.CollectionChanged -= OnPlaylistsChanged;
+        _recentPlaybackStore.RecentSongs.CollectionChanged -= OnRecentSongsChanged;
+        foreach (Playlist playlist in _playlistStore.Playlists)
+        {
+            playlist.Songs.CollectionChanged -= OnPlaylistSongsChanged;
+        }
+
+        base.Dispose();
+    }
+
+    private void OpenPlaylist(Playlist? playlist)
+    {
+        if (playlist is null)
+        {
+            return;
+        }
+
+        _playlistViewModel.DisplayedPlaylist = playlist;
+        _navigation.NavigateTo(_playlistViewModel);
+    }
+
+    private async Task PlaySongAsync(Song? song)
+    {
+        if (song is null)
+        {
+            return;
+        }
+
+        if (!await EnsurePlayableAsync(song))
+        {
+            return;
+        }
+
+        await _playbackViewModel.PlayFromBeginning(song);
+    }
+
+    private async Task PlayNextAsync(Song? song)
+    {
+        if (song is null)
+        {
+            return;
+        }
+
+        if (!await EnsurePlayableAsync(song))
+        {
+            return;
+        }
+
+        await _playbackViewModel.PlayNext(song);
+        _notifications.ShowInfo($"Queued “{song.Title}” to play next.");
+    }
+
+    private async Task<bool> EnsurePlayableAsync(Song song)
+    {
+        if (!string.IsNullOrWhiteSpace(song.FilePath) && File.Exists(song.FilePath))
+        {
+            return true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(song.VideoId))
+        {
+            return true;
+        }
+
+        try
+        {
+            string query = $"{song.Artist} {song.Title}".Trim();
+            IReadOnlyList<YouTubeSearchResult> results = await _youTubeMediaService.SearchAsync(
+                query,
+                limit: 1,
+                searchSongs: true,
+                _lifetimeCancellation.Token);
+
+            if (results.Count == 0)
+            {
+                _notifications.ShowError($"Could not find “{song.Title}” on YouTube Music.");
+                return false;
+            }
+
+            YouTubeSearchResult match = results[0];
+            song.VideoId = match.VideoId;
+            if (!string.IsNullOrWhiteSpace(match.ThumbnailUrl))
+            {
+                song.ThumbnailUrl = match.ThumbnailUrl;
+            }
+
+            if (match.Duration is { } duration && duration > TimeSpan.Zero)
+            {
+                song.Duration = duration;
+            }
+
+            _ = song.LoadThumbnailAsync(cancellationToken: _lifetimeCancellation.Token);
+            return true;
+        }
+        catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
+        {
+            return false;
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError(exception.Message);
+            return false;
+        }
+    }
+
+    private async Task LoadRecommendationsAsync()
+    {
+        if (Volatile.Read(ref _disposeState) != 0)
+        {
+            return;
+        }
+
+        IsLoadingRecommendations = true;
+        try
+        {
+            Task<IReadOnlyList<Song>> ytmTask = LoadYouTubeRecommendationsAsync();
+            Task<IReadOnlyList<Song>> lastFmTask = LoadLastFmRecommendationsAsync();
+            await Task.WhenAll(ytmTask, lastFmTask);
+
+            IReadOnlyList<Song> merged = RecommendationFeed.MergeInterleaved(
+                await ytmTask,
+                await lastFmTask);
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                RecommendedSongs.Clear();
+                foreach (Song song in merged)
                 {
-                    OnPropertyChanged(nameof(IsLastFmContentVisible));
+                    RecommendedSongs.Add(song);
+                    _ = PrefetchThumbnailAsync(song);
                 }
+
+                OnPropertyChanged(nameof(HasRecommendations));
+                OnPropertyChanged(nameof(ShowRecommendationsEmpty));
+            });
+        }
+        catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
+        {
+            // Disposing.
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Home recommendations failed: {exception.Message}");
+        }
+        finally
+        {
+            if (Volatile.Read(ref _disposeState) == 0)
+            {
+                IsLoadingRecommendations = false;
+            }
+        }
+    }
+
+    private async Task<IReadOnlyList<Song>> LoadYouTubeRecommendationsAsync()
+    {
+        try
+        {
+            IReadOnlyList<YouTubeSearchResult> results =
+                await _youTubeMediaService.GetHomeRecommendationsAsync(
+                    RecommendationFeed.MaxYtmSeeds,
+                    _lifetimeCancellation.Token);
+
+            return results.Select(MapYouTubeResult).ToList();
+        }
+        catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"YouTube Music home browse failed: {exception.Message}");
+            return [];
+        }
+    }
+
+    private async Task<IReadOnlyList<Song>> LoadLastFmRecommendationsAsync()
+    {
+        if (!_lastFmDataService.IsConfigured || !_lastFmDataService.IsAuthenticated)
+        {
+            return [];
+        }
+
+        try
+        {
+            IEnumerable<Song> tracks =
+                await _lastFmDataService.GetTopTracksAsync(_lifetimeCancellation.Token);
+            return tracks.Take(RecommendationFeed.MaxLastFmSeeds).ToList();
+        }
+        catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Last.fm top tracks failed: {exception.Message}");
+            return [];
+        }
+    }
+
+    private static Song MapYouTubeResult(YouTubeSearchResult result)
+    {
+        return new Song
+        {
+            Title = result.Title,
+            Artist = result.Author,
+            Album = result.Album,
+            VideoId = result.VideoId,
+            ThumbnailUrl = result.ThumbnailUrl,
+            ChannelTitle = result.Author,
+            Duration = result.Duration ?? TimeSpan.Zero
+        };
+    }
+
+    private async Task PrefetchThumbnailAsync(Song song)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(song.ThumbnailUrl)
+                && !string.IsNullOrWhiteSpace(song.ArtworkUrl))
+            {
+                song.ThumbnailUrl = song.ArtworkUrl;
+            }
+
+            await song.LoadThumbnailAsync(cancellationToken: _lifetimeCancellation.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore.
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Recommendation thumbnail failed: {exception.Message}");
+        }
+    }
+
+    private void ExecuteAddToPlaylist(Playlist? playlist)
+    {
+        if (playlist is null || _menuSong is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _playlistStore.AddSongToPlaylist(playlist, _menuSong);
+            _notifications.ShowInfo($"Added “{_menuSong.Title}” to “{playlist.Name}”.");
+            RefreshUploads();
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError(exception.Message);
+        }
+    }
+
+    private void ExecuteCreatePlaylistAndAddSong()
+    {
+        if (_menuSong is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var playlist = new Playlist
+            {
+                Name = "New playlist",
+                Songs = []
+            };
+            _playlistStore.AddPlaylist(playlist);
+            _playlistStore.AddSongToPlaylist(playlist, _menuSong);
+            _notifications.ShowInfo($"Created “{playlist.Name}” and added “{_menuSong.Title}”.");
+            RefreshFeaturedPlaylists();
+            RefreshUploads();
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError(exception.Message);
+        }
+    }
+
+    private void OnPlaylistsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems is not null)
+        {
+            foreach (Playlist playlist in e.OldItems.OfType<Playlist>())
+            {
+                playlist.Songs.CollectionChanged -= OnPlaylistSongsChanged;
             }
         }
 
-        private string _username = string.Empty;
-        public string Username
+        if (e.NewItems is not null)
         {
-            get => _username;
-            set => SetProperty(ref _username, value);
+            foreach (Playlist playlist in e.NewItems.OfType<Playlist>())
+            {
+                playlist.Songs.CollectionChanged += OnPlaylistSongsChanged;
+            }
         }
 
-        private string _errorMessage = string.Empty;
-        public string ErrorMessage
+        if (e.Action == NotifyCollectionChangedAction.Reset)
         {
-            get => _errorMessage;
-            set => SetProperty(ref _errorMessage, value);
+            foreach (Playlist playlist in _playlistStore.Playlists)
+            {
+                playlist.Songs.CollectionChanged -= OnPlaylistSongsChanged;
+                playlist.Songs.CollectionChanged += OnPlaylistSongsChanged;
+            }
         }
 
-        public HomeViewModel(ILastFmDataService lastFmDataService)
-        {
-            _lastFmDataService = lastFmDataService
-                ?? throw new ArgumentNullException(nameof(lastFmDataService));
+        RefreshFeaturedPlaylists();
+        RefreshUploads();
+    }
 
-            RecentlyPlayedTracks = new ObservableCollection<Song>();
-            RecommendedAlbums = new ObservableCollection<Song>();
-            _isUsernamePromptVisible = IsLastFmConfigured;
+    private void OnPlaylistSongsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        RefreshUploads();
+
+    private void OnRecentSongsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        RefreshRecentlyPlayedPreview();
+
+    private void RefreshFeaturedPlaylists()
+    {
+        FeaturedPlaylists.Clear();
+        foreach (Playlist playlist in _playlistStore.Playlists.Take(6))
+        {
+            FeaturedPlaylists.Add(playlist);
         }
 
-        public async Task SubmitDetailsAsync(
-            string password,
-            CancellationToken cancellationToken = default)
+        OnPropertyChanged(nameof(HasFeaturedPlaylists));
+    }
+
+    private void RefreshUploads()
+    {
+        UploadSongs.Clear();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (Playlist playlist in _playlistStore.Playlists)
         {
-            if (Volatile.Read(ref _disposeState) != 0)
+            playlist.Songs.CollectionChanged -= OnPlaylistSongsChanged;
+            playlist.Songs.CollectionChanged += OnPlaylistSongsChanged;
+
+            foreach (Song song in playlist.Songs)
             {
-                return;
-            }
-
-            if (!IsLastFmConfigured)
-            {
-                ErrorMessage = LastFmConfigurationMessage;
-                return;
-            }
-
-            if (IsSubmitting)
-            {
-                return;
-            }
-
-            string normalizedUsername = Username?.Trim() ?? string.Empty;
-            if (normalizedUsername.Length == 0 || string.IsNullOrEmpty(password))
-            {
-                ErrorMessage = "Username and password are required.";
-                return;
-            }
-
-            using var linkedCancellationTokenSource =
-                CancellationTokenSource.CreateLinkedTokenSource(
-                    cancellationToken,
-                    _lifetimeCancellationTokenSource.Token);
-            CancellationToken linkedCancellationToken =
-                linkedCancellationTokenSource.Token;
-
-            IsSubmitting = true;
-            ErrorMessage = string.Empty;
-
-            try
-            {
-                bool userExists = await _lastFmDataService.UserExistsAsync(
-                    normalizedUsername,
-                    password,
-                    linkedCancellationToken);
-
-                if (!userExists)
+                if (string.IsNullOrWhiteSpace(song.FilePath) || !File.Exists(song.FilePath))
                 {
-                    ErrorMessage = _lastFmDataService.LastError
-                        ?? "Invalid Last.fm username or password.";
-                    return;
+                    continue;
                 }
 
-                Username = normalizedUsername;
-                IsUsernamePromptVisible = false;
-                await LoadDataAsync(linkedCancellationToken);
-            }
-            catch (OperationCanceledException)
-                when (linkedCancellationToken.IsCancellationRequested)
-            {
-                // Closing the view or cancelling sign-in should not surface as an error.
-            }
-            catch (Exception)
-            {
-                ErrorMessage = _lastFmDataService.LastError
-                    ?? "Last.fm sign-in is currently unavailable. Please try again.";
-            }
-            finally
-            {
-                IsSubmitting = false;
-            }
-        }
-
-        private async Task LoadDataAsync(CancellationToken cancellationToken)
-        {
-            IsLoading = true;
-
-            try
-            {
-                var recentlyPlayedTracks =
-                    await _lastFmDataService.GetRecentlyPlayedTracksAsync(cancellationToken);
-                string? recentlyPlayedError = _lastFmDataService.LastError;
-
-                var recommendedAlbums =
-                    await _lastFmDataService.GetRecommendedAlbumsAsync(cancellationToken);
-                string? recommendationsError = _lastFmDataService.LastError;
-
-                cancellationToken.ThrowIfCancellationRequested();
-
-                RecentlyPlayedTracks.Clear();
-                RecommendedAlbums.Clear();
-
-                var shuffledAlbums = recommendedAlbums
-                    .OrderBy(_ => Guid.NewGuid())
-                    .ToList();
-
-                foreach (var song in shuffledAlbums)
+                string key = song.FilePath;
+                if (!seen.Add(key))
                 {
-                    RecommendedAlbums.Add(song);
+                    continue;
                 }
 
-                foreach (var song in recentlyPlayedTracks)
-                {
-                    RecentlyPlayedTracks.Add(song);
-                }
-
-                ErrorMessage = recommendationsError
-                    ?? recentlyPlayedError
-                    ?? string.Empty;
-            }
-            finally
-            {
-                IsLoading = false;
+                UploadSongs.Add(song);
             }
         }
 
-        public override void Dispose()
+        UploadSongsPreview.Clear();
+        foreach (Song song in UploadSongs.Take(9))
         {
-            if (Interlocked.Exchange(ref _disposeState, 1) != 0)
-            {
-                return;
-            }
-
-            _lifetimeCancellationTokenSource.Cancel();
-            _lifetimeCancellationTokenSource.Dispose();
-            base.Dispose();
-            GC.SuppressFinalize(this);
+            UploadSongsPreview.Add(song);
         }
+
+        OnPropertyChanged(nameof(HasUploads));
+    }
+
+    private void RefreshRecentlyPlayedPreview()
+    {
+        RecentlyPlayedPreview.Clear();
+        IEnumerable<Song> source = ShowAllRecentlyPlayed
+            ? RecentlyPlayedSongs
+            : RecentlyPlayedSongs.Take(9);
+
+        foreach (Song song in source)
+        {
+            RecentlyPlayedPreview.Add(song);
+        }
+
+        OnPropertyChanged(nameof(HasRecentlyPlayed));
     }
 }

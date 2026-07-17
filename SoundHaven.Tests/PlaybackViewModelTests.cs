@@ -515,6 +515,7 @@ public sealed class PlaybackViewModelTests : IDisposable
     private sealed class FakeLastFmDataService : ILastFmDataService
     {
         public bool IsConfigured => false;
+        public bool IsAuthenticated => false;
         public string? LastError => null;
         public string Username => string.Empty;
 

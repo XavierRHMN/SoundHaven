@@ -47,16 +47,27 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Theme" Value="{x:Null}" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <ContentPresenter Content="{TemplateBinding Content}"
-                                      Background="Transparent"
-                                      Padding="{TemplateBinding Padding}"
-                                      HorizontalContentAlignment="Center"
-                                      VerticalContentAlignment="Center" />
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalContentAlignment="Center"
+                                          VerticalContentAlignment="Center" />
+                    </Border>
                 </ControlTemplate>
             </Setter>
+        </Style>
+
+        <Style Selector="Button.SidebarIcon:pointerover">
+            <Setter Property="Background" Value="#22FFFFFF" />
+        </Style>
+
+        <Style Selector="Button.SidebarIcon:pressed">
+            <Setter Property="Background" Value="#33FFFFFF" />
         </Style>
 
         <Style Selector="ListBox.PlaylistSidebar">
@@ -128,6 +139,14 @@
                 </StackPanel>
             </Button>
 
+            <Button Background="Transparent" Foreground="White" Command="{Binding ShowLastFmViewCommand}"
+                    HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Margin="12,10">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/lastfm.svg" Width="16" Height="16" />
+                    <TextBlock Classes="ToolbarText" Text="Last.fm" VerticalAlignment="Center" Margin="12,0,0,0" />
+                </StackPanel>
+            </Button>
+
             <Button Background="Transparent" Foreground="White" Command="{Binding ShowPlayerViewCommand}"
                     HorizontalContentAlignment="Left" HorizontalAlignment="Stretch">
                 <StackPanel Orientation="Horizontal" Margin="12,10">
@@ -182,7 +201,7 @@
                          SelectedItem="{Binding ToolbarSelectedPlaylist, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:Playlist">
-                            <Grid ColumnDefinitions="Auto,*"
+                            <Grid ColumnDefinitions="Auto,*,Auto"
                                   HorizontalAlignment="Stretch"
                                   Background="Transparent"
                                   PointerPressed="OnPlaylistPointerPressed">
@@ -228,6 +247,19 @@
                                     <TextBlock Text="{Binding Name}" Classes="PlaylistName" />
                                     <TextBlock Text="{Binding ItemCountText}" Classes="PlaylistCount" />
                                 </StackPanel>
+
+                                <Button Grid.Column="2"
+                                        Classes="SidebarIcon"
+                                        Width="36"
+                                        Height="36"
+                                        VerticalAlignment="Center"
+                                        PointerPressed="OnOverflowPointerPressed"
+                                        Click="OnPlaylistOverflowClick"
+                                        ToolTip.Tip="More options">
+                                    <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
+                                         Width="20" Height="20"
+                                         Opacity="0.75" />
+                                </Button>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

@@ -22,6 +22,10 @@
             <views:HomeView />
         </DataTemplate>
 
+        <DataTemplate DataType="viewModels:LastFmViewModel">
+            <views:LastFmView />
+        </DataTemplate>
+
         <DataTemplate DataType="viewModels:SearchViewModel">
             <views:SearchView />
         </DataTemplate>

@@ -12,6 +12,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         NavigationService navigation,
         PlaylistViewModel playlistViewModel,
         HomeViewModel homeViewModel,
+        LastFmViewModel lastFmViewModel,
         ToolbarViewModel toolbarViewModel,
         PlaybackViewModel playbackViewModel,
         ShuffleViewModel shuffleViewModel,
@@ -27,6 +28,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         _navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
         PlaylistViewModel = playlistViewModel;
         HomeViewModel = homeViewModel;
+        LastFmViewModel = lastFmViewModel;
         ToolbarViewModel = toolbarViewModel;
         PlaybackViewModel = playbackViewModel;
         ShuffleViewModel = shuffleViewModel;
@@ -47,6 +49,8 @@ public sealed class MainWindowViewModel : ViewModelBase
     public PlaylistViewModel PlaylistViewModel { get; }
 
     public HomeViewModel HomeViewModel { get; }
+
+    public LastFmViewModel LastFmViewModel { get; }
 
     public ToolbarViewModel ToolbarViewModel { get; }
 
@@ -80,6 +84,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         SearchViewModel.Dispose();
         PlaybackViewModel.Dispose();
         HomeViewModel.Dispose();
+        LastFmViewModel.Dispose();
         PlaylistViewModel.Dispose();
         ThemesViewModel.Dispose();
         RepeatViewModel.Dispose();

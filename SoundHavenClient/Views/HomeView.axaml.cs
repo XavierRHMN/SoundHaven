@@ -1,45 +1,118 @@
-using System.Threading.Tasks;
+using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
+using SoundHaven.Helpers;
+using SoundHaven.Models;
 using SoundHaven.ViewModels;
 
-namespace SoundHaven.Views
+namespace SoundHaven.Views;
+
+public partial class HomeView : UserControl
 {
-    public partial class HomeView : UserControl
+    public HomeView()
     {
-        public HomeView()
+        InitializeComponent();
+    }
+
+    private void OnActionsPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        e.Handled = true;
+    }
+
+    private void OnSongDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is not Control control
+            || control.DataContext is not Song song
+            || DataContext is not HomeViewModel viewModel)
         {
-            InitializeComponent();
+            return;
         }
 
-        private async void SubmitDetails_OnClick(object? sender, RoutedEventArgs e)
+        e.Handled = true;
+        if (viewModel.PlaySongCommand.CanExecute(song))
         {
-            await SubmitDetailsAsync();
+            viewModel.PlaySongCommand.Execute(song);
+        }
+    }
+
+    private void OnSongOverflowClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button
+            || button.DataContext is not Song song
+            || DataContext is not HomeViewModel viewModel)
+        {
+            return;
         }
 
-        private async void PasswordBox_OnKeyDown(object? sender, KeyEventArgs e)
+        viewModel.SetMenuSong(song);
+        var flyout = DarkMenuFlyout.Create(PlacementMode.BottomEdgeAlignedLeft);
+        flyout.Items.Add(new MenuItem
         {
-            if (e.Key != Key.Enter)
+            Header = "Play now",
+            Command = viewModel.PlaySongCommand,
+            CommandParameter = song
+        });
+        flyout.Items.Add(new MenuItem
+        {
+            Header = "Play next",
+            Command = viewModel.PlayNextCommand,
+            CommandParameter = song
+        });
+
+        var addToPlaylist = new MenuItem { Header = "Add to playlist" };
+        foreach (Playlist playlist in viewModel.Playlists)
+        {
+            addToPlaylist.Items.Add(new MenuItem
             {
-                return;
-            }
-
-            e.Handled = true;
-            await SubmitDetailsAsync();
+                Header = playlist.Name,
+                Command = viewModel.AddToPlaylistCommand,
+                CommandParameter = playlist
+            });
         }
 
-        private async Task SubmitDetailsAsync()
+        if (viewModel.Playlists.Count > 0)
         {
-            if (DataContext is not HomeViewModel viewModel)
+            addToPlaylist.Items.Add(new Separator());
+        }
+
+        addToPlaylist.Items.Add(new MenuItem
+        {
+            Header = "Create one",
+            Command = viewModel.CreatePlaylistAndAddSongCommand,
+            Icon = new PathIcon
             {
-                return;
+                Data = StreamGeometry.Parse("M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"),
+                Width = 16,
+                Height = 16,
+                Foreground = Brushes.White
             }
+        });
 
-            string password = PasswordBox.Text ?? string.Empty;
-            PasswordBox.Text = string.Empty;
+        flyout.Items.Add(addToPlaylist);
+        flyout.ShowAt(button);
+        e.Handled = true;
+    }
 
-            await viewModel.SubmitDetailsAsync(password);
+    private void OnPlaylistCardPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        if (sender is not Control control
+            || control.DataContext is not Playlist playlist
+            || DataContext is not HomeViewModel viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        if (viewModel.OpenPlaylistCommand.CanExecute(playlist))
+        {
+            viewModel.OpenPlaylistCommand.Execute(playlist);
         }
     }
 }

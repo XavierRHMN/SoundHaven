@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.ViewModels;
@@ -29,7 +30,30 @@ public partial class ToolbarControl : UserControl
 
         // Stop ListBox from selecting (which navigates and feels laggy).
         e.Handled = true;
+        ShowPlaylistMenu(control, viewModel, playlist);
+    }
 
+    private void OnOverflowPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Keep overflow clicks from selecting/navigating the playlist row.
+        e.Handled = true;
+    }
+
+    private void OnPlaylistOverflowClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button
+            || button.DataContext is not Playlist playlist
+            || DataContext is not ToolbarViewModel viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        ShowPlaylistMenu(button, viewModel, playlist);
+    }
+
+    private static void ShowPlaylistMenu(Control anchor, ToolbarViewModel viewModel, Playlist playlist)
+    {
         var flyout = DarkMenuFlyout.Create(PlacementMode.Right);
         flyout.HorizontalOffset = 8;
         flyout.Items.Add(new MenuItem
@@ -64,6 +88,6 @@ public partial class ToolbarControl : UserControl
             CommandParameter = playlist
         });
 
-        flyout.ShowAt(control);
+        flyout.ShowAt(anchor);
     }
 }
