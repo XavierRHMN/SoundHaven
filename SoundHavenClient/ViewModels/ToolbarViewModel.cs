@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using SoundHaven.Commands;
@@ -75,7 +76,17 @@ public sealed class ToolbarViewModel : ViewModelBase
             EditPlaylistAsync,
             playlist => playlist is { Id: > 0 },
             exception => _notifications.ShowError(exception.Message));
+
+        _navigation.PropertyChanged += OnNavigationPropertyChanged;
     }
+
+    public bool IsHomeActive => ReferenceEquals(_navigation.CurrentViewModel, _homeViewModel);
+
+    public bool IsLastFmActive => ReferenceEquals(_navigation.CurrentViewModel, _lastFmViewModel);
+
+    public bool IsPlayerActive => ReferenceEquals(_navigation.CurrentViewModel, _playerViewModel);
+
+    public bool IsThemesActive => ReferenceEquals(_navigation.CurrentViewModel, _themesViewModel);
 
     public Playlist? ToolbarSelectedPlaylist
     {
@@ -217,5 +228,24 @@ public sealed class ToolbarViewModel : ViewModelBase
     {
         ToolbarSelectedPlaylist = null;
         _navigation.NavigateTo(viewModel);
+    }
+
+    private void OnNavigationPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(NavigationService.CurrentViewModel))
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(IsHomeActive));
+        OnPropertyChanged(nameof(IsLastFmActive));
+        OnPropertyChanged(nameof(IsPlayerActive));
+        OnPropertyChanged(nameof(IsThemesActive));
+    }
+
+    public override void Dispose()
+    {
+        _navigation.PropertyChanged -= OnNavigationPropertyChanged;
+        base.Dispose();
     }
 }
