@@ -12,7 +12,7 @@
         SystemDecorations="None"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
-        WindowStartupLocation="Manual">
+        WindowStartupLocation="CenterScreen">
 
     <Window.Styles>
         <Style Selector="Button.IconOnly">

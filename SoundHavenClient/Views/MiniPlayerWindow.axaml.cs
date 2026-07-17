@@ -1,36 +1,19 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Platform;
 
 namespace SoundHaven.Views;
 
 /// <summary>
-/// Compact always-on-top player (TIDAL-style): art, track info, seek, transport.
-/// Opened from the player bar's mini-player button; closing restores MainWindow.
+/// Compact always-on-top player: the album-art card with a hover-reveal overlay
+/// (close, track info, seek, transport). Opened from the player bar's
+/// mini-player button; closing restores MainWindow. Starts centered on screen.
 /// </summary>
 public partial class MiniPlayerWindow : Window
 {
     public MiniPlayerWindow()
     {
         InitializeComponent();
-        Opened += OnOpened;
-    }
-
-    private void OnOpened(object? sender, System.EventArgs e)
-    {
-        // Park in the top-right corner of the working area.
-        Screen? screen = Screens.Primary ?? Screens.ScreenFromWindow(this);
-        if (screen is null)
-        {
-            return;
-        }
-
-        PixelRect area = screen.WorkingArea;
-        double scale = RenderScaling;
-        int width = (int)(Width * scale);
-        Position = new PixelPoint(area.Right - width - 24, area.Y + 24);
     }
 
     private void OnRootPointerPressed(object? sender, PointerPressedEventArgs e)
