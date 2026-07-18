@@ -92,6 +92,7 @@ public partial class App : Application, IDisposable
             _youTubeMediaService);
         var shuffleViewModel = new ShuffleViewModel(playbackViewModel);
         var playlistStore = new PlaylistStore(database);
+        var likedAlbumsStore = new LikedAlbumsStore(database);
         var playlistViewModel = new PlaylistViewModel(
             playbackViewModel,
             new OpenFileDialogService(),
@@ -113,7 +114,8 @@ public partial class App : Application, IDisposable
             playbackViewModel,
             playlistStore,
             albumArtService,
-            notifications);
+            notifications,
+            likedAlbumsStore);
         // Search's "Create one" opens the same create-playlist dialog as the
         // sidebar plus button, which lives with the playlist page.
         searchViewModel.PromptPlaylistDetails =
@@ -128,7 +130,6 @@ public partial class App : Application, IDisposable
             notifications,
             playlistStore,
             _youTubeMediaService);
-        var likedAlbumsStore = new LikedAlbumsStore(database);
         var likedAlbumsViewModel = new LikedAlbumsViewModel(
             likedAlbumsStore,
             albumViewModel,

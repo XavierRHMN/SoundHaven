@@ -16,6 +16,16 @@ using SoundHaven.Stores;
 
 namespace SoundHaven.ViewModels;
 
+/// <summary>Search result filter pills, in display order.</summary>
+public enum SearchSection
+{
+    Top,
+    Albums,
+    Songs,
+    Artists,
+    Videos
+}
+
 /// <summary>Numbered search result row for the TIDAL-style results table.</summary>
 public sealed class SearchResultRow : ViewModelBase
 {
@@ -52,8 +62,11 @@ public sealed class SearchViewModel : ViewModelBase
     private readonly PlaylistStore _playlistStore;
     private readonly IAlbumArtService _albumArtService;
     private readonly IUserNotificationService _notifications;
+    private readonly LikedAlbumsStore _likedAlbumsStore;
     private List<Song> _songResults = [];
     private List<Song> _videoResults = [];
+    private List<Song> _albumResults = [];
+    private List<Song> _artistResults = [];
     private CancellationTokenSource _searchCancellation = new();
     private CancellationTokenSource _lifetimeCancellation = new();
     private string _searchQuery = string.Empty;
@@ -62,7 +75,7 @@ public sealed class SearchViewModel : ViewModelBase
     private Song? _selectedSong;
     private Song? _menuSong;
     private bool _isScrollViewerHittestable = true;
-    private bool _searchSongs = true;
+    private SearchSection _activeSection = SearchSection.Top;
     private bool _showResults;
 
     public SearchViewModel(
@@ -70,7 +83,8 @@ public sealed class SearchViewModel : ViewModelBase
         PlaybackViewModel playbackViewModel,
         PlaylistStore playlistStore,
         IAlbumArtService albumArtService,
-        IUserNotificationService notifications)
+        IUserNotificationService notifications,
+        LikedAlbumsStore likedAlbumsStore)
     {
         _youTubeMediaService = youTubeMediaService
             ?? throw new ArgumentNullException(nameof(youTubeMediaService));
@@ -78,6 +92,8 @@ public sealed class SearchViewModel : ViewModelBase
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _playlistStore = playlistStore
             ?? throw new ArgumentNullException(nameof(playlistStore));
+        _likedAlbumsStore = likedAlbumsStore
+            ?? throw new ArgumentNullException(nameof(likedAlbumsStore));
         _albumArtService = albumArtService
             ?? throw new ArgumentNullException(nameof(albumArtService));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
@@ -115,8 +131,8 @@ public sealed class SearchViewModel : ViewModelBase
             RemoveDownload,
             song => song is not null && IsRemovableDownload(song));
         ClearSearchCommand = new RelayCommand(() => SearchQuery = string.Empty);
-        SelectSongsCommand = new RelayCommand(() => SearchSongs = true);
-        SelectVideosCommand = new RelayCommand(() => SearchSongs = false);
+        SelectSectionCommand = new RelayCommand<SearchSection>(section => ActiveSection = section);
+        SelectArtistCommand = new RelayCommand<Song>(SelectArtist, artist => artist is not null);
         ToggleLikeCommand = new RelayCommand<Song>(ToggleLike, song => song is not null);
 
         _playbackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
@@ -159,11 +175,35 @@ public sealed class SearchViewModel : ViewModelBase
         }
     }
 
-    public bool ShowNoResults => ShowResults && !IsLoading && ResultRows.Count == 0;
+    public bool ShowNoResults => ShowResults
+        && !IsLoading
+        && ResultRows.Count == 0
+        && AlbumResults.Count == 0
+        && ArtistResults.Count == 0;
 
     public ObservableCollection<Song> SearchResults { get; }
 
     public ObservableCollection<SearchResultRow> ResultRows { get; } = [];
+
+    /// <summary>Album cards for the active section (top few on Top, all on Albums).</summary>
+    public ObservableCollection<Song> AlbumResults { get; } = [];
+
+    /// <summary>Artist cards for the active section (top few on Top, all on Artists).</summary>
+    public ObservableCollection<Song> ArtistResults { get; } = [];
+
+    public bool ShowSongsTable =>
+        ActiveSection is SearchSection.Top or SearchSection.Songs or SearchSection.Videos
+        && ResultRows.Count > 0;
+
+    public bool ShowTopSongsHeader => IsTopSelected && ResultRows.Count > 0;
+
+    public bool ShowAlbumsStrip =>
+        ActiveSection is SearchSection.Top or SearchSection.Albums
+        && AlbumResults.Count > 0;
+
+    public bool ShowArtistsStrip =>
+        ActiveSection is SearchSection.Top or SearchSection.Artists
+        && ArtistResults.Count > 0;
 
     public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
 
@@ -198,31 +238,46 @@ public sealed class SearchViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// When true, search prefers music/audio-oriented results; otherwise general videos.
+    /// The active result filter pill. All result sets are fetched together, so
+    /// switching just re-displays cached results — no new network request.
     /// </summary>
-    public bool SearchSongs
+    public SearchSection ActiveSection
     {
-        get => _searchSongs;
+        get => _activeSection;
         set
         {
-            if (!SetProperty(ref _searchSongs, value))
+            if (!SetProperty(ref _activeSection, value))
             {
                 return;
             }
 
-            // Both result sets are fetched together, so switching pills just
-            // re-displays the cached results — no new network request.
+            OnPropertyChanged(nameof(IsTopSelected));
+            OnPropertyChanged(nameof(IsAlbumsSelected));
+            OnPropertyChanged(nameof(IsSongsSelected));
+            OnPropertyChanged(nameof(IsArtistsSelected));
+            OnPropertyChanged(nameof(IsVideosSelected));
             DisplayCurrentResults();
         }
     }
+
+    public bool IsTopSelected => ActiveSection == SearchSection.Top;
+
+    public bool IsAlbumsSelected => ActiveSection == SearchSection.Albums;
+
+    public bool IsSongsSelected => ActiveSection == SearchSection.Songs;
+
+    public bool IsArtistsSelected => ActiveSection == SearchSection.Artists;
+
+    public bool IsVideosSelected => ActiveSection == SearchSection.Videos;
 
     public AsyncRelayCommand SearchCommand { get; }
 
     public RelayCommand ClearSearchCommand { get; }
 
-    public RelayCommand SelectSongsCommand { get; }
+    public RelayCommand<SearchSection> SelectSectionCommand { get; }
 
-    public RelayCommand SelectVideosCommand { get; }
+    /// <summary>Clicking an artist card searches that artist's songs.</summary>
+    public RelayCommand<Song> SelectArtistCommand { get; }
 
     public AsyncRelayCommand<Song> PlaySongCommand { get; }
 
@@ -341,19 +396,27 @@ public sealed class SearchViewModel : ViewModelBase
         SelectedSong = null;
         _songResults = [];
         _videoResults = [];
+        _albumResults = [];
+        _artistResults = [];
         SearchResults.Clear();
         ResultRows.Clear();
+        AlbumResults.Clear();
+        ArtistResults.Clear();
         try
         {
-            // Search songs and videos for the same query at once so switching
+            // Search every section for the same query at once so switching
             // pills is instant.
             Task<List<Song>> songsTask = SafeSearchAsync(SearchQuery, true, nextCancellation.Token);
             Task<List<Song>> videosTask = SafeSearchAsync(SearchQuery, false, nextCancellation.Token);
-            await Task.WhenAll(songsTask, videosTask);
+            Task<List<Song>> albumsTask = SafeSearchAlbumsAsync(SearchQuery, nextCancellation.Token);
+            Task<List<Song>> artistsTask = SafeSearchArtistsAsync(SearchQuery, nextCancellation.Token);
+            await Task.WhenAll(songsTask, videosTask, albumsTask, artistsTask);
             nextCancellation.Token.ThrowIfCancellationRequested();
 
             _songResults = await songsTask;
             _videoResults = await videosTask;
+            _albumResults = await albumsTask;
+            _artistResults = await artistsTask;
             DisplayCurrentResults();
         }
         finally
@@ -365,6 +428,98 @@ public sealed class SearchViewModel : ViewModelBase
                 OnPropertyChanged(nameof(ShowNoResults));
             }
         }
+    }
+
+    private async Task<List<Song>> SafeSearchAlbumsAsync(
+        string query,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            IReadOnlyList<YouTubeSearchResult> results = await _youTubeMediaService.SearchAlbumsAsync(
+                query,
+                12,
+                cancellationToken);
+
+            var albums = new List<Song>(results.Count);
+            foreach (YouTubeSearchResult result in results)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var album = new Song
+                {
+                    Title = result.Title,
+                    Album = result.Album ?? result.Title,
+                    Artist = result.Author,
+                    ThumbnailUrl = result.ThumbnailUrl,
+                    ArtworkUrl = result.ThumbnailUrl,
+                    Year = result.Year
+                };
+                album.IsAlbumLiked = _likedAlbumsStore.IsLiked(album);
+                albums.Add(album);
+                _ = LoadResultThumbnailAsync(album, cancellationToken);
+            }
+
+            return albums;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Search (albums) failed: {exception.Message}");
+            return [];
+        }
+    }
+
+    private async Task<List<Song>> SafeSearchArtistsAsync(
+        string query,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            IReadOnlyList<YouTubeSearchResult> results = await _youTubeMediaService.SearchArtistsAsync(
+                query,
+                8,
+                cancellationToken);
+
+            var artists = new List<Song>(results.Count);
+            foreach (YouTubeSearchResult result in results)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var artist = new Song
+                {
+                    Title = result.Title,
+                    Artist = result.Author,
+                    ThumbnailUrl = result.ThumbnailUrl
+                };
+                artists.Add(artist);
+                _ = LoadResultThumbnailAsync(artist, cancellationToken);
+            }
+
+            return artists;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Search (artists) failed: {exception.Message}");
+            return [];
+        }
+    }
+
+    private void SelectArtist(Song? artist)
+    {
+        if (artist is null || string.IsNullOrWhiteSpace(artist.Title))
+        {
+            return;
+        }
+
+        SearchQuery = artist.Title;
+        ActiveSection = SearchSection.Songs;
+        SearchCommand.Execute(null);
     }
 
     private async Task<List<Song>> SafeSearchAsync(
@@ -418,11 +573,19 @@ public sealed class SearchViewModel : ViewModelBase
 
     private void DisplayCurrentResults()
     {
-        List<Song> source = SearchSongs ? _songResults : _videoResults;
+        // The songs table: full list on Songs/Videos, a top-5 preview on Top.
+        List<Song> tableSource = ActiveSection switch
+        {
+            SearchSection.Videos => _videoResults,
+            SearchSection.Top => _songResults.Count > 5 ? _songResults.GetRange(0, 5) : _songResults,
+            SearchSection.Songs => _songResults,
+            _ => []
+        };
+
         SearchResults.Clear();
         ResultRows.Clear();
         int number = 1;
-        foreach (Song song in source)
+        foreach (Song song in tableSource)
         {
             SearchResults.Add(song);
             ResultRows.Add(new SearchResultRow(number++, song)
@@ -431,7 +594,41 @@ public sealed class SearchViewModel : ViewModelBase
             });
         }
 
+        AlbumResults.Clear();
+        if (ActiveSection is SearchSection.Top or SearchSection.Albums)
+        {
+            int albumLimit = ActiveSection == SearchSection.Top ? 6 : _albumResults.Count;
+            foreach (Song album in _albumResults)
+            {
+                if (AlbumResults.Count >= albumLimit)
+                {
+                    break;
+                }
+
+                AlbumResults.Add(album);
+            }
+        }
+
+        ArtistResults.Clear();
+        if (ActiveSection is SearchSection.Top or SearchSection.Artists)
+        {
+            int artistLimit = ActiveSection == SearchSection.Top ? 4 : _artistResults.Count;
+            foreach (Song artist in _artistResults)
+            {
+                if (ArtistResults.Count >= artistLimit)
+                {
+                    break;
+                }
+
+                ArtistResults.Add(artist);
+            }
+        }
+
         UpdatePlayingHighlights();
+        OnPropertyChanged(nameof(ShowSongsTable));
+        OnPropertyChanged(nameof(ShowTopSongsHeader));
+        OnPropertyChanged(nameof(ShowAlbumsStrip));
+        OnPropertyChanged(nameof(ShowArtistsStrip));
         OnPropertyChanged(nameof(ShowNoResults));
     }
 

@@ -63,6 +63,20 @@ public interface IYouTubeMediaService : IDisposable
         string? album,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Album entries for the search results page (title/artist/year/cover;
+    /// no video ids). Soft-fails to an empty list.</summary>
+    Task<IReadOnlyList<YouTubeSearchResult>> SearchAlbumsAsync(
+        string query,
+        int limit,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Artist entries (name + avatar) for the search results page.
+    /// Soft-fails to an empty list.</summary>
+    Task<IReadOnlyList<YouTubeSearchResult>> SearchArtistsAsync(
+        string query,
+        int limit,
+        CancellationToken cancellationToken = default);
+
     Task<YouTubeStreamSource> ResolveStreamAsync(
         string videoId,
         CancellationToken cancellationToken = default);
@@ -190,6 +204,48 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
                 .ConfigureAwait(false);
         }
         catch when (!cancellationToken.IsCancellationRequested)
+        {
+            return Array.Empty<YouTubeSearchResult>();
+        }
+    }
+
+    public async Task<IReadOnlyList<YouTubeSearchResult>> SearchAlbumsAsync(
+        string query,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _youTubeMusicSearch
+                .SearchAlbumsAsync(query, limit, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            return Array.Empty<YouTubeSearchResult>();
+        }
+    }
+
+    public async Task<IReadOnlyList<YouTubeSearchResult>> SearchArtistsAsync(
+        string query,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _youTubeMusicSearch
+                .SearchArtistsAsync(query, limit, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
         {
             return Array.Empty<YouTubeSearchResult>();
         }

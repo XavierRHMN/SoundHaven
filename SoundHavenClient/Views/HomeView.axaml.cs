@@ -180,6 +180,23 @@ public partial class HomeView : UserControl
         e.Handled = true;
     }
 
+    private void OnArtistCardPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed
+            || sender is not Control control
+            || control.DataContext is not Song artist
+            || DataContext is not HomeViewModel { Search: { } search })
+        {
+            return;
+        }
+
+        e.Handled = true;
+        if (search.SelectArtistCommand.CanExecute(artist))
+        {
+            search.SelectArtistCommand.Execute(artist);
+        }
+    }
+
     private void OnSearchOverflowClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button button

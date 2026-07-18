@@ -24,9 +24,10 @@ internal sealed class YouTubeMusicSearchClient
     // Public Innertube key used by the YouTube Music web client (not a private developer secret).
     private const string InnertubeApiKey = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
     private const string ClientVersion = "1.20250317.01.00";
-    // Filter params for songs-only / albums-only catalogue search (from ytmusicapi).
+    // Filter params for songs/albums/artists catalogue search (from ytmusicapi).
     private const string SongsFilterParams = "EgWKAQIIAWoMEA4QChADEAQQCRAF";
     private const string AlbumsFilterParams = "EgWKAQIYAWoMEA4QChADEAQQCRAF";
+    private const string ArtistsFilterParams = "EgWKAQIgAWoMEA4QChADEAQQCRAF";
 
     private readonly HttpClient _httpClient;
 
@@ -187,6 +188,155 @@ internal sealed class YouTubeMusicSearchClient
         return tracks.Count > 0
             ? new YouTubeMusicAlbum(matchedTitle, matchedArtist, year, thumbnailUrl, tracks)
             : null;
+    }
+
+    /// <summary>
+    /// Albums-filtered catalogue search for display (search results page): each
+    /// entry carries the album title (as Album), artist, year, and cover. The
+    /// VideoId is empty — opening one goes through the album page's resolution.
+    /// </summary>
+    public async Task<IReadOnlyList<YouTubeSearchResult>> SearchAlbumsAsync(
+        string query,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return Array.Empty<YouTubeSearchResult>();
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
+
+        using JsonDocument? document = await SearchRawAsync(
+                query,
+                AlbumsFilterParams,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (document is null)
+        {
+            return Array.Empty<YouTubeSearchResult>();
+        }
+
+        var results = new List<YouTubeSearchResult>(limit);
+        foreach (JsonElement item in EnumerateSongItems(document.RootElement))
+        {
+            if (!TryGetPropertyPath(
+                    item,
+                    out JsonElement browseIdElement,
+                    "navigationEndpoint",
+                    "browseEndpoint",
+                    "browseId")
+                || browseIdElement.ValueKind != JsonValueKind.String)
+            {
+                continue;
+            }
+
+            string? title = GetFlexText(item, columnIndex: 0);
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                continue;
+            }
+
+            string[] subtitleParts = GetFlexRuns(item, columnIndex: 1);
+            string? artist = subtitleParts.FirstOrDefault(part =>
+                !TryParseYear(part, out _)
+                && !LooksLikeDuration(part)
+                && !string.Equals(part, "Album", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(part, "Single", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(part, "EP", StringComparison.OrdinalIgnoreCase));
+            int? year = null;
+            foreach (string part in subtitleParts)
+            {
+                if (TryParseYear(part, out int parsed))
+                {
+                    year = parsed;
+                }
+            }
+
+            results.Add(new YouTubeSearchResult(
+                VideoId: string.Empty,
+                title,
+                artist ?? string.Empty,
+                Album: title,
+                Duration: null,
+                YouTubeThumbnailHelper.UpgradeThumbnailUrl(GetBestThumbnailUrl(item)),
+                ViewCount: 0,
+                year));
+            if (results.Count >= limit)
+            {
+                break;
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>Artists-filtered catalogue search: name plus avatar (VideoId empty).</summary>
+    public async Task<IReadOnlyList<YouTubeSearchResult>> SearchArtistsAsync(
+        string query,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return Array.Empty<YouTubeSearchResult>();
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
+
+        using JsonDocument? document = await SearchRawAsync(
+                query,
+                ArtistsFilterParams,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (document is null)
+        {
+            return Array.Empty<YouTubeSearchResult>();
+        }
+
+        var results = new List<YouTubeSearchResult>(limit);
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (JsonElement item in EnumerateSongItems(document.RootElement))
+        {
+            if (!TryGetPropertyPath(
+                    item,
+                    out JsonElement browseIdElement,
+                    "navigationEndpoint",
+                    "browseEndpoint",
+                    "browseId")
+                || browseIdElement.ValueKind != JsonValueKind.String)
+            {
+                continue;
+            }
+
+            string? name = GetFlexText(item, columnIndex: 0);
+            if (string.IsNullOrWhiteSpace(name) || !seenNames.Add(name))
+            {
+                continue;
+            }
+
+            results.Add(new YouTubeSearchResult(
+                VideoId: string.Empty,
+                name,
+                name,
+                Album: null,
+                Duration: null,
+                YouTubeThumbnailHelper.UpgradeThumbnailUrl(GetBestThumbnailUrl(item)),
+                ViewCount: 0,
+                Year: null));
+            if (results.Count >= limit)
+            {
+                break;
+            }
+        }
+
+        return results;
+    }
+
+    private static bool TryParseYear(string value, out int year)
+    {
+        return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out year)
+            && year is >= 1900 and <= 2100;
     }
 
     private async Task<JsonDocument?> SearchRawAsync(

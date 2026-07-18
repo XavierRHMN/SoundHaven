@@ -543,19 +543,36 @@
                         Command="{Binding ShowUploadsCommand}" />
             </StackPanel>
 
-            <!-- Search mode pills (shown while searching) -->
+            <!-- Search section pills (shown while searching) -->
             <StackPanel Orientation="Horizontal"
                         Spacing="10"
                         VerticalAlignment="Center"
                         IsVisible="{Binding Search.ShowResults}">
                 <Button Classes="HomePill"
-                        Classes.Selected="{Binding Search.SearchSongs}"
-                        Content="Songs"
-                        Command="{Binding Search.SelectSongsCommand}" />
+                        Classes.Selected="{Binding Search.IsTopSelected}"
+                        Content="Top results"
+                        Command="{Binding Search.SelectSectionCommand}"
+                        CommandParameter="{x:Static vm:SearchSection.Top}" />
                 <Button Classes="HomePill"
-                        Classes.Selected="{Binding !Search.SearchSongs}"
+                        Classes.Selected="{Binding Search.IsAlbumsSelected}"
+                        Content="Albums"
+                        Command="{Binding Search.SelectSectionCommand}"
+                        CommandParameter="{x:Static vm:SearchSection.Albums}" />
+                <Button Classes="HomePill"
+                        Classes.Selected="{Binding Search.IsSongsSelected}"
+                        Content="Songs"
+                        Command="{Binding Search.SelectSectionCommand}"
+                        CommandParameter="{x:Static vm:SearchSection.Songs}" />
+                <Button Classes="HomePill"
+                        Classes.Selected="{Binding Search.IsArtistsSelected}"
+                        Content="Artists"
+                        Command="{Binding Search.SelectSectionCommand}"
+                        CommandParameter="{x:Static vm:SearchSection.Artists}" />
+                <Button Classes="HomePill"
+                        Classes.Selected="{Binding Search.IsVideosSelected}"
                         Content="Videos"
-                        Command="{Binding Search.SelectVideosCommand}" />
+                        Command="{Binding Search.SelectSectionCommand}"
+                        CommandParameter="{x:Static vm:SearchSection.Videos}" />
             </StackPanel>
 
             <!-- Account chips: sign in for personalized recommendations -->
@@ -929,10 +946,82 @@
                               Theme="{StaticResource MaterialModernScrollViewer}"
                               IsVisible="{Binding !Search.IsLoading}"
                               IsHitTestVisible="{Binding Search.IsScrollViewerHittestable}">
+                    <StackPanel Spacing="8">
+                    <!-- Artists (Top results preview / full Artists section) -->
+                    <StackPanel Spacing="10"
+                                Margin="0,4,0,8"
+                                IsVisible="{Binding Search.ShowArtistsStrip}">
+                        <TextBlock Text="Artists"
+                                   Classes="SectionTitle CardAligned"
+                                   IsVisible="{Binding Search.IsTopSelected}" />
+                        <ItemsControl ItemsSource="{Binding Search.ArtistResults}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:Song">
+                                    <Border Classes="SongCard"
+                                            PointerPressed="OnArtistCardPressed"
+                                            ToolTip.Tip="See this artist's songs">
+                                        <StackPanel Spacing="10" Width="160">
+                                            <Border Width="140"
+                                                    Height="140"
+                                                    CornerRadius="70"
+                                                    ClipToBounds="True"
+                                                    Background="#2A2A2A"
+                                                    HorizontalAlignment="Center">
+                                                <Panel>
+                                                    <Border Background="#3A3A3A"
+                                                            IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNull}}" />
+                                                    <Image Source="{Binding Artwork}"
+                                                           Stretch="UniformToFill"
+                                                           IsVisible="{Binding Artwork, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                                </Panel>
+                                            </Border>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Text="{Binding Title}"
+                                                           Classes="CardTitle"
+                                                           TextAlignment="Center" />
+                                                <TextBlock Text="Artist"
+                                                           Classes="CardSubtitle"
+                                                           TextAlignment="Center" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- Albums (Top results preview / full Albums section) -->
+                    <StackPanel Spacing="10"
+                                Margin="0,4,0,8"
+                                IsVisible="{Binding Search.ShowAlbumsStrip}">
+                        <TextBlock Text="Albums"
+                                   Classes="SectionTitle CardAligned"
+                                   IsVisible="{Binding Search.IsTopSelected}" />
+                        <ItemsControl ItemsSource="{Binding Search.AlbumResults}"
+                                      ItemTemplate="{StaticResource AlbumCardTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <TextBlock Text="Songs"
+                               Classes="SectionTitle CardAligned"
+                               Margin="10,4,0,0"
+                               IsVisible="{Binding Search.ShowTopSongsHeader}" />
+
                     <ListBox x:Name="SearchResultsList"
                              Classes="SearchResults"
                              Margin="0,0,16,0"
                              ItemsSource="{Binding Search.ResultRows}"
+                             IsVisible="{Binding Search.ShowSongsTable}"
                              SelectionChanged="OnSearchRowSelectionChanged">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="vm:SearchResultRow">
@@ -1065,6 +1154,7 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
+                    </StackPanel>
                 </ScrollViewer>
 
                 <TextBlock Text="No results found — try a different search."
