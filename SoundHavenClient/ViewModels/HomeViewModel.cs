@@ -29,6 +29,7 @@ public sealed class HomeViewModel : ViewModelBase
     private readonly IYouTubeMediaService _youTubeMediaService;
     private readonly IAlbumArtService _albumArtService;
     private readonly DislikedSongsStore _dislikedSongs;
+    private readonly LikedAlbumsStore _likedAlbumsStore;
     private readonly CancellationTokenSource _lifetimeCancellation = new();
     private Song? _menuSong;
     private bool _showForYou = true;
@@ -50,9 +51,12 @@ public sealed class HomeViewModel : ViewModelBase
         IYouTubeMediaService youTubeMediaService,
         IAlbumArtService albumArtService,
         SearchViewModel searchViewModel,
-        DislikedSongsStore dislikedSongsStore)
+        DislikedSongsStore dislikedSongsStore,
+        LikedAlbumsStore likedAlbumsStore)
     {
         Search = searchViewModel ?? throw new ArgumentNullException(nameof(searchViewModel));
+        _likedAlbumsStore = likedAlbumsStore
+            ?? throw new ArgumentNullException(nameof(likedAlbumsStore));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
         _recentPlaybackStore = recentPlaybackStore
             ?? throw new ArgumentNullException(nameof(recentPlaybackStore));
@@ -83,6 +87,8 @@ public sealed class HomeViewModel : ViewModelBase
         _playlistStore.Playlists.CollectionChanged += OnPlaylistsChanged;
         _recentPlaybackStore.RecentSongs.CollectionChanged += OnRecentSongsChanged;
         _lastFmDataService.AuthenticationStateChanged += OnLastFmAuthenticationChanged;
+        _playlistStore.LikedSongsPlaylist.Songs.CollectionChanged += OnLikeStoresChanged;
+        _likedAlbumsStore.Albums.CollectionChanged += OnLikeStoresChanged;
 
         OpenPlaylistCommand = new RelayCommand<Playlist>(OpenPlaylist, playlist => playlist is not null);
         OpenAlbumCommand = new RelayCommand<Song>(OpenAlbum, album => album is not null);
@@ -109,16 +115,83 @@ public sealed class HomeViewModel : ViewModelBase
         CreatePlaylistAndAddSongCommand = new RelayCommand(
             ExecuteCreatePlaylistAndAddSong,
             () => _menuSong is not null);
+        ToggleSongLikeCommand = new RelayCommand<Song>(ToggleSongLike, song => song is not null);
+        ToggleAlbumLikeCommand = new RelayCommand<Song>(
+            ToggleAlbumLike,
+            album => album is not null);
         ShowForYouCommand = new RelayCommand(() => IsForYouSelected = true);
         ShowUploadsCommand = new RelayCommand(() => IsForYouSelected = false);
         ViewAllUploadsCommand = new RelayCommand(() => IsForYouSelected = false);
         ViewAllRecentlyPlayedCommand = new RelayCommand(() => ShowAllRecentlyPlayed = true);
+
+        RecommendedSongs.CollectionChanged += OnLikeStoresChanged;
+        TopAlbums.CollectionChanged += OnLikeStoresChanged;
+        RecentlyPlayedPreview.CollectionChanged += OnLikeStoresChanged;
+        UploadSongsPreview.CollectionChanged += OnLikeStoresChanged;
 
         RefreshFeaturedPlaylists();
         RefreshUploads();
         RefreshRecentlyPlayedPreview();
         _ = LoadRecommendationsAsync();
         _ = LoadTopAlbumsAsync();
+        RefreshLikeStamps();
+    }
+
+    public RelayCommand<Song> ToggleSongLikeCommand { get; }
+
+    public RelayCommand<Song> ToggleAlbumLikeCommand { get; }
+
+    private void ToggleSongLike(Song? song)
+    {
+        if (song is null)
+        {
+            return;
+        }
+
+        bool nowLiked = _playlistStore.ToggleFavorite(song);
+        song.IsLiked = nowLiked;
+        _notifications.ShowInfo(nowLiked ? "Added to Liked Songs." : "Removed from Liked Songs.");
+    }
+
+    private void ToggleAlbumLike(Song? album)
+    {
+        if (album is null)
+        {
+            return;
+        }
+
+        bool nowLiked = _likedAlbumsStore.Toggle(album);
+        _notifications.ShowInfo(nowLiked
+            ? $"Added “{album.Title}” to Liked Albums."
+            : $"Removed “{album.Title}” from Liked Albums.");
+    }
+
+    private void OnLikeStoresChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        => RefreshLikeStamps();
+
+    // Home cards bind the Song's runtime like flags; re-stamp them whenever the
+    // like stores or the displayed collections change.
+    private void RefreshLikeStamps()
+    {
+        foreach (Song song in RecommendedSongs)
+        {
+            song.IsLiked = _playlistStore.IsFavorite(song);
+        }
+
+        foreach (Song song in RecentlyPlayedPreview)
+        {
+            song.IsLiked = _playlistStore.IsFavorite(song);
+        }
+
+        foreach (Song song in UploadSongsPreview)
+        {
+            song.IsLiked = _playlistStore.IsFavorite(song);
+        }
+
+        foreach (Song album in TopAlbums)
+        {
+            album.IsAlbumLiked = _likedAlbumsStore.IsLiked(album);
+        }
     }
 
     public ObservableCollection<Playlist> FeaturedPlaylists { get; }
@@ -261,6 +334,12 @@ public sealed class HomeViewModel : ViewModelBase
         _playlistStore.Playlists.CollectionChanged -= OnPlaylistsChanged;
         _recentPlaybackStore.RecentSongs.CollectionChanged -= OnRecentSongsChanged;
         _lastFmDataService.AuthenticationStateChanged -= OnLastFmAuthenticationChanged;
+        _playlistStore.LikedSongsPlaylist.Songs.CollectionChanged -= OnLikeStoresChanged;
+        _likedAlbumsStore.Albums.CollectionChanged -= OnLikeStoresChanged;
+        RecommendedSongs.CollectionChanged -= OnLikeStoresChanged;
+        TopAlbums.CollectionChanged -= OnLikeStoresChanged;
+        RecentlyPlayedPreview.CollectionChanged -= OnLikeStoresChanged;
+        UploadSongsPreview.CollectionChanged -= OnLikeStoresChanged;
         foreach (Playlist playlist in _playlistStore.Playlists)
         {
             playlist.Songs.CollectionChanged -= OnPlaylistSongsChanged;

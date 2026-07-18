@@ -25,6 +25,7 @@ public sealed class ToolbarViewModel : ViewModelBase
     private readonly PlaybackViewModel _playbackViewModel;
     private readonly HomeViewModel _homeViewModel;
     private readonly PlayerViewModel _playerViewModel;
+    private readonly LikedAlbumsViewModel _likedAlbumsViewModel;
     private readonly PlaylistStore _playlistStore;
     private readonly IUserNotificationService _notifications;
     private Playlist? _toolbarSelectedPlaylist;
@@ -37,6 +38,7 @@ public sealed class ToolbarViewModel : ViewModelBase
         PlaybackViewModel playbackViewModel,
         HomeViewModel homeViewModel,
         PlayerViewModel playerViewModel,
+        LikedAlbumsViewModel likedAlbumsViewModel,
         PlaylistStore playlistStore,
         IUserNotificationService notifications)
     {
@@ -48,6 +50,8 @@ public sealed class ToolbarViewModel : ViewModelBase
         _homeViewModel = homeViewModel ?? throw new ArgumentNullException(nameof(homeViewModel));
         _playerViewModel = playerViewModel
             ?? throw new ArgumentNullException(nameof(playerViewModel));
+        _likedAlbumsViewModel = likedAlbumsViewModel
+            ?? throw new ArgumentNullException(nameof(likedAlbumsViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
@@ -78,6 +82,7 @@ public sealed class ToolbarViewModel : ViewModelBase
             () => ShowSystemPlaylist(_playlistStore.LikedSongsPlaylist));
         ShowDownloadedSongsCommand = new RelayCommand(
             () => ShowSystemPlaylist(_playlistStore.DownloadedSongsPlaylist));
+        ShowLikedAlbumsCommand = new RelayCommand(() => ShowView(_likedAlbumsViewModel));
 
         _navigation.PropertyChanged += OnNavigationPropertyChanged;
         _playlistViewModel.PropertyChanged += OnPlaylistViewModelPropertyChanged;
@@ -105,6 +110,11 @@ public sealed class ToolbarViewModel : ViewModelBase
 
     public RelayCommand ShowDownloadedSongsCommand { get; }
 
+    public RelayCommand ShowLikedAlbumsCommand { get; }
+
+    public bool IsLikedAlbumsActive =>
+        ReferenceEquals(_navigation.CurrentViewModel, _likedAlbumsViewModel);
+
     // The system playlists open from their own nav tabs, so no sidebar playlist
     // row should stay highlighted.
     private void ShowSystemPlaylist(Playlist playlist)
@@ -129,6 +139,7 @@ public sealed class ToolbarViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(IsLikedSongsActive));
         OnPropertyChanged(nameof(IsDownloadedSongsActive));
+        OnPropertyChanged(nameof(IsLikedAlbumsActive));
     }
 
     public Playlist? ToolbarSelectedPlaylist

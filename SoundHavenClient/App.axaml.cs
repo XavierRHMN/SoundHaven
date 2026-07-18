@@ -128,6 +128,12 @@ public partial class App : Application, IDisposable
             notifications,
             playlistStore,
             _youTubeMediaService);
+        var likedAlbumsStore = new LikedAlbumsStore(database);
+        var likedAlbumsViewModel = new LikedAlbumsViewModel(
+            likedAlbumsStore,
+            albumViewModel,
+            navigation,
+            notifications);
         var homeViewModel = new HomeViewModel(
             playlistStore,
             recentPlaybackStore,
@@ -140,7 +146,8 @@ public partial class App : Application, IDisposable
             _youTubeMediaService,
             albumArtService,
             searchViewModel,
-            new DislikedSongsStore(database));
+            new DislikedSongsStore(database),
+            likedAlbumsStore);
         navigation.NavigateTo(homeViewModel);
         var toolbarViewModel = new ToolbarViewModel(
             navigation,
@@ -148,6 +155,7 @@ public partial class App : Application, IDisposable
             playbackViewModel,
             homeViewModel,
             playerViewModel,
+            likedAlbumsViewModel,
             playlistStore,
             notifications);
 
@@ -165,6 +173,7 @@ public partial class App : Application, IDisposable
             repeatViewModel,
             searchViewModel,
             albumViewModel,
+            likedAlbumsViewModel,
             playlistStore,
             _audioService,
             notifications);

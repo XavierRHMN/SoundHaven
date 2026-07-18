@@ -11,7 +11,7 @@ namespace SoundHaven.Data
 {
     public class AppDatabase
     {
-        private const int CurrentSchemaVersion = 5;
+        private const int CurrentSchemaVersion = 6;
         private const string DatabaseDirectoryName = "SoundHaven";
         private const string DatabaseFileName = "AppDatabase.db";
         private const string LegacyDatabaseFileName = "AppdataBase.db";
@@ -274,7 +274,72 @@ namespace SoundHaven.Data
                     Title TEXT NOT NULL,
                     Artist TEXT,
                     CreatedAt TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS LikedAlbums (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Artist TEXT,
+                    Title TEXT NOT NULL,
+                    ThumbnailUrl TEXT,
+                    CreatedAt TEXT
                 );";
+            command.ExecuteNonQuery();
+        }
+
+        public List<Song> GetLikedAlbums()
+        {
+            var albums = new List<Song>();
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "SELECT Artist, Title, ThumbnailUrl FROM LikedAlbums ORDER BY Id;";
+            using SqliteDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                string? artist = reader.IsDBNull(0) ? null : reader.GetString(0);
+                string title = reader.GetString(1);
+                string? thumbnailUrl = reader.IsDBNull(2) ? null : reader.GetString(2);
+                albums.Add(new Song
+                {
+                    Title = title,
+                    Album = title,
+                    Artist = artist,
+                    ThumbnailUrl = thumbnailUrl,
+                    ArtworkUrl = thumbnailUrl
+                });
+            }
+
+            return albums;
+        }
+
+        public void AddLikedAlbum(string? artist, string title, string? thumbnailUrl)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(title);
+
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO LikedAlbums (Artist, Title, ThumbnailUrl, CreatedAt)
+                VALUES (@artist, @title, @thumbnailUrl, @createdAt);";
+            command.Parameters.AddWithValue("@artist", (object?)artist ?? DBNull.Value);
+            command.Parameters.AddWithValue("@title", title);
+            command.Parameters.AddWithValue("@thumbnailUrl", (object?)thumbnailUrl ?? DBNull.Value);
+            command.Parameters.AddWithValue("@createdAt", UtcNowText());
+            command.ExecuteNonQuery();
+        }
+
+        public void RemoveLikedAlbum(string? artist, string title)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(title);
+
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                DELETE FROM LikedAlbums
+                WHERE Title = @title COLLATE NOCASE
+                  AND IFNULL(Artist, '') = IFNULL(@artist, '') COLLATE NOCASE;";
+            command.Parameters.AddWithValue("@artist", (object?)artist ?? DBNull.Value);
+            command.Parameters.AddWithValue("@title", title);
             command.ExecuteNonQuery();
         }
 

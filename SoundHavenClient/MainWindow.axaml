@@ -139,6 +139,8 @@
                                         IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsPlaylistVisible}" />
                     <views:AlbumView DataContext="{Binding AlbumViewModel}"
                                      IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsAlbumVisible}" />
+                    <views:LikedAlbumsView DataContext="{Binding LikedAlbumsViewModel}"
+                                           IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsLikedAlbumsVisible}" />
                     <views:PlayerView DataContext="{Binding PlayerViewModel}"
                                       IsVisible="{Binding $parent[Window].((viewModels:MainWindowViewModel)DataContext).IsPlayerVisible}" />
                 </Panel>

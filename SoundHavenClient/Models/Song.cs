@@ -178,6 +178,24 @@ namespace SoundHaven.Models
             set => SetProperty(ref _downloadProgress, value);
         }
 
+        // Runtime-only like states (not persisted): drive card hearts on Home.
+
+        private bool _isLiked;
+        /// <summary>Whether this song is in Liked Songs.</summary>
+        public bool IsLiked
+        {
+            get => _isLiked;
+            set => SetProperty(ref _isLiked, value);
+        }
+
+        private bool _isAlbumLiked;
+        /// <summary>Whether this album entry is in Liked Albums.</summary>
+        public bool IsAlbumLiked
+        {
+            get => _isAlbumLiked;
+            set => SetProperty(ref _isAlbumLiked, value);
+        }
+
         // Selection property
 
         private bool _isSelected;

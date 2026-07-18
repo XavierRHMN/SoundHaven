@@ -198,6 +198,15 @@
             </Button>
 
             <Button Classes="NavItem"
+                    Classes.Selected="{Binding IsLikedAlbumsActive}"
+                    Command="{Binding ShowLikedAlbumsCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/playlists.svg" Width="16" Height="16" />
+                    <TextBlock Classes="ToolbarText" Text="Liked Albums" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <Button Classes="NavItem"
                     Classes.Selected="{Binding IsDownloadedSongsActive}"
                     Command="{Binding ShowDownloadedSongsCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="12">

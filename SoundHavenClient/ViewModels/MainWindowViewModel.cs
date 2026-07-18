@@ -31,6 +31,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         RepeatViewModel repeatViewModel,
         SearchViewModel searchViewModel,
         AlbumViewModel albumViewModel,
+        LikedAlbumsViewModel likedAlbumsViewModel,
         PlaylistStore playlistStore,
         IAudioService audioService,
         NotificationService notifications)
@@ -40,6 +41,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
         PlaylistViewModel = playlistViewModel;
         AlbumViewModel = albumViewModel;
+        LikedAlbumsViewModel = likedAlbumsViewModel;
         HomeViewModel = homeViewModel;
         ToolbarViewModel = toolbarViewModel;
         PlaybackViewModel = playbackViewModel;
@@ -102,9 +104,13 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public bool IsAlbumVisible => ReferenceEquals(CurrentViewModel, AlbumViewModel);
 
+    public bool IsLikedAlbumsVisible => ReferenceEquals(CurrentViewModel, LikedAlbumsViewModel);
+
     public PlaylistViewModel PlaylistViewModel { get; }
 
     public AlbumViewModel AlbumViewModel { get; }
+
+    public LikedAlbumsViewModel LikedAlbumsViewModel { get; }
 
     public HomeViewModel HomeViewModel { get; }
 
@@ -167,6 +173,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         SearchViewModel.Dispose();
         PlaybackViewModel.Dispose();
         HomeViewModel.Dispose();
+        LikedAlbumsViewModel.Dispose();
         AlbumViewModel.Dispose();
         PlaylistViewModel.Dispose();
         RepeatViewModel.Dispose();
@@ -187,6 +194,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(IsPlaylistVisible));
             OnPropertyChanged(nameof(IsPlayerVisible));
             OnPropertyChanged(nameof(IsAlbumVisible));
+            OnPropertyChanged(nameof(IsLikedAlbumsVisible));
         }
     }
 }
