@@ -460,6 +460,14 @@ public sealed class AudioService : ViewModelBase, IAudioService
         TimeSpan position,
         CancellationToken cancellationToken)
     {
+        // Previously played (or prefetched) tracks live in the on-disk cache;
+        // opening that file skips both stream resolution and the HTTPS probe.
+        string? preCachedPath = _youTubeMediaService.TryGetCachedAudioPath(videoId);
+        if (preCachedPath is not null)
+        {
+            return await CreateLocalReaderAsync(preCachedPath, position, cancellationToken);
+        }
+
         YouTubeStreamSource stream = await _youTubeMediaService.ResolveStreamAsync(
             videoId,
             cancellationToken);

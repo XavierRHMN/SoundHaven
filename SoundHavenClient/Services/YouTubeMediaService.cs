@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -76,16 +77,67 @@ public interface IYouTubeMediaService : IDisposable
         IProgress<double>? progress = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>The on-disk cache path for this video's audio when already cached,
+    /// else null. Playing from the cache skips stream resolution entirely.</summary>
+    string? TryGetCachedAudioPath(string videoId);
+
     string NormalizeVideoId(string value);
 }
 
 public sealed class YouTubeMediaService : IYouTubeMediaService
 {
     private const int MetadataConcurrency = 4;
+    private const long MaxCacheSizeBytes = 500L * 1024 * 1024;
     private readonly YoutubeClient _youtubeClient;
     private readonly HttpClient _httpClient;
     private readonly YouTubeMusicSearchClient _youTubeMusicSearch;
     private readonly SemaphoreSlim _cacheLock = new(1, 1);
+    private readonly ConcurrentDictionary<string, StreamCacheEntry> _streamCache =
+        new(StringComparer.Ordinal);
+
+    // Keeps the streaming cache bounded; least-recently-played files go first.
+    private static void TrimCache(string cacheDirectory, string justWrittenPath)
+    {
+        try
+        {
+            var files = new DirectoryInfo(cacheDirectory)
+                .EnumerateFiles("*.m4a")
+                .OrderBy(file => file.LastAccessTimeUtc)
+                .ToList();
+            long totalBytes = files.Sum(file => file.Length);
+            foreach (FileInfo file in files)
+            {
+                if (totalBytes <= MaxCacheSizeBytes)
+                {
+                    break;
+                }
+
+                if (string.Equals(file.FullName, justWrittenPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    long length = file.Length;
+                    file.Delete();
+                    totalBytes -= length;
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
 
     public YouTubeMediaService(HttpClient httpClient)
     {
@@ -303,14 +355,52 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
         string videoId,
         CancellationToken cancellationToken = default)
     {
-        var media = await ResolveMediaAsync(videoId, cancellationToken).ConfigureAwait(false);
-        return new YouTubeStreamSource(
+        // Stream URLs stay valid for hours; memoizing them makes replays and
+        // previous/next hops skip YouTube's multi-request resolution.
+        string normalizedId = NormalizeVideoId(videoId);
+        if (_streamCache.TryGetValue(normalizedId, out StreamCacheEntry? cached)
+            && DateTimeOffset.UtcNow < cached.ExpiresAt)
+        {
+            return cached.Source;
+        }
+
+        var media = await ResolveMediaAsync(normalizedId, cancellationToken).ConfigureAwait(false);
+        var source = new YouTubeStreamSource(
             media.VideoId,
             new Uri(media.Stream.Url),
             media.Duration,
             media.Stream.Container.Name,
             media.Stream.Bitrate.BitsPerSecond,
             media.Title);
+        _streamCache[normalizedId] = new StreamCacheEntry(source, GetStreamExpiry(source.StreamUri));
+        return source;
+    }
+
+    private sealed record StreamCacheEntry(YouTubeStreamSource Source, DateTimeOffset ExpiresAt);
+
+    // googlevideo URLs carry their validity in an "expire" unix-seconds parameter;
+    // keep a safety margin, and assume half an hour when it's absent.
+    private static DateTimeOffset GetStreamExpiry(Uri streamUri)
+    {
+        try
+        {
+            foreach (string pair in streamUri.Query.TrimStart('?').Split('&'))
+            {
+                if (pair.StartsWith("expire=", StringComparison.OrdinalIgnoreCase)
+                    && long.TryParse(pair.AsSpan("expire=".Length), out long unixSeconds))
+                {
+                    return DateTimeOffset.FromUnixTimeSeconds(unixSeconds) - TimeSpan.FromMinutes(5);
+                }
+            }
+        }
+        catch (FormatException)
+        {
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+        }
+
+        return DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30);
     }
 
     public async Task<Song> DownloadAudioAsync(
@@ -364,20 +454,59 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
         }
     }
 
+    public string? TryGetCachedAudioPath(string videoId)
+    {
+        try
+        {
+            string path = GetCachedAudioPath(NormalizeVideoId(videoId));
+            if (!IsUsableFile(path))
+            {
+                return null;
+            }
+
+            // Playback counts as use for the cache's least-recently-used trimming.
+            try
+            {
+                File.SetLastAccessTimeUtc(path, DateTime.UtcNow);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+
+            return path;
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    private static string GetCacheDirectory() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "SoundHaven",
+        "Cache",
+        "YouTube");
+
+    private static string GetCachedAudioPath(string normalizedId) =>
+        Path.Combine(GetCacheDirectory(), $"{normalizedId}.m4a");
+
     public async Task<string> CacheAudioAsync(
         string videoId,
         IProgress<double>? progress = null,
         CancellationToken cancellationToken = default)
     {
         string normalizedId = NormalizeVideoId(videoId);
-        string cacheDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SoundHaven",
-            "Cache",
-            "YouTube");
+        string cacheDirectory = GetCacheDirectory();
         Directory.CreateDirectory(cacheDirectory);
 
-        string outputPath = Path.Combine(cacheDirectory, $"{normalizedId}.m4a");
+        string outputPath = GetCachedAudioPath(normalizedId);
         if (IsUsableFile(outputPath))
         {
             return outputPath;
@@ -400,6 +529,7 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
                     .DownloadAsync(media.Stream, partialPath, progress, cancellationToken)
                     .ConfigureAwait(false);
                 File.Move(partialPath, outputPath, true);
+                TrimCache(cacheDirectory, outputPath);
                 return outputPath;
             }
             catch

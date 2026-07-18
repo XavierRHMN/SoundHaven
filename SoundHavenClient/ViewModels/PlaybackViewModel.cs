@@ -255,6 +255,9 @@ public sealed class PlaybackViewModel : ViewModelBase
             // Dynamic theming must not delay playback start: fetch artwork and
             // recolour in the background.
             _ = ApplyThemeFromArtworkAsync(song, replacementCancellation.Token);
+            // Warm the next track's audio in the background so the transition
+            // (or a skip) starts from the local cache instead of the network.
+            _ = PrefetchNextTrackAsync(replacementCancellation.Token);
         }
         finally
         {
@@ -797,6 +800,56 @@ public sealed class PlaybackViewModel : ViewModelBase
         }
 
         return wrap ? songs[0] : null;
+    }
+
+    // Pre-downloads the upcoming track into the streaming cache while the current
+    // one plays. Best-effort: it cancels when the user changes tracks and never
+    // surfaces failures. Shuffle is skipped since the next pick is random.
+    private async Task PrefetchNextTrackAsync(CancellationToken cancellationToken)
+    {
+        if (_youTubeMediaService is null || IsShuffleEnabled)
+        {
+            return;
+        }
+
+        try
+        {
+            // Let the current track buffer and start cleanly before spending
+            // bandwidth on the next one.
+            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
+
+            Song? next = ManualQueue.Count > 0
+                ? ManualQueue[0]
+                : GetNextSong(wrap: _repeatViewModel.RepeatMode == RepeatMode.All);
+            if (next is null
+                || (!string.IsNullOrWhiteSpace(next.FilePath) && File.Exists(next.FilePath)))
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(next.VideoId))
+            {
+                await EnsurePlayableAsync(next, cancellationToken);
+            }
+
+            if (string.IsNullOrWhiteSpace(next.VideoId)
+                || _youTubeMediaService.TryGetCachedAudioPath(next.VideoId) is not null)
+            {
+                return;
+            }
+
+            await _youTubeMediaService.CacheAudioAsync(
+                next.VideoId,
+                cancellationToken: cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // A manual track change superseded the prefetch.
+        }
+        catch
+        {
+            // Prefetching is opportunistic; playback still streams on demand.
+        }
     }
 
     private async Task HandleTrackEndedAsync()
