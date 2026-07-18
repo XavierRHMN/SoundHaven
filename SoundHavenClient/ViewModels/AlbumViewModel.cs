@@ -183,34 +183,38 @@ public sealed class AlbumViewModel : ViewModelBase
         }
     }
 
-    // An album shares one release year; resolve it once and apply to every track.
+    // Resolve each track's year independently (iTunes track matches are fuzzy, so a
+    // single-seed lookup can miss the whole album) — same approach as the playlist.
     private async Task ResolveAlbumYearAsync(CancellationToken cancellationToken)
     {
-        try
+        var pending = _tracks
+            .Where(track => track.Year is null
+                && !string.IsNullOrWhiteSpace(track.Title)
+                && !string.IsNullOrWhiteSpace(track.Artist))
+            .ToList();
+
+        foreach (Song track in pending)
         {
-            Song? seed = _tracks.FirstOrDefault(track => track.Year is null);
-            if (seed is null)
+            if (cancellationToken.IsCancellationRequested)
             {
                 return;
             }
 
-            int? year = await _albumArtService.GetTrackYearAsync(
-                AlbumArtist,
-                seed.Title,
-                cancellationToken);
-            if (year is null || cancellationToken.IsCancellationRequested)
+            try
             {
-                return;
+                int? year = await _albumArtService.GetTrackYearAsync(
+                    track.Artist,
+                    track.Title,
+                    cancellationToken);
+                if (year is not null)
+                {
+                    track.Year ??= year;
+                }
             }
-
-            foreach (Song track in _tracks)
+            catch
             {
-                track.Year ??= year;
+                // The year is decorative; failures are ignored.
             }
-        }
-        catch
-        {
-            // The year is decorative; failures are ignored.
         }
     }
 
@@ -221,9 +225,30 @@ public sealed class AlbumViewModel : ViewModelBase
             return;
         }
 
+        Song? album = _album;
+        string? coverUrl = album is null
+            ? null
+            : !string.IsNullOrWhiteSpace(album.ArtworkUrl) ? album.ArtworkUrl : album.ThumbnailUrl;
+
         foreach (Song track in _tracks)
         {
-            _playlistStore.AddSongToPlaylist(playlist, track.CloneForQueue());
+            Song clone = track.CloneForQueue();
+
+            // Album tracks carry no per-track art, so give each the album cover —
+            // otherwise the playlist shows gray boxes. ArtworkData is the only
+            // artwork the DB persists, so set it for offline/reload survival.
+            if (album?.ArtworkData is { Length: > 0 } cover)
+            {
+                clone.ArtworkData = cover;
+            }
+
+            if (!string.IsNullOrWhiteSpace(coverUrl))
+            {
+                clone.ArtworkUrl = coverUrl;
+                clone.ThumbnailUrl = coverUrl;
+            }
+
+            _playlistStore.AddSongToPlaylist(playlist, clone);
         }
 
         _notifications.ShowInfo($"Added “{AlbumTitle}” to “{playlist.Name}”.");
