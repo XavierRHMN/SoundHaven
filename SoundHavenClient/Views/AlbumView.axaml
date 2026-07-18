@@ -37,6 +37,29 @@
             <Setter Property="FontWeight" Value="Bold" />
         </Style>
 
+        <Style Selector="Button.AlbumUtility">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Background="Transparent"
+                                      Content="{TemplateBinding Content}"
+                                      Padding="{TemplateBinding Padding}"
+                                      HorizontalContentAlignment="Center"
+                                      VerticalContentAlignment="Center" />
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.AlbumUtility:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Opacity" Value="0.85" />
+        </Style>
+
         <Style Selector="DataGrid">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="RowBackground" Value="Transparent" />
@@ -134,48 +157,67 @@
                 </StackPanel>
             </Grid>
 
-            <StackPanel Grid.Row="1"
-                        Orientation="Horizontal"
-                        Spacing="14"
-                        Margin="0,20,0,8"
-                        VerticalAlignment="Center">
-                <Button Classes="AlbumHeroAction"
-                        Command="{Binding PlayAlbumCommand}"
-                        Background="White"
-                        Foreground="#111111"
-                        BorderThickness="0"
-                        ToolTip.Tip="Play album">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Svg Path="avares://SoundHavenClient/Assets/Icons/play.svg"
-                             Width="22" Height="22"
-                             Css="path { fill: #111111; }" />
-                        <TextBlock Text="Play"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center"
-                                   Foreground="#111111"
-                                   FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
-                    </StackPanel>
-                </Button>
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,20,0,8">
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            Spacing="14"
+                            VerticalAlignment="Center">
+                    <Button Classes="AlbumHeroAction"
+                            Command="{Binding PlayAlbumCommand}"
+                            Background="White"
+                            Foreground="#111111"
+                            BorderThickness="0"
+                            ToolTip.Tip="Play album">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Svg Path="avares://SoundHavenClient/Assets/Icons/play.svg"
+                                 Width="22" Height="22"
+                                 Css="path { fill: #111111; }" />
+                            <TextBlock Text="Play"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       Foreground="#111111"
+                                       FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+                        </StackPanel>
+                    </Button>
 
-                <Button Classes="AlbumHeroAction"
-                        Command="{Binding ShuffleAlbumCommand}"
-                        Background="#2A2A2A"
-                        Foreground="White"
-                        BorderThickness="0"
-                        ToolTip.Tip="Shuffle album">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Svg Path="avares://SoundHavenClient/Assets/Icons/shuffle.svg"
-                             Width="22" Height="22" />
-                        <TextBlock Text="Shuffle"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center"
-                                   Foreground="White"
-                                   FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+                    <Button Classes="AlbumHeroAction"
+                            Command="{Binding ShuffleAlbumCommand}"
+                            Background="#2A2A2A"
+                            Foreground="White"
+                            BorderThickness="0"
+                            ToolTip.Tip="Shuffle album">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Svg Path="avares://SoundHavenClient/Assets/Icons/shuffle.svg"
+                                 Width="22" Height="22" />
+                            <TextBlock Text="Shuffle"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Classes="AlbumUtility"
+                        Width="56"
+                        Height="56"
+                        VerticalAlignment="Center"
+                        Click="OnMoreButtonClick"
+                        ToolTip.Tip="More">
+                    <StackPanel Spacing="4" HorizontalAlignment="Center">
+                        <Svg Path="avares://SoundHavenClient/Assets/Icons/more_vert.svg"
+                             Width="20" Height="20" />
+                        <TextBlock Text="More"
+                                   FontSize="11"
+                                   Foreground="#C8C8C8"
+                                   HorizontalAlignment="Center"
+                                   FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
                     </StackPanel>
                 </Button>
-            </StackPanel>
+            </Grid>
         </Grid>
 
         <!-- Track list -->
@@ -226,6 +268,16 @@
                                        Classes="TrackMeta"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="YEAR" Width="64">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
+                            <TextBlock Text="{Binding Song.Year}"
+                                       Classes="TrackMeta"
+                                       VerticalAlignment="Center" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

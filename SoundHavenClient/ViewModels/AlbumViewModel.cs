@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using SoundHaven.Commands;
 using SoundHaven.Models;
 using SoundHaven.Services;
+using SoundHaven.Stores;
 
 namespace SoundHaven.ViewModels;
 
@@ -22,6 +23,7 @@ public sealed class AlbumViewModel : ViewModelBase
     private readonly ILastFmDataService _lastFmDataService;
     private readonly IAlbumArtService _albumArtService;
     private readonly IUserNotificationService _notifications;
+    private readonly PlaylistStore _playlistStore;
     private readonly ObservableCollection<Song> _tracks = new();
     private readonly ObservableCollection<PlaylistTrackRow> _trackRows = new();
     private Song? _album;
@@ -32,12 +34,14 @@ public sealed class AlbumViewModel : ViewModelBase
         PlaybackViewModel playbackViewModel,
         ILastFmDataService lastFmDataService,
         IAlbumArtService albumArtService,
-        IUserNotificationService notifications)
+        IUserNotificationService notifications,
+        PlaylistStore playlistStore)
     {
         _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _lastFmDataService = lastFmDataService ?? throw new ArgumentNullException(nameof(lastFmDataService));
         _albumArtService = albumArtService ?? throw new ArgumentNullException(nameof(albumArtService));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
 
         PlayAlbumCommand = new AsyncRelayCommand(
             () => PlayTrackAsync(_tracks.FirstOrDefault()),
@@ -51,9 +55,15 @@ public sealed class AlbumViewModel : ViewModelBase
             PlayTrackAsync,
             song => song is not null,
             exception => _notifications.ShowError(exception.Message));
+        AddAlbumToPlaylistCommand = new RelayCommand<Playlist>(
+            AddAlbumToPlaylist,
+            playlist => playlist is { Id: > 0 } && _tracks.Count > 0);
 
         _playbackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
     }
+
+    /// <summary>Saved playlists, for the header "Add to playlist" menu.</summary>
+    public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
 
     /// <summary>The album header song (Title/Album = name, Artist, Artwork).</summary>
     public Song? Album
@@ -115,6 +125,8 @@ public sealed class AlbumViewModel : ViewModelBase
 
     public AsyncRelayCommand<Song> PlayTrackCommand { get; }
 
+    public RelayCommand<Playlist> AddAlbumToPlaylistCommand { get; }
+
     /// <summary>Loads the album's cover and track list, replacing whatever was shown.</summary>
     public async Task ShowAlbumAsync(Song album)
     {
@@ -153,6 +165,7 @@ public sealed class AlbumViewModel : ViewModelBase
             }
 
             RebuildTrackRows();
+            _ = ResolveAlbumYearAsync(cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -168,6 +181,52 @@ public sealed class AlbumViewModel : ViewModelBase
             PlayAlbumCommand.RaiseCanExecuteChanged();
             ShuffleAlbumCommand.RaiseCanExecuteChanged();
         }
+    }
+
+    // An album shares one release year; resolve it once and apply to every track.
+    private async Task ResolveAlbumYearAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            Song? seed = _tracks.FirstOrDefault(track => track.Year is null);
+            if (seed is null)
+            {
+                return;
+            }
+
+            int? year = await _albumArtService.GetTrackYearAsync(
+                AlbumArtist,
+                seed.Title,
+                cancellationToken);
+            if (year is null || cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            foreach (Song track in _tracks)
+            {
+                track.Year ??= year;
+            }
+        }
+        catch
+        {
+            // The year is decorative; failures are ignored.
+        }
+    }
+
+    private void AddAlbumToPlaylist(Playlist? playlist)
+    {
+        if (playlist is null || playlist.Id <= 0 || _tracks.Count == 0)
+        {
+            return;
+        }
+
+        foreach (Song track in _tracks)
+        {
+            _playlistStore.AddSongToPlaylist(playlist, track.CloneForQueue());
+        }
+
+        _notifications.ShowInfo($"Added “{AlbumTitle}” to “{playlist.Name}”.");
     }
 
     private async Task EnsureCoverAsync(Song album, CancellationToken cancellationToken)
