@@ -75,6 +75,11 @@
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
 
+        <!-- Liked Songs name tracks the dynamic accent like its tile. -->
+        <Style Selector="TextBlock.PlaylistName.LikedName">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
+        </Style>
+
         <Style Selector="TextBlock.PlaylistCount">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="#8A8A8A" />
@@ -255,14 +260,15 @@
                                                 VerticalAlignment="Stretch"
                                                 Background="Black">
                                             <Border Background="Black"
-                                                    BorderBrush="White"
+                                                    BorderBrush="{DynamicResource PrimaryColor}"
                                                     BorderThickness="1.5"
                                                     CornerRadius="6">
-                                                <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
-                                                     Width="22" Height="22"
-                                                     HorizontalAlignment="Center"
-                                                     VerticalAlignment="Center"
-                                                     Margin="0,0,1.5,0" />
+                                                <PathIcon Width="22" Height="22"
+                                                          Foreground="{DynamicResource PrimaryColor}"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          Margin="0,0,1.5,0"
+                                                          Data="M6 13c0 1.105-1.12 2-2.5 2S1 14.105 1 13c0-1.104 1.12-2 2.5-2s2.5.896 2.5 2zm9-2c0 1.105-1.12 2-2.5 2s-2.5-.895-2.5-2 1.12-2 2.5-2 2.5.895 2.5 2zM14 11V2h1v9zM6 3v10H5V3zM5 2.905a1 1 0 0 1 .9-.995l8-.8a1 1 0 0 1 1.1.995V3L5 4z" />
                                             </Border>
                                         </Border>
 
@@ -283,7 +289,9 @@
                                             VerticalAlignment="Center"
                                             Spacing="2"
                                             IsHitTestVisible="False">
-                                    <TextBlock Text="{Binding Name}" Classes="PlaylistName" />
+                                    <TextBlock Text="{Binding Name}"
+                                               Classes="PlaylistName"
+                                               Classes.LikedName="{Binding IsLikedSongs}" />
                                     <TextBlock Text="{Binding ItemCountText}" Classes="PlaylistCount" />
                                 </StackPanel>
 

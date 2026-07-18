@@ -28,6 +28,14 @@
             <Setter Property="FontSize" Value="13" />
         </Style>
 
+        <!-- Playlist header title: white normally, dynamic accent for Liked Songs. -->
+        <Style Selector="TextBlock.HeaderTitle">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="TextBlock.HeaderTitle.LikedTitle">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
+        </Style>
+
         <Style Selector="TextBlock.TrackTitle">
             <Setter Property="FontFamily"
                     Value="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
@@ -260,14 +268,15 @@
                                 VerticalAlignment="Stretch"
                                 Background="Black">
                             <Border Background="Black"
-                                    BorderBrush="White"
+                                    BorderBrush="{DynamicResource PrimaryColor}"
                                     BorderThickness="3"
                                     CornerRadius="16">
-                                <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
-                                     Width="150" Height="150"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center"
-                                     Margin="0,0,10,0"/>
+                                <PathIcon Width="150" Height="150"
+                                          Foreground="{DynamicResource PrimaryColor}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,10,0"
+                                          Data="M6 13c0 1.105-1.12 2-2.5 2S1 14.105 1 13c0-1.104 1.12-2 2.5-2s2.5.896 2.5 2zm9-2c0 1.105-1.12 2-2.5 2s-2.5-.895-2.5-2 1.12-2 2.5-2 2.5.895 2.5 2zM14 11V2h1v9zM6 3v10H5V3zM5 2.905a1 1 0 0 1 .9-.995l8-.8a1 1 0 0 1 1.1.995V3L5 4z" />
                             </Border>
                         </Border>
                     </Panel>
@@ -281,7 +290,8 @@
                         <TextBlock Text="{Binding PlaylistName}"
                                    FontSize="56"
                                    FontWeight="Bold"
-                                   Foreground="White"
+                                   Classes="HeaderTitle"
+                                   Classes.LikedTitle="{Binding IsLikedSongsPlaylist}"
                                    LineHeight="64"
                                    TextTrimming="CharacterEllipsis"
                                    FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />

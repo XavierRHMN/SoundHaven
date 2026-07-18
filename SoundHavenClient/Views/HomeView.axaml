@@ -211,6 +211,11 @@
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
 
+        <!-- Liked Songs card name tracks the dynamic accent like its tile. -->
+        <Style Selector="TextBlock.RowTitle.LikedName">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
+        </Style>
+
         <Style Selector="TextBlock.RowTitle.Playing">
             <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
         </Style>
@@ -600,20 +605,23 @@
                                                             VerticalAlignment="Stretch"
                                                             Background="Black">
                                                         <Border Background="Black"
-                                                                BorderBrush="White"
+                                                                BorderBrush="{DynamicResource PrimaryColor}"
                                                                 BorderThickness="1.5"
                                                                 CornerRadius="6">
-                                                            <Svg Path="avares://SoundHavenClient/Assets/Icons/liked_note.svg"
-                                                                 Width="26" Height="26"
-                                                                 HorizontalAlignment="Center"
-                                                                 VerticalAlignment="Center"
-                                                                 Margin="0,0,1.7,0" />
+                                                            <PathIcon Width="26" Height="26"
+                                                                      Foreground="{DynamicResource PrimaryColor}"
+                                                                      HorizontalAlignment="Center"
+                                                                      VerticalAlignment="Center"
+                                                                      Margin="0,0,1.7,0"
+                                                                      Data="M6 13c0 1.105-1.12 2-2.5 2S1 14.105 1 13c0-1.104 1.12-2 2.5-2s2.5.896 2.5 2zm9-2c0 1.105-1.12 2-2.5 2s-2.5-.895-2.5-2 1.12-2 2.5-2 2.5.895 2.5 2zM14 11V2h1v9zM6 3v10H5V3zM5 2.905a1 1 0 0 1 .9-.995l8-.8a1 1 0 0 1 1.1.995V3L5 4z" />
                                                         </Border>
                                                     </Border>
                                                 </Panel>
                                             </Border>
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                                <TextBlock Text="{Binding Name}" Classes="RowTitle" />
+                                                <TextBlock Text="{Binding Name}"
+                                                           Classes="RowTitle"
+                                                           Classes.LikedName="{Binding IsLikedSongs}" />
                                                 <TextBlock Text="{Binding ItemCountText, StringFormat='{}{0} · Created by you'}"
                                                            Classes="RowSubtitle" />
                                             </StackPanel>
