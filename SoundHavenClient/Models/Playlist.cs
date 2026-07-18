@@ -45,6 +45,15 @@ namespace SoundHaven.Models
         /// thumbnail instead of a cover mosaic.</summary>
         public bool IsLikedSongs { get; set; }
 
+        /// <summary>True for the single system "Downloaded Songs" playlist, which is
+        /// auto-created, pinned under Liked Songs, cannot be deleted, and mirrors
+        /// every offline download rather than manual membership.</summary>
+        public bool IsDownloads { get; set; }
+
+        /// <summary>System playlists (Liked / Downloaded) can't be edited or deleted
+        /// and render their accent-colored icon tile instead of song artwork.</summary>
+        public bool IsSystemPlaylist => IsLikedSongs || IsDownloads;
+
         /// <summary>UTC creation/last-modified stamps persisted in SQLite (null for
         /// playlists created before the v3 schema; sorters fall back to Id order).</summary>
         public DateTime? CreatedAtUtc { get; set; }

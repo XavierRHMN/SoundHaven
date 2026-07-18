@@ -102,6 +102,7 @@ public partial class PlaylistView : UserControl
         var addToPlaylist = new MenuItem { Header = "Add to playlist" };
         var otherPlaylists = viewModel.AllPlaylists
             .Where(playlist => playlist.Id > 0
+                && !playlist.IsDownloads
                 && !ReferenceEquals(playlist, viewModel.DisplayedPlaylist))
             .ToList();
         if (otherPlaylists.Count == 0)
@@ -127,12 +128,37 @@ public partial class PlaylistView : UserControl
 
         flyout.Items.Add(addToPlaylist);
 
-        flyout.Items.Add(new MenuItem
+        if (!string.IsNullOrWhiteSpace(song.FilePath))
         {
-            Header = "Remove from playlist",
-            Command = viewModel.RemoveSongFromPlaylistCommand,
-            CommandParameter = song
-        });
+            flyout.Items.Add(new MenuItem
+            {
+                Header = "Show in folder",
+                Command = viewModel.OpenSongFolderCommand,
+                CommandParameter = song
+            });
+        }
+
+        // Downloaded Songs derives its membership from what's on disk, so the row's
+        // removal action is "undownload" rather than plain membership removal
+        // (which the startup reconcile would just re-add).
+        if (viewModel.IsDownloadsPlaylist)
+        {
+            flyout.Items.Add(new MenuItem
+            {
+                Header = "Remove download",
+                Command = viewModel.RemoveDownloadCommand,
+                CommandParameter = song
+            });
+        }
+        else
+        {
+            flyout.Items.Add(new MenuItem
+            {
+                Header = "Remove from playlist",
+                Command = viewModel.RemoveSongFromPlaylistCommand,
+                CommandParameter = song
+            });
+        }
 
         flyout.ShowAt(anchor, showAtPointer);
     }
@@ -156,16 +182,22 @@ public partial class PlaylistView : UserControl
             Header = "Play next",
             Command = viewModel.PlayPlaylistNextCommand
         });
-        flyout.Items.Add(new MenuItem
+
+        // Downloaded Songs membership mirrors the disk; manual add/remove would be
+        // undone by the startup reconcile, so those entries are hidden there.
+        if (!viewModel.IsDownloadsPlaylist)
         {
-            Header = "Add from storage",
-            Command = viewModel.AddSongCommand
-        });
-        flyout.Items.Add(new MenuItem
-        {
-            Header = "Remove songs",
-            Command = viewModel.EnterRemoveSongsCommand
-        });
+            flyout.Items.Add(new MenuItem
+            {
+                Header = "Add from storage",
+                Command = viewModel.AddSongCommand
+            });
+            flyout.Items.Add(new MenuItem
+            {
+                Header = "Remove songs",
+                Command = viewModel.EnterRemoveSongsCommand
+            });
+        }
 
         flyout.ShowAt(button);
     }

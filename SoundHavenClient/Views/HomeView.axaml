@@ -617,12 +617,29 @@
                                                                       Data="F1 M6 13c0 1.105-1.12 2-2.5 2S1 14.105 1 13c0-1.104 1.12-2 2.5-2s2.5.896 2.5 2zm9-2c0 1.105-1.12 2-2.5 2s-2.5-.895-2.5-2 1.12-2 2.5-2 2.5.895 2.5 2zM14 11V2h1v9zM6 3v10H5V3zM5 2.905a1 1 0 0 1 .9-.995l8-.8a1 1 0 0 1 1.1.995V3L5 4z" />
                                                         </Border>
                                                     </Border>
+
+                                                    <!-- Downloaded Songs arrow tile -->
+                                                    <Border IsVisible="{Binding IsDownloads}"
+                                                            HorizontalAlignment="Stretch"
+                                                            VerticalAlignment="Stretch"
+                                                            Background="Black">
+                                                        <Border Background="Black"
+                                                                BorderBrush="{DynamicResource PrimaryColor}"
+                                                                BorderThickness="1.5"
+                                                                CornerRadius="6">
+                                                            <PathIcon Width="26" Height="26"
+                                                                      Foreground="{DynamicResource PrimaryColor}"
+                                                                      HorizontalAlignment="Center"
+                                                                      VerticalAlignment="Center"
+                                                                      Data="M5,20h14v-2H5V20z M19,9h-4V3H9v6H5l7,7L19,9z" />
+                                                        </Border>
+                                                    </Border>
                                                 </Panel>
                                             </Border>
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                                                 <TextBlock Text="{Binding Name}"
                                                            Classes="RowTitle"
-                                                           Classes.LikedName="{Binding IsLikedSongs}" />
+                                                           Classes.LikedName="{Binding IsSystemPlaylist}" />
                                                 <TextBlock Text="{Binding ItemCountText, StringFormat='{}{0} · Created by you'}"
                                                            Classes="RowSubtitle" />
                                             </StackPanel>
@@ -930,16 +947,16 @@
                                                          Width="24"
                                                          Height="24" />
 
-                                            <Button Classes="IconOnly"
+                                            <Button Classes="IconOnly RowAction"
                                                     Width="32"
                                                     Height="32"
                                                     IsVisible="{Binding Song.CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
-                                                    Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).Search.OpenFolderCommand}"
+                                                    Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).Search.RemoveDownloadCommand}"
                                                     CommandParameter="{Binding Song}"
-                                                    ToolTip.Tip="Open folder">
-                                                <Svg Path="avares://SoundHavenClient/Assets/Icons/folder.svg"
-                                                     Width="18" Height="18"
-                                                     Opacity="0.75" />
+                                                    ToolTip.Tip="Remove download">
+                                                <PathIcon Width="18" Height="18"
+                                                          Foreground="{DynamicResource PrimaryColor}"
+                                                          Data="M9,16.17 L4.83,12 l-1.42,1.41 L9,19 L21,7 l-1.41,-1.41 z" />
                                             </Button>
                                         </Grid>
 

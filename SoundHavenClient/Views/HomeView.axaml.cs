@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -93,7 +94,7 @@ public partial class HomeView : UserControl
         });
 
         var addToPlaylist = new MenuItem { Header = "Add to playlist" };
-        foreach (Playlist playlist in viewModel.Playlists)
+        foreach (Playlist playlist in viewModel.Playlists.Where(playlist => !playlist.IsDownloads))
         {
             addToPlaylist.Items.Add(new MenuItem
             {
@@ -186,7 +187,7 @@ public partial class HomeView : UserControl
         });
 
         var addToPlaylist = new MenuItem { Header = "Add to playlist" };
-        foreach (Playlist playlist in search.Playlists)
+        foreach (Playlist playlist in search.Playlists.Where(playlist => !playlist.IsDownloads))
         {
             addToPlaylist.Items.Add(new MenuItem
             {
@@ -215,6 +216,17 @@ public partial class HomeView : UserControl
         });
 
         flyout.Items.Add(addToPlaylist);
+
+        if (!string.IsNullOrWhiteSpace(song.FilePath))
+        {
+            flyout.Items.Add(new MenuItem
+            {
+                Header = "Show in folder",
+                Command = search.OpenFolderCommand,
+                CommandParameter = song
+            });
+        }
+
         flyout.ShowAt(button);
         e.Handled = true;
     }

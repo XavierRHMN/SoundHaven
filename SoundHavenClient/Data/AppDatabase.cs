@@ -11,7 +11,7 @@ namespace SoundHaven.Data
 {
     public class AppDatabase
     {
-        private const int CurrentSchemaVersion = 4;
+        private const int CurrentSchemaVersion = 5;
         private const string DatabaseDirectoryName = "SoundHaven";
         private const string DatabaseFileName = "AppDatabase.db";
         private const string LegacyDatabaseFileName = "AppdataBase.db";
@@ -181,6 +181,11 @@ namespace SoundHaven.Data
                 MigratePlaylistsToV4(connection, transaction);
             }
 
+            if (schemaVersion < 5)
+            {
+                MigratePlaylistsToV5(connection, transaction);
+            }
+
             using (var indexCommand = connection.CreateCommand())
             {
                 indexCommand.Transaction = transaction;
@@ -249,7 +254,8 @@ namespace SoundHaven.Data
                     CoverImageData BLOB,
                     CreatedAt TEXT,
                     UpdatedAt TEXT,
-                    IsLikedSongs INTEGER NOT NULL DEFAULT 0
+                    IsLikedSongs INTEGER NOT NULL DEFAULT 0,
+                    IsDownloads INTEGER NOT NULL DEFAULT 0
                 );
 
                 CREATE TABLE IF NOT EXISTS AppSettings (
@@ -352,6 +358,18 @@ namespace SoundHaven.Data
                 "Playlists",
                 "IsLikedSongs",
                 "ALTER TABLE Playlists ADD COLUMN IsLikedSongs INTEGER NOT NULL DEFAULT 0;");
+        }
+
+        private static void MigratePlaylistsToV5(
+            SqliteConnection connection,
+            SqliteTransaction transaction)
+        {
+            EnsureColumnExists(
+                connection,
+                transaction,
+                "Playlists",
+                "IsDownloads",
+                "ALTER TABLE Playlists ADD COLUMN IsDownloads INTEGER NOT NULL DEFAULT 0;");
         }
 
         private static string UtcNowText() =>
@@ -649,6 +667,7 @@ namespace SoundHaven.Data
                         Description = @description,
                         CoverImageData = @cover,
                         IsLikedSongs = @isLiked,
+                        IsDownloads = @isDownloads,
                         UpdatedAt = @now
                     WHERE Id = @id;";
                 updateCommand.Parameters.AddWithValue("@name", playlist.Name);
@@ -659,6 +678,7 @@ namespace SoundHaven.Data
                         ? playlist.CoverImageData
                         : DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@isLiked", playlist.IsLikedSongs ? 1 : 0);
+                updateCommand.Parameters.AddWithValue("@isDownloads", playlist.IsDownloads ? 1 : 0);
                 updateCommand.Parameters.AddWithValue("@now", UtcNowText());
                 updateCommand.Parameters.AddWithValue("@id", playlistId);
                 if (updateCommand.ExecuteNonQuery() == 0)
@@ -671,8 +691,8 @@ namespace SoundHaven.Data
                 using var insertCommand = connection.CreateCommand();
                 insertCommand.Transaction = transaction;
                 insertCommand.CommandText = @"
-                    INSERT INTO Playlists (Name, Description, CoverImageData, CreatedAt, UpdatedAt, IsLikedSongs)
-                    VALUES (@name, @description, @cover, @now, @now, @isLiked);";
+                    INSERT INTO Playlists (Name, Description, CoverImageData, CreatedAt, UpdatedAt, IsLikedSongs, IsDownloads)
+                    VALUES (@name, @description, @cover, @now, @now, @isLiked, @isDownloads);";
                 insertCommand.Parameters.AddWithValue("@name", playlist.Name);
                 insertCommand.Parameters.AddWithValue("@description", playlist.Description ?? string.Empty);
                 insertCommand.Parameters.AddWithValue(
@@ -681,6 +701,7 @@ namespace SoundHaven.Data
                         ? playlist.CoverImageData
                         : DBNull.Value);
                 insertCommand.Parameters.AddWithValue("@isLiked", playlist.IsLikedSongs ? 1 : 0);
+                insertCommand.Parameters.AddWithValue("@isDownloads", playlist.IsDownloads ? 1 : 0);
                 insertCommand.Parameters.AddWithValue("@now", UtcNowText());
                 insertCommand.ExecuteNonQuery();
 
@@ -762,7 +783,7 @@ namespace SoundHaven.Data
             using (var command = connection.CreateCommand())
             {
                 command.CommandText =
-                    "SELECT Id, Name, Description, CoverImageData, CreatedAt, UpdatedAt, IsLikedSongs FROM Playlists ORDER BY Id;";
+                    "SELECT Id, Name, Description, CoverImageData, CreatedAt, UpdatedAt, IsLikedSongs, IsDownloads FROM Playlists ORDER BY Id;";
                 using var reader = command.ExecuteReader();
                 while (reader.Read())
                 {
@@ -776,7 +797,8 @@ namespace SoundHaven.Data
                             : reader.GetFieldValue<byte[]>(3),
                         CreatedAtUtc = ParseTimestamp(reader.IsDBNull(4) ? null : reader.GetString(4)),
                         UpdatedAtUtc = ParseTimestamp(reader.IsDBNull(5) ? null : reader.GetString(5)),
-                        IsLikedSongs = !reader.IsDBNull(6) && reader.GetInt32(6) != 0
+                        IsLikedSongs = !reader.IsDBNull(6) && reader.GetInt32(6) != 0,
+                        IsDownloads = !reader.IsDBNull(7) && reader.GetInt32(7) != 0
                     });
                 }
             }

@@ -59,6 +59,17 @@ public partial class AlbumView : UserControl
 
         var flyout = DarkMenuFlyout.Create(PlacementMode.BottomEdgeAlignedLeft);
         flyout.Items.Add(BuildAddToPlaylistMenu(viewModel, viewModel.AddSongToPlaylistCommand));
+
+        if (!string.IsNullOrWhiteSpace(row.Song.FilePath))
+        {
+            flyout.Items.Add(new MenuItem
+            {
+                Header = "Show in folder",
+                Command = viewModel.OpenSongFolderCommand,
+                CommandParameter = row.Song
+            });
+        }
+
         flyout.ShowAt(button);
     }
 
@@ -68,7 +79,9 @@ public partial class AlbumView : UserControl
     {
         var addToPlaylist = new MenuItem { Header = "Add to playlist" };
 
-        var playlists = viewModel.Playlists.Where(playlist => playlist.Id > 0).ToList();
+        var playlists = viewModel.Playlists
+            .Where(playlist => playlist.Id > 0 && !playlist.IsDownloads)
+            .ToList();
         if (playlists.Count == 0)
         {
             addToPlaylist.Items.Add(new MenuItem { Header = "No playlists yet", IsEnabled = false });

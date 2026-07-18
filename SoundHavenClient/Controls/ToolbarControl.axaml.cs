@@ -121,8 +121,8 @@ public partial class ToolbarControl : UserControl
             CommandParameter = playlist
         });
 
-        // The Liked Songs system playlist can't be edited or deleted.
-        if (!playlist.IsLikedSongs)
+        // The Liked / Downloaded system playlists can't be edited or deleted.
+        if (!playlist.IsSystemPlaylist)
         {
             flyout.Items.Add(new Separator());
             flyout.Items.Add(new MenuItem

@@ -76,6 +76,9 @@ public sealed class AlbumViewModel : ViewModelBase
             ExecuteOpenSongFolderAsync,
             song => song is { FilePath.Length: > 0 },
             exception => _notifications.ShowError(exception.Message));
+        RemoveDownloadCommand = new RelayCommand<Song>(
+            RemoveDownload,
+            song => song is not null && IsRemovableDownload(song));
         ToggleLikeCommand = new RelayCommand<Song>(ToggleLike, song => song is not null);
 
         _playbackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
@@ -85,6 +88,8 @@ public sealed class AlbumViewModel : ViewModelBase
     public AsyncRelayCommand<Song> DownloadSongCommand { get; }
 
     public AsyncRelayCommand<Song> OpenSongFolderCommand { get; }
+
+    public RelayCommand<Song> RemoveDownloadCommand { get; }
 
     public RelayCommand<Song> ToggleLikeCommand { get; }
 
@@ -313,6 +318,8 @@ public sealed class AlbumViewModel : ViewModelBase
         if (!string.IsNullOrWhiteSpace(song.FilePath) && File.Exists(song.FilePath))
         {
             song.CurrentDownloadState = DownloadState.Downloaded;
+            song.DownloadProgress = 100;
+            _playlistStore.MarkDownloaded(song);
             return;
         }
 
@@ -366,6 +373,7 @@ public sealed class AlbumViewModel : ViewModelBase
 
             song.CurrentDownloadState = DownloadState.Downloaded;
             song.DownloadProgress = 100;
+            _playlistStore.MarkDownloaded(song);
             _notifications.ShowInfo($"Downloaded “{song.Title}” to your Music folder.");
         }
         catch
@@ -378,8 +386,42 @@ public sealed class AlbumViewModel : ViewModelBase
         {
             DownloadSongCommand.RaiseCanExecuteChanged();
             OpenSongFolderCommand.RaiseCanExecuteChanged();
+            RemoveDownloadCommand.RaiseCanExecuteChanged();
         }
     }
+
+    // Clicking the downloaded check on a row deletes the local file; the track
+    // goes back to streaming and leaves the Downloaded Songs playlist.
+    private void RemoveDownload(Song? song)
+    {
+        if (song is null || !IsRemovableDownload(song))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(song.FilePath!);
+        }
+        catch
+        {
+            _notifications.ShowError($"Couldn't remove “{song.Title}” — the file may be in use.");
+            return;
+        }
+
+        song.FilePath = null;
+        song.CurrentDownloadState = DownloadState.NotDownloaded;
+        song.DownloadProgress = 0;
+        _playlistStore.MarkUndownloaded(song);
+        DownloadSongCommand.RaiseCanExecuteChanged();
+        RemoveDownloadCommand.RaiseCanExecuteChanged();
+        _notifications.ShowInfo($"Removed download for “{song.Title}”.");
+    }
+
+    private static bool IsRemovableDownload(Song song) =>
+        !string.IsNullOrWhiteSpace(song.VideoId)
+        && !string.IsNullOrWhiteSpace(song.FilePath)
+        && File.Exists(song.FilePath);
 
     private async Task<string?> ResolveVideoIdAsync(Song song, CancellationToken cancellationToken)
     {

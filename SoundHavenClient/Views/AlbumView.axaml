@@ -362,12 +362,13 @@
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center" />
                                     <Button Classes="RowActionButton"
-                                            Command="{Binding $parent[UserControl].((viewModels:AlbumViewModel)DataContext).OpenSongFolderCommand}"
+                                            Command="{Binding $parent[UserControl].((viewModels:AlbumViewModel)DataContext).RemoveDownloadCommand}"
                                             CommandParameter="{Binding Song}"
                                             IsVisible="{Binding Song.CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
-                                            ToolTip.Tip="Show in folder">
-                                        <Svg Path="avares://SoundHavenClient/Assets/Icons/folder.svg"
-                                             Width="18" Height="18" Opacity="0.9" />
+                                            ToolTip.Tip="Remove download">
+                                        <PathIcon Width="18" Height="18"
+                                                  Foreground="{DynamicResource PrimaryColor}"
+                                                  Data="M9,16.17 L4.83,12 l-1.42,1.41 L9,19 L21,7 l-1.41,-1.41 z" />
                                     </Button>
                                 </Panel>
 

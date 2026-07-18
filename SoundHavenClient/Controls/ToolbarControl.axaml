@@ -272,6 +272,24 @@
                                             </Border>
                                         </Border>
 
+                                        <!-- Downloaded Songs arrow tile: same treatment
+                                             as the Liked tile, with a download glyph. -->
+                                        <Border IsVisible="{Binding IsDownloads}"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch"
+                                                Background="Black">
+                                            <Border Background="Black"
+                                                    BorderBrush="{DynamicResource PrimaryColor}"
+                                                    BorderThickness="1.5"
+                                                    CornerRadius="6">
+                                                <PathIcon Width="22" Height="22"
+                                                          Foreground="{DynamicResource PrimaryColor}"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          Data="M5,20h14v-2H5V20z M19,9h-4V3H9v6H5l7,7L19,9z" />
+                                            </Border>
+                                        </Border>
+
                                         <Border Classes="PlayingBadge"
                                                 IsVisible="False"
                                                 Background="#66000000"
@@ -291,7 +309,7 @@
                                             IsHitTestVisible="False">
                                     <TextBlock Text="{Binding Name}"
                                                Classes="PlaylistName"
-                                               Classes.LikedName="{Binding IsLikedSongs}" />
+                                               Classes.LikedName="{Binding IsSystemPlaylist}" />
                                     <TextBlock Text="{Binding ItemCountText}" Classes="PlaylistCount" />
                                 </StackPanel>
 

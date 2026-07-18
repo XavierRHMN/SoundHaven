@@ -111,6 +111,8 @@ namespace SoundHaven.ViewModels
                 OnPropertyChanged(nameof(PlaylistDescription));
                 OnPropertyChanged(nameof(HasPlaylistDescription));
                 OnPropertyChanged(nameof(IsLikedSongsPlaylist));
+                OnPropertyChanged(nameof(IsDownloadsPlaylist));
+                OnPropertyChanged(nameof(IsSystemPlaylist));
                 RefreshTracksAndHeader();
                 // These commands' CanExecute reads the displayed playlist, so a
                 // playlist swap must re-query them (navigation swaps the whole
@@ -133,6 +135,13 @@ namespace SoundHaven.ViewModels
         /// <summary>True when the shown playlist is the system Liked Songs, which
         /// displays the eighth-note thumbnail instead of song artwork.</summary>
         public bool IsLikedSongsPlaylist => DisplayedPlaylist?.IsLikedSongs == true;
+
+        /// <summary>True when the shown playlist is the system Downloaded Songs, which
+        /// displays the download-arrow thumbnail and derives its own membership.</summary>
+        public bool IsDownloadsPlaylist => DisplayedPlaylist?.IsDownloads == true;
+
+        /// <summary>True for either system playlist; hides editing affordances.</summary>
+        public bool IsSystemPlaylist => DisplayedPlaylist?.IsSystemPlaylist == true;
 
         public string PlaylistName
         {
@@ -350,6 +359,9 @@ namespace SoundHaven.ViewModels
                 ExecuteOpenSongFolderAsync,
                 song => song is { FilePath.Length: > 0 },
                 exception => _notifications.ShowError(exception.Message));
+            RemoveDownloadCommand = new RelayCommand<Song>(
+                RemoveDownload,
+                song => song is not null && IsRemovableDownload(song));
             ToggleLikeCommand = new RelayCommand<Song>(ToggleLike, song => song is not null);
 
             _playlistStore.LikedSongsPlaylist.Songs.CollectionChanged += OnLikedSongsChanged;
@@ -358,6 +370,8 @@ namespace SoundHaven.ViewModels
         public AsyncRelayCommand<Song> DownloadSongCommand { get; }
 
         public AsyncRelayCommand<Song> OpenSongFolderCommand { get; }
+
+        public RelayCommand<Song> RemoveDownloadCommand { get; }
 
         public RelayCommand<Song> ToggleLikeCommand { get; }
 
@@ -481,11 +495,7 @@ namespace SoundHaven.ViewModels
                 song.FilePath = null;
                 song.CurrentDownloadState = DownloadState.NotDownloaded;
                 song.DownloadProgress = 0;
-                if (song.Id > 0)
-                {
-                    _appDatabase.UpdateSongFilePath(song.Id, null);
-                }
-
+                _playlistStore.MarkUndownloaded(song);
                 removed++;
             }
 
@@ -508,6 +518,8 @@ namespace SoundHaven.ViewModels
             if (IsOffline(song))
             {
                 song.CurrentDownloadState = DownloadState.Downloaded;
+                song.DownloadProgress = 100;
+                _playlistStore.MarkDownloaded(song);
                 return;
             }
 
@@ -561,12 +573,7 @@ namespace SoundHaven.ViewModels
 
                 song.CurrentDownloadState = DownloadState.Downloaded;
                 song.DownloadProgress = 100;
-
-                if (song.Id > 0 && !string.IsNullOrWhiteSpace(song.FilePath))
-                {
-                    _appDatabase.UpdateSongDownload(song.Id, song.FilePath, videoId);
-                }
-
+                _playlistStore.MarkDownloaded(song);
                 _notifications.ShowInfo($"Downloaded “{song.Title}” to your Music folder.");
             }
             catch
@@ -595,6 +602,37 @@ namespace SoundHaven.ViewModels
 
             Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
             return Task.CompletedTask;
+        }
+
+        // Clicking the downloaded check on a row deletes the local file; the song
+        // goes back to streaming and leaves the Downloaded Songs playlist.
+        private void RemoveDownload(Song? song)
+        {
+            if (song is null || !IsRemovableDownload(song))
+            {
+                return;
+            }
+
+            try
+            {
+                File.Delete(song.FilePath!);
+            }
+            catch
+            {
+                // The file is likely in use (e.g. currently playing); leave it
+                // downloaded rather than half-removing it.
+                _notifications.ShowError($"Couldn't remove “{song.Title}” — the file may be in use.");
+                return;
+            }
+
+            song.FilePath = null;
+            song.CurrentDownloadState = DownloadState.NotDownloaded;
+            song.DownloadProgress = 0;
+            _playlistStore.MarkUndownloaded(song);
+            DownloadSongCommand.RaiseCanExecuteChanged();
+            RemoveDownloadCommand.RaiseCanExecuteChanged();
+            RefreshDownloadState();
+            _notifications.ShowInfo($"Removed download for “{song.Title}”.");
         }
 
         private void ToggleLike(Song? song)
@@ -714,11 +752,7 @@ namespace SoundHaven.ViewModels
 
                         song.CurrentDownloadState = DownloadState.Downloaded;
                         song.DownloadProgress = 100;
-
-                        if (song.Id > 0 && !string.IsNullOrWhiteSpace(song.FilePath))
-                        {
-                            _appDatabase.UpdateSongDownload(song.Id, song.FilePath, videoId);
-                        }
+                        _playlistStore.MarkDownloaded(song);
                     }
                     catch (OperationCanceledException)
                     {

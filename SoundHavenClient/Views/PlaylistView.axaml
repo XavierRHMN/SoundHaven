@@ -312,6 +312,24 @@
                                           Data="F1 M6 13c0 1.105-1.12 2-2.5 2S1 14.105 1 13c0-1.104 1.12-2 2.5-2s2.5.896 2.5 2zm9-2c0 1.105-1.12 2-2.5 2s-2.5-.895-2.5-2 1.12-2 2.5-2 2.5.895 2.5 2zM14 11V2h1v9zM6 3v10H5V3zM5 2.905a1 1 0 0 1 .9-.995l8-.8a1 1 0 0 1 1.1.995V3L5 4z" />
                             </Border>
                         </Border>
+
+                        <!-- Downloaded Songs arrow tile: same treatment as the Liked
+                             tile, with a download glyph. -->
+                        <Border IsVisible="{Binding IsDownloadsPlaylist}"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                Background="Black">
+                            <Border Background="Black"
+                                    BorderBrush="{DynamicResource PrimaryColor}"
+                                    BorderThickness="3"
+                                    CornerRadius="16">
+                                <PathIcon Width="150" Height="150"
+                                          Foreground="{DynamicResource PrimaryColor}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Data="M5,20h14v-2H5V20z M19,9h-4V3H9v6H5l7,7L19,9z" />
+                            </Border>
+                        </Border>
                     </Panel>
                 </Border>
 
@@ -324,7 +342,7 @@
                                    FontSize="56"
                                    FontWeight="Bold"
                                    Classes="HeaderTitle"
-                                   Classes.LikedTitle="{Binding IsLikedSongsPlaylist}"
+                                   Classes.LikedTitle="{Binding IsSystemPlaylist}"
                                    LineHeight="64"
                                    TextTrimming="CharacterEllipsis"
                                    FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Bold.otf#Circular" />
@@ -467,7 +485,7 @@
                             ToolTip.Tip="Edit playlist"
                             Width="56"
                             Height="56"
-                            IsVisible="{Binding !IsLikedSongsPlaylist}"
+                            IsVisible="{Binding !IsSystemPlaylist}"
                             IsEnabled="{Binding !IsEditMode}">
                         <StackPanel Spacing="4" HorizontalAlignment="Center">
                             <Svg Path="avares://SoundHavenClient/Assets/Icons/edit.svg"
@@ -694,12 +712,13 @@
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center" />
                                     <Button Classes="RowActionButton"
-                                            Command="{Binding $parent[UserControl].((viewModels:PlaylistViewModel)DataContext).OpenSongFolderCommand}"
+                                            Command="{Binding $parent[UserControl].((viewModels:PlaylistViewModel)DataContext).RemoveDownloadCommand}"
                                             CommandParameter="{Binding Song}"
                                             IsVisible="{Binding Song.CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
-                                            ToolTip.Tip="Show in folder">
-                                        <Svg Path="avares://SoundHavenClient/Assets/Icons/folder.svg"
-                                             Width="18" Height="18" Opacity="0.9" />
+                                            ToolTip.Tip="Remove download">
+                                        <PathIcon Width="18" Height="18"
+                                                  Foreground="{DynamicResource PrimaryColor}"
+                                                  Data="M9,16.17 L4.83,12 l-1.42,1.41 L9,19 L21,7 l-1.41,-1.41 z" />
                                     </Button>
                                 </Panel>
 
