@@ -812,6 +812,13 @@ namespace SoundHaven.ViewModels
 
         private void RefreshDownloadState()
         {
+            // Per-row download/remove buttons snapshot CanExecute when bound; every
+            // state change must re-query them or a fresh check stays disabled and
+            // clicks fall through to the row (which auto-plays).
+            DownloadSongCommand?.RaiseCanExecuteChanged();
+            RemoveDownloadCommand?.RaiseCanExecuteChanged();
+            OpenSongFolderCommand?.RaiseCanExecuteChanged();
+
             ObservableCollection<Song>? songs = DisplayedPlaylist?.Songs;
             if (songs is null || songs.Count == 0)
             {

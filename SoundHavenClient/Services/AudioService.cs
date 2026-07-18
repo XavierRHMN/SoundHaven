@@ -522,7 +522,7 @@ public sealed class AudioService : ViewModelBase, IAudioService
             : DirectSoundOut.DSDEVID_DefaultPlayback;
         _outputDevice = new DirectSoundOut(deviceGuid, 150);
         _outputDevice.PlaybackStopped += OnPlaybackStopped;
-        _outputDevice.Init(_volumeProvider!);
+        _outputDevice.Init(new LeadOutSampleProvider(_volumeProvider!));
     }
 
     private void DisposeOutputDevice()
@@ -688,4 +688,50 @@ public sealed class AudioService : ViewModelBase, IAudioService
     }
 
     private sealed record ReaderResult(WaveStream Reader, TimeSpan Duration);
+
+    // DirectSoundOut's ring buffer keeps cycling while its end-of-stream stop
+    // propagates, audibly repeating the last ~150ms of every track right before
+    // the next one starts. Feeding a short silent lead-out once the source is
+    // exhausted means whatever loops during teardown is silence.
+    private sealed class LeadOutSampleProvider : ISampleProvider
+    {
+        private static readonly TimeSpan LeadOutDuration = TimeSpan.FromMilliseconds(400);
+        private readonly ISampleProvider _source;
+        private int _remainingSilenceSamples;
+        private bool _sourceEnded;
+
+        public LeadOutSampleProvider(ISampleProvider source)
+        {
+            _source = source;
+            _remainingSilenceSamples =
+                (int)(LeadOutDuration.TotalSeconds * source.WaveFormat.SampleRate)
+                * source.WaveFormat.Channels;
+        }
+
+        public WaveFormat WaveFormat => _source.WaveFormat;
+
+        public int Read(float[] buffer, int offset, int count)
+        {
+            if (!_sourceEnded)
+            {
+                int read = _source.Read(buffer, offset, count);
+                if (read > 0)
+                {
+                    return read;
+                }
+
+                _sourceEnded = true;
+            }
+
+            int silence = Math.Min(count, _remainingSilenceSamples);
+            if (silence <= 0)
+            {
+                return 0;
+            }
+
+            Array.Clear(buffer, offset, silence);
+            _remainingSilenceSamples -= silence;
+            return silence;
+        }
+    }
 }
