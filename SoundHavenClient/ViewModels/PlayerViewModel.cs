@@ -40,12 +40,6 @@ public sealed class PlayerViewModel : ViewModelBase
 
     public bool HasQueuedSongs => QueuedSongs.Count > 0;
 
-    public AsyncRelayCommand<Song> PlaySongCommand { get; }
-
-    public AsyncRelayCommand<Song> PlayHistorySongCommand { get; }
-
-    public AsyncRelayCommand<Song> PlayQueuedSongCommand { get; }
-
     public AsyncRelayCommand<Song> PlayNextCommand { get; }
 
     public AsyncRelayCommand<Song> AddToQueueCommand { get; }
@@ -64,18 +58,6 @@ public sealed class PlayerViewModel : ViewModelBase
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
         _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
-        PlaySongCommand = new AsyncRelayCommand<Song>(
-            PlaySongAsync,
-            song => song is not null,
-            exception => _notifications.ShowError(exception.Message));
-        PlayHistorySongCommand = new AsyncRelayCommand<Song>(
-            PlayHistorySongAsync,
-            song => song is not null,
-            exception => _notifications.ShowError(exception.Message));
-        PlayQueuedSongCommand = new AsyncRelayCommand<Song>(
-            PlayQueuedSongAsync,
-            song => song is not null,
-            exception => _notifications.ShowError(exception.Message));
         PlayNextCommand = new AsyncRelayCommand<Song>(
             PlayNextAsync,
             song => song is not null,
@@ -197,9 +179,45 @@ public sealed class PlayerViewModel : ViewModelBase
         base.Dispose();
     }
 
-    private Task PlaySongAsync(Song? song)
+    /// <summary>
+    /// Row-click playback for the queue panel: history entries jump back to that
+    /// track, Up Next entries jump forward. Unlike a command, this is not
+    /// single-flight gated, so a rapid second click supersedes the in-flight play
+    /// instead of being silently dropped.
+    /// </summary>
+    public async Task PlayRowAsync(Song song)
     {
-        return song is null ? Task.CompletedTask : _playbackViewModel.PlayFromBeginning(song);
+        ArgumentNullException.ThrowIfNull(song);
+        try
+        {
+            await _playbackViewModel.PlayFromBeginning(song);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer click superseded this play.
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError(exception.Message);
+        }
+    }
+
+    /// <summary>Row-click playback for "In queue" rows; consumes the queue entry.</summary>
+    public async Task PlayQueuedRowAsync(Song song)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+        try
+        {
+            await _playbackViewModel.PlayFromQueueAsync(song);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer click superseded this play.
+        }
+        catch (Exception exception)
+        {
+            _notifications.ShowError(exception.Message);
+        }
     }
 
     private async Task PlayNextAsync(Song? song)
@@ -224,31 +242,11 @@ public sealed class PlayerViewModel : ViewModelBase
         _notifications.ShowInfo($"Added “{song.Title}” to the queue.");
     }
 
-    /// <summary>Playing a manually queued track consumes its queue entry.</summary>
-    private Task PlayQueuedSongAsync(Song? song)
-    {
-        return song is null ? Task.CompletedTask : _playbackViewModel.PlayFromQueueAsync(song);
-    }
-
     /// <summary>Removes a manually queued track without playing it.</summary>
     public bool TryRemoveFromQueue(Song song)
     {
         ArgumentNullException.ThrowIfNull(song);
         return _playbackViewModel.RemoveFromQueue(song);
-    }
-
-    /// <summary>
-    /// Picking a history entry jumps back to that track in the queue; history and
-    /// Up Next re-derive from the new position automatically.
-    /// </summary>
-    private Task PlayHistorySongAsync(Song? song)
-    {
-        if (song is null)
-        {
-            return Task.CompletedTask;
-        }
-
-        return _playbackViewModel.PlayFromBeginning(song);
     }
 
     private void ExecuteAddToPlaylist(Playlist? playlist)

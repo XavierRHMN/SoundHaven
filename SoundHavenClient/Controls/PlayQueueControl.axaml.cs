@@ -68,42 +68,62 @@ public partial class PlayQueueControl : UserControl
 
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
     {
-        if (_isDragging || _suppressSelection)
+        if (_isDragging)
         {
             return;
         }
 
-        if (DataContext is not PlayerViewModel viewModel
-            || sender is not ListBox listBox
-            || listBox.SelectedItem is not Song song
-            || ReferenceEquals(song, viewModel.PlayerViewSong)
-            || !viewModel.PlaySongCommand.CanExecute(song))
-        {
-            return;
-        }
-
-        // Playing this track rebuilds Up Next (the song leaves the list). Clear selection
-        // and defer play so ListBox isn't mutated mid-SelectionChanged.
-        DeferPlay(listBox, viewModel.PlaySongCommand, song);
+        HandleRowSelection(sender, skipCurrent: true, playQueuedEntry: false);
     }
 
     private void OnQueuedSelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
     {
-        if (_suppressSelection)
+        HandleRowSelection(sender, skipCurrent: false, playQueuedEntry: true);
+    }
+
+    private void OnHistorySelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
+    {
+        HandleRowSelection(sender, skipCurrent: false, playQueuedEntry: false);
+    }
+
+    // Queue rows use selection as their click trigger, so a row must NEVER stay
+    // selected: a stuck selection renders as a second accent-colored row, and
+    // re-clicking a selected item raises no SelectionChanged, swallowing the
+    // click. Clear the selection first, unconditionally, then act on the click.
+    private void HandleRowSelection(object? sender, bool skipCurrent, bool playQueuedEntry)
+    {
+        if (_suppressSelection || sender is not ListBox listBox)
         {
             return;
         }
 
-        if (DataContext is not PlayerViewModel viewModel
-            || sender is not ListBox listBox
-            || listBox.SelectedItem is not Song song
-            || !viewModel.PlayQueuedSongCommand.CanExecute(song))
+        Song? song = listBox.SelectedItem as Song;
+        _suppressSelection = true;
+        try
+        {
+            listBox.SelectedItem = null;
+        }
+        finally
+        {
+            _suppressSelection = false;
+        }
+
+        if (song is null || DataContext is not PlayerViewModel viewModel)
         {
             return;
         }
 
-        // Playing a queued track consumes its entry (the list mutates), so defer.
-        DeferPlay(listBox, viewModel.PlayQueuedSongCommand, song);
+        if (skipCurrent && ReferenceEquals(song, viewModel.PlayerViewSong))
+        {
+            return;
+        }
+
+        // Playing rebuilds these lists (Up Next re-derives, queued entries are
+        // consumed), so defer past this event to avoid mutating the ListBox
+        // mid-SelectionChanged.
+        Dispatcher.UIThread.Post(() => _ = playQueuedEntry
+            ? viewModel.PlayQueuedRowAsync(song)
+            : viewModel.PlayRowAsync(song));
     }
 
     private void OnRemoveFromQueuePointerPressed(object? sender, PointerPressedEventArgs e)
@@ -118,46 +138,6 @@ public partial class PlayQueueControl : UserControl
 
         e.Handled = true;
         viewModel.TryRemoveFromQueue(song);
-    }
-
-    private void OnHistorySelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
-    {
-        if (_suppressSelection)
-        {
-            return;
-        }
-
-        if (DataContext is not PlayerViewModel viewModel
-            || sender is not ListBox listBox
-            || listBox.SelectedItem is not Song song
-            || !viewModel.PlayHistorySongCommand.CanExecute(song))
-        {
-            return;
-        }
-
-        // Picking a history entry removes it from the log and plays it.
-        DeferPlay(listBox, viewModel.PlayHistorySongCommand, song);
-    }
-
-    private void DeferPlay(ListBox listBox, AsyncRelayCommand<Song> playCommand, Song song)
-    {
-        _suppressSelection = true;
-        try
-        {
-            listBox.SelectedItem = null;
-        }
-        finally
-        {
-            _suppressSelection = false;
-        }
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            if (playCommand.CanExecute(song))
-            {
-                playCommand.Execute(song);
-            }
-        });
     }
 
     private void OnActionsPointerPressed(object? sender, PointerPressedEventArgs e)
