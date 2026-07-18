@@ -128,6 +128,31 @@ public sealed class AlbumViewModel : ViewModelBase
 
     public ObservableCollection<PlaylistTrackRow> TrackRows => _trackRows;
 
+    private PlaylistTrackRow? _selectedTrackRow;
+    public PlaylistTrackRow? SelectedTrackRow
+    {
+        get => _selectedTrackRow;
+        set => SetProperty(ref _selectedTrackRow, value);
+    }
+
+    /// <summary>True while the view-model moves the grid selection itself (to
+    /// follow playback). The view ignores those selection changes so they don't
+    /// re-trigger playback.</summary>
+    public bool IsSyncingSelection { get; private set; }
+
+    private void SetSelectionSilently(PlaylistTrackRow? row)
+    {
+        IsSyncingSelection = true;
+        try
+        {
+            SelectedTrackRow = row;
+        }
+        finally
+        {
+            IsSyncingSelection = false;
+        }
+    }
+
     public string TrackStatsText
     {
         get
@@ -613,6 +638,8 @@ public sealed class AlbumViewModel : ViewModelBase
                 IsLiked = _playlistStore.IsFavorite(track)
             });
         }
+
+        SetSelectionSilently(_trackRows.FirstOrDefault(row => row.IsCurrentlyPlaying));
     }
 
     private static bool IsSameTrack(Song track, Song? current)
@@ -639,9 +666,28 @@ public sealed class AlbumViewModel : ViewModelBase
         }
 
         Song? current = _playbackViewModel.CurrentSong;
+        PlaylistTrackRow? playingRow = null;
         foreach (PlaylistTrackRow row in _trackRows)
         {
             row.IsCurrentlyPlaying = IsSameTrack(row.Song, current);
+            if (row.IsCurrentlyPlaying)
+            {
+                playingRow = row;
+            }
+        }
+
+        // Keep the grid's selection highlight on the playing track as playback
+        // advances (next/previous/auto-advance), not on the last clicked row.
+        if (playingRow is not null)
+        {
+            if (!ReferenceEquals(SelectedTrackRow, playingRow))
+            {
+                SetSelectionSilently(playingRow);
+            }
+        }
+        else if (current is not null && SelectedTrackRow is not null)
+        {
+            SetSelectionSilently(null);
         }
     }
 

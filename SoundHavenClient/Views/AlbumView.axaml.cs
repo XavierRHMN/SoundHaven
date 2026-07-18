@@ -16,10 +16,11 @@ public partial class AlbumView : UserControl
     }
 
     // Selecting a row (single click) plays the album from that track, matching the
-    // playlist page's behavior.
+    // playlist page's behavior. IsSyncingSelection = the view-model is following
+    // playback; only user-initiated selection plays.
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
     {
-        if (DataContext is AlbumViewModel viewModel
+        if (DataContext is AlbumViewModel { IsSyncingSelection: false } viewModel
             && sender is DataGrid { SelectedItem: PlaylistTrackRow row }
             && viewModel.PlayTrackCommand.CanExecute(row.Song))
         {

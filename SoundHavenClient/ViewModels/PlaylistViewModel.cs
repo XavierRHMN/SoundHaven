@@ -270,6 +270,24 @@ namespace SoundHaven.ViewModels
             }
         }
 
+        /// <summary>True while the view-model moves the grid selection itself (to
+        /// follow playback, or to restore it after a rebuild). The view ignores
+        /// those selection changes so they don't re-trigger playback.</summary>
+        public bool IsSyncingSelection { get; private set; }
+
+        private void SetSelectionSilently(PlaylistTrackRow? row)
+        {
+            IsSyncingSelection = true;
+            try
+            {
+                SelectedTrackRow = row;
+            }
+            finally
+            {
+                IsSyncingSelection = false;
+            }
+        }
+
         public AsyncRelayCommand AddSongCommand { get; }
         public AsyncRelayCommand PlayPlaylistCommand { get; }
         public AsyncRelayCommand ShufflePlaylistCommand { get; }
@@ -1278,17 +1296,48 @@ namespace SoundHaven.ViewModels
                 });
             }
 
-            SelectedTrackRow = selected is null
+            PlaylistTrackRow? restored = selected is null
                 ? null
                 : _trackRows.FirstOrDefault(row => ReferenceEquals(row.Song, selected));
+            if (restored is null && !IsEditMode)
+            {
+                restored = _trackRows.FirstOrDefault(row => row.IsCurrentlyPlaying);
+            }
+
+            SetSelectionSilently(restored);
         }
 
         private void UpdatePlayingHighlights()
         {
             Song? current = _playbackViewModel.CurrentSong;
+            PlaylistTrackRow? playingRow = null;
             foreach (PlaylistTrackRow row in _trackRows)
             {
                 row.IsCurrentlyPlaying = current is not null && ReferenceEquals(current, row.Song);
+                if (row.IsCurrentlyPlaying)
+                {
+                    playingRow = row;
+                }
+            }
+
+            // Keep the grid's selection highlight on the playing track as playback
+            // advances (next/previous/auto-advance), not on the last clicked row.
+            if (IsEditMode)
+            {
+                return;
+            }
+
+            if (playingRow is not null)
+            {
+                if (!ReferenceEquals(SelectedTrackRow, playingRow))
+                {
+                    SetSelectionSilently(playingRow);
+                }
+            }
+            else if (current is not null && SelectedTrackRow is not null)
+            {
+                // Playback moved to a track outside this playlist; no row is current.
+                SetSelectionSilently(null);
             }
         }
 

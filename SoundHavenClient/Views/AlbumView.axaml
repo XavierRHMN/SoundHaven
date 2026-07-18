@@ -258,6 +258,7 @@
                   Grid.Row="1"
                   Margin="16,0,16,16"
                   ItemsSource="{Binding TrackRows}"
+                  SelectedItem="{Binding SelectedTrackRow}"
                   SelectionChanged="OnSelectionChanged"
                   AutoGenerateColumns="False"
                   CanUserReorderColumns="False"

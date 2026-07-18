@@ -25,7 +25,9 @@ public partial class PlaylistView : UserControl
 
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
     {
-        if (DataContext is PlaylistViewModel { IsEditMode: false } viewModel
+        // IsSyncingSelection = the view-model is following playback (or restoring
+        // selection after a rebuild); only user-initiated selection plays.
+        if (DataContext is PlaylistViewModel { IsEditMode: false, IsSyncingSelection: false } viewModel
             && sender is DataGrid { SelectedItem: PlaylistTrackRow row }
             && viewModel.PlaySongCommand.CanExecute(row.Song))
         {
