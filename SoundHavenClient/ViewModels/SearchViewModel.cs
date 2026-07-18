@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -19,6 +20,7 @@ namespace SoundHaven.ViewModels;
 public sealed class SearchResultRow : ViewModelBase
 {
     private bool _isCurrentlyPlaying;
+    private bool _isLiked;
 
     public SearchResultRow(int number, Song song)
     {
@@ -34,6 +36,12 @@ public sealed class SearchResultRow : ViewModelBase
     {
         get => _isCurrentlyPlaying;
         set => SetProperty(ref _isCurrentlyPlaying, value);
+    }
+
+    public bool IsLiked
+    {
+        get => _isLiked;
+        set => SetProperty(ref _isLiked, value);
     }
 }
 
@@ -105,9 +113,13 @@ public sealed class SearchViewModel : ViewModelBase
         ClearSearchCommand = new RelayCommand(() => SearchQuery = string.Empty);
         SelectSongsCommand = new RelayCommand(() => SearchSongs = true);
         SelectVideosCommand = new RelayCommand(() => SearchSongs = false);
+        ToggleLikeCommand = new RelayCommand<Song>(ToggleLike, song => song is not null);
 
         _playbackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
+        _playlistStore.LikedSongsPlaylist.Songs.CollectionChanged += OnLikedSongsChanged;
     }
+
+    public RelayCommand<Song> ToggleLikeCommand { get; }
 
     public string SearchQuery
     {
@@ -232,6 +244,7 @@ public sealed class SearchViewModel : ViewModelBase
     public override void Dispose()
     {
         _playbackViewModel.PropertyChanged -= OnPlaybackPropertyChanged;
+        _playlistStore.LikedSongsPlaylist.Songs.CollectionChanged -= OnLikedSongsChanged;
         _searchCancellation.Cancel();
         _searchCancellation.Dispose();
         _lifetimeCancellation.Cancel();
@@ -254,6 +267,28 @@ public sealed class SearchViewModel : ViewModelBase
         {
             row.IsCurrentlyPlaying = IsSameTrack(current, row.Song);
         }
+    }
+
+    private void OnLikedSongsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        => RefreshLikedStates();
+
+    private void RefreshLikedStates()
+    {
+        foreach (SearchResultRow row in ResultRows)
+        {
+            row.IsLiked = _playlistStore.IsFavorite(row.Song);
+        }
+    }
+
+    private void ToggleLike(Song? song)
+    {
+        if (song is null)
+        {
+            return;
+        }
+
+        bool nowLiked = _playlistStore.ToggleFavorite(song);
+        _notifications.ShowInfo(nowLiked ? "Added to Liked Songs." : "Removed from Liked Songs.");
     }
 
     // Queue playback clones songs, so reference equality alone is not enough.
@@ -378,7 +413,10 @@ public sealed class SearchViewModel : ViewModelBase
         foreach (Song song in source)
         {
             SearchResults.Add(song);
-            ResultRows.Add(new SearchResultRow(number++, song));
+            ResultRows.Add(new SearchResultRow(number++, song)
+            {
+                IsLiked = _playlistStore.IsFavorite(song)
+            });
         }
 
         UpdatePlayingHighlights();

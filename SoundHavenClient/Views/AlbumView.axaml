@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
+             xmlns:models="clr-namespace:SoundHaven.Models"
              mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
              x:Class="SoundHaven.Views.AlbumView"
              x:DataType="viewModels:AlbumViewModel">
@@ -94,6 +95,38 @@
             <Setter Property="Fill" Value="#1FFFFFFF" />
             <Setter Property="RadiusX" Value="8" />
             <Setter Property="RadiusY" Value="8" />
+        </Style>
+
+        <!-- Per-row action cluster (more / download / like): dim until the row is
+             hovered, so download progress and liked state stay glanceable. -->
+        <Style Selector="StackPanel.RowActions">
+            <Setter Property="Opacity" Value="0.55" />
+        </Style>
+        <Style Selector="DataGridRow:pointerover StackPanel.RowActions">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+
+        <Style Selector="Button.RowActionButton">
+            <Setter Property="Theme" Value="{x:Null}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="17" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.RowActionButton:pointerover">
+            <Setter Property="Background" Value="#22FFFFFF" />
         </Style>
     </UserControl.Styles>
 
@@ -288,6 +321,73 @@
                             <TextBlock Text="{Binding Song.Duration, Converter={StaticResource TimeSpanToMinutesSecondsConverter}}"
                                        Classes="TrackMeta"
                                        VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="" Width="128">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="viewModels:PlaylistTrackRow">
+                            <StackPanel Classes="RowActions"
+                                        Orientation="Horizontal"
+                                        Spacing="2"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,4,0"
+                                        PointerPressed="OnRowActionsPointerPressed">
+                                <!-- More options -->
+                                <Button Classes="RowActionButton"
+                                        Click="OnRowMoreButtonClick"
+                                        ToolTip.Tip="More options">
+                                    <Svg Path="avares://SoundHavenClient/Assets/Icons/more_horiz.svg"
+                                         Width="18" Height="18" Opacity="0.9" />
+                                </Button>
+
+                                <!-- Download (tri-state) -->
+                                <Panel Width="34" Height="34">
+                                    <Button Classes="RowActionButton"
+                                            Command="{Binding $parent[UserControl].((viewModels:AlbumViewModel)DataContext).DownloadSongCommand}"
+                                            CommandParameter="{Binding Song}"
+                                            IsVisible="{Binding Song.CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.NotDownloaded}}"
+                                            ToolTip.Tip="Download">
+                                        <Svg Path="avares://SoundHavenClient/Assets/Icons/download.svg"
+                                             Width="18" Height="18" Opacity="0.9" />
+                                    </Button>
+                                    <ProgressBar Classes="circular"
+                                                 Width="22" Height="22"
+                                                 IsHitTestVisible="False"
+                                                 Value="{Binding Song.DownloadProgress}"
+                                                 IsVisible="{Binding Song.CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloading}}"
+                                                 Foreground="{DynamicResource PrimaryColor}"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center" />
+                                    <Button Classes="RowActionButton"
+                                            Command="{Binding $parent[UserControl].((viewModels:AlbumViewModel)DataContext).OpenSongFolderCommand}"
+                                            CommandParameter="{Binding Song}"
+                                            IsVisible="{Binding Song.CurrentDownloadState, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static models:DownloadState.Downloaded}}"
+                                            ToolTip.Tip="Show in folder">
+                                        <Svg Path="avares://SoundHavenClient/Assets/Icons/folder.svg"
+                                             Width="18" Height="18" Opacity="0.9" />
+                                    </Button>
+                                </Panel>
+
+                                <!-- Like (heart) -->
+                                <Button Classes="RowActionButton"
+                                        Command="{Binding $parent[UserControl].((viewModels:AlbumViewModel)DataContext).ToggleLikeCommand}"
+                                        CommandParameter="{Binding Song}"
+                                        ToolTip.Tip="Add to Liked Songs">
+                                    <Panel>
+                                        <PathIcon Width="17" Height="17"
+                                                  Foreground="#B3B3B3"
+                                                  IsVisible="{Binding !IsLiked}"
+                                                  Data="M16.5,3c-1.74,0-3.41,0.81-4.5,2.09C10.91,3.81,9.24,3,7.5,3C4.42,3,2,5.42,2,8.5c0,3.78,3.4,6.86,8.55,11.54L12,21.35l1.45-1.32C18.6,15.36,22,12.28,22,8.5C22,5.42,19.58,3,16.5,3z M12.1,18.55l-0.1,0.1l-0.1-0.1C7.14,14.24,4,11.39,4,8.5C4,6.5,5.5,5,7.5,5c1.54,0,3.04,0.99,3.57,2.36h1.87C13.46,5.99,14.96,5,16.5,5c2,0,3.5,1.5,3.5,3.5C20,11.39,16.86,14.24,12.1,18.55z" />
+                                        <PathIcon Width="17" Height="17"
+                                                  Foreground="{DynamicResource PrimaryColor}"
+                                                  IsVisible="{Binding IsLiked}"
+                                                  Data="M12,21.35l-1.45-1.32C5.4,15.36,2,12.28,2,8.5C2,5.42,4.42,3,7.5,3c1.74,0,3.41,0.81,4.5,2.09C13.09,3.81,14.76,3,16.5,3C19.58,3,22,5.42,22,8.5c0,3.78-3.4,6.86-8.55,11.54L12,21.35z" />
+                                    </Panel>
+                                </Button>
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -36,6 +37,13 @@ namespace SoundHaven.ViewModels
         {
             get => _isCurrentlyPlaying;
             set => SetProperty(ref _isCurrentlyPlaying, value);
+        }
+
+        private bool _isLiked;
+        public bool IsLiked
+        {
+            get => _isLiked;
+            set => SetProperty(ref _isLiked, value);
         }
     }
 
@@ -334,7 +342,24 @@ namespace SoundHaven.ViewModels
                 ToggleDownloadAll,
                 () => !IsEditMode
                     && (IsPlaylistDownloading || HasPendingDownloads || HasRemovableDownloads));
+            DownloadSongCommand = new AsyncRelayCommand<Song>(
+                DownloadSongAsync,
+                song => song is not null && song.CurrentDownloadState == DownloadState.NotDownloaded,
+                exception => _notifications.ShowError(exception.Message));
+            OpenSongFolderCommand = new AsyncRelayCommand<Song>(
+                ExecuteOpenSongFolderAsync,
+                song => song is { FilePath.Length: > 0 },
+                exception => _notifications.ShowError(exception.Message));
+            ToggleLikeCommand = new RelayCommand<Song>(ToggleLike, song => song is not null);
+
+            _playlistStore.LikedSongsPlaylist.Songs.CollectionChanged += OnLikedSongsChanged;
         }
+
+        public AsyncRelayCommand<Song> DownloadSongCommand { get; }
+
+        public AsyncRelayCommand<Song> OpenSongFolderCommand { get; }
+
+        public RelayCommand<Song> ToggleLikeCommand { get; }
 
         /// <summary>Toggles the whole-playlist download: start when idle, cancel while
         /// running. Downloaded playlists have nothing pending, so the click is a no-op.</summary>
@@ -468,6 +493,130 @@ namespace SoundHaven.ViewModels
             if (removed > 0)
             {
                 _notifications.ShowInfo($"Removed downloads for “{playlist.Name}”.");
+            }
+        }
+
+        // Per-row download: resolves a video for artist+title-only songs, then fetches
+        // it and persists offline — the same pipeline the whole-playlist download uses.
+        private async Task DownloadSongAsync(Song? song)
+        {
+            if (song is null || string.IsNullOrWhiteSpace(song.Title))
+            {
+                return;
+            }
+
+            if (IsOffline(song))
+            {
+                song.CurrentDownloadState = DownloadState.Downloaded;
+                return;
+            }
+
+            song.CurrentDownloadState = DownloadState.Downloading;
+            song.DownloadProgress = 0;
+            DownloadSongCommand.RaiseCanExecuteChanged();
+            var progress = new Progress<double>(value =>
+                song.DownloadProgress = Math.Clamp(value, 0, 1) * 100);
+
+            try
+            {
+                string? videoId = song.VideoId;
+                if (string.IsNullOrWhiteSpace(videoId))
+                {
+                    videoId = await ResolveVideoIdAsync(song, CancellationToken.None);
+                    if (!string.IsNullOrWhiteSpace(videoId))
+                    {
+                        song.VideoId = videoId;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(videoId))
+                {
+                    song.CurrentDownloadState = DownloadState.NotDownloaded;
+                    song.DownloadProgress = 0;
+                    _notifications.ShowError($"Couldn't find “{song.Title}” to download.");
+                    return;
+                }
+
+                Song downloaded = await _youTubeMediaService.DownloadAudioAsync(
+                    videoId,
+                    progress,
+                    CancellationToken.None);
+
+                song.FilePath = downloaded.FilePath;
+                if (song.Duration <= TimeSpan.Zero && downloaded.Duration > TimeSpan.Zero)
+                {
+                    song.Duration = downloaded.Duration;
+                }
+
+                if (song.Year is null && downloaded.Year is int year && year > 0)
+                {
+                    song.Year = year;
+                }
+
+                if ((song.ArtworkData is null || song.ArtworkData.Length == 0)
+                    && downloaded.ArtworkData is { Length: > 0 })
+                {
+                    song.ArtworkData = downloaded.ArtworkData;
+                }
+
+                song.CurrentDownloadState = DownloadState.Downloaded;
+                song.DownloadProgress = 100;
+
+                if (song.Id > 0 && !string.IsNullOrWhiteSpace(song.FilePath))
+                {
+                    _appDatabase.UpdateSongDownload(song.Id, song.FilePath, videoId);
+                }
+
+                _notifications.ShowInfo($"Downloaded “{song.Title}” to your Music folder.");
+            }
+            catch
+            {
+                song.CurrentDownloadState = DownloadState.NotDownloaded;
+                song.DownloadProgress = 0;
+                throw;
+            }
+            finally
+            {
+                DownloadSongCommand.RaiseCanExecuteChanged();
+                OpenSongFolderCommand.RaiseCanExecuteChanged();
+                RefreshDownloadState();
+            }
+        }
+
+        private static Task ExecuteOpenSongFolderAsync(Song? song)
+        {
+            string? folder = song?.FilePath is { Length: > 0 } filePath
+                ? Path.GetDirectoryName(filePath)
+                : null;
+            if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
+            {
+                throw new DirectoryNotFoundException("The download folder no longer exists.");
+            }
+
+            Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+            return Task.CompletedTask;
+        }
+
+        private void ToggleLike(Song? song)
+        {
+            if (song is null)
+            {
+                return;
+            }
+
+            bool nowLiked = _playlistStore.ToggleFavorite(song);
+            _notifications.ShowInfo(nowLiked ? "Added to Liked Songs." : "Removed from Liked Songs.");
+            // The Liked Songs collection change refreshes each row's heart.
+        }
+
+        private void OnLikedSongsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+            => RefreshLikedStates();
+
+        private void RefreshLikedStates()
+        {
+            foreach (PlaylistTrackRow row in _trackRows)
+            {
+                row.IsLiked = _playlistStore.IsFavorite(row.Song);
             }
         }
 
@@ -1082,7 +1231,10 @@ namespace SoundHaven.ViewModels
             {
                 Song song = filtered[i];
                 bool isPlaying = current is not null && ReferenceEquals(current, song);
-                _trackRows.Add(new PlaylistTrackRow(i + 1, song, isPlaying));
+                _trackRows.Add(new PlaylistTrackRow(i + 1, song, isPlaying)
+                {
+                    IsLiked = _playlistStore.IsFavorite(song)
+                });
             }
 
             SelectedTrackRow = selected is null
@@ -1190,6 +1342,7 @@ namespace SoundHaven.ViewModels
         public override void Dispose()
         {
             _playbackViewModel.PropertyChanged -= OnPlaybackPropertyChanged;
+            _playlistStore.LikedSongsPlaylist.Songs.CollectionChanged -= OnLikedSongsChanged;
             _downloadCts?.Cancel();
             _downloadCts?.Dispose();
             _downloadCts = null;

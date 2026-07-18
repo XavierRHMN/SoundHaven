@@ -122,7 +122,8 @@ public partial class App : Application, IDisposable
             _lastFmDataService,
             albumArtService,
             notifications,
-            playlistStore);
+            playlistStore,
+            _youTubeMediaService);
         var homeViewModel = new HomeViewModel(
             playlistStore,
             recentPlaybackStore,
