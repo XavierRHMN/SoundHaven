@@ -482,29 +482,38 @@ public sealed class AlbumViewModel : ViewModelBase
     {
         try
         {
-            if (album.Artwork is not null)
+            // Home album cards carry only Last.fm's small (~300px) cover. Stamped
+            // onto tracks, that art fails the player's quality check on play and
+            // gets swapped for the resolved video's thumbnail — often a soft 4:3
+            // frame. Resolve a sharp square cover instead: Deezer/iTunes
+            // (1000px/600px) first, then the album's YouTube thumbnail.
+            string? highRes = await _albumArtService.GetAlbumArtworkUrlAsync(
+                album.Artist,
+                album.Album is { Length: > 0 } name ? name : album.Title,
+                cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(highRes))
+            {
+                highRes = await ResolveYouTubeCoverAsync(album, cancellationToken);
+            }
+
+            string? coverUrl = !string.IsNullOrWhiteSpace(highRes)
+                ? highRes
+                : !string.IsNullOrWhiteSpace(album.ThumbnailUrl)
+                    ? album.ThumbnailUrl
+                    : album.ArtworkUrl;
+
+            if (string.IsNullOrWhiteSpace(coverUrl))
             {
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(album.ThumbnailUrl))
-            {
-                string? url = album.ArtworkUrl;
-                if (string.IsNullOrWhiteSpace(url))
-                {
-                    url = await _albumArtService.GetAlbumArtworkUrlAsync(
-                        album.Artist,
-                        album.Album is { Length: > 0 } name ? name : album.Title,
-                        cancellationToken);
-                }
-
-                if (!string.IsNullOrWhiteSpace(url))
-                {
-                    album.ThumbnailUrl = url;
-                }
-            }
-
-            await album.LoadThumbnailAsync(cancellationToken: cancellationToken);
+            bool upgraded = !string.Equals(album.ThumbnailUrl, coverUrl, StringComparison.Ordinal);
+            album.ThumbnailUrl = coverUrl;
+            album.ArtworkUrl = coverUrl;
+            await album.LoadThumbnailAsync(
+                forceReload: upgraded || album.Artwork is null,
+                cancellationToken: cancellationToken);
 
             // The cover often arrives after the track list; re-stamp so every
             // track picks it up regardless of which finished first.
@@ -519,8 +528,50 @@ public sealed class AlbumViewModel : ViewModelBase
         }
     }
 
+    // The album's YouTube cover: search for the album and take the top result's
+    // high-res thumbnail (music "topic" results carry the square album art).
+    private async Task<string?> ResolveYouTubeCoverAsync(Song album, CancellationToken cancellationToken)
+    {
+        string albumName = album.Album is { Length: > 0 } name ? name : album.Title ?? string.Empty;
+        string query = $"{album.Artist} {albumName}".Trim();
+        if (query.Length == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            var results = await _youTubeMediaService.SearchAsync(
+                query,
+                1,
+                searchSongs: true,
+                cancellationToken);
+            if (results.Count == 0)
+            {
+                return null;
+            }
+
+            YouTubeSearchResult match = results[0];
+            return !string.IsNullOrWhiteSpace(match.ThumbnailUrl)
+                ? match.ThumbnailUrl
+                : YouTubeThumbnailHelper.GetVideoThumbnailUrl(match.VideoId);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     // Last.fm album tracks carry no per-track art; give them the album cover so
     // the queue, history, and player show real thumbnails when playing from here.
+    // Overwrites any earlier stamp: when the sharp cover arrives after the first
+    // pass (or after a track adopted a video thumbnail), the upgrade must win —
+    // and at full resolution the player keeps this square art instead of swapping
+    // in the resolved video's frame.
     private void ApplyAlbumArtToTracks()
     {
         Song? album = _album;
@@ -535,8 +586,7 @@ public sealed class AlbumViewModel : ViewModelBase
 
         foreach (Song track in _tracks)
         {
-            if (album.ArtworkData is { Length: > 0 } cover
-                && track.ArtworkData is not { Length: > 0 })
+            if (album.ArtworkData is { Length: > 0 } cover)
             {
                 track.ArtworkData = cover;
             }
@@ -546,15 +596,8 @@ public sealed class AlbumViewModel : ViewModelBase
                 continue;
             }
 
-            if (string.IsNullOrWhiteSpace(track.ArtworkUrl))
-            {
-                track.ArtworkUrl = coverUrl;
-            }
-
-            if (string.IsNullOrWhiteSpace(track.ThumbnailUrl))
-            {
-                track.ThumbnailUrl = coverUrl;
-            }
+            track.ArtworkUrl = coverUrl;
+            track.ThumbnailUrl = coverUrl;
         }
     }
 

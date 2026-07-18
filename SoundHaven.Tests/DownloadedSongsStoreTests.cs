@@ -51,7 +51,7 @@ public sealed class DownloadedSongsStoreTests : IDisposable
     }
 
     [Fact]
-    public void MarkDownloaded_AddsThenMarkUndownloadedRemoves()
+    public void MarkUndownloaded_KeepsEntryUntilRestartPrunesIt()
     {
         var store = new PlaylistStore(new AppDatabase(_databasePath));
         var song = new Song
@@ -66,8 +66,46 @@ public sealed class DownloadedSongsStoreTests : IDisposable
         Assert.Single(store.DownloadedSongsPlaylist.Songs);
         Assert.True(song.Id > 0);
 
+        // Mirror the view-model removal: delete the file, clear the path, unmark.
+        File.Delete(song.FilePath!);
+        song.FilePath = null;
+        song.CurrentDownloadState = DownloadState.NotDownloaded;
         store.MarkUndownloaded(song);
-        Assert.Empty(store.DownloadedSongsPlaylist.Songs);
+
+        // The entry stays listed so a misclick is fixed by re-downloading...
+        Assert.Single(store.DownloadedSongsPlaylist.Songs);
+
+        // ...and only leaves once the app restarts (the reconcile prunes it).
+        var reloaded = new PlaylistStore(new AppDatabase(_databasePath));
+        Assert.Empty(reloaded.DownloadedSongsPlaylist.Songs);
+    }
+
+    [Fact]
+    public void MarkDownloaded_AfterUndownload_ReusesRetainedEntry()
+    {
+        var store = new PlaylistStore(new AppDatabase(_databasePath));
+        string filePath = CreateAudioFile("glare.m4a");
+        var song = new Song
+        {
+            Title = "Glare",
+            Artist = "Blank",
+            VideoId = "vid00000001",
+            FilePath = filePath
+        };
+
+        store.MarkDownloaded(song);
+        File.Delete(filePath);
+        song.FilePath = null;
+        store.MarkUndownloaded(song);
+
+        // Re-downloading the retained entry must not create a duplicate.
+        song.FilePath = CreateAudioFile("glare.m4a");
+        store.MarkDownloaded(song);
+        Assert.Single(store.DownloadedSongsPlaylist.Songs);
+
+        // The refreshed path persists, so the entry survives a restart again.
+        var reloaded = new PlaylistStore(new AppDatabase(_databasePath));
+        Assert.Single(reloaded.DownloadedSongsPlaylist.Songs);
     }
 
     [Fact]

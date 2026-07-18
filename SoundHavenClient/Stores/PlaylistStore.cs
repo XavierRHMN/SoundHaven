@@ -144,26 +144,22 @@ namespace SoundHaven.Stores
             }
         }
 
-        /// <summary>Records a removed download: leaves Downloaded Songs and clears the
-        /// stored file path so the song streams again next session.</summary>
+        /// <summary>Records a removed download: clears the stored file path so the
+        /// song streams again, but keeps its Downloaded Songs entry so a misclick is
+        /// fixed by simply re-downloading. The startup reconcile prunes fileless
+        /// entries, so an undownloaded song leaves the playlist only after the app
+        /// exits.</summary>
         public void MarkUndownloaded(Song song)
         {
             ArgumentNullException.ThrowIfNull(song);
 
             Song? match = DownloadedSongsPlaylist.Songs
                 .FirstOrDefault(existing => SongMatches(existing, song));
-            if (match is not null)
+            if (match is not null && !ReferenceEquals(match, song))
             {
-                _appDatabase.RemoveSongFromPlaylist(DownloadedSongsPlaylist.Id, match.Id);
-                DownloadedSongsPlaylist.Songs.Remove(match);
-                DownloadedSongsPlaylist.UpdatedAtUtc = DateTime.UtcNow;
-
-                if (!ReferenceEquals(match, song))
-                {
-                    match.FilePath = null;
-                    match.CurrentDownloadState = DownloadState.NotDownloaded;
-                    match.DownloadProgress = 0;
-                }
+                match.FilePath = null;
+                match.CurrentDownloadState = DownloadState.NotDownloaded;
+                match.DownloadProgress = 0;
             }
 
             long songId = song.Id > 0 ? song.Id : match?.Id ?? 0;
