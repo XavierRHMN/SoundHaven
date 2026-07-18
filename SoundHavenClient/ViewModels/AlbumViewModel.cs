@@ -300,6 +300,7 @@ public sealed class AlbumViewModel : ViewModelBase
             ApplyAlbumArtToTracks();
             RebuildTrackRows();
             _ = ResolveAlbumYearAsync(cancellationToken);
+            _ = PrecacheLeadingTracksAsync(cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -314,6 +315,55 @@ public sealed class AlbumViewModel : ViewModelBase
             OnPropertyChanged(nameof(TrackStatsText));
             PlayAlbumCommand.RaiseCanExecuteChanged();
             ShuffleAlbumCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    private const int BrowsePrecacheTrackCount = 5;
+
+    // Opening an album warms its first few tracks into the audio cache so clicking
+    // around starts instantly. Capped small — whole-album caching would churn the
+    // bounded cache; the next-track prefetch covers the rest while listening. Only
+    // tracks that already carry a video id qualify (no searches are spent here).
+    private async Task PrecacheLeadingTracksAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Let the page settle first — a user just passing through shouldn't
+            // trigger downloads.
+            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+
+            int warmed = 0;
+            foreach (Song track in _tracks.ToList())
+            {
+                if (warmed >= BrowsePrecacheTrackCount)
+                {
+                    break;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                if (string.IsNullOrWhiteSpace(track.VideoId)
+                    || (!string.IsNullOrWhiteSpace(track.FilePath) && File.Exists(track.FilePath)))
+                {
+                    continue;
+                }
+
+                if (_youTubeMediaService.TryGetCachedAudioPath(track.VideoId) is null)
+                {
+                    await _youTubeMediaService.CacheAudioAsync(
+                        track.VideoId,
+                        cancellationToken: cancellationToken);
+                }
+
+                warmed++;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by opening another album.
+        }
+        catch
+        {
+            // Warmup is opportunistic; playback still streams on demand.
         }
     }
 

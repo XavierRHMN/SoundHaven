@@ -127,6 +127,77 @@ namespace SoundHaven.ViewModels
                 _ = EnsureThumbnailsAsync();
                 _ = ResolveMissingYearsAsync();
                 RefreshDownloadState();
+                RestartBrowsePrecache();
+            }
+        }
+
+        private const int BrowsePrecacheTrackCount = 5;
+        private CancellationTokenSource? _browsePrecacheCancellation;
+
+        // Opening a playlist warms its first few streamable tracks into the audio
+        // cache so clicking around starts instantly. Deliberately capped small:
+        // caching whole playlists would churn hundreds of megabytes per visit and
+        // evict the bounded cache; the next-track prefetch covers the rest while
+        // listening.
+        private void RestartBrowsePrecache()
+        {
+            _browsePrecacheCancellation?.Cancel();
+            _browsePrecacheCancellation?.Dispose();
+            _browsePrecacheCancellation = null;
+
+            Playlist? playlist = DisplayedPlaylist;
+            if (playlist is null)
+            {
+                return;
+            }
+
+            _browsePrecacheCancellation = new CancellationTokenSource();
+            _ = PrecacheLeadingTracksAsync(playlist, _browsePrecacheCancellation.Token);
+        }
+
+        private async Task PrecacheLeadingTracksAsync(
+            Playlist playlist,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                // Let the page settle first — a user just passing through
+                // shouldn't trigger downloads.
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+
+                int warmed = 0;
+                foreach (Song song in playlist.Songs.ToList())
+                {
+                    if (warmed >= BrowsePrecacheTrackCount
+                        || !ReferenceEquals(playlist, DisplayedPlaylist))
+                    {
+                        break;
+                    }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (string.IsNullOrWhiteSpace(song.VideoId)
+                        || (!string.IsNullOrWhiteSpace(song.FilePath) && File.Exists(song.FilePath)))
+                    {
+                        continue;
+                    }
+
+                    if (_youTubeMediaService.TryGetCachedAudioPath(song.VideoId) is null)
+                    {
+                        await _youTubeMediaService.CacheAudioAsync(
+                            song.VideoId,
+                            cancellationToken: cancellationToken);
+                    }
+
+                    warmed++;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Superseded by navigating to another playlist.
+            }
+            catch
+            {
+                // Warmup is opportunistic; playback still streams on demand.
             }
         }
 
@@ -1433,6 +1504,9 @@ namespace SoundHaven.ViewModels
         {
             _playbackViewModel.PropertyChanged -= OnPlaybackPropertyChanged;
             _playlistStore.LikedSongsPlaylist.Songs.CollectionChanged -= OnLikedSongsChanged;
+            _browsePrecacheCancellation?.Cancel();
+            _browsePrecacheCancellation?.Dispose();
+            _browsePrecacheCancellation = null;
             _downloadCts?.Cancel();
             _downloadCts?.Dispose();
             _downloadCts = null;
