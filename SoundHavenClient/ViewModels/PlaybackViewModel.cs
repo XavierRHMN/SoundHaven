@@ -291,9 +291,20 @@ public sealed class PlaybackViewModel : ViewModelBase
 
         YouTubeSearchResult match = results[0];
         song.VideoId = match.VideoId;
-        if (!string.IsNullOrWhiteSpace(match.ThumbnailUrl))
+
+        // Recommendations arrive with Last.fm's low-resolution cover (they carry no
+        // video). Now that this resolved to a real YouTube track, adopt a high-res
+        // thumbnail — the search result's cover, or maxresdefault as a fallback —
+        // and reload the artwork so the large player cover is sharp. The reload is
+        // fire-and-forget and keeps the current cover until the sharp one arrives,
+        // so it neither blanks the art nor delays playback.
+        string highResThumbnail = !string.IsNullOrWhiteSpace(match.ThumbnailUrl)
+            ? match.ThumbnailUrl
+            : YouTubeThumbnailHelper.GetVideoThumbnailUrl(match.VideoId);
+        if (!string.Equals(song.ThumbnailUrl, highResThumbnail, StringComparison.Ordinal))
         {
-            song.ThumbnailUrl = match.ThumbnailUrl;
+            song.ThumbnailUrl = highResThumbnail;
+            _ = song.LoadThumbnailAsync(forceReload: true, cancellationToken: cancellationToken);
         }
 
         if (match.Duration is { } duration && duration > TimeSpan.Zero)
