@@ -548,6 +548,29 @@ namespace SoundHaven.Data
             command.ExecuteNonQuery();
         }
 
+        /// <summary>Persists a completed download: the local file path plus the YouTube
+        /// video id it resolved to, so the song stays offline and removable next session.</summary>
+        public void UpdateSongDownload(long songId, string filePath, string? videoId)
+        {
+            if (songId <= 0)
+            {
+                return;
+            }
+
+            ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "UPDATE Songs SET FilePath = @filePath, VideoId = @videoId WHERE Id = @id;";
+            command.Parameters.AddWithValue("@filePath", filePath);
+            command.Parameters.AddWithValue(
+                "@videoId",
+                string.IsNullOrWhiteSpace(videoId) ? DBNull.Value : videoId);
+            command.Parameters.AddWithValue("@id", songId);
+            command.ExecuteNonQuery();
+        }
+
         public void UpdatePlaylistDetails(
             int playlistId,
             string name,

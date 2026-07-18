@@ -402,20 +402,20 @@
                             IsVisible="{Binding ShowDownloadButton}"
                             IsEnabled="{Binding !IsEditMode}">
                         <StackPanel Spacing="4" HorizontalAlignment="Center">
-                            <Panel Width="22" Height="22">
-                                <!-- Not downloaded: download arrow -->
-                                <PathIcon Width="20" Height="20"
-                                          Foreground="#C8C8C8"
-                                          IsVisible="{Binding IsPlaylistNotDownloaded}"
-                                          Data="M19,9 h-4 V3 H9 v6 H5 l7,7 7,-7 z M5,18 v2 h14 v-2 H5 z" />
-                                <!-- Downloading: spinner (click to cancel); the label
-                                     shows the live percentage. -->
+                            <Panel Width="24" Height="24">
+                                <!-- Not downloaded: download glyph (shared with search) -->
+                                <Svg Path="avares://SoundHavenClient/Assets/Icons/download.svg"
+                                     Width="21" Height="21"
+                                     Opacity="0.8"
+                                     IsVisible="{Binding IsPlaylistNotDownloaded}" />
+                                <!-- Downloading: progress ring (click to cancel); the
+                                     label shows the live percentage. -->
                                 <ProgressBar Classes="circular"
                                              Width="22" Height="22"
-                                             IsIndeterminate="True"
+                                             Value="{Binding DownloadAllProgress}"
                                              IsVisible="{Binding IsPlaylistDownloading}"
                                              Foreground="{DynamicResource PrimaryColor}" />
-                                <!-- Downloaded: check -->
+                                <!-- Downloaded: check in the dynamic accent -->
                                 <PathIcon Width="20" Height="20"
                                           Foreground="{DynamicResource PrimaryColor}"
                                           IsVisible="{Binding IsPlaylistDownloaded}"

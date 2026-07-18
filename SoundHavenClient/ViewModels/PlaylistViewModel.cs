@@ -391,10 +391,12 @@ namespace SoundHaven.ViewModels
             song.CurrentDownloadState == DownloadState.Downloaded
             || (!string.IsNullOrWhiteSpace(song.FilePath) && File.Exists(song.FilePath));
 
+        // Downloadable if it isn't already offline and we can source audio for it:
+        // a YouTube video id, or a title we can resolve to one (like recommendations).
         private static bool IsDownloadable(Song song) =>
-            !string.IsNullOrWhiteSpace(song.VideoId)
-            && song.CurrentDownloadState != DownloadState.Downloading
-            && !IsOffline(song);
+            song.CurrentDownloadState != DownloadState.Downloading
+            && !IsOffline(song)
+            && (!string.IsNullOrWhiteSpace(song.VideoId) || !string.IsNullOrWhiteSpace(song.Title));
 
         // Only YouTube-backed downloads can be removed: deleting the file still leaves
         // the song playable via streaming. Local files the user added are never touched.
@@ -496,7 +498,7 @@ namespace SoundHaven.ViewModels
                 foreach (Song song in pending)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    if (string.IsNullOrWhiteSpace(song.VideoId) || IsOffline(song))
+                    if (IsOffline(song))
                     {
                         completed++;
                         continue;
@@ -514,8 +516,31 @@ namespace SoundHaven.ViewModels
 
                     try
                     {
+                        // Recommendations carry only artist+title; resolve a YouTube
+                        // video for them first, exactly like playback does.
+                        string? videoId = song.VideoId;
+                        if (string.IsNullOrWhiteSpace(videoId))
+                        {
+                            videoId = await ResolveVideoIdAsync(song, cancellationToken);
+                            if (!string.IsNullOrWhiteSpace(videoId))
+                            {
+                                song.VideoId = videoId;
+                            }
+                        }
+
+                        if (string.IsNullOrWhiteSpace(videoId))
+                        {
+                            song.CurrentDownloadState = DownloadState.NotDownloaded;
+                            song.DownloadProgress = 0;
+                            failures++;
+                            completed++;
+                            DownloadAllProgress = (double)completed / pending.Count * 100;
+                            RefreshDownloadState();
+                            continue;
+                        }
+
                         Song downloaded = await _youTubeMediaService.DownloadAudioAsync(
-                            song.VideoId,
+                            videoId,
                             progress,
                             cancellationToken);
 
@@ -543,7 +568,7 @@ namespace SoundHaven.ViewModels
 
                         if (song.Id > 0 && !string.IsNullOrWhiteSpace(song.FilePath))
                         {
-                            _appDatabase.UpdateSongFilePath(song.Id, song.FilePath);
+                            _appDatabase.UpdateSongDownload(song.Id, song.FilePath, videoId);
                         }
                     }
                     catch (OperationCanceledException)
@@ -586,6 +611,22 @@ namespace SoundHaven.ViewModels
             }
         }
 
+        private async Task<string?> ResolveVideoIdAsync(Song song, CancellationToken cancellationToken)
+        {
+            string query = $"{song.Artist} {song.Title}".Trim();
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return null;
+            }
+
+            var matches = await _youTubeMediaService.SearchAsync(
+                query,
+                1,
+                searchSongs: true,
+                cancellationToken);
+            return matches.Count > 0 ? matches[0].VideoId : null;
+        }
+
         private void RefreshDownloadState()
         {
             ObservableCollection<Song>? songs = DisplayedPlaylist?.Songs;
@@ -597,17 +638,29 @@ namespace SoundHaven.ViewModels
                 return;
             }
 
-            ShowDownloadButton = true;
-
             bool downloadingThis = _downloadCts is not null
                 && ReferenceEquals(_downloadingPlaylist, DisplayedPlaylist);
+            bool anyDownloading = downloadingThis
+                || songs.Any(song => song.CurrentDownloadState == DownloadState.Downloading);
+            bool anyDownloadable = songs.Any(IsDownloadable);
+            bool anyOffline = songs.Any(IsOffline);
+
+            // Only worth a button when there's something to download or already offline;
+            // a playlist of un-downloadable, non-offline songs shows nothing.
+            ShowDownloadButton = anyDownloading || anyDownloadable || anyOffline;
+            if (!ShowDownloadButton)
+            {
+                SetPlaylistDownloadState(DownloadState.NotDownloaded);
+                DownloadAllCommand.RaiseCanExecuteChanged();
+                return;
+            }
 
             DownloadState next;
-            if (downloadingThis || songs.Any(song => song.CurrentDownloadState == DownloadState.Downloading))
+            if (anyDownloading)
             {
                 next = DownloadState.Downloading;
             }
-            else if (songs.Any(IsDownloadable))
+            else if (anyDownloadable)
             {
                 next = DownloadState.NotDownloaded;
             }
