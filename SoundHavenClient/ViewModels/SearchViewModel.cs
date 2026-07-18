@@ -92,16 +92,17 @@ public sealed class SearchViewModel : ViewModelBase
             ExecutePlayNextAsync,
             song => song is not null,
             ShowFailure);
-        AddToUpNextCommand = new AsyncRelayCommand<Song>(
-            ExecuteAddToUpNextAsync,
+        AddToQueueCommand = new AsyncRelayCommand<Song>(
+            ExecuteAddToQueueAsync,
             song => song is not null,
             ShowFailure);
         AddToPlaylistCommand = new RelayCommand<Playlist>(
             ExecuteAddToPlaylist,
             playlist => playlist is not null && playlist.Id > 0 && _menuSong is not null);
-        CreatePlaylistAndAddSongCommand = new RelayCommand(
-            ExecuteCreatePlaylistAndAddSong,
-            () => _menuSong is not null);
+        CreatePlaylistAndAddSongCommand = new AsyncRelayCommand(
+            ExecuteCreatePlaylistAndAddSongAsync,
+            () => _menuSong is not null,
+            ShowFailure);
         DownloadSongCommand = new AsyncRelayCommand<Song>(
             ExecuteDownloadSongAsync,
             song => song is not null && song.CurrentDownloadState == DownloadState.NotDownloaded,
@@ -227,11 +228,17 @@ public sealed class SearchViewModel : ViewModelBase
 
     public AsyncRelayCommand<Song> PlayNextCommand { get; }
 
-    public AsyncRelayCommand<Song> AddToUpNextCommand { get; }
+    public AsyncRelayCommand<Song> AddToQueueCommand { get; }
 
     public RelayCommand<Playlist> AddToPlaylistCommand { get; }
 
-    public RelayCommand CreatePlaylistAndAddSongCommand { get; }
+    public AsyncRelayCommand CreatePlaylistAndAddSongCommand { get; }
+
+    /// <summary>
+    /// Opens the same create-playlist dialog as the sidebar's plus button; wired
+    /// by the composition root (the dialog lives with the playlist page).
+    /// </summary>
+    public Func<Playlist, Task<bool>>? PromptPlaylistDetails { get; set; }
 
     public AsyncRelayCommand<Song> DownloadSongCommand { get; }
 
@@ -525,7 +532,7 @@ public sealed class SearchViewModel : ViewModelBase
         _notifications.ShowInfo($"Queued “{song.Title}” to play next.");
     }
 
-    private async Task ExecuteAddToUpNextAsync(Song? song)
+    private async Task ExecuteAddToQueueAsync(Song? song)
     {
         if (song is null)
         {
@@ -539,8 +546,8 @@ public sealed class SearchViewModel : ViewModelBase
                 cancellationToken: _lifetimeCancellation.Token);
         }
 
-        await _playbackViewModel.AddToUpNext(song);
-        _notifications.ShowInfo($"Added “{song.Title}” to Up Next.");
+        await _playbackViewModel.AddToQueue(song);
+        _notifications.ShowInfo($"Added “{song.Title}” to the queue.");
     }
 
     private void ExecuteAddToPlaylist(Playlist? playlist)
@@ -561,28 +568,30 @@ public sealed class SearchViewModel : ViewModelBase
         }
     }
 
-    private void ExecuteCreatePlaylistAndAddSong()
+    private async Task ExecuteCreatePlaylistAndAddSongAsync()
     {
-        if (_menuSong is null)
+        Song? song = _menuSong;
+        if (song is null)
         {
             return;
         }
 
-        try
+        var playlist = new Playlist
         {
-            var playlist = new Playlist
-            {
-                Name = "New playlist",
-                Songs = []
-            };
-            _playlistStore.AddPlaylist(playlist);
-            _playlistStore.AddSongToPlaylist(playlist, _menuSong);
-            _notifications.ShowInfo($"Created “{playlist.Name}” and added “{_menuSong.Title}”.");
-        }
-        catch (Exception exception)
+            Name = "New playlist",
+            Songs = []
+        };
+
+        // The dialog lets the user name it (and cancel); creation only proceeds
+        // on save. Without the wiring, fall back to silent creation.
+        if (PromptPlaylistDetails is { } prompt && !await prompt(playlist))
         {
-            ShowFailure(exception);
+            return;
         }
+
+        _playlistStore.AddPlaylist(playlist);
+        _playlistStore.AddSongToPlaylist(playlist, song);
+        _notifications.ShowInfo($"Created “{playlist.Name}” and added “{song.Title}”.");
     }
 
     private async Task ExecuteDownloadSongAsync(Song? song)

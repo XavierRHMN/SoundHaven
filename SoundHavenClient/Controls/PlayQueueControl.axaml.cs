@@ -87,6 +87,39 @@ public partial class PlayQueueControl : UserControl
         DeferPlay(listBox, viewModel.PlaySongCommand, song);
     }
 
+    private void OnQueuedSelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
+    {
+        if (_suppressSelection)
+        {
+            return;
+        }
+
+        if (DataContext is not PlayerViewModel viewModel
+            || sender is not ListBox listBox
+            || listBox.SelectedItem is not Song song
+            || !viewModel.PlayQueuedSongCommand.CanExecute(song))
+        {
+            return;
+        }
+
+        // Playing a queued track consumes its entry (the list mutates), so defer.
+        DeferPlay(listBox, viewModel.PlayQueuedSongCommand, song);
+    }
+
+    private void OnRemoveFromQueuePointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not Control control
+            || control.DataContext is not Song song
+            || DataContext is not PlayerViewModel viewModel
+            || !e.GetCurrentPoint(control).Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        viewModel.TryRemoveFromQueue(song);
+    }
+
     private void OnHistorySelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)
     {
         if (_suppressSelection)
@@ -214,8 +247,8 @@ public partial class PlayQueueControl : UserControl
 
         flyout.Items.Add(new MenuItem
         {
-            Header = "Add to Up Next",
-            Command = viewModel.AddToUpNextCommand,
+            Header = "Add to queue",
+            Command = viewModel.AddToQueueCommand,
             CommandParameter = song
         });
 

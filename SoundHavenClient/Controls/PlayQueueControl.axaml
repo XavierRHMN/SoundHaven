@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:models="clr-namespace:SoundHaven.Models"
              xmlns:viewModels="clr-namespace:SoundHaven.ViewModels"
+             xmlns:controls="clr-namespace:SoundHaven.Controls"
              xmlns:ripple="clr-namespace:Material.Ripple;assembly=Material.Ripple"
              x:Class="SoundHaven.Controls.PlayQueueControl"
              x:DataType="viewModels:PlayerViewModel">
@@ -156,6 +157,7 @@
                             <Grid ColumnDefinitions="Auto,*,Auto"
                                   Margin="0,2"
                                   Background="Transparent"
+                                  ToolTip.Tip="{Binding Title}"
                                   PointerPressed="OnRowRightClickPressed">
                                 <Border Grid.Column="0"
                                         CornerRadius="5"
@@ -171,8 +173,10 @@
                                 <StackPanel Grid.Column="1"
                                             Orientation="Vertical"
                                             VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Title}"
-                                               Classes="SongTrackTitle" />
+                                    <controls:ScrollingTextBlock Text="{Binding Title}"
+                                                                 FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular"
+                                                                 FontSize="16"
+                                                                 Margin="0,5,0,0" />
                                     <TextBlock Text="{Binding Artist}"
                                                Classes="SongArtistName" />
                                 </StackPanel>
@@ -210,6 +214,7 @@
                         CornerRadius="8"
                         Padding="8"
                         Margin="0,0,0,4"
+                        ToolTip.Tip="{Binding PlayerViewSong.Title}"
                         PointerPressed="OnPlayingCardPointerPressed">
                     <Grid ColumnDefinitions="Auto,*,Auto">
                         <Border Grid.Column="0"
@@ -225,9 +230,11 @@
                         <StackPanel Grid.Column="1"
                                     Orientation="Vertical"
                                     VerticalAlignment="Center">
-                            <TextBlock Text="{Binding PlayerViewSong.Title}"
-                                       Classes="SongTrackTitle"
-                                       Foreground="{DynamicResource PrimaryColor}" />
+                            <controls:ScrollingTextBlock Text="{Binding PlayerViewSong.Title}"
+                                                         FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular"
+                                                         FontSize="16"
+                                                         Margin="0,5,0,0"
+                                                         Foreground="{DynamicResource PrimaryColor}" />
                             <TextBlock Text="{Binding PlayerViewSong.Artist}"
                                        Classes="SongArtistName" />
                         </StackPanel>
@@ -250,6 +257,90 @@
                            Classes="EmptyQueueHint"
                            IsVisible="{Binding !HasPlayingSong}" />
 
+                <!-- Manually queued songs (Play next / Add to queue). They play
+                     before the playlist continues; the section hides when empty. -->
+                <StackPanel IsVisible="{Binding HasQueuedSongs}">
+                    <TextBlock Text="In queue"
+                               Classes="SectionHeader"
+                               HorizontalAlignment="Left" />
+                    <Rectangle Height="1"
+                               Fill="White"
+                               Opacity="0.1"
+                               IsHitTestVisible="False"
+                               Margin="0,0,0,8" />
+
+                    <ListBox x:Name="QueuedList"
+                             ItemsSource="{Binding QueuedSongs}"
+                             Background="Transparent"
+                             Theme="{StaticResource MaterialModernListBox}"
+                             SelectionMode="Single"
+                             SelectionChanged="OnQueuedSelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:Song">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto"
+                                      Margin="0,2"
+                                      Background="Transparent"
+                                      ToolTip.Tip="{Binding Title}"
+                                      PointerPressed="OnRowRightClickPressed">
+                                    <Border Grid.Column="0"
+                                            CornerRadius="5"
+                                            ClipToBounds="True"
+                                            Margin="0,0,10,0"
+                                            Background="#3A3A3A">
+                                        <Image Width="50"
+                                               Height="50"
+                                               Source="{Binding Artwork}"
+                                               Stretch="UniformToFill" />
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Vertical"
+                                                VerticalAlignment="Center">
+                                        <controls:ScrollingTextBlock Text="{Binding Title}"
+                                                                     FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular"
+                                                                     FontSize="16"
+                                                                     Margin="0,5,0,0" />
+                                        <TextBlock Text="{Binding Artist}"
+                                                   Classes="SongArtistName" />
+                                    </StackPanel>
+
+                                    <Button Grid.Column="2"
+                                            Classes="IconOnly"
+                                            Width="36"
+                                            Height="36"
+                                            VerticalAlignment="Center"
+                                            PointerPressed="OnActionsPointerPressed"
+                                            Click="OnRowOverflowButtonClick"
+                                            ToolTip.Tip="More options">
+                                        <Svg Path="avares://SoundHavenClient/Assets/Icons/more_vert.svg"
+                                             Stretch="Uniform"
+                                             Width="20"
+                                             Height="20"
+                                             Opacity="0.95" />
+                                    </Button>
+
+                                    <Border Grid.Column="3"
+                                            Width="32"
+                                            Height="50"
+                                            Background="Transparent"
+                                            Cursor="Hand"
+                                            ToolTip.Tip="Remove from queue"
+                                            PointerPressed="OnRemoveFromQueuePointerPressed">
+                                        <Svg Path="avares://SoundHavenClient/Assets/Icons/close.svg"
+                                             Width="16"
+                                             Height="16"
+                                             Stretch="Uniform"
+                                             Opacity="0.55"
+                                             VerticalAlignment="Center"
+                                             HorizontalAlignment="Center"
+                                             IsHitTestVisible="False" />
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+
                 <TextBlock Text="Up Next"
                            Classes="SectionHeader"
                            HorizontalAlignment="Left" />
@@ -259,7 +350,7 @@
                            IsHitTestVisible="False"
                            Margin="0,0,0,8" />
 
-                <TextBlock Text="Queue is empty — use Play next from search"
+                <TextBlock Text="Play a playlist or album to see what's next"
                            Classes="EmptyQueueHint"
                            IsVisible="{Binding !HasUpNextSongs}" />
 
@@ -275,6 +366,7 @@
                             <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto"
                                   Margin="0,2"
                                   Background="Transparent"
+                                  ToolTip.Tip="{Binding Title}"
                                   PointerPressed="OnRowRightClickPressed">
                                 <Border Grid.Column="0"
                                         Width="28"
@@ -310,8 +402,10 @@
                                 <StackPanel Grid.Column="2"
                                             Orientation="Vertical"
                                             VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Title}"
-                                               Classes="SongTrackTitle" />
+                                    <controls:ScrollingTextBlock Text="{Binding Title}"
+                                                                 FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular"
+                                                                 FontSize="16"
+                                                                 Margin="0,5,0,0" />
                                     <TextBlock Text="{Binding Artist}"
                                                Classes="SongArtistName" />
                                 </StackPanel>

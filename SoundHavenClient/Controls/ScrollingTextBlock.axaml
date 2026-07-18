@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SoundHaven.Controls.ScrollingTextBlock"
+             ClipToBounds="True"
+             HorizontalAlignment="Stretch">
+    <Canvas x:Name="ScrollCanvas">
+        <TextBlock x:Name="PrimaryText" Canvas.Top="0" />
+        <TextBlock x:Name="SecondaryText" Canvas.Top="0" />
+    </Canvas>
+</UserControl>

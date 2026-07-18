@@ -17,6 +17,32 @@ public partial class HomeView : UserControl
     public HomeView()
     {
         InitializeComponent();
+
+        // Tunnel so right-click reaches us before ListBox selection handling
+        // (selection auto-plays the row).
+        SearchResultsList.AddHandler(
+            PointerPressedEvent,
+            OnSearchListPointerPressed,
+            RoutingStrategies.Tunnel);
+    }
+
+    private void OnSearchListPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsRightButtonPressed)
+        {
+            return;
+        }
+
+        if (DataContext is not HomeViewModel { Search: { } search }
+            || e.Source is not Control source
+            || source.FindAncestorOfType<ListBoxItem>(includeSelf: true)
+                is not { DataContext: SearchResultRow row } item)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        ShowSearchSongMenu(search, row.Song, item, showAtPointer: true);
     }
 
     private void OnActionsPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -163,10 +189,20 @@ public partial class HomeView : UserControl
             return;
         }
 
-        Song song = row.Song;
+        ShowSearchSongMenu(search, row.Song, button, showAtPointer: false);
+        e.Handled = true;
+    }
+
+    private static void ShowSearchSongMenu(
+        SearchViewModel search,
+        Song song,
+        Control anchor,
+        bool showAtPointer)
+    {
         search.SetMenuSong(song);
 
-        var flyout = DarkMenuFlyout.Create(PlacementMode.BottomEdgeAlignedLeft);
+        var flyout = DarkMenuFlyout.Create(
+            showAtPointer ? PlacementMode.Pointer : PlacementMode.BottomEdgeAlignedLeft);
         flyout.Items.Add(new MenuItem
         {
             Header = "Play now",
@@ -181,8 +217,8 @@ public partial class HomeView : UserControl
         });
         flyout.Items.Add(new MenuItem
         {
-            Header = "Add to Up Next",
-            Command = search.AddToUpNextCommand,
+            Header = "Add to queue",
+            Command = search.AddToQueueCommand,
             CommandParameter = song
         });
 
@@ -227,8 +263,7 @@ public partial class HomeView : UserControl
             });
         }
 
-        flyout.ShowAt(button);
-        e.Handled = true;
+        flyout.ShowAt(anchor, showAtPointer);
     }
 
     private async void OnConnectLastFmClick(object? sender, RoutedEventArgs e)

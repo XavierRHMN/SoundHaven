@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using SoundHaven.ViewModels;
@@ -15,7 +16,8 @@ public sealed class AudioService : ViewModelBase, IAudioService
     private readonly IYouTubeMediaService _youTubeMediaService;
     private readonly SemaphoreSlim _operationLock = new(1, 1);
     private CancellationTokenSource _sessionCancellation = new();
-    private DirectSoundOut? _outputDevice;
+    private WasapiOut? _outputDevice;
+    private MMDevice? _outputMmDevice;
     private WaveStream? _reader;
     private VolumeSampleProvider? _volumeProvider;
     private Timer? _positionTimer;
@@ -296,17 +298,15 @@ public sealed class AudioService : ViewModelBase, IAudioService
 
         try
         {
-            foreach (DirectSoundDeviceInfo device in DirectSoundOut.Devices)
+            using var enumerator = new MMDeviceEnumerator();
+            foreach (MMDevice device in enumerator.EnumerateAudioEndPoints(
+                DataFlow.Render,
+                DeviceState.Active))
             {
-                // The Guid.Empty "Primary Sound Driver" is our "System default".
-                if (device.Guid == Guid.Empty)
+                using (device)
                 {
-                    continue;
+                    devices.Add(new AudioOutputDevice(device.ID, device.FriendlyName));
                 }
-
-                devices.Add(new AudioOutputDevice(
-                    device.Guid.ToString(),
-                    device.Description));
             }
         }
         catch
@@ -515,14 +515,43 @@ public sealed class AudioService : ViewModelBase, IAudioService
         CreateOutputDevice();
     }
 
+    // WASAPI shared mode renders silence when the decoder can't feed it in time
+    // (network stall, teardown). DirectSoundOut's looping ring buffer instead
+    // replays its stale contents, which is audible as a rapid stutter of the last
+    // ~150ms whenever playback ends, skips, or the stream hiccups.
     private void CreateOutputDevice()
     {
-        Guid deviceGuid = Guid.TryParse(_outputDeviceId, out Guid parsed) && parsed != Guid.Empty
-            ? parsed
-            : DirectSoundOut.DSDEVID_DefaultPlayback;
-        _outputDevice = new DirectSoundOut(deviceGuid, 150);
+        MMDevice device = ResolveOutputDevice();
+        _outputMmDevice?.Dispose();
+        _outputMmDevice = device;
+
+        _outputDevice = new WasapiOut(device, AudioClientShareMode.Shared, true, 150);
         _outputDevice.PlaybackStopped += OnPlaybackStopped;
         _outputDevice.Init(new LeadOutSampleProvider(_volumeProvider!));
+    }
+
+    private MMDevice ResolveOutputDevice()
+    {
+        using var enumerator = new MMDeviceEnumerator();
+        if (!string.IsNullOrEmpty(_outputDeviceId))
+        {
+            try
+            {
+                MMDevice selected = enumerator.GetDevice(_outputDeviceId);
+                if (selected.State == DeviceState.Active)
+                {
+                    return selected;
+                }
+
+                selected.Dispose();
+            }
+            catch
+            {
+                // The chosen device is gone; fall back to the system default.
+            }
+        }
+
+        return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
     }
 
     private void DisposeOutputDevice()
@@ -542,6 +571,9 @@ public sealed class AudioService : ViewModelBase, IAudioService
             _outputDevice.Dispose();
             _outputDevice = null;
         }
+
+        _outputMmDevice?.Dispose();
+        _outputMmDevice = null;
     }
 
     private void DisposePlaybackCore()

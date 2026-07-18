@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
@@ -21,6 +22,9 @@ public sealed class PlayerViewModel : ViewModelBase
 
     public ObservableCollection<Song> HistorySongs { get; } = [];
 
+    /// <summary>Manually queued tracks, shown as the "In queue" section.</summary>
+    public ObservableCollection<Song> QueuedSongs => _playbackViewModel.ManualQueue;
+
     public ObservableCollection<Playlist> Playlists => _playlistStore.Playlists;
 
     public string ActivePlaylistName =>
@@ -34,13 +38,17 @@ public sealed class PlayerViewModel : ViewModelBase
 
     public bool HasHistorySongs => HistorySongs.Count > 0;
 
+    public bool HasQueuedSongs => QueuedSongs.Count > 0;
+
     public AsyncRelayCommand<Song> PlaySongCommand { get; }
 
     public AsyncRelayCommand<Song> PlayHistorySongCommand { get; }
 
+    public AsyncRelayCommand<Song> PlayQueuedSongCommand { get; }
+
     public AsyncRelayCommand<Song> PlayNextCommand { get; }
 
-    public AsyncRelayCommand<Song> AddToUpNextCommand { get; }
+    public AsyncRelayCommand<Song> AddToQueueCommand { get; }
 
     public RelayCommand<Playlist> AddToPlaylistCommand { get; }
 
@@ -64,12 +72,16 @@ public sealed class PlayerViewModel : ViewModelBase
             PlayHistorySongAsync,
             song => song is not null,
             exception => _notifications.ShowError(exception.Message));
+        PlayQueuedSongCommand = new AsyncRelayCommand<Song>(
+            PlayQueuedSongAsync,
+            song => song is not null,
+            exception => _notifications.ShowError(exception.Message));
         PlayNextCommand = new AsyncRelayCommand<Song>(
             PlayNextAsync,
             song => song is not null,
             exception => _notifications.ShowError(exception.Message));
-        AddToUpNextCommand = new AsyncRelayCommand<Song>(
-            AddToUpNextAsync,
+        AddToQueueCommand = new AsyncRelayCommand<Song>(
+            AddToQueueAsync,
             song => song is not null,
             exception => _notifications.ShowError(exception.Message));
         AddToPlaylistCommand = new RelayCommand<Playlist>(
@@ -78,10 +90,14 @@ public sealed class PlayerViewModel : ViewModelBase
         CreatePlaylistAndAddSongCommand = new RelayCommand(
             ExecuteCreatePlaylistAndAddSong,
             () => _menuSong is not null);
+        QueuedSongs.CollectionChanged += OnQueuedSongsChanged;
         SubscribeToPlaylistSongs();
         RefreshUpNext();
         RefreshHistory();
     }
+
+    private void OnQueuedSongsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        => OnPropertyChanged(nameof(HasQueuedSongs));
 
     public void SetMenuSong(Song song)
     {
@@ -176,6 +192,7 @@ public sealed class PlayerViewModel : ViewModelBase
     public override void Dispose()
     {
         _playbackViewModel.PropertyChanged -= PlaybackViewModel_PropertyChanged;
+        QueuedSongs.CollectionChanged -= OnQueuedSongsChanged;
         UnsubscribeFromPlaylistSongs();
         base.Dispose();
     }
@@ -196,15 +213,28 @@ public sealed class PlayerViewModel : ViewModelBase
         _notifications.ShowInfo($"Queued “{song.Title}” to play next.");
     }
 
-    private async Task AddToUpNextAsync(Song? song)
+    private async Task AddToQueueAsync(Song? song)
     {
         if (song is null)
         {
             return;
         }
 
-        await _playbackViewModel.AddToUpNext(song);
-        _notifications.ShowInfo($"Added “{song.Title}” to Up Next.");
+        await _playbackViewModel.AddToQueue(song);
+        _notifications.ShowInfo($"Added “{song.Title}” to the queue.");
+    }
+
+    /// <summary>Playing a manually queued track consumes its queue entry.</summary>
+    private Task PlayQueuedSongAsync(Song? song)
+    {
+        return song is null ? Task.CompletedTask : _playbackViewModel.PlayFromQueueAsync(song);
+    }
+
+    /// <summary>Removes a manually queued track without playing it.</summary>
+    public bool TryRemoveFromQueue(Song song)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+        return _playbackViewModel.RemoveFromQueue(song);
     }
 
     /// <summary>
@@ -329,11 +359,31 @@ public sealed class PlayerViewModel : ViewModelBase
     private void RefreshHistory()
     {
         HistorySongs.Clear();
+        // A queue can contain the same song twice; history shows it once.
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (Song song in _playbackViewModel.GetPreviousSongs())
         {
-            HistorySongs.Add(song);
+            if (seen.Add(GetHistoryKey(song)))
+            {
+                HistorySongs.Add(song);
+            }
         }
 
         OnPropertyChanged(nameof(HasHistorySongs));
+    }
+
+    private static string GetHistoryKey(Song song)
+    {
+        if (!string.IsNullOrWhiteSpace(song.VideoId))
+        {
+            return "video:" + song.VideoId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(song.FilePath))
+        {
+            return "file:" + song.FilePath;
+        }
+
+        return $"meta:{song.Title}|{song.Artist}";
     }
 }

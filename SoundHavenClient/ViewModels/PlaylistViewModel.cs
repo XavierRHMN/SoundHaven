@@ -276,7 +276,7 @@ namespace SoundHaven.ViewModels
         public AsyncRelayCommand PlayPlaylistNextCommand { get; }
         public AsyncRelayCommand<Song> PlaySongCommand { get; }
         public AsyncRelayCommand<Song> PlaySongNextCommand { get; }
-        public AsyncRelayCommand<Song> AddToUpNextCommand { get; }
+        public AsyncRelayCommand<Song> AddToQueueCommand { get; }
         public RelayCommand<Playlist> AddMenuSongToPlaylistCommand { get; }
         public RelayCommand<Song> RemoveSongFromPlaylistCommand { get; }
         public AsyncRelayCommand OpenEditPlaylistCommand { get; }
@@ -330,8 +330,8 @@ namespace SoundHaven.ViewModels
                 PlaySongNextAsync,
                 song => song is not null && !IsEditMode,
                 exception => _notifications.ShowError(exception.Message));
-            AddToUpNextCommand = new AsyncRelayCommand<Song>(
-                AddToUpNextAsync,
+            AddToQueueCommand = new AsyncRelayCommand<Song>(
+                AddToQueueAsync,
                 song => song is not null && !IsEditMode,
                 exception => _notifications.ShowError(exception.Message));
             AddMenuSongToPlaylistCommand = new RelayCommand<Playlist>(
@@ -804,10 +804,10 @@ namespace SoundHaven.ViewModels
 
             var matches = await _youTubeMediaService.SearchAsync(
                 query,
-                1,
+                YouTubeMatchHelper.ResolveSearchLimit,
                 searchSongs: true,
                 cancellationToken);
-            return matches.Count > 0 ? matches[0].VideoId : null;
+            return YouTubeMatchHelper.PickBestMatch(matches, song)?.VideoId;
         }
 
         private void RefreshDownloadState()
@@ -1114,15 +1114,15 @@ namespace SoundHaven.ViewModels
             _notifications.ShowInfo($"Queued “{song.Title}” to play next.");
         }
 
-        private async Task AddToUpNextAsync(Song? song)
+        private async Task AddToQueueAsync(Song? song)
         {
             if (song is null)
             {
                 return;
             }
 
-            await _playbackViewModel.AddToUpNext(song);
-            _notifications.ShowInfo($"Added “{song.Title}” to Up Next.");
+            await _playbackViewModel.AddToQueue(song);
+            _notifications.ShowInfo($"Added “{song.Title}” to the queue.");
         }
 
         /// <summary>Remembers the row a context menu was opened for.</summary>

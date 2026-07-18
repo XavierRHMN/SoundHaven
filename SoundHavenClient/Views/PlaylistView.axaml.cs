@@ -94,8 +94,8 @@ public partial class PlaylistView : UserControl
 
         flyout.Items.Add(new MenuItem
         {
-            Header = "Add to Up Next",
-            Command = viewModel.AddToUpNextCommand,
+            Header = "Add to queue",
+            Command = viewModel.AddToQueueCommand,
             CommandParameter = song
         });
 

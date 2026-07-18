@@ -114,6 +114,10 @@ public partial class App : Application, IDisposable
             playlistStore,
             albumArtService,
             notifications);
+        // Search's "Create one" opens the same create-playlist dialog as the
+        // sidebar plus button, which lives with the playlist page.
+        searchViewModel.PromptPlaylistDetails =
+            playlist => playlistViewModel.PromptPlaylistDetailsAsync(playlist, isCreating: true);
         var volumeViewModel = new VolumeViewModel(_audioService);
         var songInfoViewModel = new SongInfoViewModel(playbackViewModel, _audioService, albumArtService);
         var navigation = new NavigationService(new ViewModelBase());

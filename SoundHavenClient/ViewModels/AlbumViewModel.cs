@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SoundHaven.Commands;
+using SoundHaven.Helpers;
 using SoundHaven.Models;
 using SoundHaven.Services;
 using SoundHaven.Stores;
@@ -197,6 +198,7 @@ public sealed class AlbumViewModel : ViewModelBase
                 _tracks.Add(track);
             }
 
+            ApplyAlbumArtToTracks();
             RebuildTrackRows();
             _ = ResolveAlbumYearAsync(cancellationToken);
         }
@@ -433,10 +435,10 @@ public sealed class AlbumViewModel : ViewModelBase
 
         var matches = await _youTubeMediaService.SearchAsync(
             query,
-            1,
+            YouTubeMatchHelper.ResolveSearchLimit,
             searchSongs: true,
             cancellationToken);
-        return matches.Count > 0 ? matches[0].VideoId : null;
+        return YouTubeMatchHelper.PickBestMatch(matches, song)?.VideoId;
     }
 
     private static Task ExecuteOpenSongFolderAsync(Song? song)
@@ -503,10 +505,56 @@ public sealed class AlbumViewModel : ViewModelBase
             }
 
             await album.LoadThumbnailAsync(cancellationToken: cancellationToken);
+
+            // The cover often arrives after the track list; re-stamp so every
+            // track picks it up regardless of which finished first.
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                ApplyAlbumArtToTracks();
+            }
         }
         catch
         {
             // Cover is decorative; a placeholder shows if it can't be fetched.
+        }
+    }
+
+    // Last.fm album tracks carry no per-track art; give them the album cover so
+    // the queue, history, and player show real thumbnails when playing from here.
+    private void ApplyAlbumArtToTracks()
+    {
+        Song? album = _album;
+        if (album is null || _tracks.Count == 0)
+        {
+            return;
+        }
+
+        string? coverUrl = !string.IsNullOrWhiteSpace(album.ArtworkUrl)
+            ? album.ArtworkUrl
+            : album.ThumbnailUrl;
+
+        foreach (Song track in _tracks)
+        {
+            if (album.ArtworkData is { Length: > 0 } cover
+                && track.ArtworkData is not { Length: > 0 })
+            {
+                track.ArtworkData = cover;
+            }
+
+            if (string.IsNullOrWhiteSpace(coverUrl))
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(track.ArtworkUrl))
+            {
+                track.ArtworkUrl = coverUrl;
+            }
+
+            if (string.IsNullOrWhiteSpace(track.ThumbnailUrl))
+            {
+                track.ThumbnailUrl = coverUrl;
+            }
         }
     }
 

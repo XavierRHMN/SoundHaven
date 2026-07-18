@@ -158,7 +158,12 @@ public sealed class PlaybackViewModel : ViewModelBase
     {
         if (CurrentSong is null)
         {
-            if (CurrentPlaylist?.Songs.Count > 0)
+            Song? queued = DequeueManualSong();
+            if (queued is not null)
+            {
+                await PlayFromBeginning(queued);
+            }
+            else if (CurrentPlaylist?.Songs.Count > 0)
             {
                 await PlayFromBeginning(CurrentPlaylist.Songs[0]);
             }
@@ -186,8 +191,10 @@ public sealed class PlaybackViewModel : ViewModelBase
 
     public async Task NextTrack()
     {
-        // Only Repeat All wraps at the end of the queue; otherwise Next is a no-op there.
-        Song? nextSong = GetNextSong(wrap: _repeatViewModel.RepeatMode == RepeatMode.All);
+        // Manually queued songs always play first. After that, only Repeat All
+        // wraps at the end of the queue; otherwise Next is a no-op there.
+        Song? nextSong = DequeueManualSong()
+            ?? GetNextSong(wrap: _repeatViewModel.RepeatMode == RepeatMode.All);
         if (nextSong is not null)
         {
             await PlayFromBeginning(nextSong);
@@ -281,15 +288,17 @@ public sealed class PlaybackViewModel : ViewModelBase
 
         IReadOnlyList<YouTubeSearchResult> results = await _youTubeMediaService.SearchAsync(
             query,
-            1,
+            YouTubeMatchHelper.ResolveSearchLimit,
             searchSongs: true,
             cancellationToken);
-        if (results.Count == 0)
+        // Pick by duration proximity when the track length is known — the raw top
+        // result can be a totally different song (short interludes especially).
+        YouTubeSearchResult? match = YouTubeMatchHelper.PickBestMatch(results, song);
+        if (match is null)
         {
             return;
         }
 
-        YouTubeSearchResult match = results[0];
         song.VideoId = match.VideoId;
 
         // Recommendations arrive with Last.fm's low-resolution cover (they carry no
@@ -297,14 +306,19 @@ public sealed class PlaybackViewModel : ViewModelBase
         // thumbnail — the search result's cover, or maxresdefault as a fallback —
         // and reload the artwork so the large player cover is sharp. The reload is
         // fire-and-forget and keeps the current cover until the sharp one arrives,
-        // so it neither blanks the art nor delays playback.
-        string highResThumbnail = !string.IsNullOrWhiteSpace(match.ThumbnailUrl)
-            ? match.ThumbnailUrl
-            : YouTubeThumbnailHelper.GetVideoThumbnailUrl(match.VideoId);
-        if (!string.Equals(song.ThumbnailUrl, highResThumbnail, StringComparison.Ordinal))
+        // so it neither blanks the art nor delays playback. Tracks that already
+        // carry sharp artwork (e.g. album pages stamp their cover) keep it — the
+        // resolved video's thumbnail may not even be the right cover.
+        if (song.NeedsHigherQualityArtwork())
         {
-            song.ThumbnailUrl = highResThumbnail;
-            _ = song.LoadThumbnailAsync(forceReload: true, cancellationToken: cancellationToken);
+            string highResThumbnail = !string.IsNullOrWhiteSpace(match.ThumbnailUrl)
+                ? match.ThumbnailUrl
+                : YouTubeThumbnailHelper.GetVideoThumbnailUrl(match.VideoId);
+            if (!string.Equals(song.ThumbnailUrl, highResThumbnail, StringComparison.Ordinal))
+            {
+                song.ThumbnailUrl = highResThumbnail;
+                _ = song.LoadThumbnailAsync(forceReload: true, cancellationToken: cancellationToken);
+            }
         }
 
         if (match.Duration is { } duration && duration > TimeSpan.Zero)
@@ -348,50 +362,61 @@ public sealed class PlaybackViewModel : ViewModelBase
         }
     }
 
-    public Task AddToUpNext(Song song)
+    /// <summary>
+    /// Manually queued tracks ("Play next" / "Add to queue"). They play before the
+    /// playlist continues and are consumed as they play; Up Next itself stays
+    /// strictly the playlist's own continuation.
+    /// </summary>
+    public ObservableCollection<Song> ManualQueue { get; } = new();
+
+    /// <summary>Appends a copy of <paramref name="song"/> to the end of the manual
+    /// queue. Duplicates are allowed.</summary>
+    public Task AddToQueue(Song song)
     {
         ArgumentNullException.ThrowIfNull(song);
-        EnsureQueuePlaylist();
-
-        // Always append a queue copy so duplicates are allowed.
-        CurrentPlaylist!.Songs.Add(song.CloneForQueue());
+        ManualQueue.Add(song.CloneForQueue());
         return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Inserts a copy of <paramref name="song"/> at the front of Up Next
-    /// (immediately after the currently playing track). Does not start playback.
+    /// Inserts a copy of <paramref name="song"/> at the head of the manual queue,
+    /// so it plays immediately after the current track. Does not start playback.
     /// </summary>
     public Task PlayNext(Song song)
     {
         ArgumentNullException.ThrowIfNull(song);
-        EnsureQueuePlaylist();
-
-        ObservableCollection<Song> songs = CurrentPlaylist!.Songs;
-        Song queued = song.CloneForQueue();
-
-        int insertIndex = 0;
-        if (CurrentSong is not null)
-        {
-            int referenceIndex = GetQueueReferenceIndex(songs);
-            if (referenceIndex >= 0)
-            {
-                insertIndex = referenceIndex + 1;
-            }
-        }
-
-        insertIndex = Math.Clamp(insertIndex, 0, songs.Count);
-        songs.Insert(insertIndex, queued);
+        ManualQueue.Insert(0, song.CloneForQueue());
         return Task.CompletedTask;
     }
 
-    private void EnsureQueuePlaylist()
+    /// <summary>Plays a manually queued track now, consuming its queue entry.</summary>
+    public Task PlayFromQueueAsync(Song song)
     {
-        CurrentPlaylist ??= new Playlist
+        ArgumentNullException.ThrowIfNull(song);
+        ManualQueue.Remove(song);
+        return PlayFromBeginning(song);
+    }
+
+    /// <summary>Removes a manually queued track without playing it.</summary>
+    public bool RemoveFromQueue(Song song)
+    {
+        ArgumentNullException.ThrowIfNull(song);
+        return ManualQueue.Remove(song);
+    }
+
+    // Manually queued songs take priority over playlist advancement; they never
+    // join the playlist, so the queue anchor keeps the playlist position and
+    // Up Next resumes where it left off once the manual queue drains.
+    private Song? DequeueManualSong()
+    {
+        if (ManualQueue.Count == 0)
         {
-            Name = "Up Next",
-            Songs = new ObservableCollection<Song>()
-        };
+            return null;
+        }
+
+        Song next = ManualQueue[0];
+        ManualQueue.RemoveAt(0);
+        return next;
     }
 
     private static Playlist? CreateQueueSnapshot(Playlist? source)
@@ -785,7 +810,7 @@ public sealed class PlaybackViewModel : ViewModelBase
                     break;
                 case RepeatMode.All:
                     {
-                        Song? next = GetNextSong(wrap: true);
+                        Song? next = DequeueManualSong() ?? GetNextSong(wrap: true);
                         if (next is not null)
                         {
                             await PlayFromBeginning(next);
@@ -795,7 +820,7 @@ public sealed class PlaybackViewModel : ViewModelBase
                     }
                 case RepeatMode.Off:
                     {
-                        Song? next = GetNextSong(wrap: false);
+                        Song? next = DequeueManualSong() ?? GetNextSong(wrap: false);
                         if (next is not null)
                         {
                             await PlayFromBeginning(next);

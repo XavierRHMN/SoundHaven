@@ -847,7 +847,8 @@
                               Theme="{StaticResource MaterialModernScrollViewer}"
                               IsVisible="{Binding !Search.IsLoading}"
                               IsHitTestVisible="{Binding Search.IsScrollViewerHittestable}">
-                    <ListBox Classes="SearchResults"
+                    <ListBox x:Name="SearchResultsList"
+                             Classes="SearchResults"
                              Margin="0,0,16,0"
                              ItemsSource="{Binding Search.ResultRows}"
                              SelectionChanged="OnSearchRowSelectionChanged">
