@@ -9,6 +9,12 @@
         </ResourceDictionary>
     </Styles.Resources>
 
+    <!-- Scrollbars show only the thumb: the Material modern scrollbar paints a
+         full-length track line via the ScrollBar's Background, so blank it. -->
+    <Style Selector="ScrollBar">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
     <!-- Slider styles -->
     <Style Selector="Slider">
         <Setter Property="Background" Value="Transparent" />
