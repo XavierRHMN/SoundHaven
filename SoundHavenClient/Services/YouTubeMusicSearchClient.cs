@@ -24,8 +24,9 @@ internal sealed class YouTubeMusicSearchClient
     // Public Innertube key used by the YouTube Music web client (not a private developer secret).
     private const string InnertubeApiKey = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
     private const string ClientVersion = "1.20250317.01.00";
-    // Filter params for songs-only catalogue search (from ytmusicapi).
+    // Filter params for songs-only / albums-only catalogue search (from ytmusicapi).
     private const string SongsFilterParams = "EgWKAQIIAWoMEA4QChADEAQQCRAF";
+    private const string AlbumsFilterParams = "EgWKAQIYAWoMEA4QChADEAQQCRAF";
 
     private readonly HttpClient _httpClient;
 
@@ -46,45 +47,15 @@ internal sealed class YouTubeMusicSearchClient
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
 
-        using var request = new HttpRequestMessage(
-            HttpMethod.Post,
-            $"https://music.youtube.com/youtubei/v1/search?key={InnertubeApiKey}&prettyPrint=false");
-        request.Headers.TryAddWithoutValidation("Origin", "https://music.youtube.com");
-        request.Headers.TryAddWithoutValidation("Referer", "https://music.youtube.com/");
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-        var payload = new
+        using JsonDocument? document = await SearchRawAsync(
+                query,
+                SongsFilterParams,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (document is null)
         {
-            context = new
-            {
-                client = new
-                {
-                    clientName = "WEB_REMIX",
-                    clientVersion = ClientVersion,
-                    hl = "en",
-                    gl = "US"
-                }
-            },
-            query = query.Trim(),
-            @params = SongsFilterParams
-        };
-
-        request.Content = new StringContent(
-            JsonSerializer.Serialize(payload),
-            Encoding.UTF8,
-            "application/json");
-
-        using HttpResponseMessage response = await _httpClient
-            .SendAsync(request, cancellationToken)
-            .ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-
-        await using Stream stream = await response.Content
-            .ReadAsStreamAsync(cancellationToken)
-            .ConfigureAwait(false);
-        using JsonDocument document = await JsonDocument
-            .ParseAsync(stream, cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
+            throw new InvalidOperationException("YouTube Music song search failed.");
+        }
 
         var results = new List<YouTubeSearchResult>(limit);
         foreach (JsonElement item in EnumerateSongItems(document.RootElement))
@@ -106,6 +77,234 @@ internal sealed class YouTubeMusicSearchClient
         }
 
         return results;
+    }
+
+    /// <summary>
+    /// Resolves an album from the YouTube Music catalogue: an albums-filtered
+    /// search picks the release (validated against the requested artist/title),
+    /// then browsing it yields the track list with playable video ids, the album
+    /// year, and its square cover. Null when nothing convincingly matches.
+    /// </summary>
+    public async Task<YouTubeMusicAlbum?> GetAlbumAsync(
+        string artist,
+        string album,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(album))
+        {
+            return null;
+        }
+
+        using JsonDocument? searchDocument = await SearchRawAsync(
+                $"{artist} {album}".Trim(),
+                AlbumsFilterParams,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (searchDocument is null)
+        {
+            return null;
+        }
+
+        string? browseId = null;
+        string matchedTitle = album;
+        string matchedArtist = artist;
+        int? year = null;
+        string? thumbnailUrl = null;
+        foreach (JsonElement item in EnumerateSongItems(searchDocument.RootElement))
+        {
+            if (!TryGetPropertyPath(
+                    item,
+                    out JsonElement browseIdElement,
+                    "navigationEndpoint",
+                    "browseEndpoint",
+                    "browseId")
+                || browseIdElement.ValueKind != JsonValueKind.String)
+            {
+                continue;
+            }
+
+            string? candidateBrowseId = browseIdElement.GetString();
+            string? candidateTitle = GetFlexText(item, columnIndex: 0);
+            if (string.IsNullOrWhiteSpace(candidateBrowseId)
+                || string.IsNullOrWhiteSpace(candidateTitle)
+                || !YouTubeMatchHelper.KeysOverlap(candidateTitle, album))
+            {
+                continue;
+            }
+
+            // Subtitle runs look like "Album • Artist • Year"; require the artist
+            // to appear so "MUSIC" can't resolve to someone else's album.
+            string[] subtitleParts = GetFlexRuns(item, columnIndex: 1);
+            if (artist.Length > 0
+                && subtitleParts.Length > 0
+                && !subtitleParts.Any(part => YouTubeMatchHelper.KeysOverlap(part, artist)))
+            {
+                continue;
+            }
+
+            browseId = candidateBrowseId;
+            matchedTitle = candidateTitle;
+            matchedArtist = subtitleParts.FirstOrDefault(
+                    part => YouTubeMatchHelper.KeysOverlap(part, artist))
+                ?? (subtitleParts.Length > 1 ? subtitleParts[1] : artist);
+            foreach (string part in subtitleParts)
+            {
+                if (int.TryParse(part, NumberStyles.None, CultureInfo.InvariantCulture, out int parsed)
+                    && parsed is >= 1900 and <= 2100)
+                {
+                    year = parsed;
+                }
+            }
+
+            thumbnailUrl = YouTubeThumbnailHelper.UpgradeThumbnailUrl(GetBestThumbnailUrl(item));
+            break;
+        }
+
+        if (browseId is null)
+        {
+            return null;
+        }
+
+        using JsonDocument? albumDocument = await BrowseAsync(browseId, cancellationToken)
+            .ConfigureAwait(false);
+        if (albumDocument is null)
+        {
+            return null;
+        }
+
+        var tracks = new List<YouTubeSearchResult>();
+        var seenVideoIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (JsonElement item in EnumerateHomeSongItems(albumDocument.RootElement))
+        {
+            if (TryParseAlbumTrack(item, matchedArtist, matchedTitle, thumbnailUrl, year, out YouTubeSearchResult? track)
+                && track is not null
+                && seenVideoIds.Add(track.VideoId))
+            {
+                tracks.Add(track);
+            }
+        }
+
+        return tracks.Count > 0
+            ? new YouTubeMusicAlbum(matchedTitle, matchedArtist, year, thumbnailUrl, tracks)
+            : null;
+    }
+
+    private async Task<JsonDocument?> SearchRawAsync(
+        string query,
+        string filterParams,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"https://music.youtube.com/youtubei/v1/search?key={InnertubeApiKey}&prettyPrint=false");
+        request.Headers.TryAddWithoutValidation("Origin", "https://music.youtube.com");
+        request.Headers.TryAddWithoutValidation("Referer", "https://music.youtube.com/");
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        var payload = new
+        {
+            context = new
+            {
+                client = new
+                {
+                    clientName = "WEB_REMIX",
+                    clientVersion = ClientVersion,
+                    hl = "en",
+                    gl = "US"
+                }
+            },
+            query = query.Trim(),
+            @params = filterParams
+        };
+
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json");
+
+        using HttpResponseMessage response = await _httpClient
+            .SendAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        await using Stream stream = await response.Content
+            .ReadAsStreamAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return await JsonDocument
+            .ParseAsync(stream, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    // Album-page track rows keep the title in flex column 0, the artist in flex
+    // column 1, and the duration in the fixed column at the row's end.
+    private static bool TryParseAlbumTrack(
+        JsonElement item,
+        string albumArtist,
+        string albumTitle,
+        string? coverUrl,
+        int? year,
+        out YouTubeSearchResult? result)
+    {
+        result = null;
+
+        string? videoId = GetVideoId(item);
+        if (string.IsNullOrWhiteSpace(videoId))
+        {
+            return false;
+        }
+
+        string title = GetFlexText(item, columnIndex: 0) ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return false;
+        }
+
+        string[] secondaryParts = GetFlexRuns(item, columnIndex: 1);
+        string? artist = secondaryParts.FirstOrDefault(part => !LooksLikeDuration(part));
+        TimeSpan? duration = GetFixedColumnDuration(item)
+            ?? ParseDuration(secondaryParts.LastOrDefault());
+
+        result = new YouTubeSearchResult(
+            videoId,
+            title,
+            string.IsNullOrWhiteSpace(artist) ? albumArtist : artist,
+            albumTitle,
+            duration,
+            coverUrl,
+            ViewCount: 0,
+            year);
+        return true;
+    }
+
+    private static TimeSpan? GetFixedColumnDuration(JsonElement item)
+    {
+        if (!item.TryGetProperty("fixedColumns", out JsonElement fixedColumns)
+            || fixedColumns.ValueKind != JsonValueKind.Array
+            || fixedColumns.GetArrayLength() == 0
+            || !TryGetPropertyPath(
+                fixedColumns[0],
+                out JsonElement runs,
+                "musicResponsiveListItemFixedColumnRenderer",
+                "text",
+                "runs")
+            || runs.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (JsonElement run in runs.EnumerateArray())
+        {
+            if (run.TryGetProperty("text", out JsonElement text)
+                && ParseDuration(text.GetString()) is { } duration)
+            {
+                return duration;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

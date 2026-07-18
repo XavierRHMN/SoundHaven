@@ -182,7 +182,8 @@ public sealed class AlbumArtServiceTests : IDisposable
                   {"title":"POP OUT","duration":163,"artist":{"name":"Playboi Carti"}},
                   {"title":"K POP","duration":141,"artist":{"name":"Playboi Carti"}}
                 ]}
-                """
+                """,
+            ["api.deezer.com/album/42?"] = """{"id":42,"release_date":"2025-03-14"}"""
         };
         using var httpClient = new HttpClient(handler);
         var service = new AlbumArtService(httpClient, _cache);
@@ -197,6 +198,8 @@ public sealed class AlbumArtServiceTests : IDisposable
         List<string> expectedTitles = ["POP OUT", "K POP"];
         Assert.Equal(expectedTitles, resolved.Tracks.Select(track => track.Title));
         Assert.Equal(TimeSpan.FromSeconds(163), resolved.Tracks[0].Duration);
+        // The album's release year applies to every track.
+        Assert.All(resolved.Tracks, track => Assert.Equal(2025, track.Year));
     }
 
     [Fact]

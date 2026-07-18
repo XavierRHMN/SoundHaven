@@ -26,6 +26,15 @@ public sealed record YouTubeSearchResult(
     long ViewCount,
     int? Year);
 
+/// <summary>A YouTube Music catalogue album: metadata plus its playable tracks
+/// (each already carrying a video id, so playback needs no per-song search).</summary>
+public sealed record YouTubeMusicAlbum(
+    string Title,
+    string Artist,
+    int? Year,
+    string? ThumbnailUrl,
+    IReadOnlyList<YouTubeSearchResult> Tracks);
+
 public sealed record YouTubeStreamSource(
     string VideoId,
     Uri StreamUri,
@@ -44,6 +53,13 @@ public interface IYouTubeMediaService : IDisposable
 
     Task<IReadOnlyList<YouTubeSearchResult>> GetHomeRecommendationsAsync(
         int limit,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Resolve an album's playable track list from the YouTube Music
+    /// catalogue, or null when no convincingly matching album exists.</summary>
+    Task<YouTubeMusicAlbum?> GetAlbumAsync(
+        string? artist,
+        string? album,
         CancellationToken cancellationToken = default);
 
     Task<YouTubeStreamSource> ResolveStreamAsync(
@@ -124,6 +140,33 @@ public sealed class YouTubeMediaService : IYouTubeMediaService
         catch when (!cancellationToken.IsCancellationRequested)
         {
             return Array.Empty<YouTubeSearchResult>();
+        }
+    }
+
+    public async Task<YouTubeMusicAlbum?> GetAlbumAsync(
+        string? artist,
+        string? album,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(album))
+        {
+            return null;
+        }
+
+        try
+        {
+            return await _youTubeMusicSearch
+                .GetAlbumAsync(artist?.Trim() ?? string.Empty, album.Trim(), cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            // The album catalogue is best-effort; callers fall back to other sources.
+            return null;
         }
     }
 

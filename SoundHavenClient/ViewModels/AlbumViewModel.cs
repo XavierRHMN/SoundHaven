@@ -210,11 +210,10 @@ public sealed class AlbumViewModel : ViewModelBase
                 ? name
                 : album.Title ?? string.Empty;
 
-            // Resolve the album as one catalog release (Deezer/iTunes) so the cover
-            // and track list can never disagree. Last.fm's tag-derived entries are
-            // junk for ambiguous names — "Music" serves unrelated tracks — so it's
-            // only the fallback for albums the catalogs don't know.
-            ResolvedAlbum? resolved = await _albumArtService.GetAlbumWithTracksAsync(
+            // YouTube Music first: its album tracks already carry video ids, so
+            // playing starts instantly instead of each track searching on play,
+            // and the release year applies to the whole album.
+            YouTubeMusicAlbum? musicAlbum = await _youTubeMediaService.GetAlbumAsync(
                 album.Artist,
                 albumName,
                 cancellationToken);
@@ -224,29 +223,34 @@ public sealed class AlbumViewModel : ViewModelBase
                 return;
             }
 
-            if (resolved is { Tracks.Count: > 0 })
+            if (musicAlbum is { Tracks.Count: > 0 })
             {
-                foreach (AlbumTrack track in resolved.Tracks)
+                foreach (YouTubeSearchResult track in musicAlbum.Tracks)
                 {
                     _tracks.Add(new Song
                     {
                         Title = track.Title,
-                        Artist = string.IsNullOrWhiteSpace(track.Artist)
+                        Artist = string.IsNullOrWhiteSpace(track.Author)
                             ? album.Artist
-                            : track.Artist,
+                            : track.Author,
                         Album = albumName,
-                        Duration = track.Duration,
-                        Year = track.Year
+                        Duration = track.Duration ?? TimeSpan.Zero,
+                        Year = track.Year ?? musicAlbum.Year,
+                        VideoId = track.VideoId,
+                        ThumbnailUrl = musicAlbum.ThumbnailUrl
                     });
                 }
 
-                _ = ApplyResolvedCoverAsync(album, resolved.CoverUrl, cancellationToken);
+                _ = ApplyResolvedCoverAsync(album, musicAlbum.ThumbnailUrl, cancellationToken);
             }
             else
             {
-                _ = EnsureCoverAsync(album, cancellationToken);
-                IEnumerable<Song> tracks = await _lastFmDataService.GetAlbumTracksAsync(
-                    album.Artist ?? string.Empty,
+                // Deezer/iTunes next: still one catalog release (cover and track
+                // list can't disagree). Last.fm's tag-derived entries are junk for
+                // ambiguous names — "Music" serves unrelated tracks — so it's only
+                // the last resort.
+                ResolvedAlbum? resolved = await _albumArtService.GetAlbumWithTracksAsync(
+                    album.Artist,
                     albumName,
                     cancellationToken);
 
@@ -255,9 +259,41 @@ public sealed class AlbumViewModel : ViewModelBase
                     return;
                 }
 
-                foreach (Song track in tracks)
+                if (resolved is { Tracks.Count: > 0 })
                 {
-                    _tracks.Add(track);
+                    foreach (AlbumTrack track in resolved.Tracks)
+                    {
+                        _tracks.Add(new Song
+                        {
+                            Title = track.Title,
+                            Artist = string.IsNullOrWhiteSpace(track.Artist)
+                                ? album.Artist
+                                : track.Artist,
+                            Album = albumName,
+                            Duration = track.Duration,
+                            Year = track.Year
+                        });
+                    }
+
+                    _ = ApplyResolvedCoverAsync(album, resolved.CoverUrl, cancellationToken);
+                }
+                else
+                {
+                    _ = EnsureCoverAsync(album, cancellationToken);
+                    IEnumerable<Song> tracks = await _lastFmDataService.GetAlbumTracksAsync(
+                        album.Artist ?? string.Empty,
+                        albumName,
+                        cancellationToken);
+
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    foreach (Song track in tracks)
+                    {
+                        _tracks.Add(track);
+                    }
                 }
             }
 

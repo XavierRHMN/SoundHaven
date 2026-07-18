@@ -102,38 +102,42 @@ public static class YouTubeMatchHelper
     }
 
     // "MUNYUN (Official Audio)" names "MUNYUN"; "Long Time (Intro)" does not.
-    private static bool TitlesOverlap(string? candidate, string? requested)
-    {
-        string normalizedCandidate = NormalizeText(candidate);
-        string normalizedRequested = NormalizeText(requested);
-        if (normalizedCandidate.Length == 0 || normalizedRequested.Length == 0)
-        {
-            return false;
-        }
-
-        return normalizedCandidate.Contains(normalizedRequested, StringComparison.Ordinal)
-            || normalizedRequested.Contains(normalizedCandidate, StringComparison.Ordinal);
-    }
+    private static bool TitlesOverlap(string? candidate, string? requested) =>
+        KeysOverlap(candidate, requested);
 
     // Channel names decorate the artist ("Playboi Carti - Topic", "PlayboiCartiVEVO"),
     // so compare with spacing/punctuation stripped.
     private static bool ArtistsAgree(string? candidateAuthor, string? requestedArtist)
     {
-        string normalizedRequested = NormalizeText(requestedArtist);
+        string normalizedRequested = NormalizeKey(requestedArtist);
         if (normalizedRequested.Length == 0)
         {
             return true;
         }
 
-        string normalizedAuthor = NormalizeText(candidateAuthor);
+        string normalizedAuthor = NormalizeKey(candidateAuthor);
         return normalizedAuthor.Length == 0
             || normalizedAuthor.Contains(normalizedRequested, StringComparison.Ordinal)
             || normalizedRequested.Contains(normalizedAuthor, StringComparison.Ordinal);
     }
 
-    // Lowercase alphanumerics only, so casing, spacing, and punctuation never
-    // block a match.
-    private static string NormalizeText(string? value)
+    /// <summary>Both names non-empty and one contains the other after normalizing.</summary>
+    public static bool KeysOverlap(string? first, string? second)
+    {
+        string normalizedFirst = NormalizeKey(first);
+        string normalizedSecond = NormalizeKey(second);
+        if (normalizedFirst.Length == 0 || normalizedSecond.Length == 0)
+        {
+            return false;
+        }
+
+        return normalizedFirst.Contains(normalizedSecond, StringComparison.Ordinal)
+            || normalizedSecond.Contains(normalizedFirst, StringComparison.Ordinal);
+    }
+
+    /// <summary>Lowercase alphanumerics only, so casing, spacing, and punctuation
+    /// never block a match.</summary>
+    public static string NormalizeKey(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {

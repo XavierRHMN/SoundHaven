@@ -386,6 +386,8 @@ public sealed class AlbumArtService : IAlbumArtService
             }
 
             string? cover = GetFirstString(chosen, "cover_xl", "cover_big", "cover_medium", "cover");
+            int? albumYear = await GetDeezerAlbumYearAsync(albumId, cancellationToken)
+                .ConfigureAwait(false);
 
             string tracksUrl = FormattableString.Invariant(
                 $"{DeezerAlbumTracksEndpointBase}/{albumId}/tracks?limit=100&output=json");
@@ -417,10 +419,43 @@ public sealed class AlbumArtService : IAlbumArtService
                         ? TimeSpan.FromSeconds(seconds)
                         : TimeSpan.Zero;
 
-                tracks.Add(new AlbumTrack(title, trackArtist, duration, null));
+                tracks.Add(new AlbumTrack(title, trackArtist, duration, albumYear));
             }
 
             return tracks.Count > 0 ? new ResolvedAlbum(cover, tracks) : null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // Deezer's album search results omit the release date; the album's own record
+    // has it. The year applies to every track — soft-fails to null since a per-track
+    // guess from an unrelated release is worse than no year.
+    private async Task<int?> GetDeezerAlbumYearAsync(long albumId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            string detailsUrl = FormattableString.Invariant(
+                $"{DeezerAlbumTracksEndpointBase}/{albumId}?output=json");
+            using JsonDocument? details = await FetchJsonAsync(detailsUrl, cancellationToken)
+                .ConfigureAwait(false);
+            string? releaseDate = details is null
+                ? null
+                : GetFirstString(details.RootElement, "release_date");
+            return releaseDate is { Length: >= 4 }
+                && int.TryParse(
+                    releaseDate.AsSpan(0, 4),
+                    NumberStyles.None,
+                    CultureInfo.InvariantCulture,
+                    out int year)
+                    ? year
+                    : null;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
