@@ -188,6 +188,24 @@
                 </StackPanel>
             </Button>
 
+            <Button Classes="NavItem"
+                    Classes.Selected="{Binding IsLikedSongsActive}"
+                    Command="{Binding ShowLikedSongsCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/favorite.svg" Width="16" Height="16" />
+                    <TextBlock Classes="ToolbarText" Text="Liked Songs" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <Button Classes="NavItem"
+                    Classes.Selected="{Binding IsDownloadedSongsActive}"
+                    Command="{Binding ShowDownloadedSongsCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Svg Path="avares://SoundHavenClient/Assets/Icons/download.svg" Width="16" Height="16" />
+                    <TextBlock Classes="ToolbarText" Text="Downloaded" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
             <Separator Background="White" Opacity="0.08" Margin="4,8" />
         </StackPanel>
 
@@ -222,7 +240,7 @@
                           HorizontalScrollBarVisibility="Disabled"
                           Theme="{StaticResource MaterialModernScrollViewer}">
                 <ListBox Classes="PlaylistSidebar"
-                         ItemsSource="{Binding PlaylistCollection}"
+                         ItemsSource="{Binding SidebarPlaylists}"
                          SelectedItem="{Binding ToolbarSelectedPlaylist, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:Playlist">

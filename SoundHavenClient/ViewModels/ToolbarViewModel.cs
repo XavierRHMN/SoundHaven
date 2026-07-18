@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -73,13 +74,62 @@ public sealed class ToolbarViewModel : ViewModelBase
             EditPlaylistAsync,
             playlist => playlist is { Id: > 0 },
             exception => _notifications.ShowError(exception.Message));
+        ShowLikedSongsCommand = new RelayCommand(
+            () => ShowSystemPlaylist(_playlistStore.LikedSongsPlaylist));
+        ShowDownloadedSongsCommand = new RelayCommand(
+            () => ShowSystemPlaylist(_playlistStore.DownloadedSongsPlaylist));
 
         _navigation.PropertyChanged += OnNavigationPropertyChanged;
+        _playlistViewModel.PropertyChanged += OnPlaylistViewModelPropertyChanged;
+        _playlistStore.Playlists.CollectionChanged += OnStorePlaylistsChanged;
+        ApplyPlaylistSort();
     }
 
     public bool IsHomeActive => ReferenceEquals(_navigation.CurrentViewModel, _homeViewModel);
 
     public bool IsPlayerActive => ReferenceEquals(_navigation.CurrentViewModel, _playerViewModel);
+
+    public bool IsLikedSongsActive =>
+        ReferenceEquals(_navigation.CurrentViewModel, _playlistViewModel)
+        && ReferenceEquals(
+            _playlistViewModel.DisplayedPlaylist,
+            _playlistStore.LikedSongsPlaylist);
+
+    public bool IsDownloadedSongsActive =>
+        ReferenceEquals(_navigation.CurrentViewModel, _playlistViewModel)
+        && ReferenceEquals(
+            _playlistViewModel.DisplayedPlaylist,
+            _playlistStore.DownloadedSongsPlaylist);
+
+    public RelayCommand ShowLikedSongsCommand { get; }
+
+    public RelayCommand ShowDownloadedSongsCommand { get; }
+
+    // The system playlists open from their own nav tabs, so no sidebar playlist
+    // row should stay highlighted.
+    private void ShowSystemPlaylist(Playlist playlist)
+    {
+        ToolbarSelectedPlaylist = null;
+        _playlistViewModel.DisplayedPlaylist = playlist;
+        _navigation.NavigateTo(_playlistViewModel);
+    }
+
+    private void OnPlaylistViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(PlaylistViewModel.DisplayedPlaylist))
+        {
+            RaiseSystemTabStates();
+        }
+    }
+
+    private void OnStorePlaylistsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        => ApplyPlaylistSort();
+
+    private void RaiseSystemTabStates()
+    {
+        OnPropertyChanged(nameof(IsLikedSongsActive));
+        OnPropertyChanged(nameof(IsDownloadedSongsActive));
+    }
 
     public Playlist? ToolbarSelectedPlaylist
     {
@@ -94,7 +144,9 @@ public sealed class ToolbarViewModel : ViewModelBase
         }
     }
 
-    public ObservableCollection<Playlist> PlaylistCollection => _playlistStore.Playlists;
+    /// <summary>User playlists shown in the sidebar list. The system playlists
+    /// (Liked / Downloaded) live as nav tabs instead of rows here.</summary>
+    public ObservableCollection<Playlist> SidebarPlaylists { get; } = new();
 
     public RelayCommand ShowHomeViewCommand { get; }
 
@@ -156,15 +208,18 @@ public sealed class ToolbarViewModel : ViewModelBase
 
     private void ApplyPlaylistSort()
     {
+        // System playlists (Liked / Downloaded) are nav tabs, not sidebar rows.
+        var userPlaylists = _playlistStore.Playlists
+            .Where(playlist => !playlist.IsSystemPlaylist);
         var ordered = (_playlistSortMode switch
         {
-            PlaylistSortMode.Alphabetical => PlaylistCollection
+            PlaylistSortMode.Alphabetical => userPlaylists
                 .OrderBy(playlist => playlist.Name, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(playlist => playlist.Id),
-            PlaylistSortMode.UpdatedDate => PlaylistCollection
+            PlaylistSortMode.UpdatedDate => userPlaylists
                 .OrderBy(playlist => playlist.UpdatedAtUtc ?? playlist.CreatedAtUtc ?? DateTime.MinValue)
                 .ThenBy(playlist => playlist.Id),
-            _ => PlaylistCollection
+            _ => userPlaylists
                 .OrderBy(playlist => playlist.CreatedAtUtc ?? DateTime.MinValue)
                 .ThenBy(playlist => playlist.Id)
         }).ToList();
@@ -174,26 +229,10 @@ public sealed class ToolbarViewModel : ViewModelBase
             ordered.Reverse();
         }
 
-        // The system playlists stay pinned to the top regardless of sort:
-        // Liked Songs first, Downloaded Songs right under it.
-        Playlist? liked = ordered.FirstOrDefault(playlist => playlist.IsLikedSongs);
-        if (liked is not null)
-        {
-            ordered.Remove(liked);
-            ordered.Insert(0, liked);
-        }
-
-        Playlist? downloads = ordered.FirstOrDefault(playlist => playlist.IsDownloads);
-        if (downloads is not null)
-        {
-            ordered.Remove(downloads);
-            ordered.Insert(liked is not null ? 1 : 0, downloads);
-        }
-
-        PlaylistCollection.Clear();
+        SidebarPlaylists.Clear();
         foreach (Playlist playlist in ordered)
         {
-            PlaylistCollection.Add(playlist);
+            SidebarPlaylists.Add(playlist);
         }
     }
 
@@ -277,11 +316,14 @@ public sealed class ToolbarViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(IsHomeActive));
         OnPropertyChanged(nameof(IsPlayerActive));
+        RaiseSystemTabStates();
     }
 
     public override void Dispose()
     {
         _navigation.PropertyChanged -= OnNavigationPropertyChanged;
+        _playlistViewModel.PropertyChanged -= OnPlaylistViewModelPropertyChanged;
+        _playlistStore.Playlists.CollectionChanged -= OnStorePlaylistsChanged;
         base.Dispose();
     }
 }
