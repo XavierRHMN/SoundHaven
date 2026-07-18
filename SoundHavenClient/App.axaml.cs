@@ -98,7 +98,8 @@ public partial class App : Application, IDisposable
             database,
             playlistStore,
             notifications,
-            albumArtService);
+            albumArtService,
+            _youTubeMediaService);
         var playerViewModel = new PlayerViewModel(
             playbackViewModel,
             playlistStore,

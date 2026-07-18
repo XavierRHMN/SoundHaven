@@ -395,6 +395,41 @@
                     </Button>
 
                     <Button Classes="PlaylistUtility"
+                            Command="{Binding DownloadAllCommand}"
+                            ToolTip.Tip="{Binding DownloadButtonTooltip}"
+                            Width="88"
+                            Height="56"
+                            IsVisible="{Binding ShowDownloadButton}"
+                            IsEnabled="{Binding !IsEditMode}">
+                        <StackPanel Spacing="4" HorizontalAlignment="Center">
+                            <Panel Width="22" Height="22">
+                                <!-- Not downloaded: download arrow -->
+                                <PathIcon Width="20" Height="20"
+                                          Foreground="#C8C8C8"
+                                          IsVisible="{Binding IsPlaylistNotDownloaded}"
+                                          Data="M19,9 h-4 V3 H9 v6 H5 l7,7 7,-7 z M5,18 v2 h14 v-2 H5 z" />
+                                <!-- Downloading: spinner (click to cancel); the label
+                                     shows the live percentage. -->
+                                <ProgressBar Classes="circular"
+                                             Width="22" Height="22"
+                                             IsIndeterminate="True"
+                                             IsVisible="{Binding IsPlaylistDownloading}"
+                                             Foreground="{DynamicResource PrimaryColor}" />
+                                <!-- Downloaded: check -->
+                                <PathIcon Width="20" Height="20"
+                                          Foreground="{DynamicResource PrimaryColor}"
+                                          IsVisible="{Binding IsPlaylistDownloaded}"
+                                          Data="M9,16.17 L4.83,12 l-1.42,1.41 L9,19 L21,7 l-1.41,-1.41 z" />
+                            </Panel>
+                            <TextBlock Text="{Binding DownloadButtonLabel}"
+                                       FontSize="11"
+                                       Foreground="#C8C8C8"
+                                       HorizontalAlignment="Center"
+                                       FontFamily="avares://SoundHavenClient/Assets/Fonts/Circular/CircularStd-Medium.otf#Circular" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Classes="PlaylistUtility"
                             Command="{Binding OpenEditPlaylistCommand}"
                             ToolTip.Tip="Edit playlist"
                             Width="56"

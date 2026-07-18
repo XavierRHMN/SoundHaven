@@ -2,7 +2,9 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -45,6 +47,12 @@ namespace SoundHaven.ViewModels
         private readonly Stores.PlaylistStore _playlistStore;
         private readonly IUserNotificationService _notifications;
         private readonly IAlbumArtService _albumArtService;
+        private readonly IYouTubeMediaService _youTubeMediaService;
+        private CancellationTokenSource? _downloadCts;
+        private Playlist? _downloadingPlaylist;
+        private DownloadState _playlistDownloadState = DownloadState.NotDownloaded;
+        private double _downloadAllProgress;
+        private bool _showDownloadButton;
         private readonly ObservableCollection<Song> _emptySongs = new();
         private readonly ObservableCollection<PlaylistTrackRow> _trackRows = new();
         private readonly Bitmap?[] _coverSlots = new Bitmap?[4];
@@ -108,6 +116,7 @@ namespace SoundHaven.ViewModels
                 OpenEditPlaylistCommand?.RaiseCanExecuteChanged();
                 _ = EnsureThumbnailsAsync();
                 _ = ResolveMissingYearsAsync();
+                RefreshDownloadState();
             }
         }
 
@@ -204,6 +213,7 @@ namespace SoundHaven.ViewModels
                     EnterRemoveSongsCommand.RaiseCanExecuteChanged();
                     CancelRemoveSongsCommand.RaiseCanExecuteChanged();
                     DeleteSelectedSongsCommand.RaiseCanExecuteChanged();
+                    DownloadAllCommand.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -266,7 +276,8 @@ namespace SoundHaven.ViewModels
             AppDatabase appDatabase,
             Stores.PlaylistStore playlistStore,
             IUserNotificationService notifications,
-            IAlbumArtService albumArtService)
+            IAlbumArtService albumArtService,
+            IYouTubeMediaService youTubeMediaService)
         {
             _playbackViewModel = playbackViewModel ?? throw new ArgumentNullException(nameof(playbackViewModel));
             _openFileDialogService = openFileDialogService ?? throw new ArgumentNullException(nameof(openFileDialogService));
@@ -274,6 +285,7 @@ namespace SoundHaven.ViewModels
             _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
             _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
             _albumArtService = albumArtService ?? throw new ArgumentNullException(nameof(albumArtService));
+            _youTubeMediaService = youTubeMediaService ?? throw new ArgumentNullException(nameof(youTubeMediaService));
 
             _playbackViewModel.PropertyChanged += OnPlaybackPropertyChanged;
 
@@ -318,6 +330,246 @@ namespace SoundHaven.ViewModels
             EnterRemoveSongsCommand = new RelayCommand(EnterRemoveSongsMode, () => DisplayedPlaylist is { Id: > 0 } && !IsEditMode);
             CancelRemoveSongsCommand = new RelayCommand(CancelRemoveSongsMode, () => IsEditMode);
             DeleteSelectedSongsCommand = new RelayCommand(DeleteSelectedSongs, () => IsEditMode);
+            DownloadAllCommand = new RelayCommand(
+                ToggleDownloadAll,
+                () => !IsEditMode && (IsPlaylistDownloading || HasPendingDownloads));
+        }
+
+        /// <summary>Toggles the whole-playlist download: start when idle, cancel while
+        /// running. Downloaded playlists have nothing pending, so the click is a no-op.</summary>
+        public RelayCommand DownloadAllCommand { get; }
+
+        /// <summary>Shown only when the playlist has tracks worth a download button.</summary>
+        public bool ShowDownloadButton
+        {
+            get => _showDownloadButton;
+            private set => SetProperty(ref _showDownloadButton, value);
+        }
+
+        /// <summary>Overall download progress (0-100) while a batch is running.</summary>
+        public double DownloadAllProgress
+        {
+            get => _downloadAllProgress;
+            private set
+            {
+                if (SetProperty(ref _downloadAllProgress, value))
+                {
+                    OnPropertyChanged(nameof(DownloadButtonLabel));
+                }
+            }
+        }
+
+        public bool IsPlaylistNotDownloaded => _playlistDownloadState == DownloadState.NotDownloaded;
+
+        public bool IsPlaylistDownloading => _playlistDownloadState == DownloadState.Downloading;
+
+        public bool IsPlaylistDownloaded => _playlistDownloadState == DownloadState.Downloaded;
+
+        public string DownloadButtonLabel => _playlistDownloadState switch
+        {
+            DownloadState.Downloading => $"{(int)DownloadAllProgress}%",
+            DownloadState.Downloaded => "Downloaded",
+            _ => "Download"
+        };
+
+        public string DownloadButtonTooltip => _playlistDownloadState switch
+        {
+            DownloadState.Downloading => "Cancel download",
+            DownloadState.Downloaded => "Downloaded for offline playback",
+            _ => "Download all songs"
+        };
+
+        private bool HasPendingDownloads =>
+            DisplayedPlaylist?.Songs.Any(IsDownloadable) ?? false;
+
+        // A song is offline if we downloaded it or it already has a usable local file.
+        private static bool IsOffline(Song song) =>
+            song.CurrentDownloadState == DownloadState.Downloaded
+            || (!string.IsNullOrWhiteSpace(song.FilePath) && File.Exists(song.FilePath));
+
+        private static bool IsDownloadable(Song song) =>
+            !string.IsNullOrWhiteSpace(song.VideoId)
+            && song.CurrentDownloadState != DownloadState.Downloading
+            && !IsOffline(song);
+
+        private void ToggleDownloadAll()
+        {
+            if (_downloadCts is not null)
+            {
+                _downloadCts.Cancel();
+                return;
+            }
+
+            if (HasPendingDownloads)
+            {
+                _ = DownloadAllAsync();
+            }
+        }
+
+        private async Task DownloadAllAsync()
+        {
+            Playlist? playlist = DisplayedPlaylist;
+            if (playlist is null)
+            {
+                return;
+            }
+
+            var pending = playlist.Songs.Where(IsDownloadable).ToList();
+            if (pending.Count == 0)
+            {
+                return;
+            }
+
+            _downloadCts = new CancellationTokenSource();
+            _downloadingPlaylist = playlist;
+            CancellationToken cancellationToken = _downloadCts.Token;
+            DownloadAllProgress = 0;
+            RefreshDownloadState();
+
+            int completed = 0;
+            int failures = 0;
+            try
+            {
+                foreach (Song song in pending)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (string.IsNullOrWhiteSpace(song.VideoId) || IsOffline(song))
+                    {
+                        completed++;
+                        continue;
+                    }
+
+                    song.CurrentDownloadState = DownloadState.Downloading;
+                    song.DownloadProgress = 0;
+                    int baseIndex = completed;
+                    var progress = new Progress<double>(value =>
+                    {
+                        double fraction = Math.Clamp(value, 0, 1);
+                        song.DownloadProgress = fraction * 100;
+                        DownloadAllProgress = (baseIndex + fraction) / pending.Count * 100;
+                    });
+
+                    try
+                    {
+                        Song downloaded = await _youTubeMediaService.DownloadAudioAsync(
+                            song.VideoId,
+                            progress,
+                            cancellationToken);
+
+                        // Keep the playlist's own metadata; only add what makes it play
+                        // offline and fill in anything it was missing.
+                        song.FilePath = downloaded.FilePath;
+                        if (song.Duration <= TimeSpan.Zero && downloaded.Duration > TimeSpan.Zero)
+                        {
+                            song.Duration = downloaded.Duration;
+                        }
+
+                        if (song.Year is null && downloaded.Year is int year && year > 0)
+                        {
+                            song.Year = year;
+                        }
+
+                        if ((song.ArtworkData is null || song.ArtworkData.Length == 0)
+                            && downloaded.ArtworkData is { Length: > 0 })
+                        {
+                            song.ArtworkData = downloaded.ArtworkData;
+                        }
+
+                        song.CurrentDownloadState = DownloadState.Downloaded;
+                        song.DownloadProgress = 100;
+
+                        if (song.Id > 0 && !string.IsNullOrWhiteSpace(song.FilePath))
+                        {
+                            _appDatabase.UpdateSongFilePath(song.Id, song.FilePath);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        song.CurrentDownloadState = DownloadState.NotDownloaded;
+                        song.DownloadProgress = 0;
+                        throw;
+                    }
+                    catch
+                    {
+                        song.CurrentDownloadState = DownloadState.NotDownloaded;
+                        song.DownloadProgress = 0;
+                        failures++;
+                    }
+
+                    completed++;
+                    DownloadAllProgress = (double)completed / pending.Count * 100;
+                    RefreshDownloadState();
+                }
+
+                _notifications.ShowInfo(failures == 0
+                    ? $"Downloaded “{playlist.Name}” for offline listening."
+                    : $"Downloaded {pending.Count - failures} of {pending.Count} songs; {failures} failed.");
+            }
+            catch (OperationCanceledException)
+            {
+                _notifications.ShowInfo("Download cancelled.");
+            }
+            catch (Exception exception)
+            {
+                _notifications.ShowError(exception.Message);
+            }
+            finally
+            {
+                _downloadCts?.Dispose();
+                _downloadCts = null;
+                _downloadingPlaylist = null;
+                DownloadAllProgress = 0;
+                RefreshDownloadState();
+            }
+        }
+
+        private void RefreshDownloadState()
+        {
+            ObservableCollection<Song>? songs = DisplayedPlaylist?.Songs;
+            if (songs is null || songs.Count == 0)
+            {
+                ShowDownloadButton = false;
+                SetPlaylistDownloadState(DownloadState.NotDownloaded);
+                DownloadAllCommand.RaiseCanExecuteChanged();
+                return;
+            }
+
+            ShowDownloadButton = true;
+
+            bool downloadingThis = _downloadCts is not null
+                && ReferenceEquals(_downloadingPlaylist, DisplayedPlaylist);
+
+            DownloadState next;
+            if (downloadingThis || songs.Any(song => song.CurrentDownloadState == DownloadState.Downloading))
+            {
+                next = DownloadState.Downloading;
+            }
+            else if (songs.Any(IsDownloadable))
+            {
+                next = DownloadState.NotDownloaded;
+            }
+            else
+            {
+                next = DownloadState.Downloaded;
+            }
+
+            SetPlaylistDownloadState(next);
+            DownloadAllCommand.RaiseCanExecuteChanged();
+        }
+
+        private void SetPlaylistDownloadState(DownloadState state)
+        {
+            if (_playlistDownloadState == state)
+            {
+                return;
+            }
+
+            _playlistDownloadState = state;
+            OnPropertyChanged(nameof(IsPlaylistNotDownloaded));
+            OnPropertyChanged(nameof(IsPlaylistDownloading));
+            OnPropertyChanged(nameof(IsPlaylistDownloaded));
+            OnPropertyChanged(nameof(DownloadButtonLabel));
+            OnPropertyChanged(nameof(DownloadButtonTooltip));
         }
 
         private async Task AddSongAsync()
@@ -650,6 +902,7 @@ namespace SoundHaven.ViewModels
             }
 
             RefreshTracksAndHeader();
+            RefreshDownloadState();
             PlayPlaylistCommand.RaiseCanExecuteChanged();
             ShufflePlaylistCommand.RaiseCanExecuteChanged();
             _ = EnsureThumbnailsAsync();
@@ -657,6 +910,11 @@ namespace SoundHaven.ViewModels
 
         private void OnSongPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName is nameof(Song.CurrentDownloadState) or nameof(Song.FilePath))
+            {
+                RefreshDownloadState();
+            }
+
             if (e.PropertyName is nameof(Song.Artwork) or nameof(Song.Duration)
                 or nameof(Song.Title) or nameof(Song.Artist) or nameof(Song.Album))
             {
@@ -816,6 +1074,9 @@ namespace SoundHaven.ViewModels
         public override void Dispose()
         {
             _playbackViewModel.PropertyChanged -= OnPlaybackPropertyChanged;
+            _downloadCts?.Cancel();
+            _downloadCts?.Dispose();
+            _downloadCts = null;
 
             if (_displayedPlaylist != null)
             {
