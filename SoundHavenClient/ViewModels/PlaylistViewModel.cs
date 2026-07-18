@@ -332,7 +332,8 @@ namespace SoundHaven.ViewModels
             DeleteSelectedSongsCommand = new RelayCommand(DeleteSelectedSongs, () => IsEditMode);
             DownloadAllCommand = new RelayCommand(
                 ToggleDownloadAll,
-                () => !IsEditMode && (IsPlaylistDownloading || HasPendingDownloads));
+                () => !IsEditMode
+                    && (IsPlaylistDownloading || HasPendingDownloads || HasRemovableDownloads));
         }
 
         /// <summary>Toggles the whole-playlist download: start when idle, cancel while
@@ -375,12 +376,15 @@ namespace SoundHaven.ViewModels
         public string DownloadButtonTooltip => _playlistDownloadState switch
         {
             DownloadState.Downloading => "Cancel download",
-            DownloadState.Downloaded => "Downloaded for offline playback",
+            DownloadState.Downloaded => "Remove download",
             _ => "Download all songs"
         };
 
         private bool HasPendingDownloads =>
             DisplayedPlaylist?.Songs.Any(IsDownloadable) ?? false;
+
+        private bool HasRemovableDownloads =>
+            DisplayedPlaylist?.Songs.Any(IsRemovableDownload) ?? false;
 
         // A song is offline if we downloaded it or it already has a usable local file.
         private static bool IsOffline(Song song) =>
@@ -391,6 +395,13 @@ namespace SoundHaven.ViewModels
             !string.IsNullOrWhiteSpace(song.VideoId)
             && song.CurrentDownloadState != DownloadState.Downloading
             && !IsOffline(song);
+
+        // Only YouTube-backed downloads can be removed: deleting the file still leaves
+        // the song playable via streaming. Local files the user added are never touched.
+        private static bool IsRemovableDownload(Song song) =>
+            !string.IsNullOrWhiteSpace(song.VideoId)
+            && !string.IsNullOrWhiteSpace(song.FilePath)
+            && File.Exists(song.FilePath);
 
         private void ToggleDownloadAll()
         {
@@ -403,6 +414,58 @@ namespace SoundHaven.ViewModels
             if (HasPendingDownloads)
             {
                 _ = DownloadAllAsync();
+            }
+            else if (HasRemovableDownloads)
+            {
+                RemoveAllDownloads();
+            }
+        }
+
+        private void RemoveAllDownloads()
+        {
+            Playlist? playlist = DisplayedPlaylist;
+            if (playlist is null)
+            {
+                return;
+            }
+
+            int removed = 0;
+            foreach (Song song in playlist.Songs.ToList())
+            {
+                if (!IsRemovableDownload(song))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    if (File.Exists(song.FilePath!))
+                    {
+                        File.Delete(song.FilePath!);
+                    }
+                }
+                catch
+                {
+                    // The file is likely in use (e.g. currently playing); leave it
+                    // downloaded rather than half-removing it.
+                    continue;
+                }
+
+                song.FilePath = null;
+                song.CurrentDownloadState = DownloadState.NotDownloaded;
+                song.DownloadProgress = 0;
+                if (song.Id > 0)
+                {
+                    _appDatabase.UpdateSongFilePath(song.Id, null);
+                }
+
+                removed++;
+            }
+
+            RefreshDownloadState();
+            if (removed > 0)
+            {
+                _notifications.ShowInfo($"Removed downloads for “{playlist.Name}”.");
             }
         }
 

@@ -529,21 +529,21 @@ namespace SoundHaven.Data
             UpdatePlaylistDetails(playlistId, newName, description: null, coverImageData: null, updateDescription: false, updateCover: false);
         }
 
-        /// <summary>Persists a downloaded song's local file path so it stays available
-        /// offline across sessions.</summary>
-        public void UpdateSongFilePath(long songId, string filePath)
+        /// <summary>Persists (or clears, when <paramref name="filePath"/> is null) a
+        /// downloaded song's local file path so its offline status survives restarts.</summary>
+        public void UpdateSongFilePath(long songId, string? filePath)
         {
             if (songId <= 0)
             {
                 return;
             }
 
-            ArgumentNullException.ThrowIfNull(filePath);
-
             using var connection = OpenConnection();
             using var command = connection.CreateCommand();
             command.CommandText = "UPDATE Songs SET FilePath = @filePath WHERE Id = @id;";
-            command.Parameters.AddWithValue("@filePath", filePath);
+            command.Parameters.AddWithValue(
+                "@filePath",
+                string.IsNullOrWhiteSpace(filePath) ? DBNull.Value : filePath);
             command.Parameters.AddWithValue("@id", songId);
             command.ExecuteNonQuery();
         }
