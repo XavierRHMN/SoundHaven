@@ -164,6 +164,94 @@ public sealed class AlbumArtServiceTests : IDisposable
         Assert.Empty(handler.RequestedHosts);
     }
 
+    [Fact]
+    public async Task GetAlbumWithTracks_PicksExactTitleMatchOverPartial()
+    {
+        var handler = new RoutingHandler
+        {
+            // Fuzzy search returns a partial-title hit first; the exact title with a
+            // matching artist must win, and its own tracks/cover must be used.
+            ["api.deezer.com/search/album"] = """
+                {"data":[
+                  {"id":11,"title":"Music Is My Drug","cover_xl":"https://cdn.deezer.example/wrong.jpg","artist":{"name":"Playboi Carti"}},
+                  {"id":42,"title":"MUSIC","cover_xl":"https://cdn.deezer.example/music-xl.jpg","artist":{"name":"Playboi Carti"}}
+                ]}
+                """,
+            ["api.deezer.com/album/42/tracks"] = """
+                {"data":[
+                  {"title":"POP OUT","duration":163,"artist":{"name":"Playboi Carti"}},
+                  {"title":"K POP","duration":141,"artist":{"name":"Playboi Carti"}}
+                ]}
+                """
+        };
+        using var httpClient = new HttpClient(handler);
+        var service = new AlbumArtService(httpClient, _cache);
+
+        ResolvedAlbum? resolved = await service.GetAlbumWithTracksAsync(
+            "Playboi Carti",
+            "Music",
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(resolved);
+        Assert.Equal("https://cdn.deezer.example/music-xl.jpg", resolved.CoverUrl);
+        List<string> expectedTitles = ["POP OUT", "K POP"];
+        Assert.Equal(expectedTitles, resolved.Tracks.Select(track => track.Title));
+        Assert.Equal(TimeSpan.FromSeconds(163), resolved.Tracks[0].Duration);
+    }
+
+    [Fact]
+    public async Task GetAlbumWithTracks_RejectsWrongArtistEverywhere()
+    {
+        var handler = new RoutingHandler
+        {
+            ["api.deezer.com/search/album"] = """
+                {"data":[{"id":7,"title":"Music","cover_xl":"https://cdn.deezer.example/other.jpg","artist":{"name":"Someone Else"}}]}
+                """,
+            ["itunes.apple.com/search"] = """
+                {"resultCount":1,"results":[{"wrapperType":"collection","collectionId":9,"collectionName":"Music","artistName":"Another Artist","artworkUrl100":"https://is1.mzstatic.example/100x100bb.jpg"}]}
+                """
+        };
+        using var httpClient = new HttpClient(handler);
+        var service = new AlbumArtService(httpClient, _cache);
+
+        Assert.Null(await service.GetAlbumWithTracksAsync(
+            "Playboi Carti",
+            "Music",
+            TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task GetAlbumWithTracks_FallsBackToITunesWithYearsAndOrder()
+    {
+        var handler = new RoutingHandler
+        {
+            ["api.deezer.com/search/album"] = """{"data":[]}""",
+            ["itunes.apple.com/search"] = """
+                {"resultCount":1,"results":[{"wrapperType":"collection","collectionId":9,"collectionName":"Graduation","artistName":"Kanye West","artworkUrl100":"https://is1.mzstatic.example/100x100bb.jpg"}]}
+                """,
+            ["itunes.apple.com/lookup"] = """
+                {"resultCount":3,"results":[
+                  {"wrapperType":"collection","collectionId":9,"collectionName":"Graduation"},
+                  {"wrapperType":"track","trackName":"Champion","artistName":"Kanye West","trackTimeMillis":167000,"trackNumber":2,"discNumber":1,"releaseDate":"2007-09-11T07:00:00Z"},
+                  {"wrapperType":"track","trackName":"Good Morning","artistName":"Kanye West","trackTimeMillis":195000,"trackNumber":1,"discNumber":1,"releaseDate":"2007-09-11T07:00:00Z"}
+                ]}
+                """
+        };
+        using var httpClient = new HttpClient(handler);
+        var service = new AlbumArtService(httpClient, _cache);
+
+        ResolvedAlbum? resolved = await service.GetAlbumWithTracksAsync(
+            "Kanye West",
+            "Graduation",
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(resolved);
+        Assert.Equal("https://is1.mzstatic.example/600x600bb.jpg", resolved.CoverUrl);
+        List<string> expectedTitles = ["Good Morning", "Champion"];
+        Assert.Equal(expectedTitles, resolved.Tracks.Select(track => track.Title));
+        Assert.Equal(2007, resolved.Tracks[0].Year);
+    }
+
     [Theory]
     [InlineData(null, false)]
     [InlineData("", false)]
@@ -199,15 +287,29 @@ public sealed class AlbumArtServiceTests : IDisposable
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
-            string host = request.RequestUri?.Host ?? string.Empty;
-            RequestedHosts.Add(host);
+            string uri = request.RequestUri?.AbsoluteUri ?? string.Empty;
+            RequestedHosts.Add(request.RequestUri?.Host ?? string.Empty);
 
-            string body = _responsesByHost.TryGetValue(host, out string? configured)
-                ? configured
-                : """{"data":[],"results":[]}""";
+            // Keys are URL substrings (a bare host, or host + path for endpoints
+            // that need distinct responses); the most specific match wins.
+            string? body = null;
+            int bestLength = -1;
+            foreach (KeyValuePair<string, string> pair in _responsesByHost)
+            {
+                if (pair.Key.Length > bestLength
+                    && uri.Contains(pair.Key, StringComparison.OrdinalIgnoreCase))
+                {
+                    body = pair.Value;
+                    bestLength = pair.Key.Length;
+                }
+            }
+
             var response = new HttpResponseMessage(StatusCode)
             {
-                Content = new StringContent(body, Encoding.UTF8, "application/json")
+                Content = new StringContent(
+                    body ?? """{"data":[],"results":[]}""",
+                    Encoding.UTF8,
+                    "application/json")
             };
             return Task.FromResult(response);
         }

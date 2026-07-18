@@ -204,13 +204,19 @@ public sealed class AlbumViewModel : ViewModelBase
         PlayAlbumCommand.RaiseCanExecuteChanged();
         ShuffleAlbumCommand.RaiseCanExecuteChanged();
 
-        _ = EnsureCoverAsync(album, cancellationToken);
-
         try
         {
-            IEnumerable<Song> tracks = await _lastFmDataService.GetAlbumTracksAsync(
-                album.Artist ?? string.Empty,
-                album.Album is { Length: > 0 } name ? name : album.Title ?? string.Empty,
+            string albumName = album.Album is { Length: > 0 } name
+                ? name
+                : album.Title ?? string.Empty;
+
+            // Resolve the album as one catalog release (Deezer/iTunes) so the cover
+            // and track list can never disagree. Last.fm's tag-derived entries are
+            // junk for ambiguous names — "Music" serves unrelated tracks — so it's
+            // only the fallback for albums the catalogs don't know.
+            ResolvedAlbum? resolved = await _albumArtService.GetAlbumWithTracksAsync(
+                album.Artist,
+                albumName,
                 cancellationToken);
 
             if (cancellationToken.IsCancellationRequested)
@@ -218,9 +224,41 @@ public sealed class AlbumViewModel : ViewModelBase
                 return;
             }
 
-            foreach (Song track in tracks)
+            if (resolved is { Tracks.Count: > 0 })
             {
-                _tracks.Add(track);
+                foreach (AlbumTrack track in resolved.Tracks)
+                {
+                    _tracks.Add(new Song
+                    {
+                        Title = track.Title,
+                        Artist = string.IsNullOrWhiteSpace(track.Artist)
+                            ? album.Artist
+                            : track.Artist,
+                        Album = albumName,
+                        Duration = track.Duration,
+                        Year = track.Year
+                    });
+                }
+
+                _ = ApplyResolvedCoverAsync(album, resolved.CoverUrl, cancellationToken);
+            }
+            else
+            {
+                _ = EnsureCoverAsync(album, cancellationToken);
+                IEnumerable<Song> tracks = await _lastFmDataService.GetAlbumTracksAsync(
+                    album.Artist ?? string.Empty,
+                    albumName,
+                    cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                foreach (Song track in tracks)
+                {
+                    _tracks.Add(track);
+                }
             }
 
             ApplyAlbumArtToTracks();
@@ -500,6 +538,39 @@ public sealed class AlbumViewModel : ViewModelBase
         foreach (PlaylistTrackRow row in _trackRows)
         {
             row.IsLiked = _playlistStore.IsFavorite(row.Song);
+        }
+    }
+
+    // The resolved catalog release carries its own cover, so use exactly that —
+    // running another fuzzy art lookup here could pick a different release.
+    private async Task ApplyResolvedCoverAsync(
+        Song album,
+        string? coverUrl,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(coverUrl))
+            {
+                await EnsureCoverAsync(album, cancellationToken);
+                return;
+            }
+
+            bool upgraded = !string.Equals(album.ThumbnailUrl, coverUrl, StringComparison.Ordinal);
+            album.ThumbnailUrl = coverUrl;
+            album.ArtworkUrl = coverUrl;
+            await album.LoadThumbnailAsync(
+                forceReload: upgraded || album.Artwork is null,
+                cancellationToken: cancellationToken);
+
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                ApplyAlbumArtToTracks();
+            }
+        }
+        catch
+        {
+            // Cover is decorative; a placeholder shows if it can't be fetched.
         }
     }
 
