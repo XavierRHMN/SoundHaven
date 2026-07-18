@@ -649,6 +649,12 @@ public sealed class PlaybackViewModelTests : IDisposable
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Enumerable.Empty<Song>());
 
+        public Task<IEnumerable<Song>> GetAlbumTracksAsync(
+            string artist,
+            string album,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(Enumerable.Empty<Song>());
+
         public Task ScrobbleTrackAsync(string title, string artist, string album) =>
             Task.CompletedTask;
 

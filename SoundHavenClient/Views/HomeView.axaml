@@ -64,7 +64,8 @@
             <!-- Album card: same look, no overflow menu (albums aren't queueable rows) -->
             <DataTemplate x:Key="AlbumCardTemplate" x:DataType="models:Song">
                 <Border Classes="SongCard"
-                        DoubleTapped="OnSongDoubleTapped">
+                        PointerPressed="OnAlbumCardPressed"
+                        ToolTip.Tip="Open album">
                     <StackPanel Spacing="10">
                         <Panel Width="160" Height="160">
                             <Border CornerRadius="8"
@@ -83,9 +84,9 @@
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Bottom"
                                     Margin="0,0,8,8"
-                                    Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).PlaySongCommand}"
+                                    Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).PlayAlbumCommand}"
                                     CommandParameter="{Binding}"
-                                    ToolTip.Tip="Play">
+                                    ToolTip.Tip="Play album">
                                 <Svg Path="avares://SoundHavenClient/Assets/Icons/play.svg"
                                      Width="20" Height="20"
                                      Css="path { fill: #111111; }" />

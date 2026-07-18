@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using SoundHaven.Commands;
 using SoundHaven.Helpers;
 using SoundHaven.Models;
@@ -281,6 +282,34 @@ public partial class HomeView : UserControl
         if (viewModel.OpenPlaylistCommand.CanExecute(playlist))
         {
             viewModel.OpenPlaylistCommand.Execute(playlist);
+        }
+    }
+
+    private void OnAlbumCardPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        // Clicks on the hover Play button run its own command, not navigation.
+        if (e.Source is Control source
+            && source.FindAncestorOfType<Button>(includeSelf: true) is not null)
+        {
+            return;
+        }
+
+        if (sender is not Control control
+            || control.DataContext is not Song album
+            || DataContext is not HomeViewModel viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        if (viewModel.OpenAlbumCommand.CanExecute(album))
+        {
+            viewModel.OpenAlbumCommand.Execute(album);
         }
     }
 }

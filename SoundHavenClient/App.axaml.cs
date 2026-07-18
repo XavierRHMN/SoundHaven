@@ -117,11 +117,17 @@ public partial class App : Application, IDisposable
         var volumeViewModel = new VolumeViewModel(_audioService);
         var songInfoViewModel = new SongInfoViewModel(playbackViewModel, _audioService, albumArtService);
         var navigation = new NavigationService(new ViewModelBase());
+        var albumViewModel = new AlbumViewModel(
+            playbackViewModel,
+            _lastFmDataService,
+            albumArtService,
+            notifications);
         var homeViewModel = new HomeViewModel(
             playlistStore,
             recentPlaybackStore,
             playbackViewModel,
             playlistViewModel,
+            albumViewModel,
             navigation,
             notifications,
             _lastFmDataService,
@@ -152,6 +158,7 @@ public partial class App : Application, IDisposable
             songInfoViewModel,
             repeatViewModel,
             searchViewModel,
+            albumViewModel,
             playlistStore,
             _audioService,
             notifications);

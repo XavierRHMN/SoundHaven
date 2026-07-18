@@ -41,6 +41,12 @@ public interface ILastFmDataService
 
     Task<IEnumerable<Song>> GetRecommendedAlbumsAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>The track list for a specific album (Last.fm album.getInfo).</summary>
+    Task<IEnumerable<Song>> GetAlbumTracksAsync(
+        string artist,
+        string album,
+        CancellationToken cancellationToken = default);
+
     Task ScrobbleTrackAsync(string title, string artist, string album);
 
     Task ScrobbleTrackAsync(
@@ -567,6 +573,108 @@ public sealed class LastFmDataService : ILastFmDataService, IDisposable
         catch (Exception)
         {
             LastError = "Last.fm albums are currently unavailable.";
+            return Array.Empty<Song>();
+        }
+    }
+
+    public async Task<IEnumerable<Song>> GetAlbumTracksAsync(
+        string artist,
+        string album,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(artist)
+            || string.IsNullOrWhiteSpace(album)
+            || !IsConfigured)
+        {
+            return Array.Empty<Song>();
+        }
+
+        string cacheKey =
+            $"lastfm:album-tracks:{artist.ToLowerInvariant()}:{album.ToLowerInvariant()}";
+        if (_cache.TryGetValue(cacheKey, out IReadOnlyList<Song>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        try
+        {
+            var extraParameters = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["artist"] = artist,
+                ["album"] = album,
+                ["autocorrect"] = "1"
+            };
+            using JsonDocument response = await GetAsync(
+                "album.getinfo",
+                extraParameters,
+                cancellationToken);
+
+            var songs = new List<Song>();
+            if (response.RootElement.TryGetProperty("album", out JsonElement albumElement)
+                && albumElement.TryGetProperty("tracks", out JsonElement tracksElement)
+                && tracksElement.ValueKind == JsonValueKind.Object
+                && tracksElement.TryGetProperty("track", out JsonElement trackElement))
+            {
+                string albumName = GetString(albumElement, "name");
+                if (albumName.Length == 0)
+                {
+                    albumName = album;
+                }
+
+                // Single-track albums come back as one object, not an array.
+                IEnumerable<JsonElement> trackItems = trackElement.ValueKind == JsonValueKind.Array
+                    ? trackElement.EnumerateArray()
+                    : new[] { trackElement };
+
+                foreach (JsonElement track in trackItems)
+                {
+                    string title = GetString(track, "name");
+                    if (title.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    string trackArtist = GetNestedString(track, "artist", "name");
+                    if (trackArtist.Length == 0)
+                    {
+                        trackArtist = artist;
+                    }
+
+                    // Last.fm returns track duration as a JSON number (seconds).
+                    int durationSeconds = 0;
+                    if (track.TryGetProperty("duration", out JsonElement durationElement))
+                    {
+                        durationSeconds = durationElement.ValueKind switch
+                        {
+                            JsonValueKind.Number =>
+                                durationElement.TryGetInt32(out int seconds) ? seconds : 0,
+                            JsonValueKind.String =>
+                                ParseInt32(durationElement.GetString() ?? string.Empty),
+                            _ => 0
+                        };
+                    }
+
+                    songs.Add(new Song
+                    {
+                        Title = title,
+                        Artist = trackArtist,
+                        Album = albumName,
+                        Duration = TimeSpan.FromSeconds(durationSeconds)
+                    });
+                }
+            }
+
+            _cache.Set(cacheKey, songs, _cacheOptions);
+            LastError = null;
+            return songs;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            LastError = "Album tracks are currently unavailable.";
             return Array.Empty<Song>();
         }
     }

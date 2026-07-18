@@ -22,6 +22,7 @@ public sealed class HomeViewModel : ViewModelBase
     private readonly RecentPlaybackStore _recentPlaybackStore;
     private readonly PlaybackViewModel _playbackViewModel;
     private readonly PlaylistViewModel _playlistViewModel;
+    private readonly AlbumViewModel _albumViewModel;
     private readonly NavigationService _navigation;
     private readonly IUserNotificationService _notifications;
     private readonly ILastFmDataService _lastFmDataService;
@@ -42,6 +43,7 @@ public sealed class HomeViewModel : ViewModelBase
         RecentPlaybackStore recentPlaybackStore,
         PlaybackViewModel playbackViewModel,
         PlaylistViewModel playlistViewModel,
+        AlbumViewModel albumViewModel,
         NavigationService navigation,
         IUserNotificationService notifications,
         ILastFmDataService lastFmDataService,
@@ -58,6 +60,7 @@ public sealed class HomeViewModel : ViewModelBase
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _playlistViewModel = playlistViewModel
             ?? throw new ArgumentNullException(nameof(playlistViewModel));
+        _albumViewModel = albumViewModel ?? throw new ArgumentNullException(nameof(albumViewModel));
         _navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
         _lastFmDataService = lastFmDataService
@@ -82,6 +85,11 @@ public sealed class HomeViewModel : ViewModelBase
         _lastFmDataService.AuthenticationStateChanged += OnLastFmAuthenticationChanged;
 
         OpenPlaylistCommand = new RelayCommand<Playlist>(OpenPlaylist, playlist => playlist is not null);
+        OpenAlbumCommand = new RelayCommand<Song>(OpenAlbum, album => album is not null);
+        PlayAlbumCommand = new AsyncRelayCommand<Song>(
+            PlayAlbumAsync,
+            album => album is not null,
+            exception => _notifications.ShowError(exception.Message));
         CreatePlaylistCommand = new AsyncRelayCommand(
             CreatePlaylistAsync,
             () => true,
@@ -212,6 +220,10 @@ public sealed class HomeViewModel : ViewModelBase
 
     public RelayCommand<Playlist> OpenPlaylistCommand { get; }
 
+    public RelayCommand<Song> OpenAlbumCommand { get; }
+
+    public AsyncRelayCommand<Song> PlayAlbumCommand { get; }
+
     public AsyncRelayCommand CreatePlaylistCommand { get; }
 
     public AsyncRelayCommand<Song> PlaySongCommand { get; }
@@ -266,6 +278,37 @@ public sealed class HomeViewModel : ViewModelBase
 
         _playlistViewModel.DisplayedPlaylist = playlist;
         _navigation.NavigateTo(_playlistViewModel);
+    }
+
+    private void OpenAlbum(Song? album)
+    {
+        if (album is null)
+        {
+            return;
+        }
+
+        _ = _albumViewModel.ShowAlbumAsync(album);
+        _navigation.NavigateTo(_albumViewModel);
+    }
+
+    private async Task PlayAlbumAsync(Song? album)
+    {
+        if (album is null)
+        {
+            return;
+        }
+
+        // Load the album's tracks (also readies the album page), then play them.
+        // If the tracklist can't be resolved, fall back to the album as one track.
+        await _albumViewModel.ShowAlbumAsync(album);
+        if (_albumViewModel.PlayAlbumCommand.CanExecute(null))
+        {
+            _albumViewModel.PlayAlbumCommand.Execute(null);
+        }
+        else
+        {
+            await PlaySongAsync(album);
+        }
     }
 
     private async Task PlaySongAsync(Song? song)
