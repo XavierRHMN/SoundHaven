@@ -138,10 +138,17 @@ namespace SoundHaven.Models
                 return null;
             }
 
-            int newIndex = (index + (int)direction) % Songs.Count;
+            int newIndex = index + (int)direction;
             if (newIndex < 0)
             {
-                newIndex += Songs.Count;
+                // Previous on the first track doesn't wrap to the end; the caller
+                // restarts the current song instead.
+                return null;
+            }
+
+            if (newIndex >= Songs.Count)
+            {
+                newIndex %= Songs.Count;
             }
 
             return Songs[newIndex];

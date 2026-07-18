@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -22,10 +23,47 @@ public partial class PlayQueueControl : UserControl
     private int _dragFromIndex = -1;
     private bool _isDragging;
     private bool _suppressSelection;
+    private INotifyCollectionChanged? _historyCollection;
 
     public PlayQueueControl()
     {
         InitializeComponent();
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    // History lists the earlier tracks of the queue oldest-first; keep the newest
+    // (nearest "Playing") in view so the capped 5-row window shows recent history.
+    private void OnDataContextChanged(object? sender, EventArgs eventArgs)
+    {
+        if (_historyCollection is not null)
+        {
+            _historyCollection.CollectionChanged -= OnHistoryCollectionChanged;
+            _historyCollection = null;
+        }
+
+        if (DataContext is PlayerViewModel viewModel)
+        {
+            _historyCollection = viewModel.HistorySongs;
+            _historyCollection.CollectionChanged += OnHistoryCollectionChanged;
+            ScrollHistoryToEnd();
+        }
+    }
+
+    private void OnHistoryCollectionChanged(object? sender, NotifyCollectionChangedEventArgs eventArgs)
+        => ScrollHistoryToEnd();
+
+    private void ScrollHistoryToEnd()
+    {
+        Dispatcher.UIThread.Post(
+            () =>
+            {
+                int count = HistoryList.ItemCount;
+                if (count > 0)
+                {
+                    HistoryList.ScrollIntoView(count - 1);
+                }
+            },
+            DispatcherPriority.Background);
     }
 
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs eventArgs)

@@ -11,14 +11,11 @@ namespace SoundHaven.ViewModels;
 
 public sealed class PlayerViewModel : ViewModelBase
 {
-    private const int MaxHistoryItems = 50;
-
     private readonly PlaybackViewModel _playbackViewModel;
     private readonly PlaylistStore _playlistStore;
     private readonly IUserNotificationService _notifications;
     private ObservableCollection<Song>? _subscribedSongs;
     private Song? _menuSong;
-    private Song? _lastPlayingSong;
 
     public ObservableCollection<Song> UpNextSongs { get; } = [];
 
@@ -58,7 +55,6 @@ public sealed class PlayerViewModel : ViewModelBase
             ?? throw new ArgumentNullException(nameof(playbackViewModel));
         _playlistStore = playlistStore ?? throw new ArgumentNullException(nameof(playlistStore));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
-        _lastPlayingSong = playbackViewModel.CurrentSong;
         _playbackViewModel.PropertyChanged += PlaybackViewModel_PropertyChanged;
         PlaySongCommand = new AsyncRelayCommand<Song>(
             PlaySongAsync,
@@ -84,6 +80,7 @@ public sealed class PlayerViewModel : ViewModelBase
             () => _menuSong is not null);
         SubscribeToPlaylistSongs();
         RefreshUpNext();
+        RefreshHistory();
     }
 
     public void SetMenuSong(Song song)
@@ -211,20 +208,14 @@ public sealed class PlayerViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Picking a history entry consumes it: the row leaves the log and the track
-    /// moves back into Playing. The track it interrupts is appended to the log
-    /// by the normal transition bookkeeping.
+    /// Picking a history entry jumps back to that track in the queue; history and
+    /// Up Next re-derive from the new position automatically.
     /// </summary>
     private Task PlayHistorySongAsync(Song? song)
     {
         if (song is null)
         {
             return Task.CompletedTask;
-        }
-
-        if (HistorySongs.Remove(song))
-        {
-            OnPropertyChanged(nameof(HasHistorySongs));
         }
 
         return _playbackViewModel.PlayFromBeginning(song);
@@ -282,12 +273,13 @@ public sealed class PlayerViewModel : ViewModelBase
                 OnPropertyChanged(nameof(PlayerViewSong));
                 OnPropertyChanged(nameof(HasPlayingSong));
                 RefreshUpNext();
-                RecordHistoryTransition();
+                RefreshHistory();
                 break;
             case nameof(PlaybackViewModel.CurrentPlaylist):
                 OnPropertyChanged(nameof(ActivePlaylistName));
                 SubscribeToPlaylistSongs();
                 RefreshUpNext();
+                RefreshHistory();
                 break;
         }
     }
@@ -314,6 +306,7 @@ public sealed class PlayerViewModel : ViewModelBase
     private void OnPlaylistSongsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         RefreshUpNext();
+        RefreshHistory();
     }
 
     private void RefreshUpNext()
@@ -328,25 +321,17 @@ public sealed class PlayerViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Up Next -> Playing -> History: the moment a track stops being the current
-    /// one it is appended to the bottom of the history log. Replays append again;
-    /// the log stays chronological, never deduped or reordered.
+    /// History is the earlier tracks of the current queue — everything before the
+    /// playing track, in order. Because it's derived from the queue position, the
+    /// first playlist track shows no history, later tracks show all prior ones, and
+    /// a one-off YouTube-search play (a single-song queue) clears it entirely.
     /// </summary>
-    private void RecordHistoryTransition()
+    private void RefreshHistory()
     {
-        Song? current = _playbackViewModel.CurrentSong;
-        Song? previous = _lastPlayingSong;
-        _lastPlayingSong = current;
-        if (previous is null || ReferenceEquals(previous, current))
+        HistorySongs.Clear();
+        foreach (Song song in _playbackViewModel.GetPreviousSongs())
         {
-            return;
-        }
-
-        // Clone so a replayed track yields distinct ListBox items.
-        HistorySongs.Add(previous.CloneForQueue());
-        while (HistorySongs.Count > MaxHistoryItems)
-        {
-            HistorySongs.RemoveAt(0);
+            HistorySongs.Add(song);
         }
 
         OnPropertyChanged(nameof(HasHistorySongs));

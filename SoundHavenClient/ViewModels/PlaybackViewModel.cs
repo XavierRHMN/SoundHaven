@@ -504,6 +504,33 @@ public sealed class PlaybackViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Songs queued before the currently playing track — its history within the
+    /// current queue. Empty for the first track and for a one-off play (a
+    /// single-song queue), which is what wipes history on a YouTube-search play.
+    /// </summary>
+    public IReadOnlyList<Song> GetPreviousSongs()
+    {
+        if (CurrentPlaylist?.Songs is not { Count: > 0 } songs || CurrentSong is null)
+        {
+            return Array.Empty<Song>();
+        }
+
+        int referenceIndex = GetQueueReferenceIndex(songs);
+        if (referenceIndex <= 0)
+        {
+            return Array.Empty<Song>();
+        }
+
+        var previous = new List<Song>(referenceIndex);
+        for (int i = 0; i < referenceIndex; i++)
+        {
+            previous.Add(songs[i]);
+        }
+
+        return previous;
+    }
+
+    /// <summary>
     /// Reorders an upcoming queue entry. Indices are relative to <see cref="GetUpcomingSongs"/>.
     /// </summary>
     public bool MoveUpNext(int fromUpNextIndex, int toUpNextIndex)

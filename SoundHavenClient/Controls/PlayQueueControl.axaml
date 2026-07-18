@@ -140,13 +140,17 @@
                            Classes="EmptyQueueHint"
                            IsVisible="{Binding !HasHistorySongs}" />
 
+                <!-- History shows ~5 rows, then scrolls (scrollbar hidden). -->
                 <ListBox x:Name="HistoryList"
                          ItemsSource="{Binding HistorySongs}"
                          Background="Transparent"
                          Theme="{StaticResource MaterialModernListBox}"
                          SelectionMode="Single"
                          SelectionChanged="OnHistorySelectionChanged"
-                         IsVisible="{Binding HasHistorySongs}">
+                         IsVisible="{Binding HasHistorySongs}"
+                         MaxHeight="290"
+                         ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:Song">
                             <Grid ColumnDefinitions="Auto,*,Auto"
